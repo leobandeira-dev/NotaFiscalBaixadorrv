@@ -130,12 +130,29 @@ def generate_simple_danfe(xml_content: str, output_path: str) -> bool:
         # Get styles
         styles = getSampleStyleSheet()
         
+        # Create custom styles
+        from reportlab.lib.styles import ParagraphStyle
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=16,
+            alignment=TA_CENTER,
+            spaceAfter=20
+        )
+        
+        subtitle_style = ParagraphStyle(
+            'CustomSubtitle',
+            parent=styles['Heading2'],
+            fontSize=12,
+            alignment=TA_CENTER,
+            spaceAfter=10
+        )
+        
         # Build document content
         elements = []
         
         # Title
-        title = Paragraph("<b>DANFE - Documento Auxiliar da Nota Fiscal Eletrônica</b>", styles['Title'])
-        title.alignment = TA_CENTER
+        title = Paragraph("<b>DANFE - Documento Auxiliar da Nota Fiscal Eletrônica</b>", title_style)
         elements.append(title)
         elements.append(Spacer(1, 20))
         
@@ -173,9 +190,7 @@ def generate_simple_danfe(xml_content: str, output_path: str) -> bool:
         elements.append(Spacer(1, 15))
         
         # Emitente
-        emitente_title = Paragraph("<b>EMITENTE</b>", styles['Heading2'])
-        emitente_title.alignment = TA_CENTER
-        elements.append(emitente_title)
+        elements.append(Paragraph("<b>EMITENTE</b>", subtitle_style))
         
         emitente_data = [
             ['Razão Social:', data['emit_nome']],
@@ -194,9 +209,7 @@ def generate_simple_danfe(xml_content: str, output_path: str) -> bool:
         elements.append(Spacer(1, 15))
         
         # Destinatário
-        dest_title = Paragraph("<b>DESTINATÁRIO</b>", styles['Heading2'])
-        dest_title.alignment = TA_CENTER
-        elements.append(dest_title)
+        elements.append(Paragraph("<b>DESTINATÁRIO</b>", subtitle_style))
         
         dest_data = [
             ['Razão Social:', data['dest_nome']],
@@ -215,9 +228,7 @@ def generate_simple_danfe(xml_content: str, output_path: str) -> bool:
         elements.append(Spacer(1, 15))
         
         # Totais
-        totais_title = Paragraph("<b>TOTAIS</b>", styles['Heading2'])
-        totais_title.alignment = TA_CENTER
-        elements.append(totais_title)
+        elements.append(Paragraph("<b>TOTAIS</b>", subtitle_style))
         
         totais_data = [
             ['Valor dos Produtos:', data['valor_produtos']],
