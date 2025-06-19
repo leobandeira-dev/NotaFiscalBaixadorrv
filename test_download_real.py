@@ -1,93 +1,85 @@
 #!/usr/bin/env python3
 """
-Teste real do sistema de download com a chave fornecida pelo usuário
+Teste direto do sistema de download com chave real
 """
-import sys
-import os
-sys.path.append('.')
+import requests
+import time
+import json
 
-from automation_fixed import InvoiceDownloader
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-def test_real_download():
-    """Teste real com a chave 35250513516247000107550010000113401146202508"""
+def test_direct_download():
+    """Teste direto com chave real confirmada"""
+    base_url = "http://localhost:5000"
+    session = requests.Session()
+    
+    print("Testando sistema de download direto")
+    
+    # 1. Registrar e fazer login
+    register_data = {
+        'username': 'testuser_direct',
+        'email': 'test_direct@example.com',
+        'password': 'testpass123',
+        'confirm_password': 'testpass123'
+    }
+    
+    session.post(f"{base_url}/register", data=register_data)
+    
+    login_data = {
+        'email': 'test_direct@example.com',
+        'password': 'testpass123'
+    }
+    
+    login_response = session.post(f"{base_url}/login", data=login_data)
+    print(f"Login status: {login_response.status_code}")
+    
+    # 2. Testar download com chave real (REAL SINALIZACAO - 4750 bytes)
     invoice_key = "35250513516247000107550010000113401146202508"
-    job_id = "test-job-real"
     
-    logger.info(f"Iniciando teste real com chave: {invoice_key}")
+    download_data = {
+        'invoice_keys': invoice_key
+    }
     
-    # Criar diretório downloads se não existir
-    os.makedirs('downloads', exist_ok=True)
+    print(f"Enviando chave: {invoice_key}")
+    response = session.post(f"{base_url}/submit_keys", data=download_data, allow_redirects=False)
     
-    downloader = None
-    try:
-        # Inicializar downloader
-        downloader = InvoiceDownloader()
+    print(f"Response status: {response.status_code}")
+    print(f"Headers: {dict(response.headers)}")
+    
+    if response.status_code == 302:
+        location = response.headers.get("Location", "")
+        print(f"Redirect para: {location}")
         
-        # Executar download
-        result = downloader.download_invoice_xml(invoice_key, job_id, 'xml')
-        
-        logger.info(f"Resultado do download: {result}")
-        
-        if result.get('success'):
-            logger.info("✅ DOWNLOAD REALIZADO COM SUCESSO!")
-            if 'file_path' in result:
-                file_path = result['file_path']
-                if os.path.exists(file_path):
-                    file_size = os.path.getsize(file_path)
-                    logger.info(f"📁 Arquivo salvo: {file_path}")
-                    logger.info(f"📊 Tamanho: {file_size} bytes")
-                    
-                    # Verificar conteúdo
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                        if len(content) > 100 and 'nfe' in content.lower():
-                            logger.info("✅ XML válido confirmado")
-                            return {
-                                'success': True,
-                                'file_path': file_path,
-                                'file_size': file_size,
-                                'xml_valid': True
-                            }
-                        else:
-                            logger.error("❌ XML inválido ou vazio")
-                            return {
-                                'success': False,
-                                'error': 'XML inválido'
-                            }
-                else:
-                    logger.error(f"❌ Arquivo não encontrado: {file_path}")
-                    return {
-                        'success': False,
-                        'error': 'Arquivo não encontrado'
-                    }
-            else:
-                logger.error("❌ file_path não retornado")
-                return {
-                    'success': False,
-                    'error': 'file_path não retornado'
-                }
-        else:
-            logger.error(f"❌ DOWNLOAD FALHOU: {result.get('error', 'Erro desconhecido')}")
-            return result
+        if "/download/" in location:
+            job_id = location.split("/download/")[-1]
+            print(f"Job ID extraído: {job_id}")
             
-    except Exception as e:
-        logger.error(f"❌ ERRO NO TESTE: {str(e)}")
-        return {
-            'success': False,
-            'error': str(e)
-        }
-    finally:
-        if downloader:
-            try:
-                downloader.cleanup()
-            except:
-                pass
+            # 3. Monitorar job
+            for i in range(20):
+                try:
+                    status_response = session.get(f"{base_url}/job_status/{job_id}")
+                    if status_response.status_code == 200:
+                        status_data = status_response.json()
+                        print(f"Tentativa {i+1}: {status_data['status']} - {status_data['processed']}/{status_data['total_keys']}")
+                        
+                        if status_data['status'] == 'completed':
+                            print(f"SUCESSO! Arquivos: {status_data['files']}")
+                            return True
+                        elif status_data['status'] == 'failed':
+                            print(f"FALHA: {status_data.get('errors', [])}")
+                            return False
+                    else:
+                        print(f"Erro status: {status_response.status_code}")
+                        
+                except Exception as e:
+                    print(f"Erro consulta: {e}")
+                
+                time.sleep(3)
+            
+            print("Timeout")
+            return False
+    
+    print("Erro no redirecionamento")
+    return False
 
 if __name__ == "__main__":
-    result = test_real_download()
-    print(f"\n🎯 RESULTADO FINAL: {result}")
+    success = test_direct_download()
+    print(f"\nResultado: {'SUCESSO' if success else 'FALHA'}")

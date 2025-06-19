@@ -50,12 +50,20 @@ def test_complete_system():
         'invoice_keys': invoice_key
     }
     
-    response = session.post(f"{base_url}/submit_keys", data=download_data)
+    response = session.post(f"{base_url}/submit_keys", data=download_data, allow_redirects=False)
     
-    if response.status_code == 200 and "/download/" in response.url:
+    if response.status_code == 302 and "Location" in response.headers:
         # Extrair job_id da URL de redirecionamento
-        job_id = response.url.split("/download/")[-1]
-        print(f"✅ Job criado com sucesso: {job_id}")
+        location = response.headers["Location"]
+        if "/download/" in location:
+            job_id = location.split("/download/")[-1]
+            print(f"✅ Job criado com sucesso: {job_id}")
+        else:
+            print(f"❌ Redirecionamento inesperado: {location}")
+            return False
+    else:
+        print(f"❌ Erro na resposta: {response.status_code}")
+        return False
         
         # 4. Monitorar progresso
         print("⏳ Monitorando progresso do download...")
@@ -97,8 +105,9 @@ def test_complete_system():
         
         print("⏰ Timeout aguardando conclusão do download")
         return False
-    else:
-        print(f"❌ Erro ao iniciar download: {response.status_code}")
+    
+    if 'job_id' not in locals():
+        print("❌ Job não foi criado corretamente")
         return False
 
 if __name__ == "__main__":
