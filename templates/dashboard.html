@@ -1,185 +1,9 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - XML Downloader</title>
-    
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
-    <style>
-        :root {
-            --primary-purple: #8A05BE;
-            --primary-purple-dark: #6B0F9A;
-            --primary-purple-light: #A855F7;
-            --gray-50: #FAFAFA;
-            --gray-100: #F5F5F5;
-            --gray-900: #1A1A1A;
-            --sidebar-width: 280px;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: #f8fafc;
-            color: #334155;
-        }
-        
-        /* Sidebar */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: var(--sidebar-width);
-            height: 100vh;
-            background: white;
-            border-right: 1px solid #e2e8f0;
-            z-index: 1000;
-            transition: transform 0.3s ease;
-        }
-        
-        .sidebar-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-        
-        .sidebar-brand {
-            display: flex;
-            align-items: center;
-            font-size: 1.25rem;
-            font-weight: 800;
-            color: var(--primary-purple);
-            text-decoration: none;
-        }
-        
-        .sidebar-brand i {
-            margin-right: 0.75rem;
-            font-size: 1.5rem;
-        }
-        
-        .sidebar-nav {
-            padding: 1rem 0;
-        }
-        
-        .nav-item {
-            margin-bottom: 0.25rem;
-        }
-        
-        .nav-link {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1.5rem;
-            color: #64748b;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            font-weight: 500;
-        }
-        
-        .nav-link:hover {
-            background: #f1f5f9;
-            color: var(--primary-purple);
-        }
-        
-        .nav-link.active {
-            background: rgba(138, 5, 190, 0.1);
-            color: var(--primary-purple);
-            border-right: 3px solid var(--primary-purple);
-        }
-        
-        .nav-link i {
-            margin-right: 0.75rem;
-            width: 20px;
-            text-align: center;
-        }
-        
-        .sidebar-footer {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 1.5rem;
-            border-top: 1px solid #e2e8f0;
-        }
-        
-        .user-info {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem;
-            background: #f8fafc;
-            border-radius: 12px;
-            margin-bottom: 1rem;
-        }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light));
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            margin-right: 0.75rem;
-        }
-        
-        .user-details h6 {
-            margin: 0;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: var(--gray-900);
-        }
-        
-        .user-details p {
-            margin: 0;
-            font-size: 0.75rem;
-            color: #64748b;
-        }
-        
-        /* Main Content */
-        .main-content {
-            margin-left: var(--sidebar-width);
-            min-height: 100vh;
-        }
-        
-        .top-bar {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: between;
-            align-items: center;
-        }
-        
-        .page-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--gray-900);
-            margin: 0;
-        }
-        
-        .page-subtitle {
-            color: #64748b;
-            font-size: 0.875rem;
-            margin: 0;
-        }
-        
-        .content-area {
-            padding: 2rem;
-        }
-        
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<style>
         /* Dashboard Cards */
         .stats-grid {
             display: grid;
@@ -289,21 +113,6 @@
             opacity: 0.9;
         }
         
-        .btn-outline-light {
-            border: 2px solid rgba(255,255,255,0.3);
-            color: white;
-            background: transparent;
-            border-radius: 8px;
-            padding: 0.5rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-outline-light:hover {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-        
         /* Quick Actions */
         .quick-actions {
             display: grid;
@@ -348,20 +157,6 @@
         .action-card p {
             color: #64748b;
             margin-bottom: 1.5rem;
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
-            border: none;
-            border-radius: 8px;
-            padding: 0.75rem 1.5rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(138, 5, 190, 0.3);
         }
         
         /* Recent Activity */
@@ -415,99 +210,155 @@
             font-size: 0.75rem;
             color: #64748b;
         }
-        
-        /* Mobile Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.show {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-            
-            .content-area {
-                padding: 1rem;
-            }
-            
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .quick-actions {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <a href="{{ url_for('dashboard') }}" class="sidebar-brand">
-                <i class="fas fa-file-invoice"></i>
-                XMLDownloader
-            </a>
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Visão geral da sua gestão fiscal automatizada</p>
+</div>
+
+<!-- Trial Banner -->
+{% if current_user.is_trial_active() %}
+<div class="trial-banner">
+    <div class="trial-content">
+        <h5><i class="fas fa-gift me-2"></i>Período de teste ativo</h5>
+        <p>Você tem 7 dias restantes no seu teste gratuito</p>
+    </div>
+    <a href="{{ url_for('add_balance') }}" class="btn btn-outline-light">
+        Adicionar Saldo
+    </a>
+</div>
+{% endif %}
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-header">
+            <div class="stat-icon purple">
+                <i class="fas fa-file-download"></i>
+            </div>
         </div>
-        
-        <nav class="sidebar-nav">
-            <div class="nav-item">
-                <a href="{{ url_for('dashboard') }}" class="nav-link active">
-                    <i class="fas fa-chart-line"></i>
-                    Dashboard
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('xml_download') }}" class="nav-link">
-                    <i class="fas fa-download"></i>
-                    Download XMLs
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="fas fa-file-pdf"></i>
-                    DANFE PDFs
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('api_credentials') }}" class="nav-link">
-                    <i class="fas fa-code"></i>
-                    API & Integração
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="{{ url_for('add_balance') }}" class="nav-link">
-                    <i class="fas fa-credit-card"></i>
-                    Adicionar Saldo
-                </a>
-            </div>
-            <div class="nav-item">
-                <a href="#" class="nav-link">
-                    <i class="fas fa-chart-bar"></i>
-                    Relatórios
-                </a>
-            </div>
-        </nav>
-        
-        <div class="sidebar-footer">
-            <div class="user-info">
-                <div class="user-avatar">
-                    {{ current_user.name[0].upper() if current_user.name else 'U' }}
-                </div>
-                <div class="user-details">
-                    <h6>{{ current_user.name }}</h6>
-                    <p>{{ current_user.email }}</p>
-                </div>
-            </div>
-            <a href="{{ url_for('logout') }}" class="btn btn-outline-secondary btn-sm w-100">
-                <i class="fas fa-sign-out-alt me-2"></i>Sair
-            </a>
+        <div class="stat-value">{{ total_usage }}</div>
+        <div class="stat-label">XMLs baixados (total)</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up me-1"></i>+12% este mês
         </div>
     </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <div class="stat-icon green">
+                <i class="fas fa-calendar-month"></i>
+            </div>
+        </div>
+        <div class="stat-value">{{ this_month_usage }}</div>
+        <div class="stat-label">XMLs este mês</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up me-1"></i>+8% vs mês anterior
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <div class="stat-icon blue">
+                <i class="fas fa-wallet"></i>
+            </div>
+        </div>
+        <div class="stat-value">R$ {{ "%.2f"|format(current_user.balance) }}</div>
+        <div class="stat-label">Saldo atual</div>
+        {% if current_user.balance < 5.0 %}
+        <div class="stat-change negative">
+            <i class="fas fa-exclamation-triangle me-1"></i>Saldo baixo
+        </div>
+        {% else %}
+        <div class="stat-change positive">
+            <i class="fas fa-check me-1"></i>85% de economia
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-header">
+            <div class="stat-icon orange">
+                <i class="fas fa-clock"></i>
+            </div>
+        </div>
+        <div class="stat-value">10h</div>
+        <div class="stat-label">Tempo economizado</div>
+        <div class="stat-change positive">
+            <i class="fas fa-arrow-up me-1"></i>85% de economia
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+    <div class="action-card">
+        <div class="action-icon purple">
+            <i class="fas fa-download"></i>
+        </div>
+        <h5>Baixar XMLs</h5>
+        <p>Faça o download automático de XMLs em lote. Cole as chaves das notas fiscais e deixe o sistema trabalhar para você.</p>
+        <a href="{{ url_for('xml_download') }}" class="btn btn-primary">
+            <i class="fas fa-play me-2"></i>Começar Download
+        </a>
+    </div>
+    
+    <div class="action-card">
+        <div class="action-icon green">
+            <i class="fas fa-file-pdf"></i>
+        </div>
+        <h5>Gerar DANFEs</h5>
+        <p>Converta seus XMLs em DANFEs profissionais em PDF. Geração limitada e gratuita para todos os usuários.</p>
+        <a href="{{ url_for('my_xmls') }}" class="btn btn-primary">
+            <i class="fas fa-magic me-2"></i>Gerar DANFEs
+        </a>
+    </div>
+    
+    <div class="action-card">
+        <div class="action-icon blue">
+            <i class="fas fa-code"></i>
+        </div>
+        <h5>Integração API</h5>
+        <p>Conecte seu sistema ao XMLDownloader usando nossa API REST. Documentação completa e exemplos práticos.</p>
+        <a href="{{ url_for('api_credentials') }}" class="btn btn-primary">
+            <i class="fas fa-cog me-2"></i>Configurar API
+        </a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="activity-card">
+    <div class="activity-header">
+        <h5><i class="fas fa-history me-2"></i>Atividade Recente</h5>
+        <a href="{{ url_for('my_xmls') }}" class="btn btn-sm btn-outline-primary">
+            Ver todas
+        </a>
+    </div>
+    
+    {% if recent_xmls %}
+        {% for xml in recent_xmls %}
+        <div class="activity-item">
+            <div class="activity-icon green">
+                <i class="fas fa-check"></i>
+            </div>
+            <div class="activity-details">
+                <h6>XML baixado com sucesso</h6>
+                <p>{{ xml.created_at.strftime('%d/%m/%Y às %H:%M') }} - {{ xml.file_name }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <p class="text-muted">Nenhuma atividade recente</p>
+            <a href="{{ url_for('xml_download') }}" class="btn btn-primary">
+                Fazer primeiro download
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
     
     <!-- Main Content -->
     <div class="main-content">
