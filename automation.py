@@ -335,8 +335,13 @@ class InvoiceDownloader:
             if download_link:
                 try:
                     download_url = download_link.get_attribute('href')
-                    if download_url and download_url.startswith('http'):
-                        logger.info(f"[Job {job_id}] Downloading from URL: {download_url}")
+                    logger.info(f"[Job {job_id}] Found download URL: {download_url}")
+                    
+                    # Skip if URL redirects to homepage
+                    if download_url and 'meudanfe.com.br/' == download_url.rstrip('/'):
+                        logger.warning(f"[Job {job_id}] Download link redirects to homepage, skipping direct download")
+                    elif download_url and download_url.startswith('http'):
+                        logger.info(f"[Job {job_id}] Attempting direct download from URL: {download_url}")
                         return self.download_file(download_url, invoice_key, job_id)
                     else:
                         logger.info(f"[Job {job_id}] Clicking download link...")
@@ -412,6 +417,48 @@ class InvoiceDownloader:
                 except Exception as e:
                     logger.warning(f"[Job {job_id}] Error checking page source: {e}")
             
+            # If no XML found yet, try to look for it in the current page after clicking XML button
+            if not xml_content:
+                logger.info(f"[Job {job_id}] No XML content found yet, checking current page source...")
+                try:
+                    # Wait a bit more and check page source
+                    time.sleep(3)
+                    page_source = self.driver.page_source
+                    
+                    # Look for XML patterns in the page
+                    import re
+                    # Try to find XML content that might be embedded
+                    xml_patterns = [
+                        r'(<\?xml[^>]*>.*?</nfeProc>)',
+                        r'(<\?xml[^>]*>.*?</NFe>)', 
+                        r'(<nfeProc[^>]*>.*?</nfeProc>)',
+                        r'(<NFe[^>]*>.*?</NFe>)'
+                    ]
+                    
+                    for pattern in xml_patterns:
+                        match = re.search(pattern, page_source, re.DOTALL | re.IGNORECASE)
+                        if match:
+                            xml_content = match.group(1)
+                            logger.info(f"[Job {job_id}] Found XML pattern in page source (length: {len(xml_content)})")
+                            break
+                            
+                    # If still no XML, try to find it in text content of elements
+                    if not xml_content:
+                        logger.info(f"[Job {job_id}] Searching for XML in all page elements...")
+                        all_elements = self.driver.find_elements(By.XPATH, "//*")
+                        for element in all_elements:
+                            try:
+                                text = element.text.strip()
+                                if text and len(text) > 100 and ('<?xml' in text or '<nfeProc' in text or '<NFe' in text):
+                                    xml_content = text
+                                    logger.info(f"[Job {job_id}] Found XML in element text (length: {len(xml_content)})")
+                                    break
+                            except:
+                                continue
+                                
+                except Exception as e:
+                    logger.warning(f"[Job {job_id}] Error in enhanced XML search: {e}")
+
             # Save XML content if found
             if xml_content:
                 try:
