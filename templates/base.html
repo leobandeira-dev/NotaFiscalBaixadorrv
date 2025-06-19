@@ -8,51 +8,51 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
-            /* Nubank Purple Palette */
-            --purple-nubank: #8A05BE;
-            --purple-light: #A855F7;
-            --purple-dark: #6B0F9A;
-            --purple-accent: #C084FC;
+            /* Bling-inspired Color Palette */
+            --primary-green: #52C41A;
+            --primary-green-dark: #389E0D;
+            --primary-green-light: #73D13D;
+            --secondary-purple: #8A05BE;
             
-            /* Neutral Colors inspired by Bling */
+            /* Neutral Colors */
             --white: #FFFFFF;
-            --gray-50: #F9FAFB;
-            --gray-100: #F3F4F6;
-            --gray-200: #E5E7EB;
-            --gray-300: #D1D5DB;
-            --gray-400: #9CA3AF;
-            --gray-500: #6B7280;
-            --gray-600: #4B5563;
-            --gray-700: #374151;
-            --gray-800: #1F2937;
-            --gray-900: #111827;
+            --gray-50: #FAFAFA;
+            --gray-100: #F5F5F5;
+            --gray-200: #E8E8E8;
+            --gray-300: #D9D9D9;
+            --gray-400: #BFBFBF;
+            --gray-500: #8C8C8C;
+            --gray-600: #595959;
+            --gray-700: #434343;
+            --gray-800: #262626;
+            --gray-900: #1F1F1F;
             
-            /* Accent Colors */
-            --green-500: #10B981;
-            --blue-500: #3B82F6;
-            --yellow-500: #F59E0B;
-            --red-500: #EF4444;
+            /* Status Colors */
+            --success: #52C41A;
+            --warning: #FAAD14;
+            --error: #FF4D4F;
+            --info: #1890FF;
             
             /* Text Colors */
-            --text-primary: var(--gray-800);
-            --text-secondary: var(--gray-600);
-            --text-muted: var(--gray-500);
+            --text-primary: #262626;
+            --text-secondary: #595959;
+            --text-muted: #8C8C8C;
+            --text-light: #BFBFBF;
             
             /* Shadows */
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            --shadow-purple: 0 10px 15px -3px rgba(138, 5, 190, 0.1), 0 4px 6px -2px rgba(138, 5, 190, 0.05);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+            --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
         }
 
         body {
-            background: #FFFFFF;
+            background: var(--gray-50);
             min-height: 100vh;
             color: var(--text-primary);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             line-height: 1.6;
-            font-size: 16px;
+            font-size: 14px;
         }
         
         /* Minimal Card Design */
@@ -168,113 +168,136 @@
             border-color: var(--purple-light);
         }
         
-        /* Minimal Navigation */
+        /* Bling-style Navigation */
         .navbar {
-            background: #FFFFFF !important;
-            border-bottom: 1px solid #E5E7EB;
+            background: var(--white) !important;
+            border-bottom: 1px solid var(--gray-200);
             padding: 1rem 0;
+            box-shadow: var(--shadow-sm);
         }
         
         .navbar-brand {
-            color: var(--purple-nubank) !important;
+            color: var(--primary-green) !important;
             font-weight: 700;
-            font-size: 1.25rem;
+            font-size: 1.5rem;
         }
         
         .nav-link {
             color: var(--text-secondary) !important;
-            font-weight: 400;
-            padding: 8px 12px !important;
+            font-weight: 500;
+            padding: 12px 16px !important;
+            border-radius: 6px;
+            margin: 0 4px;
+            transition: all 0.2s ease;
         }
         
         .nav-link:hover {
-            color: var(--purple-nubank) !important;
+            color: var(--primary-green) !important;
+            background: rgba(82, 196, 26, 0.1);
         }
         
-        /* Simple Button Design */
+        /* Bling-style Buttons */
         .btn-premium {
-            background: var(--purple-nubank);
+            background: var(--primary-green);
             border: none;
             border-radius: 6px;
-            padding: 10px 20px;
+            padding: 12px 24px;
             color: white;
-            font-weight: 500;
+            font-weight: 600;
             font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
         }
         
         .btn-premium:hover {
-            background: var(--purple-dark);
+            background: var(--primary-green-dark);
             color: white;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
         
-        /* Minimal Card Design */
+        /* Bling-style Cards */
         .card {
-            background: #FFFFFF;
-            border: 1px solid #E5E7EB;
+            background: var(--white);
+            border: 1px solid var(--gray-200);
             border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.2s ease;
+        }
+        
+        .card:hover {
+            box-shadow: var(--shadow-md);
         }
         
         .card-header {
-            background: #F9FAFB !important;
+            background: var(--gray-50) !important;
             color: var(--text-primary) !important;
-            border-bottom: 1px solid #E5E7EB;
-            font-weight: 500;
-            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+            font-weight: 600;
+            padding: 16px 20px;
+            font-size: 16px;
         }
         
         .card-body {
-            padding: 1.5rem;
+            padding: 20px;
         }
         
-        /* Simple Button Styles */
+        /* Bling-style Buttons */
         .btn-primary {
-            background: var(--purple-nubank);
+            background: var(--primary-green);
             border: none;
             border-radius: 6px;
-            font-weight: 500;
-            padding: 10px 16px;
+            font-weight: 600;
+            padding: 12px 20px;
             font-size: 14px;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow-sm);
         }
         
         .btn-primary:hover {
-            background: var(--purple-dark);
+            background: var(--primary-green-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
         
         .btn-success {
-            background: var(--green-500);
+            background: var(--success);
             border: none;
             border-radius: 6px;
-            font-weight: 500;
-            padding: 10px 16px;
+            font-weight: 600;
+            padding: 12px 20px;
             font-size: 14px;
+            transition: all 0.2s ease;
         }
         
         .btn-success:hover {
-            background: #0D9466;
+            background: var(--primary-green-dark);
         }
         
         .btn-warning {
-            background: var(--yellow-500);
+            background: var(--warning);
             border: none;
             border-radius: 6px;
-            color: var(--gray-900);
-            font-weight: 500;
-            padding: 10px 16px;
+            color: var(--white);
+            font-weight: 600;
+            padding: 12px 20px;
             font-size: 14px;
         }
         
         .btn-outline-primary {
-            border: 1px solid var(--purple-nubank);
-            color: var(--purple-nubank);
+            border: 2px solid var(--primary-green);
+            color: var(--primary-green);
             background: transparent;
             border-radius: 6px;
-            font-weight: 500;
-            padding: 10px 16px;
+            font-weight: 600;
+            padding: 10px 20px;
+            transition: all 0.2s ease;
         }
         
         .btn-outline-primary:hover {
-            background: var(--purple-nubank);
+            background: var(--primary-green);
             color: white;
+            transform: translateY(-1px);
         }
         
         /* Simple Alerts */
@@ -363,15 +386,47 @@
         
         /* Color Classes */
         .text-primary {
-            color: var(--purple-nubank) !important;
+            color: var(--primary-green) !important;
+        }
+        
+        .text-success {
+            color: var(--success) !important;
         }
         
         .bg-primary {
-            background: var(--purple-nubank) !important;
+            background: var(--primary-green) !important;
+        }
+        
+        .bg-success {
+            background: var(--success) !important;
+        }
+        
+        .bg-success-soft {
+            background: rgba(82, 196, 26, 0.1) !important;
         }
         
         .text-muted {
             color: var(--text-muted) !important;
+        }
+        
+        .text-secondary {
+            color: var(--text-secondary) !important;
+        }
+        
+        .text-dark {
+            color: var(--text-primary) !important;
+        }
+        
+        /* Bling-style Hero Section */
+        .hero-section {
+            background: var(--gray-50);
+            min-height: 100vh;
+        }
+        
+        .hero-dashboard {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--gray-200);
         }
         
         /* Simple Tables */
