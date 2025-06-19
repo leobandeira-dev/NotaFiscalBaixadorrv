@@ -15,7 +15,7 @@ from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
 from itsdangerous import URLSafeTimedSerializer
 from authlib.integrations.flask_client import OAuth
-from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, init_default_data
+from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, ImportedXML, init_default_data
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 
 # Configure logging
@@ -739,8 +739,6 @@ def job_status(job_id):
 @login_required
 def my_xmls():
     """Lista XMLs do usuário logado"""
-    from models import ImportedXML
-    
     # Buscar XMLs do usuário
     xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.created_at.desc()).limit(50).all()
     
@@ -752,15 +750,9 @@ def my_xmls():
 @login_required 
 def labels_module():
     """Módulo de geração de etiquetas"""
-    from models import ImportedXML, UserModule
-    
-    # Verificar se usuário tem acesso ao módulo de etiquetas
-    user_module = UserModule.query.filter_by(
-        user_id=current_user.id,
-        module_id=3  # Labels module ID
-    ).first()
-    
-    if not user_module:
+    # Verificar se usuário tem saldo para acessar módulos premium
+    # Por enquanto, permitir acesso se usuário tem saldo ou está no período trial
+    if current_user.current_balance < 49.90 and current_user.trial_expires_at < datetime.now():
         flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
         return redirect(url_for('dashboard'))
     
@@ -841,9 +833,22 @@ def generate_danfe_route(xml_id):
     try:
         # Gerar DANFE
         danfe_generator = DANFEGenerator()
-        pdf_io = io.BytesIO()
         
-        if danfe_generator.generate_danfe(xml_record.xml_content, pdf_io):
+        # Criar um arquivo temporário para o DANFE
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
+            temp_path = temp_file.name
+        
+        if danfe_generator.generate_danfe(xml_record.xml_content, temp_path):
+            # Ler o arquivo gerado
+            with open(temp_path, 'rb') as f:
+                pdf_data = f.read()
+            
+            # Remover arquivo temporário
+            import os
+            os.unlink(temp_path)
+            
+            pdf_io = io.BytesIO(pdf_data)
             pdf_io.seek(0)
             
             return send_file(
@@ -865,15 +870,8 @@ def generate_danfe_route(xml_id):
 @login_required
 def generate_label_route(xml_id):
     """Gera e baixa etiqueta de transporte para um XML específico"""
-    from models import ImportedXML, UserModule
-    
-    # Verificar se usuário tem acesso ao módulo de etiquetas
-    user_module = UserModule.query.filter_by(
-        user_id=current_user.id,
-        module_id=3  # Labels module ID
-    ).first()
-    
-    if not user_module:
+    # Verificar se usuário tem saldo para acessar módulos premium
+    if current_user.current_balance < 49.90 and current_user.trial_expires_at < datetime.now():
         flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
         return redirect(url_for('my_xmls'))
     
@@ -903,15 +901,8 @@ def generate_label_route(xml_id):
 @login_required
 def bulk_generate_labels_route():
     """Gera etiquetas em lote"""
-    from models import UserModule
-    
-    # Verificar se usuário tem acesso ao módulo de etiquetas
-    user_module = UserModule.query.filter_by(
-        user_id=current_user.id,
-        module_id=3  # Labels module ID
-    ).first()
-    
-    if not user_module:
+    # Verificar se usuário tem saldo para acessar módulos premium
+    if current_user.current_balance < 49.90 and current_user.trial_expires_at < datetime.now():
         flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
         return redirect(url_for('labels_module'))
     
