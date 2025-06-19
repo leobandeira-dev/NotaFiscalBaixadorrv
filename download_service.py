@@ -103,8 +103,13 @@ class DownloadService:
             
             db.session.add(usage_record)
             
-            # Atualizar saldo do usuário
-            user.current_balance -= xml_price
+            # Atualizar saldo do usuário apenas se não estiver em período de teste
+            if not is_trial_active:
+                user.current_balance -= xml_price
+                logger.info(f"Cobrado R$ {xml_price:.2f} do usuário {user_id}")
+            else:
+                logger.info(f"Download gratuito para usuário {user_id} (período de teste)")
+            
             user.updated_at = datetime.utcnow()
             
             # Commit todas as mudanças
