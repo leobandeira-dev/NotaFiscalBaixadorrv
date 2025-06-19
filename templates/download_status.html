@@ -471,14 +471,30 @@
                             Download concluído com sucesso!
                         </p>
                         {% if job.files %}
-                        <a href="{{ url_for('download_zip', job_id=job.job_id) }}" class="btn btn-success">
-                            <i class="fas fa-download me-2"></i>
-                            Baixar ZIP ({{ job.files|length }} arquivos)
-                        </a>
-                        <button class="btn btn-primary" onclick="generateDanfe()">
-                            <i class="fas fa-file-pdf me-2"></i>
-                            Gerar DANFE (Grátis)
-                        </button>
+                        <div class="d-grid gap-3 mt-4">
+                            {% for file in job.files %}
+                            <div class="card border-success">
+                                <div class="card-body">
+                                    <h6 class="card-title text-success">
+                                        <i class="fas fa-file-code me-2"></i>
+                                        {{ file }}
+                                    </h6>
+                                    <div class="btn-group w-100">
+                                        <a href="/downloads/{{ file }}" download="{{ file }}" 
+                                           class="btn btn-success">
+                                            <i class="fas fa-download me-2"></i>
+                                            Baixar XML
+                                        </a>
+                                        <button onclick="generateDanfe('{{ file }}')" 
+                                                class="btn btn-primary">
+                                            <i class="fas fa-file-pdf me-2"></i>
+                                            Gerar DANFE (Grátis)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
                         {% endif %}
                         {% elif job.status == 'failed' %}
                         <p class="text-danger mb-4">
@@ -524,6 +540,38 @@
                 .catch(error => console.error('Error:', error));
         }
         
+        function generateDanfe(filename) {
+            const xmlKey = filename.replace('.xml', '');
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Gerando...';
+            button.disabled = true;
+            
+            // Create form to download DANFE
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/generate-danfe-direct';
+            form.style.display = 'none';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'xml_filename';
+            input.value = filename;
+            
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+            
+            // Restore button after short delay
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                document.body.removeChild(form);
+            }, 2000);
+        }
+
         function updateProgress(data) {
             // Update progress bar
             const progressFill = document.getElementById('progress-fill');
