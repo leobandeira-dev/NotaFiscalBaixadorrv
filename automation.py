@@ -316,11 +316,62 @@ class InvoiceDownloader:
                 # If no file download, look for XML content displayed on page
                 time.sleep(3)  # Wait a bit more for content to load
                 
-                # Check if XML content is now displayed on the page
+                # Check if XML content is now displayed on the page or in a new tab/window
                 try:
+                    # First, check if a new window/tab was opened with XML content
+                    original_window = self.driver.current_window_handle
+                    all_windows = self.driver.window_handles
+                    
+                    if len(all_windows) > 1:
+                        logger.info(f"[Job {job_id}] New window detected, checking for XML content")
+                        for window_handle in all_windows:
+                            if window_handle != original_window:
+                                self.driver.switch_to.window(window_handle)
+                                time.sleep(2)
+                                
+                                # Check if this window contains XML
+                                page_source = self.driver.page_source
+                                if '<?xml' in page_source and ('<nfeProc' in page_source or '<NFe' in page_source):
+                                    logger.info(f"[Job {job_id}] XML content found in new window")
+                                    # Extract and save XML content
+                                    import re
+                                    xml_match = re.search(r'(<\?xml.*?</nfeProc>)', page_source, re.DOTALL)
+                                    if not xml_match:
+                                        xml_match = re.search(r'(<\?xml.*?</NFe>)', page_source, re.DOTALL)
+                                    
+                                    if xml_match:
+                                        xml_content = xml_match.group(1)
+                                        # Close the new window and return to original
+                                        self.driver.close()
+                                        self.driver.switch_to.window(original_window)
+                                        
+                                        # Save the XML content
+                                        downloads_dir = 'downloads'
+                                        os.makedirs(downloads_dir, exist_ok=True)
+                                        filename = f"{invoice_key}.xml"
+                                        file_path = os.path.join(downloads_dir, filename)
+                                        
+                                        with open(file_path, 'w', encoding='utf-8') as f:
+                                            f.write(xml_content)
+                                        
+                                        logger.info(f"[Job {job_id}] XML content saved to: {file_path}")
+                                        return {
+                                            'success': True,
+                                            'file_path': file_path,
+                                            'filename': filename,
+                                            'size': len(xml_content.encode('utf-8'))
+                                        }
+                                
+                                # Close window if no XML found
+                                self.driver.close()
+                        
+                        # Return to original window
+                        self.driver.switch_to.window(original_window)
+                    
+                    # If no new window, check current page for XML content
                     page_source = self.driver.page_source
                     if '<?xml' in page_source and ('<nfeProc' in page_source or '<NFe' in page_source):
-                        logger.info(f"[Job {job_id}] XML content found in page after button click")
+                        logger.info(f"[Job {job_id}] XML content found in current page after button click")
                         # Extract and save XML content
                         import re
                         xml_match = re.search(r'(<\?xml.*?</nfeProc>)', page_source, re.DOTALL)
