@@ -116,10 +116,10 @@ class InvoiceDownloader:
             logger.error(f"Full traceback: {traceback.format_exc()}")
             raise
     
-    def download_invoice_xml(self, invoice_key: str, job_id: str) -> Dict[str, Any]:
-        """Download XML for a specific invoice key"""
+    def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml') -> Dict[str, Any]:
+        """Download XML or DANFE for a specific invoice key"""
         try:
-            logger.info(f"[Job {job_id}] Starting download for invoice key: {invoice_key}")
+            logger.info(f"[Job {job_id}] Starting {download_type.upper()} download for invoice key: {invoice_key}")
             
             # Check if driver is available
             if not self.driver:
@@ -263,21 +263,24 @@ class InvoiceDownloader:
             new_title = self.driver.title
             logger.info(f"[Job {job_id}] After submit - URL: {new_url}, Title: {new_title}")
             
-            # Enhanced XML extraction - look for the "Baixar XML" button specifically
-            logger.info(f"[Job {job_id}] Looking for XML download button...")
+            # Enhanced download extraction - look for the appropriate download button
+            logger.info(f"[Job {job_id}] Looking for {download_type.upper()} download button...")
             
-            # Look for the blue "Baixar XML" button specifically
-            xml_button_found = False
-            xml_button_selectors = [
-                'button:contains("Baixar XML")',
-                'button[class*="btn"]:contains("XML")',
-                'button[style*="background-color: rgb(52, 144, 220)"]',  # Blue button color
-                '.btn:contains("Baixar XML")',
-                'button:contains("XML")'
-            ]
+            # Look for the appropriate download button based on type
+            download_button_found = False
+            
+            if download_type.lower() == 'xml':
+                search_texts = ['baixar xml', 'xml']
+                button_type = 'XML'
+            elif download_type.lower() == 'danfe':
+                search_texts = ['baixar danfe', 'danfe']
+                button_type = 'DANFE'
+            else:
+                search_texts = ['baixar xml', 'xml']  # Default to XML
+                button_type = 'XML'
             
             try:
-                # First try with CSS selectors that might match the blue button
+                # First try with CSS selectors that might match the download button
                 buttons = self.driver.find_elements(By.TAG_NAME, "button")
                 logger.info(f"[Job {job_id}] Found {len(buttons)} buttons on page")
                 
@@ -289,13 +292,13 @@ class InvoiceDownloader:
                         
                         logger.debug(f"[Job {job_id}] Button {idx+1}: text='{btn_text}', class='{btn_class}', style='{btn_style[:100]}'")
                         
-                        # Look specifically for "Baixar XML" button
-                        if 'baixar xml' in btn_text.lower() or 'xml' in btn_text.lower():
-                            logger.info(f"[Job {job_id}] Found XML button: '{btn_text}'")
+                        # Look specifically for the requested download button
+                        if any(search_text in btn_text.lower() for search_text in search_texts):
+                            logger.info(f"[Job {job_id}] Found {button_type} button: '{btn_text}'")
                             btn.click()
-                            xml_button_found = True
+                            download_button_found = True
                             time.sleep(5)  # Wait for download to initiate
-                            logger.info(f"[Job {job_id}] Clicked XML download button")
+                            logger.info(f"[Job {job_id}] Clicked {button_type} download button")
                             break
                             
                     except Exception as e:
@@ -303,13 +306,13 @@ class InvoiceDownloader:
                         continue
                         
             except Exception as e:
-                logger.warning(f"[Job {job_id}] Error finding XML buttons: {e}")
+                logger.warning(f"[Job {job_id}] Error finding {button_type} buttons: {e}")
             
-            # If XML button was found and clicked, check for download or XML content
-            if xml_button_found:
-                logger.info(f"[Job {job_id}] XML button was clicked, checking for downloaded file or XML content...")
+            # If download button was found and clicked, check for download or content
+            if download_button_found:
+                logger.info(f"[Job {job_id}] {button_type} button was clicked, checking for downloaded file or content...")
                 # First check if file was downloaded via browser
-                download_result = self.check_downloaded_file(invoice_key, job_id)
+                download_result = self.check_downloaded_file(invoice_key, job_id, download_type)
                 if download_result['success']:
                     return download_result
                 
@@ -400,8 +403,8 @@ class InvoiceDownloader:
                     logger.warning(f"[Job {job_id}] Error extracting XML from page: {e}")
             
             # If button click didn't work, try to find download links
-            if not xml_button_found:
-                logger.info(f"[Job {job_id}] XML button not found, looking for download links...")
+            if not download_button_found:
+                logger.info(f"[Job {job_id}] {button_type} button not found, looking for download links...")
             
             # Look for download links with enhanced selectors
             download_selectors = [
@@ -675,7 +678,7 @@ class InvoiceDownloader:
                 'error': f'Erro inesperado ao salvar arquivo: {str(e)}'
             }
     
-    def check_downloaded_file(self, invoice_key, job_id):
+    def check_downloaded_file(self, invoice_key, job_id, download_type='xml'):
         """Check if file was downloaded by Selenium"""
         downloads_dir = 'downloads'
         
@@ -683,14 +686,21 @@ class InvoiceDownloader:
         max_wait = 30  # seconds
         wait_time = 0
         
+        # Determine file extension based on download type
+        if download_type.lower() == 'danfe':
+            file_extensions = ['.pdf', '.PDF']
+            new_filename = f"{invoice_key}.pdf"
+        else:  # xml
+            file_extensions = ['.xml', '.XML']
+            new_filename = f"{invoice_key}.xml"
+        
         while wait_time < max_wait:
-            # Look for files that might be the downloaded XML
+            # Look for files that might be the downloaded file
             for filename in os.listdir(downloads_dir):
-                if filename.endswith('.xml') and (invoice_key in filename or filename.endswith('.xml')):
+                if any(filename.endswith(ext) for ext in file_extensions) and (invoice_key in filename or any(filename.endswith(ext) for ext in file_extensions)):
                     file_path = os.path.join(downloads_dir, filename)
                     
                     # Rename file to have invoice key in name
-                    new_filename = f"{invoice_key}.xml"
                     new_file_path = os.path.join(downloads_dir, new_filename)
                     
                     if file_path != new_file_path:
