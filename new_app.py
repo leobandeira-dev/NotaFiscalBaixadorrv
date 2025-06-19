@@ -20,6 +20,7 @@ from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_p
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
 from transport_label_generator import TransportLabelGenerator, generate_label_from_database_xml
 from xml_processor import extract_xml_data
+from download_service import DownloadService
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -641,79 +642,115 @@ def asaas_webhook():
 
 # Background processing functions
 def process_download_job(job_id):
-    """Process download job in background"""
-    from automation_fixed import InvoiceDownloader
-    
-    with jobs_lock:
-        job = download_jobs.get(job_id)
-    
-    if not job:
-        return
-    
-    try:
-        job.status = "running"
+    """Process download job in background with proper Flask context"""
+    with app.app_context():  # Essential: Flask context for database operations
+        from automation_fixed import InvoiceDownloader
         
-        for i, invoice_key in enumerate(job.invoice_keys):
-            downloader = None
-            try:
-                # Create fresh downloader instance
-                downloader = InvoiceDownloader()
-                
-                # Download XML with user_id for database saving and charging
-                result = downloader.download_invoice_xml(invoice_key, job_id, 'xml', job.user_id)
-                
-                # Update job progress immediately
-                with jobs_lock:
-                    job.processed += 1
-                    logger.info(f"[Job {job_id}] Processed {job.processed}/{len(job.invoice_keys)} keys")
-                
-                if result.get('success'):
+        with jobs_lock:
+            job = download_jobs.get(job_id)
+        
+        if not job:
+            return
+        
+        try:
+            job.status = "running"
+            
+            for i, invoice_key in enumerate(job.invoice_keys):
+                downloader = None
+                try:
+                    # Create fresh downloader instance
+                    downloader = InvoiceDownloader()
+                    
+                    # Download XML with user_id for database saving and charging
+                    result = downloader.download_invoice_xml(invoice_key, job_id, 'xml', job.user_id)
+                    
+                    # Update job progress immediately
                     with jobs_lock:
-                        job.successful += 1
-                    # Extract filename from file_path for template compatibility
-                    if 'file_path' in result:
-                        filename = os.path.basename(result['file_path'])
+                        job.processed += 1
+                        logger.info(f"[Job {job_id}] Processed {job.processed}/{len(job.invoice_keys)} keys")
+                    
+                    if result.get('success'):
                         with jobs_lock:
-                            job.files.append(filename)
-                        logger.info(f"[Job {job_id}] Successfully downloaded: {filename}")
+                            job.successful += 1
+                        
+                        # Process successful download with proper database handling
+                        if 'file_path' in result and os.path.exists(result['file_path']):
+                            try:
+                                # Read XML content from file
+                                with open(result['file_path'], 'r', encoding='utf-8') as f:
+                                    xml_content = f.read()
+                                
+                                # Use DownloadService to properly save to database with charging
+                                download_success = DownloadService.process_successful_download(
+                                    user_id=job.user_id,
+                                    invoice_key=invoice_key,
+                                    xml_content=xml_content,
+                                    file_path=result['file_path'],
+                                    job_id=job_id
+                                )
+                                
+                                if download_success:
+                                    filename = os.path.basename(result['file_path'])
+                                    with jobs_lock:
+                                        job.files.append(filename)
+                                    logger.info(f"[Job {job_id}] Successfully processed and saved to database: {filename}")
+                                else:
+                                    logger.error(f"[Job {job_id}] Failed to save to database: {invoice_key}")
+                                    
+                            except Exception as db_error:
+                                logger.error(f"[Job {job_id}] Database error for {invoice_key}: {db_error}")
+                                # Still track the file even if database save fails
+                                filename = os.path.basename(result['file_path'])
+                                with jobs_lock:
+                                    job.files.append(filename)
+                        
+                        # Fallback for file tracking
+                        elif 'file_path' in result:
+                            filename = os.path.basename(result['file_path'])
+                            with jobs_lock:
+                                job.files.append(filename)
+                            logger.info(f"[Job {job_id}] Successfully downloaded: {filename}")
+                        else:
+                            logger.warning(f"[Job {job_id}] Success but no file_path in result")
                     else:
-                        logger.warning(f"[Job {job_id}] Success but no file_path in result")
-                else:
+                        with jobs_lock:
+                            job.failed += 1
+                            error_msg = result.get('error', 'Unknown error')
+                            job.errors.append({
+                                'invoice_key': invoice_key,
+                                'error': error_msg
+                            })
+                        logger.error(f"[Job {job_id}] Failed to download {invoice_key}: {error_msg}")
+                            
+                except Exception as e:
                     with jobs_lock:
+                        job.processed += 1
                         job.failed += 1
-                        error_msg = result.get('error', 'Unknown error')
+                        error_msg = str(e)
                         job.errors.append({
                             'invoice_key': invoice_key,
                             'error': error_msg
                         })
-                    logger.error(f"[Job {job_id}] Failed to download {invoice_key}: {error_msg}")
-                        
-            except Exception as e:
-                with jobs_lock:
-                    job.processed += 1
-                    job.failed += 1
-                    error_msg = str(e)
-                    job.errors.append({
-                        'invoice_key': invoice_key,
-                        'error': error_msg
-                    })
-                logger.error(f"[Job {job_id}] Exception for {invoice_key}: {error_msg}")
-            finally:
-                # Cleanup only after all attempts
-                if downloader:
-                    try:
-                        downloader.cleanup()
-                    except:
-                        pass
-        
-        with jobs_lock:
-            job.status = "completed"
-            job.end_time = datetime.now()
-        
-    except Exception as e:
-        logger.error(f"Job error: {str(e)}")
-        with jobs_lock:
-            job.status = "failed"
+                    logger.error(f"[Job {job_id}] Exception for {invoice_key}: {error_msg}")
+                finally:
+                    # Cleanup only after all attempts
+                    if downloader:
+                        try:
+                            downloader.cleanup()
+                        except:
+                            pass
+            
+            with jobs_lock:
+                job.status = "completed"
+                job.completed_at = datetime.now()
+            
+            logger.info(f"[Job {job_id}] Completed - Successful: {job.successful}, Failed: {job.failed}")
+            
+        except Exception as e:
+            logger.error(f"[Job {job_id}] Job error: {str(e)}")
+            with jobs_lock:
+                job.status = "failed"
+                job.completed_at = datetime.now()
 
 def process_danfe_generation(job_id):
     """Generate DANFE for downloaded XMLs"""

@@ -389,15 +389,23 @@
             updateSelection();
         }
         
-        // Confirm bulk generation
-        document.getElementById('bulkForm').addEventListener('submit', function(e) {
-            const count = document.querySelectorAll('input[name="xml_ids"]:checked').length;
-            if (count > 0) {
-                const confirmed = confirm(`Gerar etiquetas para ${count} XML(s)?\n\nCusto: R$ 49,90 (taxa única do módulo)`);
-                if (!confirmed) {
-                    e.preventDefault();
+        // Confirm bulk generation - check if form exists
+        const bulkForm = document.getElementById('bulkForm');
+        if (bulkForm) {
+            bulkForm.addEventListener('submit', function(e) {
+                const count = document.querySelectorAll('input[name="xml_ids"]:checked').length;
+                if (count > 0) {
+                    const confirmed = confirm(`Gerar etiquetas para ${count} XML(s)?\n\nCusto: R$ 49,90 (taxa única do módulo)`);
+                    if (!confirmed) {
+                        e.preventDefault();
+                    }
                 }
-            }
+            });
+        }
+        
+        // Initialize selection on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSelection();
         });
 </script>
 {% endblock %}
