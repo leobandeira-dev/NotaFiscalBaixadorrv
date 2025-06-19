@@ -295,9 +295,24 @@ class InvoiceDownloader:
                         # Look specifically for the requested download button
                         if any(search_text in btn_text.lower() for search_text in search_texts):
                             logger.info(f"[Job {job_id}] Found {button_type} button: '{btn_text}'")
+                            
+                            # Check if button has href attribute (is actually a link)
+                            btn_href = btn.get_attribute('onclick') or btn.get_attribute('href')
+                            if btn_href:
+                                logger.info(f"[Job {job_id}] Button has action: {btn_href[:100]}")
+                            
+                            # Store window handles before clicking
+                            original_handles = self.driver.window_handles
+                            
                             btn.click()
                             download_button_found = True
-                            time.sleep(5)  # Wait for download to initiate
+                            time.sleep(3)  # Wait for action to complete
+                            
+                            # Check if new window opened
+                            new_handles = self.driver.window_handles
+                            if len(new_handles) > len(original_handles):
+                                logger.info(f"[Job {job_id}] New window opened after clicking {button_type} button")
+                            
                             logger.info(f"[Job {job_id}] Clicked {button_type} download button")
                             break
                             
@@ -312,17 +327,142 @@ class InvoiceDownloader:
             if download_button_found:
                 logger.info(f"[Job {job_id}] {button_type} button was clicked, checking for downloaded file or content...")
                 
-                # Wait longer for the download to process
-                time.sleep(8)
+                # Wait for the download/content to load
+                time.sleep(3)
                 
-                # First check if file was downloaded via browser
+                # Strategy 0: Check if a direct download happened first
                 download_result = self.check_downloaded_file(invoice_key, job_id, download_type)
                 if download_result['success']:
                     return download_result
                 
-                # Enhanced XML extraction with multiple strategies
+                # Strategy 0.5: Try to get the href of the clicked button and download directly
                 try:
-                    # Strategy 1: Check for new tabs/windows
+                    logger.info(f"[Job {job_id}] Checking for direct download link...")
+                    current_url = self.driver.current_url
+                    page_source = self.driver.page_source
+                    
+                    # Look for XML download links in the current page
+                    import re
+                    xml_links = re.findall(r'href=["\']([^"\']*\.xml[^"\']*)["\']', page_source, re.IGNORECASE)
+                    if xml_links:
+                        for xml_link in xml_links:
+                            logger.info(f"[Job {job_id}] Found XML link: {xml_link}")
+                            try:
+                                if xml_link.startswith('http'):
+                                    download_url = xml_link
+                                else:
+                                    # Relative URL
+                                    from urllib.parse import urljoin
+                                    download_url = urljoin(current_url, xml_link)
+                                
+                                logger.info(f"[Job {job_id}] Attempting direct download from: {download_url}")
+                                download_result = self.download_file(download_url, invoice_key, job_id)
+                                if download_result['success']:
+                                    return download_result
+                            except Exception as e:
+                                logger.debug(f"[Job {job_id}] Failed to download from {xml_link}: {e}")
+                                continue
+                except Exception as e:
+                    logger.warning(f"[Job {job_id}] Error checking for direct download links: {e}")
+                
+                # Wait a bit more for content to load
+                time.sleep(5)
+                
+                # Enhanced XML extraction strategies specifically for meudanfe.com.br
+                try:
+                    # Strategy 1: Intercept network requests for XML files
+                    logger.info(f"[Job {job_id}] Checking for XML downloads and content...")
+                    
+                    # Check browser's download directory first
+                    time.sleep(2)  # Give more time for download
+                    download_result = self.check_downloaded_file(invoice_key, job_id, download_type)
+                    if download_result['success']:
+                        return download_result
+                    
+                    # Strategy 1.5: Try to trigger download again by looking for the actual download URL
+                    current_page_source = self.driver.page_source
+                    current_url = self.driver.current_url
+                    
+                    # Look for direct XML content that may have been loaded in the page
+                    xml_content = self.extract_xml_from_page(current_page_source, job_id)
+                    if xml_content:
+                        logger.info(f"[Job {job_id}] Found XML content in current page")
+                        return self.save_xml_file(xml_content, invoice_key, job_id)
+                    
+                    # Strategy 1.6: Check if we can construct the download URL manually
+                    # meudanfe.com.br often uses predictable URL patterns
+                    if 'ver-danfe' in current_url:
+                        logger.info(f"[Job {job_id}] Attempting to construct direct XML download URL...")
+                        try:
+                            # Try common URL patterns for XML download
+                            base_url = current_url.replace('/ver-danfe', '')
+                            potential_xml_urls = [
+                                f"{base_url}/download-xml/{invoice_key}",
+                                f"{base_url}/xml/{invoice_key}",
+                                f"{base_url}/download/{invoice_key}.xml",
+                                f"https://meudanfe.com.br/download-xml/{invoice_key}",
+                                f"https://meudanfe.com.br/xml/{invoice_key}.xml"
+                            ]
+                            
+                            for xml_url in potential_xml_urls:
+                                logger.info(f"[Job {job_id}] Trying direct XML URL: {xml_url}")
+                                try:
+                                    download_result = self.download_file(xml_url, invoice_key, job_id)
+                                    if download_result['success']:
+                                        return download_result
+                                except Exception as e:
+                                    logger.debug(f"[Job {job_id}] Direct URL failed: {e}")
+                                    continue
+                        except Exception as e:
+                            logger.warning(f"[Job {job_id}] Error trying direct URLs: {e}")
+                    
+                    # Strategy 2: Look for meudanfe.com.br specific XML patterns
+                    import re
+                    logger.info(f"[Job {job_id}] Analyzing page for meudanfe.com.br XML patterns...")
+                    
+                    # Check for specific patterns used by meudanfe.com.br
+                    # Look for hidden download links or form actions
+                    download_patterns = [
+                        r'href=["\']([^"\']*download[^"\']*xml[^"\']*)["\']',
+                        r'href=["\']([^"\']*xml[^"\']*download[^"\']*)["\']',
+                        r'action=["\']([^"\']*download[^"\']*)["\']',
+                        r'data-href=["\']([^"\']*\.xml[^"\']*)["\']',
+                        r'data-url=["\']([^"\']*\.xml[^"\']*)["\']',
+                        r'data-download=["\']([^"\']*\.xml[^"\']*)["\']'
+                    ]
+                    
+                    dynamic_links = []
+                    for pattern in download_patterns:
+                        matches = re.findall(pattern, current_page_source, re.IGNORECASE)
+                        dynamic_links.extend(matches)
+                        if matches:
+                            logger.info(f"[Job {job_id}] Found {len(matches)} links with pattern: {pattern[:30]}...")
+                    
+                    # Also check for JavaScript-generated URLs
+                    js_patterns = [
+                        r'window\.open\(["\']([^"\']*\.xml[^"\']*)["\']',
+                        r'location\.href\s*=\s*["\']([^"\']*\.xml[^"\']*)["\']',
+                        r'download\(["\']([^"\']*\.xml[^"\']*)["\']'
+                    ]
+                    
+                    for pattern in js_patterns:
+                        matches = re.findall(pattern, current_page_source, re.IGNORECASE)
+                        dynamic_links.extend(matches)
+                    
+                    for link in dynamic_links:
+                        logger.info(f"[Job {job_id}] Found dynamic XML link: {link}")
+                        try:
+                            if not link.startswith('http'):
+                                from urllib.parse import urljoin
+                                link = urljoin(self.driver.current_url, link)
+                            
+                            download_result = self.download_file(link, invoice_key, job_id)
+                            if download_result['success']:
+                                return download_result
+                        except Exception as e:
+                            logger.debug(f"[Job {job_id}] Failed to download from dynamic link {link}: {e}")
+                    
+                    # Strategy 3: Check for new tabs/windows
                     original_window = self.driver.current_window_handle
                     all_windows = self.driver.window_handles
                     
@@ -338,6 +478,18 @@ class InvoiceDownloader:
                                     page_source = self.driver.page_source
                                     
                                     logger.info(f"[Job {job_id}] Checking window: {page_url[:100]}")
+                                    
+                                    # Check if this is an XML file URL
+                                    if '.xml' in page_url.lower():
+                                        logger.info(f"[Job {job_id}] Found XML URL in new window: {page_url}")
+                                        try:
+                                            download_result = self.download_file(page_url, invoice_key, job_id)
+                                            self.driver.close()
+                                            self.driver.switch_to.window(original_window)
+                                            if download_result['success']:
+                                                return download_result
+                                        except Exception as e:
+                                            logger.warning(f"[Job {job_id}] Failed to download from window URL: {e}")
                                     
                                     # Look for XML content in the new window
                                     xml_content = self.extract_xml_from_page(page_source, job_id)
