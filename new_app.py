@@ -656,7 +656,9 @@ def process_download_job(job_id):
                 
                 if result['success']:
                     job.successful += 1
-                    job.downloaded_files.append(result['file_path'])
+                    # Extract filename from file_path for template compatibility
+                    filename = os.path.basename(result['file_path'])
+                    job.files.append(filename)
                 else:
                     job.failed += 1
                     job.errors.append({
