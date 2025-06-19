@@ -169,7 +169,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ url_for('my_xmls') }}" class="nav-link {% if request.endpoint == 'my_xmls' %}active{% endif %}">
                         <i class="fas fa-file-code"></i>
                         Meus XMLs
                     </a>
@@ -187,7 +187,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ url_for('api_docs') }}" class="nav-link {% if request.endpoint == 'api_docs' %}active{% endif %}">
                         <i class="fas fa-code"></i>
                         API & Integração
                     </a>
@@ -199,7 +199,7 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ url_for('labels_module') }}" class="nav-link {% if request.endpoint == 'labels_module' %}active{% endif %}">
                         <i class="fas fa-tags"></i>
                         Etiquetas (Módulo)
                         <span class="badge bg-warning text-dark ms-auto">R$ 49,90</span>
@@ -217,7 +217,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">Ferramentas</div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ url_for('test_automation') }}" class="nav-link">
                         <i class="fas fa-vial"></i>
                         Testar Conexão
                     </a>
@@ -228,7 +228,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">Administração</div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="{{ url_for('admin.dashboard') }}" class="nav-link">
                         <i class="fas fa-shield-alt"></i>
                         Painel Admin
                         <span class="badge bg-danger ms-auto">Admin</span>

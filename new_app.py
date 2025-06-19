@@ -734,5 +734,217 @@ def job_status(job_id):
         
         return jsonify(job.to_dict())
 
+# Rotas principais do sistema
+@app.route('/my-xmls')
+@login_required
+def my_xmls():
+    """Lista XMLs do usuário logado"""
+    from models import ImportedXML
+    
+    # Buscar XMLs do usuário
+    xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.created_at.desc()).limit(50).all()
+    
+    return render_template('my_xmls.html', 
+                         xmls=xmls,
+                         current_user=current_user)
+
+@app.route('/labels-module')
+@login_required 
+def labels_module():
+    """Módulo de geração de etiquetas"""
+    from models import ImportedXML, UserModule
+    
+    # Verificar se usuário tem acesso ao módulo de etiquetas
+    user_module = UserModule.query.filter_by(
+        user_id=current_user.id,
+        module_id=3  # Labels module ID
+    ).first()
+    
+    if not user_module:
+        flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
+        return redirect(url_for('dashboard'))
+    
+    # Buscar XMLs do usuário para geração de etiquetas
+    xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.created_at.desc()).all()
+    
+    return render_template('labels.html', 
+                         xmls=xmls,
+                         current_user=current_user)
+
+@app.route('/api-docs')
+@login_required
+def api_docs():
+    """Documentação da API"""
+    return render_template('api_docs.html', current_user=current_user)
+
+@app.route('/test-automation')
+@login_required
+def test_automation():
+    """Testar conexão do sistema de automação"""
+    try:
+        from automation_fixed import InvoiceDownloader
+        
+        downloader = InvoiceDownloader()
+        result = downloader.test_connection()
+        
+        if result.get('success'):
+            flash('Conexão testada com sucesso! Sistema funcionando normalmente.', 'success')
+        else:
+            flash(f'Erro na conexão: {result.get("error", "Erro desconhecido")}', 'error')
+            
+    except Exception as e:
+        logger.error(f"Error testing automation: {str(e)}")
+        flash(f'Erro ao testar sistema: {str(e)}', 'error')
+    
+    return redirect(url_for('dashboard'))
+
+@app.route('/download-xml/<int:xml_id>')
+@login_required
+def download_xml(xml_id):
+    """Download arquivo XML específico"""
+    from models import ImportedXML
+    from flask import send_file
+    import io
+    
+    xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    
+    if not xml_record:
+        flash('XML não encontrado.', 'error')
+        return redirect(url_for('my_xmls'))
+    
+    # Criar arquivo em memória
+    xml_io = io.BytesIO(xml_record.xml_content.encode('utf-8'))
+    xml_io.seek(0)
+    
+    return send_file(
+        xml_io,
+        as_attachment=True,
+        download_name=f"{xml_record.invoice_key}.xml",
+        mimetype='application/xml'
+    )
+
+@app.route('/generate-danfe/<int:xml_id>')
+@login_required
+def generate_danfe_route(xml_id):
+    """Gera e baixa DANFE para um XML específico"""
+    from models import ImportedXML
+    from danfe_generator import DANFEGenerator
+    from flask import send_file
+    import io
+    
+    xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    
+    if not xml_record:
+        flash('XML não encontrado.', 'error')
+        return redirect(url_for('my_xmls'))
+    
+    try:
+        # Gerar DANFE
+        danfe_generator = DANFEGenerator()
+        pdf_io = io.BytesIO()
+        
+        if danfe_generator.generate_danfe(xml_record.xml_content, pdf_io):
+            pdf_io.seek(0)
+            
+            return send_file(
+                pdf_io,
+                as_attachment=True,
+                download_name=f"DANFE_{xml_record.invoice_key}.pdf",
+                mimetype='application/pdf'
+            )
+        else:
+            flash('Erro ao gerar DANFE.', 'error')
+            
+    except Exception as e:
+        logger.error(f"Error generating DANFE: {str(e)}")
+        flash('Erro ao gerar DANFE.', 'error')
+    
+    return redirect(url_for('my_xmls'))
+
+@app.route('/generate-label/<int:xml_id>')
+@login_required
+def generate_label_route(xml_id):
+    """Gera e baixa etiqueta de transporte para um XML específico"""
+    from models import ImportedXML, UserModule
+    
+    # Verificar se usuário tem acesso ao módulo de etiquetas
+    user_module = UserModule.query.filter_by(
+        user_id=current_user.id,
+        module_id=3  # Labels module ID
+    ).first()
+    
+    if not user_module:
+        flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
+        return redirect(url_for('my_xmls'))
+    
+    xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    
+    if not xml_record:
+        flash('XML não encontrado.', 'error')
+        return redirect(url_for('my_xmls'))
+    
+    try:
+        from label_generator import generate_label_for_xml
+        
+        result = generate_label_for_xml(xml_id)
+        
+        if result.get('success'):
+            return redirect(result['download_url'])
+        else:
+            flash(f'Erro ao gerar etiqueta: {result.get("error")}', 'error')
+            
+    except Exception as e:
+        logger.error(f"Error generating label: {str(e)}")
+        flash('Erro ao gerar etiqueta.', 'error')
+    
+    return redirect(url_for('my_xmls'))
+
+@app.route('/bulk-generate-labels', methods=['POST'])
+@login_required
+def bulk_generate_labels_route():
+    """Gera etiquetas em lote"""
+    from models import UserModule
+    
+    # Verificar se usuário tem acesso ao módulo de etiquetas
+    user_module = UserModule.query.filter_by(
+        user_id=current_user.id,
+        module_id=3  # Labels module ID
+    ).first()
+    
+    if not user_module:
+        flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
+        return redirect(url_for('labels_module'))
+    
+    xml_ids = request.form.getlist('xml_ids')
+    
+    if not xml_ids:
+        flash('Selecione pelo menos um XML para gerar etiquetas.', 'warning')
+        return redirect(url_for('labels_module'))
+    
+    try:
+        from label_generator import bulk_generate_labels
+        
+        xml_ids = [int(xml_id) for xml_id in xml_ids]
+        result = bulk_generate_labels(xml_ids)
+        
+        if result.get('success'):
+            flash(f'Etiquetas geradas com sucesso! {result.get("count", 0)} etiquetas criadas.', 'success')
+            return redirect(result.get('download_url', url_for('labels_module')))
+        else:
+            flash(f'Erro ao gerar etiquetas: {result.get("error")}', 'error')
+            
+    except Exception as e:
+        logger.error(f"Error bulk generating labels: {str(e)}")
+        flash('Erro ao gerar etiquetas em lote.', 'error')
+    
+    return redirect(url_for('labels_module'))
+
+# Importar admin panel
+try:
+    from admin_panel import init_admin_panel
+    init_admin_panel(app)
+except ImportError:
+    logger.warning("Admin panel not available")
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
