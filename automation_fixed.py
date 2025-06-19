@@ -127,7 +127,7 @@ class InvoiceDownloader:
             
             # Wait for results page
             logger.info(f"[Job {job_id}] Waiting for response page...")
-            time.sleep(12)  # Wait for page to load completely
+            time.sleep(8)  # Reduced wait time
             
             logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
             
@@ -177,10 +177,18 @@ class InvoiceDownloader:
             
             # Strategy 2: Wait and check for browser downloads
             logger.info(f"[Job {job_id}] Strategy 2: Checking for browser downloads...")
-            time.sleep(15)  # Increased wait time
+            time.sleep(10)  # Wait for download
             download_result = self.check_downloaded_file(invoice_key, job_id)
             if download_result['success']:
-                logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - returning result")
+                logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - file downloaded and found")
+                return download_result
+            
+            # Strategy 2b: Wait a bit more and check again
+            logger.info(f"[Job {job_id}] Strategy 2b: Extended wait for download...")
+            time.sleep(8)
+            download_result = self.check_downloaded_file(invoice_key, job_id)
+            if download_result['success']:
+                logger.info(f"[Job {job_id}] Strategy 2b SUCCESS - file found after extended wait")
                 return download_result
             
             # Strategy 3: Extract XML from page source
