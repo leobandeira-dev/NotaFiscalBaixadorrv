@@ -25,8 +25,8 @@ class InvoiceDownloader:
             logger.info("Setting up Chrome WebDriver...")
             
             chrome_options = Options()
-            # Essential headless options for Replit environment
-            chrome_options.add_argument('--headless=new')  # Use new headless mode
+            # Essential headless options for Replit environment - more stable configuration
+            chrome_options.add_argument('--headless')  # Use standard headless mode for stability
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
@@ -34,15 +34,22 @@ class InvoiceDownloader:
             chrome_options.add_argument('--disable-background-timer-throttling')
             chrome_options.add_argument('--disable-backgrounding-occluded-windows')
             chrome_options.add_argument('--disable-renderer-backgrounding')
-            chrome_options.add_argument('--disable-features=TranslateUI')
-            chrome_options.add_argument('--disable-ipc-flooding-protection')
-            chrome_options.add_argument('--window-size=1920,1080')
-            chrome_options.add_argument('--remote-debugging-port=9222')
-            chrome_options.add_argument('--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+            chrome_options.add_argument('--disable-features=TranslateUI,VizDisplayCompositor')
+            chrome_options.add_argument('--disable-extensions')
+            chrome_options.add_argument('--disable-plugins')
+            chrome_options.add_argument('--disable-images')
+            # Keep JavaScript enabled as website likely needs it
+            chrome_options.add_argument('--window-size=1280,720')  # Smaller window size
+            chrome_options.add_argument('--user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36')
             
-            # Memory and performance optimizations
+            # Memory and performance optimizations for stability
             chrome_options.add_argument('--memory-pressure-off')
-            chrome_options.add_argument('--max_old_space_size=4096')
+            chrome_options.add_argument('--max_old_space_size=2048')  # Reduced memory
+            chrome_options.add_argument('--disable-logging')
+            chrome_options.add_argument('--disable-web-security')
+            # Remove single-process as it can cause instability
+            chrome_options.add_argument('--disable-crash-reporter')
+            chrome_options.add_argument('--disable-in-process-stack-traces')
             
             # Download preferences
             download_dir = os.path.abspath('downloads')
@@ -90,8 +97,10 @@ class InvoiceDownloader:
                     logger.error(f"Selenium manager also failed: {selenium_error}")
                     raise selenium_error
             
-            self.driver.implicitly_wait(10)
-            self.driver.set_page_load_timeout(30)
+            # Set shorter timeouts to prevent hanging
+            self.driver.implicitly_wait(5)
+            self.driver.set_page_load_timeout(20)
+            self.driver.set_script_timeout(15)
             
             # Test driver with a simple page
             logger.info("Testing Chrome WebDriver with simple page...")

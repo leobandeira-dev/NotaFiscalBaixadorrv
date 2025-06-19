@@ -1,5 +1,6 @@
 import os
 import logging
+import time
 from flask import Flask, render_template, request, jsonify, send_file, flash, redirect, url_for
 from threading import Thread, Lock
 import uuid
@@ -167,6 +168,34 @@ def download_zip(job_id):
         flash('Erro ao criar arquivo ZIP.', 'error')
         return redirect(url_for('download_status', job_id=job_id))
 
+@app.route('/download_file/<job_id>/<filename>')
+def download_individual_file(job_id, filename):
+    """Download individual XML file"""
+    with jobs_lock:
+        job = download_jobs.get(job_id)
+    
+    if not job:
+        flash('Job de download não encontrado.', 'error')
+        return redirect(url_for('index'))
+    
+    # Find the file in downloaded files
+    file_path = None
+    for downloaded_file in job.downloaded_files:
+        if os.path.basename(downloaded_file) == filename:
+            file_path = downloaded_file
+            break
+    
+    if not file_path or not os.path.exists(file_path):
+        flash('Arquivo não encontrado.', 'error')
+        return redirect(url_for('download_status', job_id=job_id))
+    
+    try:
+        return send_file(file_path, as_attachment=True, download_name=filename)
+    except Exception as e:
+        logger.error(f"Error sending file {filename}: {str(e)}")
+        flash('Erro ao enviar arquivo.', 'error')
+        return redirect(url_for('download_status', job_id=job_id))
+
 @app.route('/test_automation')
 def test_automation():
     """Test the automation system connectivity"""
@@ -204,28 +233,53 @@ def process_download_job(job_id):
     
     try:
         job.status = "running"
-        downloader = InvoiceDownloader()
         
         for i, invoice_key in enumerate(job.invoice_keys):
             try:
                 logger.info(f"Processing invoice key {i+1}/{job.total_keys}: {invoice_key}")
                 
-                # Download XML for this invoice key
-                result = downloader.download_invoice_xml(invoice_key, job_id)
+                # Create fresh downloader instance for each key to prevent crashes
+                downloader = None
+                try:
+                    downloader = InvoiceDownloader()
+                    
+                    # Download XML for this invoice key
+                    result = downloader.download_invoice_xml(invoice_key, job_id)
+                    
+                    job.processed += 1
+                    
+                    if result['success']:
+                        job.successful += 1
+                        job.downloaded_files.append(result['file_path'])
+                        logger.info(f"Successfully downloaded: {result['file_path']}")
+                    else:
+                        job.failed += 1
+                        job.errors.append({
+                            'invoice_key': invoice_key,
+                            'error': result['error']
+                        })
+                        logger.error(f"Failed to download {invoice_key}: {result['error']}")
                 
-                job.processed += 1
-                
-                if result['success']:
-                    job.successful += 1
-                    job.downloaded_files.append(result['file_path'])
-                    logger.info(f"Successfully downloaded: {result['file_path']}")
-                else:
+                except Exception as download_error:
+                    job.processed += 1
                     job.failed += 1
+                    error_msg = f"Erro no download: {str(download_error)}"
                     job.errors.append({
                         'invoice_key': invoice_key,
-                        'error': result['error']
+                        'error': error_msg
                     })
-                    logger.error(f"Failed to download {invoice_key}: {result['error']}")
+                    logger.error(f"Download error for {invoice_key}: {str(download_error)}")
+                
+                finally:
+                    # Always cleanup the driver after each download
+                    if downloader:
+                        try:
+                            downloader.cleanup()
+                        except Exception as cleanup_error:
+                            logger.warning(f"Error cleaning up driver: {cleanup_error}")
+                
+                # Small delay between downloads to prevent overwhelming the server
+                time.sleep(2)
                 
             except Exception as e:
                 job.processed += 1
@@ -239,9 +293,6 @@ def process_download_job(job_id):
         
         job.status = "completed"
         job.end_time = datetime.now()
-        
-        # Clean up selenium driver
-        downloader.cleanup()
         
         logger.info(f"Job {job_id} completed. Success: {job.successful}, Failed: {job.failed}")
         
