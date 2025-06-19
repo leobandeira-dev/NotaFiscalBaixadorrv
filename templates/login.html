@@ -393,7 +393,7 @@
                                 Lembrar de mim
                             </label>
                         </div>
-                        <a href="#" class="forgot-password">Esqueci minha senha</a>
+                        <a href="{{ url_for('forgot_password') }}" class="forgot-password">Esqueci minha senha</a>
                     </div>
                     
                     <button type="submit" class="btn btn-primary">
@@ -401,6 +401,21 @@
                         Entrar na minha conta
                     </button>
                 </form>
+                
+                <!-- Social Login -->
+                <div class="text-center my-4">
+                    <div class="position-relative">
+                        <hr style="border-color: #e5e7eb;">
+                        <span class="position-absolute top-50 start-50 translate-middle px-3 bg-white text-muted small">ou continue com</span>
+                    </div>
+                </div>
+                
+                <div class="d-grid">
+                    <a href="{{ url_for('google_login') }}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fab fa-google me-2 text-danger"></i>
+                        Entrar com Google
+                    </a>
+                </div>
                 
                 <div class="auth-footer">
                     <p>Ainda não tem conta? <a href="{{ url_for('register') }}">Criar conta grátis</a></p>

@@ -346,6 +346,21 @@
                     </button>
                 </form>
                 
+                <!-- Social Login -->
+                <div class="text-center my-4">
+                    <div class="position-relative">
+                        <hr style="border-color: #e5e7eb;">
+                        <span class="position-absolute top-50 start-50 translate-middle px-3 bg-white text-muted small">ou registre-se com</span>
+                    </div>
+                </div>
+                
+                <div class="d-grid">
+                    <a href="{{ url_for('google_login') }}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fab fa-google me-2 text-danger"></i>
+                        Registrar com Google
+                    </a>
+                </div>
+                
                 <div class="auth-footer">
                     <p>Já tem uma conta? <a href="{{ url_for('login') }}">Fazer Login</a></p>
                     <p class="mt-2">
