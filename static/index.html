@@ -714,15 +714,19 @@
                 
                 <div class="col-lg-4">
                     <div class="pricing-card">
-                        <div class="solution-icon icon-api">
+                        <div class="solution-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
                             <i class="fas fa-tags"></i>
                         </div>
                         <h3>Módulo Etiquetas</h3>
                         <div class="price price-module">R$ 49,90<small>/único</small></div>
+                        <div style="background: #fef3c7; color: #92400e; padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; margin: 1rem 0; font-weight: 600;">
+                            <i class="fas fa-shield-alt me-1"></i>Evita perdas e devoluções
+                        </div>
                         <ul class="feature-list">
-                            <li><i class="fas fa-check"></i> Etiquetas personalizadas</li>
-                            <li><i class="fas fa-check"></i> Múltiplos formatos</li>
-                            <li><i class="fas fa-check"></i> Integração logística</li>
+                            <li><i class="fas fa-check"></i> Identificação correta de volumes</li>
+                            <li><i class="fas fa-check"></i> Reduz extravios e perdas</li>
+                            <li><i class="fas fa-check"></i> Evita reentregas desnecessárias</li>
+                            <li><i class="fas fa-check"></i> Economia em devoluções</li>
                             <li><i class="fas fa-check"></i> Uso ilimitado</li>
                         </ul>
                     </div>
@@ -733,7 +737,7 @@
             <div class="calculator">
                 <h4 class="text-center mb-4">
                     <i class="fas fa-calculator me-2" style="color: var(--primary-purple);"></i>
-                    Calcule sua economia
+                    Calcule sua economia vs concorrentes
                 </h4>
                 
                 <div class="row align-items-center">
@@ -746,32 +750,55 @@
                     </div>
                     
                     <div class="col-md-8">
-                        <div class="calculator-result">
+                        <div class="calculator-result" style="grid-template-columns: repeat(4, 1fr);">
                             <div class="result-item">
-                                <div style="color: #666; font-size: 0.9rem;">Custo XMLs</div>
-                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-purple);">
+                                <div style="color: #666; font-size: 0.8rem;">XMLDownloader</div>
+                                <div style="font-size: 1.3rem; font-weight: 700; color: var(--primary-purple);">
                                     R$ <span id="xmlCost">100,00</span>
                                 </div>
+                                <div style="font-size: 0.7rem; color: #10b981; font-weight: 600;">+ DANFE Grátis</div>
                             </div>
                             
-                            <div class="result-item" style="background: #f0fdf4; border-color: #10b981;">
-                                <div style="color: #10b981; font-size: 0.9rem;">DANFE PDFs</div>
-                                <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">GRÁTIS</div>
+                            <div class="result-item" style="background: #fef2f2; border-color: #dc2626;">
+                                <div style="color: #dc2626; font-size: 0.8rem;">Concorrentes</div>
+                                <div style="font-size: 1.3rem; font-weight: 700; color: #dc2626;">
+                                    R$ <span id="competitorCost">490,00</span>
+                                </div>
+                                <div style="font-size: 0.7rem; color: #666;">Média R$ 0,49/XML</div>
                             </div>
                             
                             <div class="result-item highlighted">
-                                <div style="color: #666; font-size: 0.9rem;">Total Mensal</div>
-                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-purple);">
-                                    R$ <span id="totalCost">100,00</span>
+                                <div style="color: #666; font-size: 0.8rem;">Sua Economia</div>
+                                <div style="font-size: 1.3rem; font-weight: 700; color: #10b981;">
+                                    R$ <span id="savings">390,00</span>
                                 </div>
+                                <div style="font-size: 0.7rem; color: #10b981; font-weight: 600;"><span id="savingsPercent">80%</span> menos</div>
+                            </div>
+                            
+                            <div class="result-item" style="background: #f0fdf4; border-color: #10b981;">
+                                <div style="color: #10b981; font-size: 0.8rem;">Por Ano</div>
+                                <div style="font-size: 1.3rem; font-weight: 700; color: #10b981;">
+                                    R$ <span id="yearSavings">4.680</span>
+                                </div>
+                                <div style="font-size: 0.7rem; color: #10b981; font-weight: 600;">Economia anual</div>
                             </div>
                         </div>
                         
-                        <div class="text-center mt-3">
-                            <small style="color: #666;">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Valor mínimo de recarga: R$ 19,90 • Sem mensalidades
-                            </small>
+                        <div class="text-center mt-4" style="background: #f8fafc; padding: 1rem; border-radius: 8px;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <small style="color: #666;">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Valor mínimo de recarga: R$ 19,90 • Sem mensalidades
+                                    </small>
+                                </div>
+                                <div class="col-md-6">
+                                    <small style="color: #10b981; font-weight: 600;">
+                                        <i class="fas fa-gift me-1"></i>
+                                        DANFE PDF sempre gratuito
+                                    </small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -848,15 +875,25 @@
         const slider = document.getElementById('xmlSlider');
         const xmlCount = document.getElementById('xmlCount');
         const xmlCost = document.getElementById('xmlCost');
-        const totalCost = document.getElementById('totalCost');
+        const competitorCost = document.getElementById('competitorCost');
+        const savings = document.getElementById('savings');
+        const savingsPercent = document.getElementById('savingsPercent');
+        const yearSavings = document.getElementById('yearSavings');
 
         function updateCalculator() {
             const count = parseInt(slider.value);
-            const cost = count * 0.10;
+            const ourCost = count * 0.10;
+            const competitorsCost = count * 0.49;
+            const monthlySavings = competitorsCost - ourCost;
+            const annualSavings = monthlySavings * 12;
+            const savingsPercentage = Math.round((monthlySavings / competitorsCost) * 100);
             
             xmlCount.textContent = count.toLocaleString('pt-BR');
-            xmlCost.textContent = cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-            totalCost.textContent = cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            xmlCost.textContent = ourCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            competitorCost.textContent = competitorsCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            savings.textContent = monthlySavings.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            savingsPercent.textContent = savingsPercentage + '%';
+            yearSavings.textContent = annualSavings.toLocaleString('pt-BR', { minimumFractionDigits: 0 });
         }
 
         slider.addEventListener('input', updateCalculator);
