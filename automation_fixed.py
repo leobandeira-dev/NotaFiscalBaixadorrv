@@ -177,9 +177,10 @@ class InvoiceDownloader:
             
             # Strategy 2: Wait and check for browser downloads
             logger.info(f"[Job {job_id}] Strategy 2: Checking for browser downloads...")
-            time.sleep(5)
+            time.sleep(15)  # Increased wait time
             download_result = self.check_downloaded_file(invoice_key, job_id)
             if download_result['success']:
+                logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - returning result")
                 return download_result
             
             # Strategy 3: Extract XML from page source

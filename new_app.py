@@ -650,30 +650,39 @@ def process_download_job(job_id):
                 # Create fresh downloader instance
                 downloader = InvoiceDownloader()
                 
-                # Download XML only initially
+                # Download XML with user_id for database saving
                 result = downloader.download_invoice_xml(invoice_key, job_id, 'xml')
                 
                 job.processed += 1
+                logger.info(f"[Job {job_id}] Processed {job.processed}/{len(job.invoice_keys)} keys")
                 
-                if result['success']:
+                if result.get('success'):
                     job.successful += 1
                     # Extract filename from file_path for template compatibility
-                    filename = os.path.basename(result['file_path'])
-                    job.files.append(filename)
+                    if 'file_path' in result:
+                        filename = os.path.basename(result['file_path'])
+                        job.files.append(filename)
+                        logger.info(f"[Job {job_id}] Successfully downloaded: {filename}")
+                    else:
+                        logger.warning(f"[Job {job_id}] Success but no file_path in result")
                 else:
                     job.failed += 1
+                    error_msg = result.get('error', 'Unknown error')
                     job.errors.append({
                         'invoice_key': invoice_key,
-                        'error': result['error']
+                        'error': error_msg
                     })
+                    logger.error(f"[Job {job_id}] Failed to download {invoice_key}: {error_msg}")
                         
             except Exception as e:
                 job.processed += 1
                 job.failed += 1
+                error_msg = str(e)
                 job.errors.append({
                     'invoice_key': invoice_key,
-                    'error': str(e)
+                    'error': error_msg
                 })
+                logger.error(f"[Job {job_id}] Exception for {invoice_key}: {error_msg}")
             finally:
                 # Cleanup only after all attempts
                 if downloader:
