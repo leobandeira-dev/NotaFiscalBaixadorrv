@@ -583,10 +583,15 @@ class InvoiceDownloader:
                         f.write(xml_content)
                     
                     logger.info(f"[Job {job_id}] XML content saved to: {file_path}")
-                    return {
-                        'success': True,
-                        'file_path': file_path
-                    }
+                    
+                    # If download type is DANFE, generate PDF from XML
+                    if download_type.lower() == 'danfe':
+                        return self.generate_danfe_from_xml(file_path, invoice_key, job_id)
+                    else:
+                        return {
+                            'success': True,
+                            'file_path': file_path
+                        }
                 except Exception as e:
                     logger.error(f"[Job {job_id}] Error saving XML content: {e}")
                     return {
@@ -718,6 +723,51 @@ class InvoiceDownloader:
             'success': False,
             'error': f'Arquivo {download_type.upper()} não foi baixado dentro do tempo limite'
         }
+    
+    def generate_danfe_from_xml(self, xml_file_path: str, invoice_key: str, job_id: str) -> Dict[str, Any]:
+        """Generate DANFE PDF from XML file"""
+        try:
+            from simple_danfe import generate_simple_danfe
+            
+            logger.info(f"[Job {job_id}] Generating DANFE from XML: {xml_file_path}")
+            
+            # Read XML content
+            with open(xml_file_path, 'r', encoding='utf-8') as f:
+                xml_content = f.read()
+            
+            # Generate PDF DANFE
+            pdf_filename = f"{invoice_key}.pdf"
+            pdf_path = os.path.join('downloads', pdf_filename)
+            
+            success = generate_simple_danfe(xml_content, pdf_path)
+            
+            if success:
+                logger.info(f"[Job {job_id}] DANFE generated successfully: {pdf_path}")
+                
+                # Remove XML file if only DANFE was requested
+                try:
+                    os.remove(xml_file_path)
+                    logger.info(f"[Job {job_id}] Temporary XML file removed: {xml_file_path}")
+                except:
+                    pass
+                
+                return {
+                    'success': True,
+                    'file_path': pdf_path
+                }
+            else:
+                logger.error(f"[Job {job_id}] Failed to generate DANFE from XML")
+                return {
+                    'success': False,
+                    'error': 'Erro ao gerar DANFE a partir do XML'
+                }
+                
+        except Exception as e:
+            logger.error(f"[Job {job_id}] Error generating DANFE: {e}")
+            return {
+                'success': False,
+                'error': f'Erro ao gerar DANFE: {str(e)}'
+            }
     
     def test_connection(self) -> Dict[str, Any]:
         """Test if the automation system can connect to the invoice system"""
