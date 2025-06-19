@@ -9,8 +9,8 @@ import time
 import os
 from typing import List, Dict, Optional
 
-class MeuDANFeAPIClient:
-    """Cliente para a API do MeuDANFe XML Downloader"""
+class XMLDownloaderAPIClient:
+    """Cliente para a API do XML Downloader"""
     
     def __init__(self, base_url: str = "http://localhost:5000"):
         """
@@ -99,7 +99,7 @@ class MeuDANFeAPIClient:
         return file_path
     
     def test_connection(self) -> Dict:
-        """Testa a conexão com o meudanfe.com.br"""
+        """Testa a conexão do sistema de automação"""
         response = requests.post(f"{self.api_url}/test")
         response.raise_for_status()
         return response.json()
@@ -182,15 +182,15 @@ def main():
     """Exemplo de uso do cliente da API"""
     
     # Inicializar cliente
-    client = MeuDANFeAPIClient("http://localhost:5000")
+    client = XMLDownloaderAPIClient("http://localhost:5000")
     
     # Verificar se a API está funcionando
     print("Verificando status da API...")
     health = client.health_check()
     print(f"API Status: {health['status']} (v{health['version']})")
     
-    # Testar conexão com meudanfe.com.br
-    print("\nTestando conexão com meudanfe.com.br...")
+    # Testar conexão do sistema
+    print("\nTestando conexão do sistema de automação...")
     try:
         test_result = client.test_connection()
         print(f"Teste de conexão: {test_result['status']}")

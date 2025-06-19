@@ -1,8 +1,8 @@
-# MeuDANFe XML Downloader
+# XML Downloader
 
 ## Overview
 
-This is a Python Flask web application that automates the bulk download of XML invoices from MeuDANFe.com.br. The application provides a web interface where users can input invoice keys and track the download progress in real-time through a background processing system.
+This is a Python Flask web application that automates the bulk download of XML invoice files. The application provides both a web interface and a complete REST API where users can input invoice keys and track the download progress in real-time through a background processing system.
 
 ## System Architecture
 
@@ -102,6 +102,7 @@ This is a Python Flask web application that automates the bulk download of XML i
 - June 19, 2025: **PRODUCTION READY** - System validated with authentic XML downloads, interface fully operational
 - June 19, 2025: **API INTEGRATION COMPLETE** - Added comprehensive REST API with full CRUD operations
 - June 19, 2025: **FULL SYSTEM READY** - Web interface + REST API + Python client + complete documentation
+- June 19, 2025: **GENERIC SYSTEM** - Removed all specific site references, created API documentation page
 
 ## User Preferences
 
