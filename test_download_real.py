@@ -28,8 +28,14 @@ def test_direct_download():
         'password': 'testpass123'
     }
     
-    login_response = session.post(f"{base_url}/login", data=login_data)
+    login_response = session.post(f"{base_url}/login", data=login_data, allow_redirects=True)
     print(f"Login status: {login_response.status_code}")
+    print(f"Final URL: {login_response.url}")
+    
+    # Verificar se login foi bem-sucedido
+    if "dashboard" not in login_response.url and login_response.status_code != 200:
+        print("Login falhou")
+        return False
     
     # 2. Testar download com chave real (REAL SINALIZACAO - 4750 bytes)
     invoice_key = "35250513516247000107550010000113401146202508"
