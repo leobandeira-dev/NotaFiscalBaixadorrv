@@ -183,11 +183,20 @@ class InvoiceDownloader:
                             with open(download_result['file_path'], 'r', encoding='utf-8') as f:
                                 xml_content = f.read()
                             
-                            # Save to database and charge credits
-                            db_result = self.save_xml_content(xml_content, invoice_key, job_id, user_id, 'SISTEMA')
+                            # Use new download service for charging and database operations
+                            from download_service import DownloadService
+                            success = DownloadService.process_successful_download(
+                                user_id=user_id,
+                                invoice_key=invoice_key,
+                                xml_content=xml_content,
+                                file_path=download_result['file_path'],
+                                job_id=job_id
+                            )
                             
-                            # Merge results
-                            download_result.update(db_result)
+                            if success:
+                                logger.info(f"[Job {job_id}] Successfully charged and saved XML for user {user_id}")
+                            else:
+                                logger.error(f"[Job {job_id}] Failed to charge or save XML for user {user_id}")
                             
                         except Exception as e:
                             logger.error(f"[Job {job_id}] Error processing downloaded file: {e}")

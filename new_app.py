@@ -329,17 +329,21 @@ def google_callback():
 @login_required
 def dashboard():
     """User dashboard"""
-    # Get user usage statistics
+    from download_service import DownloadService
+    
+    # Get user XML statistics
+    user_xmls = DownloadService.get_user_xmls(current_user.id)
+    xml_count = len(user_xmls)
+    
+    # Get usage statistics
     total_usage = UsageRecord.query.filter_by(user_id=current_user.id).count()
     this_month_usage = UsageRecord.query.filter(
         UsageRecord.user_id == current_user.id,
         UsageRecord.created_at >= datetime.now().replace(day=1)
     ).count()
     
-    # Get recent usage
-    recent_usage = UsageRecord.query.filter_by(user_id=current_user.id).order_by(
-        UsageRecord.created_at.desc()
-    ).limit(10).all()
+    # Get recent activities using the new service
+    recent_activities = DownloadService.get_recent_activity(current_user.id, days=7)
     
     # Get pending charges
     pending_charges = Charge.query.filter_by(
@@ -348,9 +352,11 @@ def dashboard():
     ).all()
     
     return render_template('dashboard.html', 
+                         xml_count=xml_count,
+                         danfe_count=xml_count,  # DANFE is free for each XML
                          total_usage=total_usage,
                          this_month_usage=this_month_usage,
-                         recent_usage=recent_usage,
+                         recent_activities=recent_activities,
                          pending_charges=pending_charges)
 
 @app.route('/xml-download')
