@@ -4,7 +4,7 @@ Integração com API do Asaas para cobrança
 
 import requests
 import logging
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from typing import Dict, Any, Optional
 from models import SystemSettings
 
