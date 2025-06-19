@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Comprar Créditos{% endblock %}
+
+{% block content %}
+<style>
+    .pricing-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+    
+    .pricing-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+    
+    .pricing-subtitle {
+        font-size: 1.125rem;
+        color: #6b7280;
+    }
+    
+    .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+    
+    .pricing-card {
+        background: white;
+        border: 2px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        position: relative;
+        transition: all 0.3s ease;
+    }
+    
+    .pricing-card:hover {
+        border-color: #8A05BE;
+        box-shadow: 0 4px 12px rgba(138, 5, 190, 0.15);
+    }
+    
+    .pricing-card.recommended {
+        border-color: #8A05BE;
+        position: relative;
+    }
+    
+    .pricing-card.recommended::before {
+        content: "Mais Popular";
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #8A05BE;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .package-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+    
+    .package-price {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #8A05BE;
+        margin-bottom: 0.25rem;
+    }
+    
+    .package-price-currency {
+        font-size: 1rem;
+        color: #6b7280;
+    }
+    
+    .package-description {
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .package-details {
+        margin-bottom: 2rem;
+    }
+    
+    .package-detail {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+        color: #374151;
+    }
+    
+    .package-detail i {
+        color: #059669;
+        margin-right: 0.5rem;
+    }
+    
+    .savings-badge {
+        background: #dcfce7;
+        color: #166534;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        display: inline-block;
+    }
+    
+    .btn-buy {
+        background: #8A05BE;
+        color: white;
+        border: none;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+    
+    .btn-buy:hover {
+        background: #7a0ca8;
+        transform: translateY(-1px);
+    }
+    
+    .btn-buy:disabled {
+        background: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+    }
+    
+    .current-balance {
+        background: #f8f9fa;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .balance-amount {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #8A05BE;
+    }
+    
+    .stripe-info {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        text-align: center;
+    }
+    
+    .stripe-info h4 {
+        color: #1e293b;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stripe-info p {
+        color: #64748b;
+        font-size: 0.875rem;
+        margin: 0;
+    }
+</style>
+
+<div class="pricing-header">
+    <h1 class="pricing-title">Comprar Créditos</h1>
+    <p class="pricing-subtitle">Escolha o pacote ideal para suas necessidades de download de XMLs</p>
+</div>
+
+<!-- Saldo Atual -->
+<div class="current-balance">
+    <div>Seu saldo atual:</div>
+    <div class="balance-amount">R$ {{ "%.2f"|format(current_user.current_balance or 0) }}</div>
+    <div style="font-size: 0.875rem; color: #6b7280; margin-top: 0.25rem;">
+        Equivalente a {{ (current_user.current_balance / 0.10)|int if current_user.current_balance else 0 }} downloads de XML
+    </div>
+</div>
+
+<!-- Pacotes de Créditos -->
+<div class="pricing-grid">
+    {% for package_id, package in packages.items() %}
+    <div class="pricing-card {% if package_id == 'professional_1500' %}recommended{% endif %}">
+        {% if package.savings and package.savings.savings_percent > 0 %}
+        <div class="savings-badge">
+            Economize {{ package.savings.savings_percent }}%
+        </div>
+        {% endif %}
+        
+        <div class="package-name">{{ package.name }}</div>
+        <div class="package-price">
+            R$ {{ "%.0f"|format(package.price_brl / 100) }}
+            <span class="package-price-currency">,{{ "%02d"|format((package.price_brl % 100)) }}</span>
+        </div>
+        <div class="package-description">{{ package.description }}</div>
+        
+        <div class="package-details">
+            <div class="package-detail">
+                <i class="fas fa-check"></i>
+                {{ (package.credits / 0.10)|int }} downloads de XML
+            </div>
+            <div class="package-detail">
+                <i class="fas fa-check"></i>
+                DANFEs ilimitados (grátis)
+            </div>
+            <div class="package-detail">
+                <i class="fas fa-check"></i>
+                Acesso total à API
+            </div>
+            {% if package.savings and package.savings.savings_percent > 0 %}
+            <div class="package-detail">
+                <i class="fas fa-star"></i>
+                Economia de R$ {{ "%.2f"|format(package.savings.savings_brl / 100) }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <button class="btn-buy" onclick="buyPackage('{{ package_id }}')">
+            Comprar Agora
+        </button>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Informações de Segurança -->
+<div class="stripe-info">
+    <h4><i class="fab fa-stripe" style="color: #635bff;"></i> Pagamento Seguro</h4>
+    <p>Processado pela Stripe com criptografia SSL de nível bancário. Seus dados estão protegidos.</p>
+</div>
+
+<script>
+async function buyPackage(packageId) {
+    try {
+        // Desabilitar botão durante processamento
+        const button = event.target;
+        button.disabled = true;
+        button.innerHTML = 'Processando...';
+        
+        const response = await fetch('/create-checkout-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                package_id: packageId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.checkout_url) {
+            // Redirecionar para checkout Stripe
+            window.location.href = data.checkout_url;
+        } else {
+            alert('Erro ao criar sessão de pagamento: ' + (data.error || 'Erro desconhecido'));
+            button.disabled = false;
+            button.innerHTML = 'Comprar Agora';
+        }
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao processar solicitação. Tente novamente.');
+        
+        // Reabilitar botão
+        const button = event.target;
+        button.disabled = false;
+        button.innerHTML = 'Comprar Agora';
+    }
+}
+</script>
+
+{% endblock %}

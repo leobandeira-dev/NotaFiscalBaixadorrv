@@ -242,6 +242,78 @@ class ImportedXML(db.Model):
             'imported_at': self.imported_at.isoformat()
         }
 
+class StripeTransaction(db.Model):
+    """Transações Stripe"""
+    __tablename__ = 'stripe_transactions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Dados Stripe
+    stripe_payment_intent_id = db.Column(db.String(255), unique=True)
+    stripe_session_id = db.Column(db.String(255), unique=True)
+    
+    # Transação
+    amount_brl = db.Column(db.Float, nullable=False)  # Valor em reais
+    credits_purchased = db.Column(db.Float, nullable=False)  # Créditos comprados
+    package_id = db.Column(db.String(50))  # ID do pacote comprado
+    
+    # Status
+    status = db.Column(db.String(20), default='pending')  # pending, completed, failed, refunded
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    completed_at = db.Column(db.DateTime)
+    
+    # Relacionamento
+    user = db.relationship('User', backref='stripe_transactions')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'amount_brl': self.amount_brl,
+            'credits_purchased': self.credits_purchased,
+            'package_id': self.package_id,
+            'status': self.status,
+            'created_at': self.created_at.isoformat(),
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None
+        }
+
+class CreditBalance(db.Model):
+    """Histórico de saldos de créditos"""
+    __tablename__ = 'credit_balances'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Transação de crédito
+    transaction_type = db.Column(db.String(20), nullable=False)  # 'credit' (adicionar) ou 'debit' (usar)
+    amount = db.Column(db.Float, nullable=False)  # Valor da transação
+    balance_after = db.Column(db.Float, nullable=False)  # Saldo após transação
+    
+    # Detalhes
+    description = db.Column(db.String(255))
+    service_type = db.Column(db.String(50))  # xml_download, labels_module, etc
+    reference_id = db.Column(db.String(255))  # ID de referência (job_id, transaction_id, etc)
+    
+    # Timestamp
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relacionamento
+    user = db.relationship('User', backref='credit_history')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'transaction_type': self.transaction_type,
+            'amount': self.amount,
+            'balance_after': self.balance_after,
+            'description': self.description,
+            'service_type': self.service_type,
+            'created_at': self.created_at.isoformat()
+        }
+
 class SystemSettings(db.Model):
     """Configurações do sistema"""
     __tablename__ = 'system_settings'

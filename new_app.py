@@ -15,8 +15,9 @@ from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
 from itsdangerous import URLSafeTimedSerializer
 from authlib.integrations.flask_client import OAuth
-from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, ImportedXML, init_default_data
+from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, ImportedXML, StripeTransaction, CreditBalance, init_default_data
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
+from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -1004,6 +1005,206 @@ def bulk_generate_labels_route():
         flash('Erro ao gerar etiquetas em lote.', 'error')
     
     return redirect(url_for('labels_module'))
+
+# ==================== ROTAS DE PAGAMENTO STRIPE ====================
+
+@app.route('/comprar-creditos')
+@login_required
+def comprar_creditos():
+    """Página para compra de créditos"""
+    packages = PricingManager.CREDIT_PACKAGES
+    
+    # Calcular economia para cada pacote
+    packages_with_savings = {}
+    for package_id, package_data in packages.items():
+        savings = PricingManager.calculate_xml_package_savings(package_id)
+        packages_with_savings[package_id] = {
+            **package_data,
+            'savings': savings
+        }
+    
+    return render_template('comprar_creditos.html', 
+                         packages=packages_with_savings,
+                         current_user=current_user)
+
+@app.route('/create-checkout-session', methods=['POST'])
+@login_required 
+def create_checkout_session():
+    """Criar sessão de checkout Stripe"""
+    try:
+        data = request.get_json()
+        package_id = data.get('package_id')
+        
+        if not package_id:
+            return jsonify({'error': 'Package ID is required'}), 400
+        
+        package = PricingManager.get_credit_package(package_id)
+        if not package:
+            return jsonify({'error': 'Invalid package'}), 400
+        
+        # Inicializar gerenciador Stripe
+        stripe_manager = StripePaymentManager()
+        
+        # Criar sessão de checkout
+        success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}'
+        cancel_url = url_for('comprar_creditos', _external=True)
+        
+        price_data = {
+            'currency': 'brl',
+            'product_data': {
+                'name': package['name'],
+                'description': package['description']
+            },
+            'unit_amount': package['price_brl']
+        }
+        
+        metadata = {
+            'user_id': str(current_user.id),
+            'package_id': package_id,
+            'credits': str(package['credits'])
+        }
+        
+        result = stripe_manager.create_checkout_session(
+            price_data=price_data,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            customer_email=current_user.email,
+            metadata=metadata
+        )
+        
+        if result['success']:
+            # Registrar transação como pendente
+            transaction = StripeTransaction(
+                user_id=current_user.id,
+                stripe_session_id=result['session_id'],
+                amount_brl=package['price_brl'] / 100,  # Converter centavos para reais
+                credits_purchased=package['credits'],
+                package_id=package_id,
+                status='pending'
+            )
+            
+            db.session.add(transaction)
+            db.session.commit()
+            
+            return jsonify({'checkout_url': result['checkout_url']})
+        else:
+            return jsonify({'error': result['error']}), 500
+            
+    except Exception as e:
+        logger.error(f"Error creating checkout session: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/payment-success')
+@login_required
+def payment_success():
+    """Página de sucesso do pagamento"""
+    session_id = request.args.get('session_id')
+    
+    if not session_id:
+        flash('Sessão de pagamento não encontrada.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Buscar transação no banco
+    transaction = StripeTransaction.query.filter_by(
+        stripe_session_id=session_id,
+        user_id=current_user.id
+    ).first()
+    
+    if not transaction:
+        flash('Transação não encontrada.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Verificar status no Stripe
+    stripe_manager = StripePaymentManager()
+    result = stripe_manager.retrieve_checkout_session(session_id)
+    
+    if result['success'] and result['session'].payment_status == 'paid':
+        # Processar pagamento se ainda não foi processado
+        if transaction.status == 'pending':
+            credits_added = CreditManager.add_credits(
+                user_id=current_user.id,
+                amount=transaction.credits_purchased,
+                description=f"Compra: {transaction.package_id}",
+                payment_method="stripe",
+                transaction_id=session_id
+            )
+            
+            if credits_added:
+                transaction.status = 'completed'
+                transaction.completed_at = datetime.utcnow()
+                db.session.commit()
+                
+                flash(f'Pagamento realizado com sucesso! R$ {transaction.credits_purchased:.2f} em créditos adicionados.', 'success')
+            else:
+                flash('Erro ao processar créditos. Entre em contato com o suporte.', 'error')
+        else:
+            flash('Créditos já foram adicionados anteriormente.', 'info')
+    else:
+        flash('Pagamento não confirmado. Tente novamente.', 'error')
+    
+    return redirect(url_for('dashboard'))
+
+@app.route('/stripe-webhook', methods=['POST'])
+def stripe_webhook():
+    """Webhook para processar eventos do Stripe"""
+    payload = request.get_data()
+    sig_header = request.headers.get('Stripe-Signature')
+    endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
+    
+    if not endpoint_secret:
+        logger.error("STRIPE_WEBHOOK_SECRET not configured")
+        return '', 400
+    
+    try:
+        result = process_stripe_webhook(payload, sig_header, endpoint_secret)
+        
+        if result['success']:
+            return '', 200
+        else:
+            logger.error(f"Webhook processing failed: {result.get('error')}")
+            return '', 400
+            
+    except Exception as e:
+        logger.error(f"Webhook error: {str(e)}")
+        return '', 400
+
+@app.route('/historico-creditos')
+@login_required
+def historico_creditos():
+    """Histórico de uso de créditos"""
+    usage_history = CreditManager.get_usage_history(current_user.id, days=30)
+    
+    # Buscar transações Stripe
+    stripe_transactions = StripeTransaction.query.filter_by(
+        user_id=current_user.id
+    ).order_by(StripeTransaction.created_at.desc()).limit(20).all()
+    
+    return render_template('historico_creditos.html',
+                         usage_history=usage_history,
+                         stripe_transactions=stripe_transactions,
+                         current_user=current_user)
+
+@app.route('/api/user/balance')
+@login_required
+def api_user_balance():
+    """API para obter saldo atual do usuário"""
+    return jsonify({
+        'balance': current_user.current_balance or 0.0,
+        'is_trial': current_user.is_trial_active(),
+        'trial_expires': current_user.trial_expires_at.isoformat() if current_user.trial_expires_at else None
+    })
+
+# Modificar função de dedução de créditos para XML downloads
+def charge_for_xml_download(user_id: int, invoice_key: str) -> bool:
+    """Cobra pelo download de XML se não estiver em período de teste"""
+    price = PricingManager.get_service_price('xml_download')
+    
+    return CreditManager.deduct_credits(
+        user_id=user_id,
+        amount=price,
+        description=f"Download XML: {invoice_key[:10]}...",
+        service_type="xml_download"
+    )
 
 # Importar admin panel
 try:
