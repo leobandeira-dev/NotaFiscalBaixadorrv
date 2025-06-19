@@ -837,8 +837,8 @@ def generate_danfe_direct():
             return redirect(request.referrer or url_for('xml_download'))
         
         # Gerar DANFE
-        from danfe_generator import generate_danfe_from_xml
-        danfe_path = generate_danfe_from_xml(xml_path)
+        from danfe_simple import generate_danfe_from_file
+        danfe_path = generate_danfe_from_file(xml_path)
         
         if danfe_path:
             logger.info(f"DANFE gerado com sucesso: {danfe_path}")
