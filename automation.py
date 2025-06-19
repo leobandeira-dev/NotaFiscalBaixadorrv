@@ -207,8 +207,6 @@ class InvoiceDownloader:
             logger.info(f"[Job {job_id}] Looking for submit button...")
             submit_selectors = [
                 'button[type="submit"]',
-                'button:contains("Buscar DANFE/XML")',
-                'button:contains("Buscar")',
                 '.btn',
                 'button'
             ]
@@ -265,108 +263,195 @@ class InvoiceDownloader:
             new_title = self.driver.title
             logger.info(f"[Job {job_id}] After submit - URL: {new_url}, Title: {new_title}")
             
-            # Look for download link or XML content
-            logger.info(f"[Job {job_id}] Looking for download links...")
+            # Enhanced XML extraction for meudanfe.com.br
+            logger.info(f"[Job {job_id}] Looking for XML content or download options...")
+            
+            # First, look for any buttons that might trigger XML display or download
+            xml_buttons = []
+            try:
+                buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                for btn in buttons:
+                    try:
+                        btn_text = btn.text.lower().strip()
+                        if any(keyword in btn_text for keyword in ['xml', 'download', 'baixar', 'arquivo', 'salvar']):
+                            xml_buttons.append(btn)
+                            logger.info(f"[Job {job_id}] Found potential XML button: '{btn_text}'")
+                    except:
+                        continue
+                        
+                # Try clicking XML-related buttons
+                for btn in xml_buttons:
+                    try:
+                        logger.info(f"[Job {job_id}] Clicking XML button: '{btn.text}'")
+                        btn.click()
+                        time.sleep(3)  # Wait for action to complete
+                        break  # Only click the first relevant button
+                    except Exception as e:
+                        logger.warning(f"[Job {job_id}] Could not click button: {e}")
+                        
+            except Exception as e:
+                logger.warning(f"[Job {job_id}] Error finding XML buttons: {e}")
+            
+            # Look for download links with enhanced selectors
             download_selectors = [
                 'a[href*=".xml"]',
-                'a[href*="download"]',
+                'a[href*="download"]', 
                 'a[download]',
-                '.download-link',
-                '.xml-link',
+                'a[href*="xml"]',
                 'a[href*="arquivo"]',
-                'a[href*="file"]'
+                'a[href*="file"]',
+                'a[href*="danfe"]'
             ]
             
             download_link = None
-            for i, selector in enumerate(download_selectors):
+            for selector in download_selectors:
                 try:
-                    logger.debug(f"[Job {job_id}] Trying download selector {i+1}/{len(download_selectors)}: {selector}")
-                    download_link = WebDriverWait(self.driver, 5).until(
-                        EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
-                    )
+                    download_link = self.driver.find_element(By.CSS_SELECTOR, selector)
                     logger.info(f"[Job {job_id}] Found download link with selector: {selector}")
                     break
-                except TimeoutException:
-                    logger.debug(f"[Job {job_id}] Download selector {selector} not found")
+                except:
                     continue
             
-            # Also try to find links by text content
+            # Enhanced text-based link search
             if not download_link:
-                logger.info(f"[Job {job_id}] Trying to find download link by text content...")
                 try:
                     links = self.driver.find_elements(By.TAG_NAME, "a")
-                    logger.info(f"[Job {job_id}] Found {len(links)} link elements")
-                    for idx, link in enumerate(links):
+                    for link in links:
                         try:
                             link_text = link.text.lower().strip()
                             link_href = link.get_attribute('href') or ''
-                            logger.debug(f"[Job {job_id}] Link {idx+1}: text='{link_text}', href='{link_href[:100]}'")
-                            if ('xml' in link_text or 'download' in link_text or 'baixar' in link_text or 
-                                '.xml' in link_href or 'download' in link_href):
+                            
+                            if any(keyword in link_text for keyword in ['xml', 'download', 'baixar', 'arquivo', 'danfe']) or \
+                               any(keyword in link_href.lower() for keyword in ['.xml', 'download', 'arquivo', 'xml']):
                                 download_link = link
-                                logger.info(f"[Job {job_id}] Found download link by content: text='{link_text}', href='{link_href[:100]}'")
+                                logger.info(f"[Job {job_id}] Found download link by content: '{link_text}' -> '{link_href}'")
                                 break
                         except:
-                            logger.warning(f"[Job {job_id}] Could not inspect link {idx+1}")
+                            continue
                 except Exception as e:
-                    logger.error(f"[Job {job_id}] Error finding links by text: {e}")
+                    logger.warning(f"[Job {job_id}] Error searching links: {e}")
             
+            # Process download link if found
             if download_link:
-                # Get the download URL
-                download_url = download_link.get_attribute('href')
-                logger.info(f"[Job {job_id}] Found download URL: {download_url}")
-                
-                if download_url and download_url.startswith('http'):
-                    # Download the file using requests
-                    logger.info(f"[Job {job_id}] Downloading file via requests...")
-                    return self.download_file(download_url, invoice_key, job_id)
-                else:
-                    # Click the download link
-                    logger.info(f"[Job {job_id}] Clicking download link...")
-                    download_link.click()
-                    time.sleep(8)  # Wait longer for download
-                    
-                    # Check if file was downloaded
-                    return self.check_downloaded_file(invoice_key, job_id)
+                try:
+                    download_url = download_link.get_attribute('href')
+                    if download_url and download_url.startswith('http'):
+                        logger.info(f"[Job {job_id}] Downloading from URL: {download_url}")
+                        return self.download_file(download_url, invoice_key, job_id)
+                    else:
+                        logger.info(f"[Job {job_id}] Clicking download link...")
+                        download_link.click()
+                        time.sleep(8)
+                        return self.check_downloaded_file(invoice_key, job_id)
+                except Exception as e:
+                    logger.warning(f"[Job {job_id}] Error processing download link: {e}")
             
-            # If no download link found, check if XML content is displayed on page
-            logger.info(f"[Job {job_id}] Looking for XML content displayed on page...")
-            try:
-                # Look for XML in various containers
-                xml_containers = ['pre', 'code', 'textarea', 'div.xml', '.xml-content']
-                xml_content = None
-                
-                for container in xml_containers:
-                    try:
-                        element = self.driver.find_element(By.CSS_SELECTOR, container)
-                        content = element.text.strip()
-                        if content and ('<?xml' in content or '<nfeProc' in content or '<NFe' in content):
-                            xml_content = content
-                            logger.info(f"[Job {job_id}] Found XML content in {container} element")
-                            break
-                    except:
-                        continue
-                
-                if xml_content:
-                    # Save XML content to file
+            # Enhanced XML content search
+            logger.info(f"[Job {job_id}] Searching for XML content in page elements...")
+            xml_content = None
+            
+            # Try various selectors and approaches to find XML
+            xml_search_strategies = [
+                # Direct element searches
+                ('CSS', 'pre'),
+                ('CSS', 'code'), 
+                ('CSS', 'textarea'),
+                ('CSS', '[class*="xml"]'),
+                ('CSS', '[id*="xml"]'),
+                ('CSS', 'div'),
+                ('CSS', 'span'),
+                # XPath searches for XML patterns
+                ('XPATH', '//*[contains(text(), "<?xml")]'),
+                ('XPATH', '//*[contains(text(), "<nfeProc")]'),
+                ('XPATH', '//*[contains(text(), "<NFe")]'),
+                ('XPATH', '//*[contains(text(), "<infNFe")]'),
+            ]
+            
+            for strategy_type, selector in xml_search_strategies:
+                try:
+                    if strategy_type == 'CSS':
+                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    else:  # XPATH
+                        elements = self.driver.find_elements(By.XPATH, selector)
+                    
+                    for element in elements:
+                        try:
+                            content = element.text.strip()
+                            # More comprehensive XML detection
+                            if content and len(content) > 50 and any(pattern in content for pattern in [
+                                '<?xml', '<nfeProc', '<NFe', '<infNFe', 'versao=', 'xmlns='
+                            ]):
+                                xml_content = content
+                                logger.info(f"[Job {job_id}] Found XML content using {strategy_type} selector '{selector}' (length: {len(content)})")
+                                break
+                        except:
+                            continue
+                    
+                    if xml_content:
+                        break
+                        
+                except Exception as e:
+                    logger.debug(f"[Job {job_id}] Strategy {strategy_type}:'{selector}' failed: {e}")
+                    continue
+            
+            # Check page source directly as last resort
+            if not xml_content:
+                try:
+                    page_source = self.driver.page_source
+                    if '<?xml' in page_source and ('<nfeProc' in page_source or '<NFe' in page_source):
+                        logger.info(f"[Job {job_id}] Found XML content in page source")
+                        # Extract XML from page source
+                        import re
+                        xml_match = re.search(r'(<\?xml.*?</nfeProc>)', page_source, re.DOTALL)
+                        if not xml_match:
+                            xml_match = re.search(r'(<\?xml.*?</NFe>)', page_source, re.DOTALL)
+                        
+                        if xml_match:
+                            xml_content = xml_match.group(1)
+                            logger.info(f"[Job {job_id}] Extracted XML from page source (length: {len(xml_content)})")
+                except Exception as e:
+                    logger.warning(f"[Job {job_id}] Error checking page source: {e}")
+            
+            # Save XML content if found
+            if xml_content:
+                try:
                     filename = f"{invoice_key}.xml"
                     file_path = os.path.join('downloads', filename)
                     
                     with open(file_path, 'w', encoding='utf-8') as f:
                         f.write(xml_content)
                     
-                    logger.info(f"[Job {job_id}] XML content saved to file: {file_path}")
+                    logger.info(f"[Job {job_id}] XML content saved to: {file_path}")
                     return {
                         'success': True,
                         'file_path': file_path
                     }
-            except Exception as e:
-                logger.error(f"[Job {job_id}] Error checking for XML content: {e}")
+                except Exception as e:
+                    logger.error(f"[Job {job_id}] Error saving XML content: {e}")
+                    return {
+                        'success': False,
+                        'error': f'Erro ao salvar XML: {str(e)}'
+                    }
             
-            logger.warning(f"[Job {job_id}] No XML found for invoice key: {invoice_key}")
+            # Check for error messages on the page
+            try:
+                error_keywords = ['erro', 'inválid', 'não encontrad', 'inexistent', 'error']
+                page_text = self.driver.find_element(By.TAG_NAME, "body").text.lower()
+                
+                for keyword in error_keywords:
+                    if keyword in page_text:
+                        logger.warning(f"[Job {job_id}] Detected error keyword '{keyword}' in page")
+                        return {
+                            'success': False,
+                            'error': f'Possível erro na consulta - página contém "{keyword}"'
+                        }
+            except:
+                pass
+            
+            logger.warning(f"[Job {job_id}] No XML content found for invoice key: {invoice_key}")
             return {
                 'success': False,
-                'error': 'XML não encontrado ou link de download não disponível'
+                'error': 'XML não encontrado na página de resultados'
             }
             
         except TimeoutException as e:
