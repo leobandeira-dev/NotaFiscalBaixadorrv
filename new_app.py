@@ -304,26 +304,18 @@ def generate_danfe(job_id):
         flash('Aguarde o download dos XMLs terminar.', 'warning')
         return redirect(url_for('download_status', job_id=job_id))
     
-    # Check if user can use DANFE service
-    danfe_cost = job.successful * 0.15  # R$ 0.15 per DANFE
+    # DANFE generation is now FREE
+    danfe_cost = 0.0
     
-    if not current_user.can_use_service(danfe_cost):
-        flash(f'Saldo insuficiente para gerar DANFE. Custo: R$ {danfe_cost:.2f}', 'warning')
-        return redirect(url_for('add_balance'))
-    
-    # Deduct balance if not in trial
-    if not current_user.is_trial_active():
-        current_user.deduct_balance(danfe_cost, f"Geração de {job.successful} DANFEs")
-    
-    # Record usage
+    # Record usage (free service)
     danfe_module = ServiceModule.query.filter_by(name='danfe_generation').first()
     if danfe_module:
         usage = UsageRecord(
             user_id=current_user.id,
             module_id=danfe_module.id,
             quantity=job.successful,
-            cost=danfe_cost if not current_user.is_trial_active() else 0.0,
-            description=f"Geração de {job.successful} DANFEs",
+            cost=0.0,
+            description=f"Geração GRATUITA de {job.successful} DANFEs",
             job_id=job_id
         )
         db.session.add(usage)

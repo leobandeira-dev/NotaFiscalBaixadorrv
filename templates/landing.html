@@ -1,113 +1,207 @@
 {% extends "base.html" %}
 
-{% block title %}XML Downloader - Automação para Notas Fiscais{% endblock %}
+{% block title %}XML Downloader - Transforme Sua Gestão Fiscal{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row min-vh-100 align-items-center">
-        <div class="col-lg-6">
-            <div class="text-center text-lg-start">
-                <h1 class="display-4 fw-bold mb-4">
-                    <i class="fas fa-file-invoice text-primary me-3"></i>
-                    XML Downloader
-                </h1>
-                <p class="lead mb-4">
-                    Automação completa para download de XMLs de notas fiscais e geração de DANFE em PDF.
-                    Sistema profissional com API integrada e cobrança automática.
+<!-- Hero Section -->
+<section class="hero-section d-flex align-items-center">
+    <div class="container position-relative">
+        <div class="row align-items-center min-vh-100 py-5">
+            <div class="col-lg-6">
+                <div class="text-white">
+                    <h1 class="display-3 fw-bold mb-4 floating-element">
+                        Transforme Sua <span class="text-warning">Gestão Fiscal</span>
+                    </h1>
+                    <p class="lead mb-4 fs-5">
+                        Imagine nunca mais perder tempo baixando XMLs manualmente. Nossa plataforma automatiza todo o processo, 
+                        liberando você para focar no que realmente importa: fazer seu negócio crescer.
+                    </p>
+                    
+                    <div class="mb-4">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check-circle text-success me-3 fs-5"></i>
+                            <span class="fs-6">Download automático de milhares de XMLs em minutos</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check-circle text-success me-3 fs-5"></i>
+                            <span class="fs-6">DANFE gratuito para todos os XMLs baixados</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-check-circle text-success me-3 fs-5"></i>
+                            <span class="fs-6">API profissional para integração total</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-3 fs-5"></i>
+                            <span class="fs-6">Módulo de etiquetas para logística completa</span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning mb-4 bg-warning bg-opacity-25 border-warning">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-gift me-3 fs-4"></i>
+                            <div>
+                                <strong class="fs-5">7 dias completamente grátis!</strong><br>
+                                <small>Teste todos os recursos sem compromisso</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-3 d-md-flex">
+                        <a href="{{ url_for('register') }}" class="btn btn-premium btn-lg">
+                            <i class="fas fa-rocket me-2"></i>Começar Agora Grátis
+                        </a>
+                        <a href="#pricing" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-calculator me-2"></i>Ver Preços
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="text-center floating-element">
+                    <div class="feature-card p-5">
+                        <i class="fas fa-chart-line text-warning mb-4" style="font-size: 4rem;"></i>
+                        <h4 class="text-white mb-3">Empresas economizam até</h4>
+                        <div class="display-4 text-warning fw-bold">85%</div>
+                        <p class="text-white-50 mt-3">do tempo gasto com gestão fiscal</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Problem & Solution -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-8 text-center">
+                <h2 class="display-5 fw-bold mb-4">O Problema que Você Conhece</h2>
+                <p class="lead text-muted">
+                    Horas perdidas baixando XMLs um por um. Planilhas desorganizadas. 
+                    Processos manuais que custam tempo e dinheiro.
                 </p>
-                
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <div class="card h-100 bg-primary text-white">
-                            <div class="card-body text-center">
-                                <i class="fas fa-download fa-2x mb-2"></i>
-                                <h6>Download Automático</h6>
-                                <small>XMLs e DANFE em lote</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 bg-success text-white">
-                            <div class="card-body text-center">
-                                <i class="fas fa-api fa-2x mb-2"></i>
-                                <h6>API Completa</h6>
-                                <small>Integração programática</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 bg-info text-white">
-                            <div class="card-body text-center">
-                                <i class="fas fa-file-pdf fa-2x mb-2"></i>
-                                <h6>Geração DANFE</h6>
-                                <small>PDF profissional</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card h-100 bg-warning text-dark">
-                            <div class="card-body text-center">
-                                <i class="fas fa-tags fa-2x mb-2"></i>
-                                <h6>Etiquetas</h6>
-                                <small>Geração automática</small>
-                            </div>
-                        </div>
-                    </div>
+            </div>
+        </div>
+        
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="glass-card p-4 h-100 text-center">
+                    <i class="fas fa-clock text-danger mb-3" style="font-size: 3rem;"></i>
+                    <h5>Tempo Perdido</h5>
+                    <p class="text-muted">Funcionários gastam horas em tarefas repetitivas</p>
                 </div>
-
-                <div class="alert alert-success mb-4">
-                    <i class="fas fa-gift me-2"></i>
-                    <strong>7 dias grátis</strong> para testar todos os recursos!
+            </div>
+            <div class="col-md-4">
+                <div class="glass-card p-4 h-100 text-center">
+                    <i class="fas fa-exclamation-triangle text-warning mb-3" style="font-size: 3rem;"></i>
+                    <h5>Erros Humanos</h5>
+                    <p class="text-muted">Processos manuais geram inconsistências</p>
                 </div>
+            </div>
+            <div class="col-md-4">
+                <div class="glass-card p-4 h-100 text-center">
+                    <i class="fas fa-money-bill-wave text-danger mb-3" style="font-size: 3rem;"></i>
+                    <h5>Custos Altos</h5>
+                    <p class="text-muted">Operação manual custa mais que automação</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 
-                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
-                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
-                        <i class="fas fa-user-plus me-2"></i>Criar Conta Grátis
-                    </a>
-                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
-                        <i class="fas fa-sign-in-alt me-2"></i>Fazer Login
-                    </a>
+<!-- Pricing Section -->
+<section id="pricing" class="py-5">
+    <div class="container">
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-8 text-center">
+                <h2 class="display-5 fw-bold mb-4">Preços Transparentes</h2>
+                <p class="lead text-muted">Pague apenas pelo que usar, sem surpresas</p>
+            </div>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-4 col-md-6">
+                <div class="pricing-card p-4 text-center h-100">
+                    <div class="mb-4">
+                        <i class="fas fa-download text-primary mb-3" style="font-size: 3rem;"></i>
+                        <h4>Download XML</h4>
+                        <div class="display-6 fw-bold text-primary">R$ 0,10</div>
+                        <small class="text-muted">por XML baixado</small>
+                    </div>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Download automático</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Validação de chaves</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Processamento em lote</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Via web e API</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="pricing-card p-4 text-center h-100 border-success" style="border-width: 3px !important;">
+                    <div class="mb-4">
+                        <span class="badge bg-success mb-2">GRÁTIS</span>
+                        <i class="fas fa-file-pdf text-success mb-3" style="font-size: 3rem;"></i>
+                        <h4>DANFE PDF</h4>
+                        <div class="display-6 fw-bold text-success">R$ 0,00</div>
+                        <small class="text-muted">sempre gratuito</small>
+                    </div>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Geração automática</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Layout profissional</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Download individual</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Sem limites</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="col-lg-4 col-md-6">
+                <div class="pricing-card p-4 text-center h-100">
+                    <div class="mb-4">
+                        <i class="fas fa-tags text-warning mb-3" style="font-size: 3rem;"></i>
+                        <h4>Módulo Etiquetas</h4>
+                        <div class="display-6 fw-bold text-warning">R$ 49,90</div>
+                        <small class="text-muted">acesso completo</small>
+                    </div>
+                    <ul class="list-unstyled mb-4">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Etiquetas personalizadas</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Múltiplos formatos</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Integração logística</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Uso ilimitado</li>
+                    </ul>
                 </div>
             </div>
         </div>
         
-        <div class="col-lg-6">
-            <div class="text-center">
-                <div class="card shadow-lg">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">
-                            <i class="fas fa-calculator me-2"></i>Calculadora de Custos
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-12">
-                                <label class="form-label">Quantidade de XMLs por mês:</label>
-                                <input type="number" id="xmlCount" class="form-control" value="100" min="1">
-                            </div>
-                            <div class="col-12">
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <tr>
-                                            <td>Download XML:</td>
-                                            <td class="text-end">R$ <span id="xmlCost">10.00</span></td>
-                                        </tr>
-                                        <tr>
-                                            <td>Geração DANFE:</td>
-                                            <td class="text-end">R$ <span id="danfeCost">15.00</span></td>
-                                        </tr>
-                                        <tr class="table-primary">
-                                            <td><strong>Total mensal:</strong></td>
-                                            <td class="text-end"><strong>R$ <span id="totalCost">25.00</span></strong></td>
-                                        </tr>
-                                    </table>
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="glass-card p-4 text-center">
+                    <h5 class="mb-3">Calculadora de Economia</h5>
+                    <div class="row g-3 align-items-center justify-content-center">
+                        <div class="col-md-3">
+                            <label class="form-label">XMLs por mês:</label>
+                            <input type="number" id="xmlCount" class="form-control" value="1000" min="1">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="fw-bold">Download</div>
+                                    <div class="text-primary">R$ <span id="xmlCost">100.00</span></div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold">DANFE</div>
+                                    <div class="text-success">R$ 0,00</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold">Total</div>
+                                    <div class="text-dark fs-5">R$ <span id="totalCost">100.00</span></div>
                                 </div>
                             </div>
-                            <div class="col-12">
-                                <small class="text-muted">
-                                    Valor mínimo de recarga: R$ 19,90<br>
-                                    Sem mensalidades ou taxas fixas
-                                </small>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-muted">
+                                <small>Valor mínimo: R$ 19,90<br>Sem mensalidades</small>
                             </div>
                         </div>
                     </div>
@@ -115,7 +209,77 @@
             </div>
         </div>
     </div>
-</div>
+</section>
+
+<!-- Success Stories -->
+<section class="py-5 premium-gradient">
+    <div class="container">
+        <div class="row justify-content-center mb-5">
+            <div class="col-lg-8 text-center text-white">
+                <h2 class="display-5 fw-bold mb-4">Histórias de Sucesso</h2>
+                <p class="lead">Empresas que transformaram sua gestão fiscal</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card p-4 text-center h-100">
+                    <div class="mb-3">
+                        <i class="fas fa-building text-warning" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h5 class="text-white">Distribuidora ABC</h5>
+                    <p class="text-white-50">"Reduziu de 8 horas para 30 minutos o processo de download de 5.000 XMLs mensais"</p>
+                    <div class="text-warning fw-bold">90% menos tempo</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card p-4 text-center h-100">
+                    <div class="mb-3">
+                        <i class="fas fa-store text-warning" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h5 class="text-white">Varejo XYZ</h5>
+                    <p class="text-white-50">"Automatizou completamente a gestão fiscal, eliminando erros humanos"</p>
+                    <div class="text-warning fw-bold">100% automático</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="feature-card p-4 text-center h-100">
+                    <div class="mb-3">
+                        <i class="fas fa-truck text-warning" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h5 class="text-white">Logística 123</h5>
+                    <p class="text-white-50">"Integrou via API e criou um fluxo completamente automatizado"</p>
+                    <div class="text-warning fw-bold">ROI em 30 dias</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Final -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <div class="glass-card p-5">
+                    <h2 class="display-5 fw-bold mb-4">Pronto para Transformar sua Empresa?</h2>
+                    <p class="lead mb-4">
+                        Junte-se a centenas de empresas que já automatizaram sua gestão fiscal.
+                        Comece seu teste gratuito agora!
+                    </p>
+                    <div class="d-grid gap-3 d-md-flex justify-content-center">
+                        <a href="{{ url_for('register') }}" class="btn btn-premium btn-lg">
+                            <i class="fas fa-rocket me-2"></i>Começar Teste Grátis
+                        </a>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Já tenho conta
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
 
 {% block scripts %}
@@ -123,12 +287,13 @@
 document.getElementById('xmlCount').addEventListener('input', function() {
     const count = parseInt(this.value) || 0;
     const xmlCost = count * 0.10;
-    const danfeCost = count * 0.15;
-    const total = xmlCost + danfeCost;
+    const total = xmlCost; // DANFE é gratuito agora
     
     document.getElementById('xmlCost').textContent = xmlCost.toFixed(2);
-    document.getElementById('danfeCost').textContent = danfeCost.toFixed(2);
     document.getElementById('totalCost').textContent = total.toFixed(2);
 });
+
+// Trigger initial calculation
+document.getElementById('xmlCount').dispatchEvent(new Event('input'));
 </script>
 {% endblock %}

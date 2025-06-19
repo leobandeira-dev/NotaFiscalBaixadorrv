@@ -241,17 +241,17 @@ def init_default_data():
         {
             'name': 'danfe_generation',
             'description': 'Geração de DANFE em PDF',
-            'cost_per_use': 0.15
+            'cost_per_use': 0.00
         },
         {
             'name': 'api_usage',
             'description': 'Uso da API para downloads',
-            'cost_per_use': 0.05
+            'cost_per_use': 0.10
         },
         {
             'name': 'label_generation',
-            'description': 'Geração de etiquetas a partir de notas fiscais',
-            'cost_per_use': 0.20
+            'description': 'Módulo de etiquetas',
+            'cost_per_use': 49.90
         }
     ]
     

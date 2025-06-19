@@ -145,11 +145,11 @@
                                     <h6>Gerar DANFE</h6>
                                     <p class="text-muted">Converter XMLs em PDF DANFE</p>
                                     <div class="d-grid gap-2">
-                                        <a href="{{ url_for('generate_danfe', job_id=job.job_id) }}" class="btn btn-danger">
-                                            <i class="fas fa-file-pdf me-1"></i>Gerar DANFE
+                                        <a href="{{ url_for('generate_danfe', job_id=job.job_id) }}" class="btn btn-success">
+                                            <i class="fas fa-file-pdf me-1"></i>Gerar DANFE GRÁTIS
                                         </a>
-                                        <small class="text-muted">
-                                            Custo: R$ {{ "%.2f"|format(job.successful * 0.15) }}
+                                        <small class="text-success">
+                                            <i class="fas fa-gift me-1"></i>Serviço gratuito!
                                         </small>
                                     </div>
                                 </div>
