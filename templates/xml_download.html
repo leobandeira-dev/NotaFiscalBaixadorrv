@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}Download XML - XML Downloader{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-download me-2"></i>Download de XMLs</h2>
+            <p class="text-muted">Insira as chaves das notas fiscais para download automático</p>
+        </div>
+    </div>
+
+    <!-- Pricing Info -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Preços</h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li><i class="fas fa-file-alt text-primary me-2"></i>Download XML: R$ 0,10 cada</li>
+                        <li><i class="fas fa-file-pdf text-danger me-2"></i>Geração DANFE: R$ 0,15 cada</li>
+                        <li><i class="fas fa-api text-info me-2"></i>Uso via API: R$ 0,05 cada</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-user me-2"></i>Seu Status</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1">
+                        <i class="fas fa-wallet text-success me-2"></i>
+                        Saldo: <strong>R$ {{ "%.2f"|format(current_user.current_balance) }}</strong>
+                    </p>
+                    {% if current_user.is_trial_active() %}
+                    <p class="mb-0">
+                        <i class="fas fa-gift text-warning me-2"></i>
+                        <span class="badge bg-warning text-dark">TRIAL ATIVO</span>
+                        Até {{ current_user.trial_expires_at.strftime('%d/%m/%Y') if current_user.trial_expires_at else 'N/A' }}
+                    </p>
+                    {% else %}
+                    <p class="mb-0">
+                        <i class="fas fa-check text-success me-2"></i>
+                        Conta ativa - Cobrança por uso
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Inserir Chaves de Notas Fiscais</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('submit_keys') }}" onsubmit="return validateForm()">
+                        <div class="mb-3">
+                            <label for="invoice_keys" class="form-label">
+                                <i class="fas fa-key me-1"></i>Chaves das Notas Fiscais
+                            </label>
+                            <textarea class="form-control" id="invoice_keys" name="invoice_keys" rows="10" 
+                                     placeholder="Cole aqui as chaves das notas fiscais (uma por linha)&#10;Exemplo:&#10;35200507234567000123550010000001231234567890&#10;35200507234567000123550010000001241234567891" 
+                                     oninput="validateKeys()" required></textarea>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Cole uma chave por linha. Cada chave deve ter 44 dígitos.
+                            </div>
+                        </div>
+                        
+                        <!-- Validation Results -->
+                        <div id="validation-results" class="mb-3" style="display: none;">
+                            <div class="alert alert-info">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>Total de linhas:</strong> <span id="total-lines">0</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Chaves válidas:</strong> <span id="valid-keys" class="text-success">0</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Chaves inválidas:</strong> <span id="invalid-keys" class="text-danger">0</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Custo estimado:</strong> R$ <span id="estimated-cost">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Cost Warning -->
+                        <div id="cost-warning" class="alert alert-warning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Atenção:</strong> O custo estimado é maior que seu saldo atual.
+                            <a href="{{ url_for('add_balance') }}" class="btn btn-warning btn-sm ms-2">
+                                <i class="fas fa-plus me-1"></i>Adicionar Saldo
+                            </a>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" id="submit-btn" class="btn btn-primary" disabled>
+                                <i class="fas fa-download me-1"></i>Iniciar Download
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Como usar</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Cole as chaves das notas fiscais no campo acima (uma por linha)</li>
+                        <li>O sistema validará automaticamente as chaves (devem ter 44 dígitos)</li>
+                        <li>Clique em "Iniciar Download" para processar</li>
+                        <li>Após o download, você poderá escolher gerar DANFE em PDF</li>
+                        <li>Os arquivos ficarão disponíveis para download por 24 horas</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentUserBalance = {{ current_user.current_balance }};
+let isTrialActive = {{ 'true' if current_user.is_trial_active() else 'false' }};
+
+function validateKeys() {
+    const textarea = document.getElementById('invoice_keys');
+    const text = textarea.value.trim();
+    
+    if (!text) {
+        document.getElementById('validation-results').style.display = 'none';
+        document.getElementById('submit-btn').disabled = true;
+        return;
+    }
+    
+    const lines = text.split('\n').filter(line => line.trim());
+    const validKeys = [];
+    const invalidKeys = [];
+    
+    lines.forEach(line => {
+        const cleanKey = line.trim().replace(/\D/g, ''); // Remove non-digits
+        if (cleanKey.length === 44) {
+            validKeys.push(cleanKey);
+        } else {
+            invalidKeys.push(line.trim());
+        }
+    });
+    
+    // Update validation display
+    document.getElementById('total-lines').textContent = lines.length;
+    document.getElementById('valid-keys').textContent = validKeys.length;
+    document.getElementById('invalid-keys').textContent = invalidKeys.length;
+    
+    // Calculate cost
+    const xmlCost = validKeys.length * 0.10;
+    document.getElementById('estimated-cost').textContent = xmlCost.toFixed(2);
+    
+    // Show validation results
+    document.getElementById('validation-results').style.display = 'block';
+    
+    // Check balance
+    const costWarning = document.getElementById('cost-warning');
+    if (!isTrialActive && xmlCost > currentUserBalance) {
+        costWarning.style.display = 'block';
+    } else {
+        costWarning.style.display = 'none';
+    }
+    
+    // Enable/disable submit button
+    document.getElementById('submit-btn').disabled = validKeys.length === 0;
+}
+
+function validateForm() {
+    const textarea = document.getElementById('invoice_keys');
+    const text = textarea.value.trim();
+    
+    if (!text) {
+        alert('Por favor, insira pelo menos uma chave de nota fiscal.');
+        return false;
+    }
+    
+    const lines = text.split('\n').filter(line => line.trim());
+    const validKeys = lines.filter(line => {
+        const cleanKey = line.trim().replace(/\D/g, '');
+        return cleanKey.length === 44;
+    });
+    
+    if (validKeys.length === 0) {
+        alert('Nenhuma chave válida encontrada. Chaves devem ter 44 dígitos.');
+        return false;
+    }
+    
+    return confirm(`Processar ${validKeys.length} chave(s) de nota fiscal?\nCusto estimado: R$ ${(validKeys.length * 0.10).toFixed(2)}`);
+}
+
+// Real-time validation as user types
+document.getElementById('invoice_keys').addEventListener('input', validateKeys);
+</script>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}XML Downloader - Automação para Notas Fiscais{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row min-vh-100 align-items-center">
+        <div class="col-lg-6">
+            <div class="text-center text-lg-start">
+                <h1 class="display-4 fw-bold mb-4">
+                    <i class="fas fa-file-invoice text-primary me-3"></i>
+                    XML Downloader
+                </h1>
+                <p class="lead mb-4">
+                    Automação completa para download de XMLs de notas fiscais e geração de DANFE em PDF.
+                    Sistema profissional com API integrada e cobrança automática.
+                </p>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="card h-100 bg-primary text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-download fa-2x mb-2"></i>
+                                <h6>Download Automático</h6>
+                                <small>XMLs e DANFE em lote</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 bg-success text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-api fa-2x mb-2"></i>
+                                <h6>API Completa</h6>
+                                <small>Integração programática</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 bg-info text-white">
+                            <div class="card-body text-center">
+                                <i class="fas fa-file-pdf fa-2x mb-2"></i>
+                                <h6>Geração DANFE</h6>
+                                <small>PDF profissional</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card h-100 bg-warning text-dark">
+                            <div class="card-body text-center">
+                                <i class="fas fa-tags fa-2x mb-2"></i>
+                                <h6>Etiquetas</h6>
+                                <small>Geração automática</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-success mb-4">
+                    <i class="fas fa-gift me-2"></i>
+                    <strong>7 dias grátis</strong> para testar todos os recursos!
+                </div>
+
+                <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-user-plus me-2"></i>Criar Conta Grátis
+                    </a>
+                    <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-sign-in-alt me-2"></i>Fazer Login
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="text-center">
+                <div class="card shadow-lg">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calculator me-2"></i>Calculadora de Custos
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Quantidade de XMLs por mês:</label>
+                                <input type="number" id="xmlCount" class="form-control" value="100" min="1">
+                            </div>
+                            <div class="col-12">
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <tr>
+                                            <td>Download XML:</td>
+                                            <td class="text-end">R$ <span id="xmlCost">10.00</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Geração DANFE:</td>
+                                            <td class="text-end">R$ <span id="danfeCost">15.00</span></td>
+                                        </tr>
+                                        <tr class="table-primary">
+                                            <td><strong>Total mensal:</strong></td>
+                                            <td class="text-end"><strong>R$ <span id="totalCost">25.00</span></strong></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <small class="text-muted">
+                                    Valor mínimo de recarga: R$ 19,90<br>
+                                    Sem mensalidades ou taxas fixas
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('xmlCount').addEventListener('input', function() {
+    const count = parseInt(this.value) || 0;
+    const xmlCost = count * 0.10;
+    const danfeCost = count * 0.15;
+    const total = xmlCost + danfeCost;
+    
+    document.getElementById('xmlCost').textContent = xmlCost.toFixed(2);
+    document.getElementById('danfeCost').textContent = danfeCost.toFixed(2);
+    document.getElementById('totalCost').textContent = total.toFixed(2);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - XML Downloader{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+                <div class="text-end">
+                    <small class="text-muted">Bem-vindo, {{ current_user.name }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Balance and Trial Status -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card balance-card text-white h-100">
+                <div class="card-body text-center">
+                    <h3><i class="fas fa-wallet me-2"></i>R$ {{ "%.2f"|format(current_user.current_balance) }}</h3>
+                    <p class="mb-0">Saldo Disponível</p>
+                    {% if current_user.current_balance < 10 %}
+                    <small class="text-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Saldo baixo
+                    </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card {% if current_user.is_trial_active() %}bg-warning text-dark{% else %}bg-secondary{% endif %} text-white h-100">
+                <div class="card-body text-center">
+                    {% if current_user.is_trial_active() %}
+                    <h5><i class="fas fa-gift me-2"></i>Trial Ativo</h5>
+                    <p class="mb-0">
+                        Expira em: {{ current_user.trial_expires_at.strftime('%d/%m/%Y') if current_user.trial_expires_at else 'N/A' }}
+                    </p>
+                    <small>Teste todos os recursos gratuitamente!</small>
+                    {% else %}
+                    <h5><i class="fas fa-user-check me-2"></i>Conta Ativa</h5>
+                    <p class="mb-0">Trial expirado</p>
+                    <small>Usando sistema de cobrança por uso</small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <h5><i class="fas fa-chart-line me-2"></i>Uso Total</h5>
+                    <p class="mb-0">
+                        <strong>{{ total_usage }}</strong> operações
+                    </p>
+                    <small>Este mês: {{ this_month_usage }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Ações Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{{ url_for('xml_download') }}" class="btn btn-primary w-100">
+                                <i class="fas fa-download d-block mb-1"></i>
+                                Download XML
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('add_balance') }}" class="btn btn-success w-100">
+                                <i class="fas fa-plus d-block mb-1"></i>
+                                Adicionar Saldo
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('api_credentials') }}" class="btn btn-info w-100">
+                                <i class="fas fa-key d-block mb-1"></i>
+                                Credenciais API
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="/api/docs" class="btn btn-outline-primary w-100" target="_blank">
+                                <i class="fas fa-book d-block mb-1"></i>
+                                Documentação
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Charges -->
+    {% if pending_charges %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Cobranças Pendentes</h5>
+                </div>
+                <div class="card-body">
+                    {% for charge in pending_charges %}
+                    <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>R$ {{ "%.2f"|format(charge.amount) }}</strong> - {{ charge.description }}
+                            <br><small>Vencimento: {{ charge.due_date.strftime('%d/%m/%Y') if charge.due_date else 'N/A' }}</small>
+                        </div>
+                        {% if charge.payment_url %}
+                        <a href="{{ charge.payment_url }}" target="_blank" class="btn btn-warning">
+                            <i class="fas fa-credit-card me-1"></i>Pagar
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Recent Usage -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Uso Recente</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_usage %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Serviço</th>
+                                    <th>Quantidade</th>
+                                    <th>Custo</th>
+                                    <th>Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for usage in recent_usage %}
+                                <tr>
+                                    <td>{{ usage.created_at.strftime('%d/%m/%Y %H:%M') if usage.created_at else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ usage.module_name or 'N/A' }}</span>
+                                    </td>
+                                    <td>{{ usage.quantity }}</td>
+                                    <td>
+                                        {% if usage.cost > 0 %}
+                                        R$ {{ "%.2f"|format(usage.cost) }}
+                                        {% else %}
+                                        <span class="badge bg-success">Grátis</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ usage.description or 'N/A' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <h6>Nenhum uso registrado ainda</h6>
+                        <p>Comece fazendo seu primeiro download de XML!</p>
+                        <a href="{{ url_for('xml_download') }}" class="btn btn-primary">
+                            <i class="fas fa-download me-1"></i>Fazer Download
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

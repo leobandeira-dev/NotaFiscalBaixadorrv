@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Adicionar Saldo - XML Downloader{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2><i class="fas fa-plus-circle me-2"></i>Adicionar Saldo</h2>
+            <p class="text-muted">Recarregue seu saldo para continuar usando os serviços</p>
+        </div>
+    </div>
+
+    <!-- Current Balance -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card balance-card text-white">
+                <div class="card-body text-center">
+                    <h3><i class="fas fa-wallet me-2"></i>R$ {{ "%.2f"|format(current_user.current_balance) }}</h3>
+                    <p class="mb-0">Saldo Atual</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h6><i class="fas fa-info-circle me-2"></i>Informações</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li>• Valor mínimo: R$ {{ "%.2f"|format(min_amount) }}</li>
+                        <li>• Sem taxas adicionais</li>
+                        <li>• Pagamento via PIX instantâneo</li>
+                        <li>• Saldo nunca expira</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Balance Form -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Nova Recarga</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('create_charge') }}">
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">
+                                <i class="fas fa-dollar-sign me-1"></i>Valor da Recarga
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">R$</span>
+                                <input type="number" class="form-control" id="amount" name="amount" 
+                                       min="{{ min_amount }}" step="0.01" value="{{ min_amount }}" required>
+                            </div>
+                            <div class="form-text">
+                                Valor mínimo: R$ {{ "%.2f"|format(min_amount) }}
+                            </div>
+                        </div>
+                        
+                        <!-- Quick Amount Buttons -->
+                        <div class="mb-3">
+                            <label class="form-label">Valores Sugeridos:</label>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setAmount(19.90)">R$ 19,90</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setAmount(49.90)">R$ 49,90</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setAmount(99.90)">R$ 99,90</button>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="setAmount(199.90)">R$ 199,90</button>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-qrcode me-1"></i>Gerar Cobrança PIX
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0"><i class="fas fa-calculator me-2"></i>Calculadora</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <label class="form-label">XMLs por mês:</label>
+                        <input type="number" id="calc-xml" class="form-control form-control-sm" value="100" min="1" onchange="calculateUsage()">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">DANFEs por mês:</label>
+                        <input type="number" id="calc-danfe" class="form-control form-control-sm" value="100" min="0" onchange="calculateUsage()">
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <strong>Custo mensal estimado:</strong><br>
+                        <span class="h5 text-primary">R$ <span id="monthly-cost">25.00</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Charges -->
+    {% if pending_charges %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Cobranças Pendentes</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Valor</th>
+                                    <th>Descrição</th>
+                                    <th>Vencimento</th>
+                                    <th>Status</th>
+                                    <th>Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for charge in pending_charges %}
+                                <tr>
+                                    <td>{{ charge.created_at.strftime('%d/%m/%Y') if charge.created_at else 'N/A' }}</td>
+                                    <td><strong>R$ {{ "%.2f"|format(charge.amount) }}</strong></td>
+                                    <td>{{ charge.description }}</td>
+                                    <td>{{ charge.due_date.strftime('%d/%m/%Y') if charge.due_date else 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-warning">{{ charge.status }}</span>
+                                    </td>
+                                    <td>
+                                        {% if charge.payment_url %}
+                                        <a href="{{ charge.payment_url }}" target="_blank" class="btn btn-success btn-sm">
+                                            <i class="fas fa-qrcode me-1"></i>Pagar PIX
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Payment Instructions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Como Funciona</h6>
+                </div>
+                <div class="card-body">
+                    <ol class="mb-0">
+                        <li>Escolha o valor desejado e clique em "Gerar Cobrança PIX"</li>
+                        <li>Você receberá um link de pagamento com QR Code PIX</li>
+                        <li>Pague usando seu banco ou carteira digital</li>
+                        <li>O saldo é adicionado automaticamente após confirmação</li>
+                        <li>Use o saldo para downloads de XML, geração de DANFE e API</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function setAmount(value) {
+    document.getElementById('amount').value = value.toFixed(2);
+}
+
+function calculateUsage() {
+    const xmlCount = parseInt(document.getElementById('calc-xml').value) || 0;
+    const danfeCount = parseInt(document.getElementById('calc-danfe').value) || 0;
+    
+    const xmlCost = xmlCount * 0.10;
+    const danfeCost = danfeCount * 0.15;
+    const total = xmlCost + danfeCost;
+    
+    document.getElementById('monthly-cost').textContent = total.toFixed(2);
+}
+
+// Initialize calculation
+calculateUsage();
+</script>
+{% endblock %}
