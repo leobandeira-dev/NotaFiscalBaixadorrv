@@ -393,3 +393,28 @@ def init_default_data():
             db.session.add(setting)
     
     db.session.commit()
+
+
+class XMLFile(db.Model):
+    """Modelo para armazenar arquivos XML baixados"""
+    __tablename__ = 'xml_files'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    filename = db.Column(db.String(255), nullable=False)
+    invoice_key = db.Column(db.String(44), nullable=False)  # Chave de 44 dígitos
+    file_path = db.Column(db.String(500), nullable=False)
+    xml_content = db.Column(db.Text, nullable=True)  # Conteúdo XML opcional
+    import_type = db.Column(db.String(50), default='SISTEMA')  # SISTEMA, MANUAL, API
+    job_id = db.Column(db.String(50), nullable=True)  # ID do job de download
+    
+    # Timestamps
+    imported_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relacionamento com usuário
+    user = db.relationship('User', backref='xml_files')
+    
+    def __repr__(self):
+        return f'<XMLFile {self.filename}>'
