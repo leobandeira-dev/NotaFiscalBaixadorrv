@@ -645,6 +645,7 @@ def process_download_job(job_id):
         job.status = "running"
         
         for i, invoice_key in enumerate(job.invoice_keys):
+            downloader = None
             try:
                 # Create fresh downloader instance
                 downloader = InvoiceDownloader()
@@ -665,13 +666,6 @@ def process_download_job(job_id):
                         'invoice_key': invoice_key,
                         'error': result['error']
                     })
-                
-                # Cleanup
-                if downloader:
-                    try:
-                        downloader.cleanup()
-                    except:
-                        pass
                         
             except Exception as e:
                 job.processed += 1
@@ -680,6 +674,13 @@ def process_download_job(job_id):
                     'invoice_key': invoice_key,
                     'error': str(e)
                 })
+            finally:
+                # Cleanup only after all attempts
+                if downloader:
+                    try:
+                        downloader.cleanup()
+                    except:
+                        pass
         
         job.status = "completed"
         job.end_time = datetime.now()
