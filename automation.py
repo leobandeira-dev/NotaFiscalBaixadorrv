@@ -325,7 +325,9 @@ class InvoiceDownloader:
             
             # If download button was found and clicked, check for download or content
             if download_button_found:
-                logger.info(f"[Job {job_id}] {button_type} button was clicked, checking for downloaded file or content...")
+                logger.info(f"[Job {job_id}] {button_type} button was clicked, starting comprehensive capture strategies...")
+                logger.info(f"[Job {job_id}] Current URL after button click: {self.driver.current_url}")
+                logger.info(f"[Job {job_id}] Page title after button click: {self.driver.title}")
                 
                 # Wait for the download/content to load
                 time.sleep(3)
@@ -368,16 +370,20 @@ class InvoiceDownloader:
                 # Wait a bit more for content to load
                 time.sleep(5)
                 
+                # CRITICAL: Force execution of all XML capture strategies
+                logger.info(f"[Job {job_id}] ===== STARTING COMPREHENSIVE XML CAPTURE =====")
+                
                 # Enhanced XML extraction strategies specifically for meudanfe.com.br
                 try:
-                    # Strategy 1: Intercept network requests for XML files
-                    logger.info(f"[Job {job_id}] Checking for XML downloads and content...")
-                    
-                    # Check browser's download directory first
-                    time.sleep(2)  # Give more time for download
+                    # Strategy 1: Check browser downloads first
+                    logger.info(f"[Job {job_id}] Strategy 1: Checking browser downloads...")
+                    time.sleep(3)  # Give more time for download
                     download_result = self.check_downloaded_file(invoice_key, job_id, download_type)
                     if download_result['success']:
+                        logger.info(f"[Job {job_id}] SUCCESS: Found file via browser download")
                         return download_result
+                    else:
+                        logger.info(f"[Job {job_id}] Strategy 1 failed: No file in downloads directory")
                     
                     # Strategy 1.5: Try to trigger download again by looking for the actual download URL
                     current_page_source = self.driver.page_source
