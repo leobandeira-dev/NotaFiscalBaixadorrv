@@ -93,10 +93,17 @@ class DownloadJob:
         self.successful = 0
         self.failed = 0
         self.status = "starting"
-        self.downloaded_files = []
+        self.files = []  # Changed from downloaded_files to files for template compatibility
         self.errors = []
         self.start_time = datetime.now()
         self.end_time = None
+
+    @property
+    def progress_percentage(self):
+        """Calculate progress percentage"""
+        if self.total_keys == 0:
+            return 0
+        return round((self.processed / self.total_keys) * 100, 2)
 
     def to_dict(self):
         return {
@@ -106,11 +113,11 @@ class DownloadJob:
             'successful': self.successful,
             'failed': self.failed,
             'status': self.status,
-            'downloaded_files': self.downloaded_files,
+            'files': self.files,
             'errors': self.errors,
             'start_time': self.start_time.isoformat() if self.start_time else None,
             'end_time': self.end_time.isoformat() if self.end_time else None,
-            'progress_percentage': round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
+            'progress_percentage': self.progress_percentage
         }
 
 # Create tables and initialize data

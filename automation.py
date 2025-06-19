@@ -311,96 +311,101 @@ class InvoiceDownloader:
             # If download button was found and clicked, check for download or content
             if download_button_found:
                 logger.info(f"[Job {job_id}] {button_type} button was clicked, checking for downloaded file or content...")
+                
+                # Wait longer for the download to process
+                time.sleep(8)
+                
                 # First check if file was downloaded via browser
                 download_result = self.check_downloaded_file(invoice_key, job_id, download_type)
                 if download_result['success']:
                     return download_result
                 
-                # If no file download, look for XML content displayed on page
-                time.sleep(3)  # Wait a bit more for content to load
-                
-                # Check if XML content is now displayed on the page or in a new tab/window
+                # Enhanced XML extraction with multiple strategies
                 try:
-                    # First, check if a new window/tab was opened with XML content
+                    # Strategy 1: Check for new tabs/windows
                     original_window = self.driver.current_window_handle
                     all_windows = self.driver.window_handles
                     
                     if len(all_windows) > 1:
-                        logger.info(f"[Job {job_id}] New window detected, checking for XML content")
+                        logger.info(f"[Job {job_id}] Checking {len(all_windows)} windows for XML content")
                         for window_handle in all_windows:
                             if window_handle != original_window:
-                                self.driver.switch_to.window(window_handle)
-                                time.sleep(2)
-                                
-                                # Check if this window contains XML
-                                page_source = self.driver.page_source
-                                if '<?xml' in page_source and ('<nfeProc' in page_source or '<NFe' in page_source):
-                                    logger.info(f"[Job {job_id}] XML content found in new window")
-                                    # Extract and save XML content
-                                    import re
-                                    xml_match = re.search(r'(<\?xml.*?</nfeProc>)', page_source, re.DOTALL)
-                                    if not xml_match:
-                                        xml_match = re.search(r'(<\?xml.*?</NFe>)', page_source, re.DOTALL)
+                                try:
+                                    self.driver.switch_to.window(window_handle)
+                                    time.sleep(3)
                                     
-                                    if xml_match:
-                                        xml_content = xml_match.group(1)
-                                        # Close the new window and return to original
+                                    page_url = self.driver.current_url
+                                    page_source = self.driver.page_source
+                                    
+                                    logger.info(f"[Job {job_id}] Checking window: {page_url[:100]}")
+                                    
+                                    # Look for XML content in the new window
+                                    xml_content = self.extract_xml_from_page(page_source, job_id)
+                                    if xml_content:
                                         self.driver.close()
                                         self.driver.switch_to.window(original_window)
-                                        
-                                        # Save the XML content
-                                        downloads_dir = 'downloads'
-                                        os.makedirs(downloads_dir, exist_ok=True)
-                                        filename = f"{invoice_key}.xml"
-                                        file_path = os.path.join(downloads_dir, filename)
-                                        
-                                        with open(file_path, 'w', encoding='utf-8') as f:
-                                            f.write(xml_content)
-                                        
-                                        logger.info(f"[Job {job_id}] XML content saved to: {file_path}")
-                                        return {
-                                            'success': True,
-                                            'file_path': file_path,
-                                            'filename': filename,
-                                            'size': len(xml_content.encode('utf-8'))
-                                        }
-                                
-                                # Close window if no XML found
-                                self.driver.close()
+                                        return self.save_xml_file(xml_content, invoice_key, job_id)
+                                    
+                                    self.driver.close()
+                                except Exception as e:
+                                    logger.warning(f"[Job {job_id}] Error checking window: {e}")
+                                    try:
+                                        self.driver.close()
+                                    except:
+                                        pass
                         
-                        # Return to original window
                         self.driver.switch_to.window(original_window)
                     
-                    # If no new window, check current page for XML content
+                    # Strategy 2: Check current page for XML content
+                    time.sleep(3)
                     page_source = self.driver.page_source
-                    if '<?xml' in page_source and ('<nfeProc' in page_source or '<NFe' in page_source):
-                        logger.info(f"[Job {job_id}] XML content found in current page after button click")
-                        # Extract and save XML content
-                        import re
-                        xml_match = re.search(r'(<\?xml.*?</nfeProc>)', page_source, re.DOTALL)
-                        if not xml_match:
-                            xml_match = re.search(r'(<\?xml.*?</NFe>)', page_source, re.DOTALL)
-                        
-                        if xml_match:
-                            xml_content = xml_match.group(1)
-                            # Save the XML content
-                            downloads_dir = 'downloads'
-                            os.makedirs(downloads_dir, exist_ok=True)
-                            filename = f"{invoice_key}.xml"
-                            file_path = os.path.join(downloads_dir, filename)
-                            
-                            with open(file_path, 'w', encoding='utf-8') as f:
-                                f.write(xml_content)
-                            
-                            logger.info(f"[Job {job_id}] XML content saved to: {file_path}")
-                            return {
-                                'success': True,
-                                'file_path': file_path,
-                                'filename': filename,
-                                'size': len(xml_content.encode('utf-8'))
-                            }
+                    xml_content = self.extract_xml_from_page(page_source, job_id)
+                    if xml_content:
+                        return self.save_xml_file(xml_content, invoice_key, job_id)
+                    
+                    # Strategy 3: Look for download links or iframe content
+                    try:
+                        # Check for any download links that might contain XML
+                        download_links = self.driver.find_elements(By.TAG_NAME, "a")
+                        for link in download_links:
+                            try:
+                                href = link.get_attribute('href')
+                                text = link.text.lower()
+                                if href and ('xml' in href.lower() or 'xml' in text):
+                                    logger.info(f"[Job {job_id}] Found XML download link: {href}")
+                                    # Try to download directly using requests
+                                    download_result = self.download_file(href, invoice_key, job_id)
+                                    if download_result['success']:
+                                        return download_result
+                            except Exception as e:
+                                logger.debug(f"[Job {job_id}] Error checking link: {e}")
+                                continue
+                    except Exception as e:
+                        logger.warning(f"[Job {job_id}] Error checking download links: {e}")
+                    
+                    # Strategy 4: Check for iframes with XML content
+                    try:
+                        iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
+                        for idx, iframe in enumerate(iframes):
+                            try:
+                                self.driver.switch_to.frame(iframe)
+                                iframe_source = self.driver.page_source
+                                xml_content = self.extract_xml_from_page(iframe_source, job_id)
+                                if xml_content:
+                                    self.driver.switch_to.default_content()
+                                    return self.save_xml_file(xml_content, invoice_key, job_id)
+                                self.driver.switch_to.default_content()
+                            except Exception as e:
+                                logger.debug(f"[Job {job_id}] Error checking iframe {idx}: {e}")
+                                try:
+                                    self.driver.switch_to.default_content()
+                                except:
+                                    pass
+                    except Exception as e:
+                        logger.warning(f"[Job {job_id}] Error checking iframes: {e}")
+                
                 except Exception as e:
-                    logger.warning(f"[Job {job_id}] Error extracting XML from page: {e}")
+                    logger.error(f"[Job {job_id}] Error in XML extraction strategies: {e}")
             
             # If button click didn't work, try to find download links
             if not download_button_found:
@@ -824,6 +829,84 @@ class InvoiceDownloader:
                 'error': f'Erro no teste de conexão: {str(e)}'
             }
     
+    def extract_xml_from_page(self, page_source: str, job_id: str) -> str:
+        """Extract XML content from page source"""
+        try:
+            import re
+            
+            # Multiple patterns to find XML content
+            patterns = [
+                r'(<\?xml.*?</nfeProc>)',
+                r'(<\?xml.*?</NFe>)',
+                r'(<\?xml.*?</infNFe>)',
+                r'(<nfeProc.*?</nfeProc>)',
+                r'(<NFe.*?</NFe>)'
+            ]
+            
+            for pattern in patterns:
+                xml_match = re.search(pattern, page_source, re.DOTALL | re.IGNORECASE)
+                if xml_match:
+                    xml_content = xml_match.group(1)
+                    logger.info(f"[Job {job_id}] XML content extracted using pattern: {pattern[:20]}...")
+                    return xml_content
+            
+            # Check if page contains raw XML without proper tags
+            if '<?xml' in page_source:
+                logger.info(f"[Job {job_id}] Found XML marker but couldn't extract complete content")
+                # Try to extract from pre or code tags
+                pre_match = re.search(r'<pre[^>]*>(.*?)</pre>', page_source, re.DOTALL | re.IGNORECASE)
+                if pre_match and '<?xml' in pre_match.group(1):
+                    return pre_match.group(1).strip()
+                
+                code_match = re.search(r'<code[^>]*>(.*?)</code>', page_source, re.DOTALL | re.IGNORECASE)
+                if code_match and '<?xml' in code_match.group(1):
+                    return code_match.group(1).strip()
+            
+            return None
+            
+        except Exception as e:
+            logger.error(f"[Job {job_id}] Error extracting XML from page: {e}")
+            return None
+    
+    def save_xml_file(self, xml_content: str, invoice_key: str, job_id: str) -> Dict[str, Any]:
+        """Save XML content to file"""
+        try:
+            # Clean up XML content
+            xml_content = xml_content.strip()
+            
+            # Ensure proper XML declaration
+            if not xml_content.startswith('<?xml'):
+                xml_content = '<?xml version="1.0" encoding="UTF-8"?>\n' + xml_content
+            
+            # Create downloads directory
+            downloads_dir = 'downloads'
+            os.makedirs(downloads_dir, exist_ok=True)
+            
+            # Generate filename
+            filename = f"{invoice_key}.xml"
+            file_path = os.path.join(downloads_dir, filename)
+            
+            # Save the file
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(xml_content)
+            
+            file_size = os.path.getsize(file_path)
+            logger.info(f"[Job {job_id}] XML file saved: {file_path} ({file_size} bytes)")
+            
+            return {
+                'success': True,
+                'file_path': file_path,
+                'filename': filename,
+                'size': file_size
+            }
+            
+        except Exception as e:
+            logger.error(f"[Job {job_id}] Error saving XML file: {e}")
+            return {
+                'success': False,
+                'error': f'Erro ao salvar arquivo XML: {str(e)}'
+            }
+
     def cleanup(self):
         """Clean up resources"""
         if self.driver:
