@@ -739,7 +739,7 @@ def process_danfe_generation(job_id):
         logger.error(f"DANFE generation error: {str(e)}")
 
 # API endpoints for job status
-@app.route('/api/job_status/<job_id>')
+@app.route('/job_status/<job_id>')
 @login_required
 def job_status(job_id):
     """Get job status"""
