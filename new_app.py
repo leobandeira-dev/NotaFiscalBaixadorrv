@@ -757,7 +757,7 @@ def labels_module():
         return redirect(url_for('dashboard'))
     
     # Buscar XMLs do usuário para geração de etiquetas
-    xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.created_at.desc()).all()
+    xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).all()
     
     return render_template('labels.html', 
                          xmls=xmls,
