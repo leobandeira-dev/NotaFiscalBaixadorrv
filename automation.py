@@ -154,19 +154,12 @@ class InvoiceDownloader:
             # Look for input field for invoice key
             logger.info(f"[Job {job_id}] Looking for input field for invoice key...")
             
-            # Try different possible selectors for the invoice key input
+            # Use specific selectors based on website analysis
             input_selectors = [
-                'input[name*="chave"]',
-                'input[id*="chave"]', 
-                'input[placeholder*="chave"]',
-                'input[name*="nfe"]',
-                'input[id*="nfe"]',
-                'input[placeholder*="nfe"]',
-                'input[type="text"]',
-                'input[name*="key"]',
-                'input[id*="key"]',
-                'textarea[name*="chave"]',
-                'textarea[id*="chave"]'
+                'input[placeholder="Digite a CHAVE DE ACESSO"]',  # Exact match
+                'input[placeholder*="CHAVE DE ACESSO"]',         # Partial match
+                'input[placeholder*="chave"]',                   # Fallback 1
+                'input[type="text"]'                             # Fallback 2
             ]
             
             input_element = None
@@ -210,13 +203,12 @@ class InvoiceDownloader:
             input_element.send_keys(invoice_key)
             logger.info(f"[Job {job_id}] Invoice key entered successfully")
             
-            # Look for submit button
+            # Look for submit button - use specific selectors from website analysis
             logger.info(f"[Job {job_id}] Looking for submit button...")
             submit_selectors = [
                 'button[type="submit"]',
-                'input[type="submit"]',
-                '.btn-primary',
-                '.btn-success', 
+                'button:contains("Buscar DANFE/XML")',
+                'button:contains("Buscar")',
                 '.btn',
                 'button'
             ]

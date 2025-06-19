@@ -91,7 +91,12 @@ This is a Python Flask web application that automates the bulk download of XML i
 - **Browser Options**: Headless Chrome with security and performance optimizations
 
 ## Changelog
-- June 19, 2025. Initial setup
+- June 19, 2025: Initial setup with Flask web application
+- June 19, 2025: Implemented Selenium automation with Chrome WebDriver
+- June 19, 2025: Added comprehensive logging system for debugging
+- June 19, 2025: Fixed Chrome stability issues and WebDriver crashes
+- June 19, 2025: Added individual file download capability (non-ZIP)
+- June 19, 2025: Implemented fresh driver instances per download to prevent crashes
 
 ## User Preferences
 

@@ -241,6 +241,36 @@
                 });
         }
         
+        function populateFilesList(downloadedFiles) {
+            const filesList = document.getElementById('filesList');
+            filesList.innerHTML = '';
+            
+            if (downloadedFiles && downloadedFiles.length > 0) {
+                downloadedFiles.forEach(filePath => {
+                    const filename = filePath.split('/').pop();
+                    const invoiceKey = filename.replace('.xml', '');
+                    
+                    const listItem = document.createElement('div');
+                    listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    listItem.innerHTML = `
+                        <div>
+                            <i class="fas fa-file-code me-2 text-success"></i>
+                            <strong>${invoiceKey}</strong>
+                            <small class="text-muted ms-2">${filename}</small>
+                        </div>
+                        <a href="/download_file/${jobId}/${filename}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-download me-1"></i>
+                            Baixar XML
+                        </a>
+                    `;
+                    filesList.appendChild(listItem);
+                });
+            } else {
+                filesList.innerHTML = '<div class="text-muted text-center py-3">Nenhum arquivo foi baixado com sucesso.</div>';
+            }
+        }
+        
         // Poll for status updates every 2 seconds
         const pollInterval = setInterval(updateJobStatus, 2000);
         
