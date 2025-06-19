@@ -197,6 +197,51 @@ class Charge(db.Model):
             'paid_at': self.paid_at.isoformat() if self.paid_at else None
         }
 
+class ImportedXML(db.Model):
+    """XMLs importados com sucesso"""
+    __tablename__ = 'imported_xmls'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    invoice_key = db.Column(db.String(44), nullable=False)  # Chave de acesso da nota fiscal
+    xml_content = db.Column(db.Text, nullable=False)  # Conteúdo XML completo
+    file_path = db.Column(db.String(255))  # Caminho do arquivo salvo
+    
+    import_type = db.Column(db.String(20), nullable=False)  # 'API' ou 'SISTEMA'
+    job_id = db.Column(db.String(100))  # ID do job relacionado
+    
+    # Dados extraídos do XML para facilitar consultas
+    cnpj_emitente = db.Column(db.String(14))
+    nome_emitente = db.Column(db.String(255))
+    numero_nf = db.Column(db.String(50))
+    serie_nf = db.Column(db.String(10))
+    data_emissao = db.Column(db.Date)
+    valor_total = db.Column(db.Float)
+    
+    # Controle de processamento
+    danfe_generated = db.Column(db.Boolean, default=False)
+    label_generated = db.Column(db.Boolean, default=False)
+    
+    # Timestamps
+    imported_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'invoice_key': self.invoice_key,
+            'import_type': self.import_type,
+            'cnpj_emitente': self.cnpj_emitente,
+            'nome_emitente': self.nome_emitente,
+            'numero_nf': self.numero_nf,
+            'serie_nf': self.serie_nf,
+            'data_emissao': self.data_emissao.isoformat() if self.data_emissao else None,
+            'valor_total': self.valor_total,
+            'danfe_generated': self.danfe_generated,
+            'label_generated': self.label_generated,
+            'imported_at': self.imported_at.isoformat()
+        }
+
 class SystemSettings(db.Model):
     """Configurações do sistema"""
     __tablename__ = 'system_settings'

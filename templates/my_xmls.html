@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus XMLs - XMLDownloader</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 2rem auto;
+            max-width: 1200px;
+            padding: 2rem;
+        }
+        
+        .header-section {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #8A05BE;
+        }
+        
+        .header-section h1 {
+            color: #8A05BE;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .xml-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .xml-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .xml-card-header {
+            background: linear-gradient(135deg, #8A05BE, #a855f7);
+            color: white;
+            padding: 1rem;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+        
+        .xml-card-body {
+            padding: 1.5rem;
+        }
+        
+        .btn-custom {
+            border-radius: 10px;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            margin: 0.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #8A05BE, #a855f7);
+            border: none;
+            color: white;
+        }
+        
+        .btn-primary-custom:hover {
+            background: linear-gradient(135deg, #7c0aa3, #9333ea);
+            transform: translateY(-1px);
+        }
+        
+        .btn-success-custom {
+            background: linear-gradient(135deg, #059669, #10b981);
+            border: none;
+            color: white;
+        }
+        
+        .btn-success-custom:hover {
+            background: linear-gradient(135deg, #047857, #059669);
+            transform: translateY(-1px);
+        }
+        
+        .invoice-key {
+            font-family: 'Courier New', monospace;
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .pagination-custom .page-link {
+            color: #8A05BE;
+            border: none;
+            border-radius: 10px;
+            margin: 0 0.25rem;
+        }
+        
+        .pagination-custom .page-link:hover {
+            background: #8A05BE;
+            color: white;
+        }
+        
+        .pagination-custom .page-item.active .page-link {
+            background: #8A05BE;
+            border-color: #8A05BE;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #d1d5db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-container">
+            <div class="header-section">
+                <h1><i class="fas fa-file-code"></i> Meus XMLs</h1>
+                <p class="text-muted">Gerencie seus XMLs baixados, gere DANFEs e faça downloads</p>
+                <a href="/" class="btn btn-outline-primary btn-custom">
+                    <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                </a>
+            </div>
+            
+            {% if xmls %}
+                <div class="row">
+                    {% for xml in xmls %}
+                    <div class="col-12">
+                        <div class="xml-card">
+                            <div class="xml-card-header">
+                                <div>
+                                    <h5 class="mb-1">
+                                        <i class="fas fa-file-alt"></i>
+                                        NF-e {{ xml.numero_nf or 'N/A' }}/{{ xml.serie_nf or 'N/A' }}
+                                    </h5>
+                                    <small>{{ xml.nome_emitente or 'Emitente não identificado' }}</small>
+                                </div>
+                                <div class="text-end">
+                                    <span class="status-badge {{ 'status-success' if xml.danfe_generated else 'status-pending' }}">
+                                        <i class="fas fa-{{ 'check' if xml.danfe_generated else 'clock' }}"></i>
+                                        {{ 'DANFE Gerado' if xml.danfe_generated else 'DANFE Pendente' }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="xml-card-body">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="mb-2">
+                                            <strong>Chave de Acesso:</strong>
+                                            <div class="invoice-key">{{ xml.invoice_key }}</div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <small class="text-muted">CNPJ:</small><br>
+                                                <span>{{ xml.cnpj_emitente or 'N/A' }}</span>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <small class="text-muted">Data Emissão:</small><br>
+                                                <span>{{ xml.data_emissao or 'N/A' }}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row mt-2">
+                                            <div class="col-sm-6">
+                                                <small class="text-muted">Valor Total:</small><br>
+                                                <span>{{ 'R$ {:,.2f}'.format(xml.valor_total) if xml.valor_total else 'N/A' }}</span>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <small class="text-muted">Importado via:</small><br>
+                                                <span class="badge bg-{{ 'primary' if xml.import_type == 'API' else 'secondary' }}">
+                                                    {{ xml.import_type }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-4 text-end">
+                                        <div class="d-flex flex-column gap-2">
+                                            <a href="{{ url_for('download_xml_file', xml_id=xml.id) }}" 
+                                               class="btn btn-primary-custom btn-custom">
+                                                <i class="fas fa-download"></i> Download XML
+                                            </a>
+                                            
+                                            <a href="{{ url_for('generate_danfe_route', xml_id=xml.id) }}" 
+                                               class="btn btn-success-custom btn-custom">
+                                                <i class="fas fa-file-pdf"></i> 
+                                                {{ 'Download DANFE' if xml.danfe_generated else 'Gerar DANFE' }}
+                                            </a>
+                                            
+                                            {% if not xml.label_generated %}
+                                            <button class="btn btn-warning btn-custom" disabled>
+                                                <i class="fas fa-tags"></i> Gerar Etiquetas
+                                                <small class="d-block">(Em breve)</small>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        <small class="text-muted d-block mt-2">
+                                            Importado em: {{ xml.imported_at[:10] }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Paginação -->
+                {% if total_pages > 1 %}
+                <div class="d-flex justify-content-center mt-4">
+                    <nav aria-label="Navegação de páginas">
+                        <ul class="pagination pagination-custom">
+                            {% if page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('my_xmls', page=page-1) }}">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for p in range(1, total_pages + 1) %}
+                                {% if p == page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ p }}</span>
+                                </li>
+                                {% elif p <= 3 or p >= total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('my_xmls', page=p) }}">{{ p }}</a>
+                                </li>
+                                {% elif p == 4 and page > 6 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% elif p == total_pages - 3 and page < total_pages - 5 %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page < total_pages %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('my_xmls', page=page+1) }}">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Mostrando {{ xmls|length }} de {{ total }} XMLs
+                    </small>
+                </div>
+                
+            {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-file-code"></i>
+                    <h3>Nenhum XML encontrado</h3>
+                    <p>Você ainda não baixou nenhum XML. Use o sistema de download para começar.</p>
+                    <a href="/" class="btn btn-primary-custom btn-custom btn-lg">
+                        <i class="fas fa-download"></i> Fazer Download de XMLs
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

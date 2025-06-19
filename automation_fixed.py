@@ -67,7 +67,9 @@ class InvoiceDownloader:
             
             if chromedriver_path:
                 logger.info(f"Attempting to use chromedriver at: {chromedriver_path}")
-                self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=chrome_options)
+                from selenium.webdriver.chrome.service import Service
+                service = Service(chromedriver_path)
+                self.driver = webdriver.Chrome(service=service, options=chrome_options)
             else:
                 logger.info("Using system chromedriver")
                 self.driver = webdriver.Chrome(options=chrome_options)
@@ -352,8 +354,8 @@ class InvoiceDownloader:
             logger.error(f"Error extracting XML: {e}")
             return None
     
-    def save_xml_content(self, xml_content: str, invoice_key: str, job_id: str) -> Dict[str, Any]:
-        """Save XML content to file"""
+    def save_xml_content(self, xml_content: str, invoice_key: str, job_id: str, user_id: int = None, import_type: str = 'SISTEMA') -> Dict[str, Any]:
+        """Save XML content to file and database"""
         try:
             filename = f"{invoice_key}.xml"
             file_path = os.path.join('downloads', filename)
@@ -363,9 +365,28 @@ class InvoiceDownloader:
             
             logger.info(f"[Job {job_id}] XML content saved to: {file_path}")
             
+            # Salvar no banco de dados se user_id fornecido
+            xml_id = None
+            if user_id:
+                try:
+                    from xml_processor import save_xml_to_database
+                    xml_id = save_xml_to_database(
+                        user_id=user_id,
+                        invoice_key=invoice_key,
+                        xml_content=xml_content,
+                        file_path=file_path,
+                        import_type=import_type,
+                        job_id=job_id
+                    )
+                    logger.info(f"[Job {job_id}] XML saved to database with ID: {xml_id}")
+                except Exception as e:
+                    logger.error(f"[Job {job_id}] Error saving to database: {e}")
+            
             return {
                 'success': True,
-                'file_path': file_path
+                'file_path': file_path,
+                'xml_id': xml_id,
+                'filename': filename
             }
             
         except Exception as e:

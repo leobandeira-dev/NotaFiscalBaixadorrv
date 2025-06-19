@@ -586,5 +586,70 @@ def api_test_connection():
             'timestamp': datetime.now().isoformat()
         }), 500
 
+# Rotas para gerenciamento de XMLs baixados
+@app.route('/my-xmls')
+def my_xmls():
+    """Lista XMLs do usuário logado"""
+    from xml_processor import get_user_xmls
+    
+    # Simular usuário logado (integrar com sistema de autenticação real)
+    user_id = 1  # TODO: Obter do sistema de autenticação
+    
+    page = request.args.get('page', 1, type=int)
+    limit = 20
+    offset = (page - 1) * limit
+    
+    result = get_user_xmls(user_id, limit, offset)
+    
+    return render_template('my_xmls.html', 
+                         xmls=result['xmls'],
+                         total=result['total'],
+                         page=page,
+                         total_pages=((result['total'] - 1) // limit) + 1 if result['total'] > 0 else 1)
+
+@app.route('/download-xml/<int:xml_id>')
+def download_xml_file(xml_id):
+    """Download arquivo XML específico"""
+    try:
+        from models import ImportedXML
+        
+        xml_record = ImportedXML.query.get_or_404(xml_id)
+        # TODO: Verificar se usuário tem acesso ao XML
+        
+        return send_file(
+            xml_record.file_path,
+            as_attachment=True,
+            download_name=f"{xml_record.invoice_key}.xml",
+            mimetype='application/xml'
+        )
+    except Exception as e:
+        logger.error(f"Error downloading XML: {str(e)}")
+        flash('Erro ao baixar arquivo XML.', 'error')
+        return redirect(url_for('my_xmls'))
+
+@app.route('/generate-danfe/<int:xml_id>')
+def generate_danfe_route(xml_id):
+    """Gera e baixa DANFE para um XML específico"""
+    try:
+        from xml_processor import generate_danfe_for_xml
+        
+        result = generate_danfe_for_xml(xml_id)
+        
+        if result['success']:
+            return send_file(
+                result['pdf_path'],
+                as_attachment=True,
+                download_name=result['filename'],
+                mimetype='application/pdf'
+            )
+        else:
+            flash(f"Erro ao gerar DANFE: {result['error']}", 'error')
+            return redirect(url_for('my_xmls'))
+            
+    except Exception as e:
+        logger.error(f"Error generating DANFE: {str(e)}")
+        flash('Erro ao gerar DANFE.', 'error')
+        return redirect(url_for('my_xmls'))
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
