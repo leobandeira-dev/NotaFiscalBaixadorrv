@@ -3,7 +3,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const validCountBadge = document.getElementById('validCount');
     const invalidCountBadge = document.getElementById('invalidCount');
     const submitBtn = document.getElementById('submitBtn');
+    const submitBtnText = document.getElementById('submitBtnText');
     const form = document.getElementById('keysForm');
+    const downloadTypeRadios = document.querySelectorAll('input[name="download_type"]');
 
     // Function to validate invoice key
     function isValidInvoiceKey(key) {
@@ -47,6 +49,29 @@ document.addEventListener('DOMContentLoaded', function() {
         // Enable/disable submit button
         submitBtn.disabled = validCount === 0;
     }
+
+    // Function to update submit button text based on download type
+    function updateSubmitButtonText() {
+        const selectedType = document.querySelector('input[name="download_type"]:checked').value;
+        switch(selectedType) {
+            case 'xml':
+                submitBtnText.textContent = 'Iniciar Download dos XMLs';
+                break;
+            case 'danfe':
+                submitBtnText.textContent = 'Iniciar Download dos DANFEs';
+                break;
+            case 'both':
+                submitBtnText.textContent = 'Iniciar Download (XML + DANFE)';
+                break;
+            default:
+                submitBtnText.textContent = 'Iniciar Download';
+        }
+    }
+
+    // Add event listeners for download type changes
+    downloadTypeRadios.forEach(radio => {
+        radio.addEventListener('change', updateSubmitButtonText);
+    });
 
     // Add event listener for textarea changes
     invoiceKeysTextarea.addEventListener('input', updateKeyCounts);
@@ -98,8 +123,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     });
 
-    // Initial count update
+    // Initial count update and button text
     updateKeyCounts();
+    updateSubmitButtonText();
 
     // Add tooltips to help icons
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));

@@ -67,6 +67,7 @@ def submit_keys():
     """Handle form submission with invoice keys"""
     try:
         keys_text = request.form.get('invoice_keys', '').strip()
+        download_type = request.form.get('download_type', 'xml').strip()
         
         if not keys_text:
             flash('Por favor, insira pelo menos uma chave de nota fiscal.', 'error')
@@ -101,6 +102,7 @@ def submit_keys():
         # Create download job
         job_id = str(uuid.uuid4())
         job = DownloadJob(job_id, valid_keys)
+        job.download_type = download_type  # Store download type in job
         
         with jobs_lock:
             download_jobs[job_id] = job

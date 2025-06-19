@@ -716,7 +716,7 @@ class InvoiceDownloader:
         
         return {
             'success': False,
-            'error': 'Arquivo XML não foi baixado dentro do tempo limite'
+            'error': f'Arquivo {download_type.upper()} não foi baixado dentro do tempo limite'
         }
     
     def test_connection(self) -> Dict[str, Any]:
