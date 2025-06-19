@@ -735,14 +735,14 @@ def job_status(job_id):
         return jsonify(job.to_dict())
 
 # Rotas principais do sistema
-@app.route('/my-xmls')
+@app.route('/meus-xmls')
 @login_required
-def my_xmls():
+def meus_xmls():
     """Lista XMLs do usuário logado"""
     # Buscar XMLs do usuário
-    xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.created_at.desc()).limit(50).all()
+    xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).limit(50).all()
     
-    return render_template('my_xmls.html', 
+    return render_template('meus_xmls.html', 
                          xmls=xmls,
                          current_user=current_user)
 
@@ -802,7 +802,7 @@ def download_xml(xml_id):
     
     if not xml_record:
         flash('XML não encontrado.', 'error')
-        return redirect(url_for('my_xmls'))
+        return redirect(url_for('meus_xmls'))
     
     # Criar arquivo em memória
     xml_io = io.BytesIO(xml_record.xml_content.encode('utf-8'))
@@ -828,7 +828,7 @@ def generate_danfe_route(xml_id):
     
     if not xml_record:
         flash('XML não encontrado.', 'error')
-        return redirect(url_for('my_xmls'))
+        return redirect(url_for('meus_xmls'))
     
     try:
         # Gerar DANFE
@@ -864,7 +864,7 @@ def generate_danfe_route(xml_id):
         logger.error(f"Error generating DANFE: {str(e)}")
         flash('Erro ao gerar DANFE.', 'error')
     
-    return redirect(url_for('my_xmls'))
+    return redirect(url_for('meus_xmls'))
 
 @app.route('/generate-label/<int:xml_id>')
 @login_required
@@ -873,13 +873,13 @@ def generate_label_route(xml_id):
     # Verificar se usuário tem saldo para acessar módulos premium
     if current_user.current_balance < 49.90 and current_user.trial_expires_at < datetime.now():
         flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
-        return redirect(url_for('my_xmls'))
+        return redirect(url_for('meus_xmls'))
     
     xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
     
     if not xml_record:
         flash('XML não encontrado.', 'error')
-        return redirect(url_for('my_xmls'))
+        return redirect(url_for('meus_xmls'))
     
     try:
         from label_generator import generate_label_for_xml
@@ -895,7 +895,7 @@ def generate_label_route(xml_id):
         logger.error(f"Error generating label: {str(e)}")
         flash('Erro ao gerar etiqueta.', 'error')
     
-    return redirect(url_for('my_xmls'))
+    return redirect(url_for('meus_xmls'))
 
 @app.route('/bulk-generate-labels', methods=['POST'])
 @login_required
