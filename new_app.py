@@ -1179,7 +1179,7 @@ def historico_creditos():
         user_id=current_user.id
     ).order_by(StripeTransaction.created_at.desc()).limit(20).all()
     
-    return render_template('historico_creditos.html',
+    return render_template('historico_creditos_simple.html',
                          usage_history=usage_history,
                          stripe_transactions=stripe_transactions,
                          current_user=current_user)
