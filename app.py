@@ -235,7 +235,7 @@ def download_individual_file(job_id, filename):
 def test_automation():
     """Test the automation system connectivity"""
     try:
-        from automation import InvoiceDownloader
+        from automation_fixed import InvoiceDownloader
         
         downloader = InvoiceDownloader()
         result = downloader.test_connection()
@@ -258,7 +258,7 @@ def test_automation():
 
 def process_download_job(job_id):
     """Process download job in background"""
-    from automation import InvoiceDownloader
+    from automation_fixed import InvoiceDownloader
     
     with jobs_lock:
         job = download_jobs.get(job_id)
@@ -565,7 +565,7 @@ def api_download_file(job_id, filename):
 def api_test_connection():
     """Test connection to invoice system"""
     try:
-        from automation import InvoiceDownloader
+        from automation_fixed import InvoiceDownloader
         
         downloader = InvoiceDownloader()
         result = downloader.test_connection()
