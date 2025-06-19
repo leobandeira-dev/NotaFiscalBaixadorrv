@@ -651,5 +651,82 @@ def generate_danfe_route(xml_id):
         flash('Erro ao gerar DANFE.', 'error')
         return redirect(url_for('my_xmls'))
 
+@app.route('/generate-label/<int:xml_id>')
+def generate_label_route(xml_id):
+    """Gera e baixa etiqueta de transporte para um XML específico"""
+    try:
+        from label_generator import generate_label_for_xml
+        
+        result = generate_label_for_xml(xml_id)
+        
+        if result['success']:
+            return send_file(
+                result['label_path'],
+                as_attachment=True,
+                download_name=result['filename'],
+                mimetype='application/pdf'
+            )
+        else:
+            flash(f"Erro ao gerar etiqueta: {result['error']}", 'error')
+            return redirect(url_for('my_xmls'))
+            
+    except Exception as e:
+        logger.error(f"Error generating label: {str(e)}")
+        flash('Erro ao gerar etiqueta.', 'error')
+        return redirect(url_for('my_xmls'))
+
+@app.route('/labels')
+def labels_module():
+    """Módulo de geração de etiquetas"""
+    from xml_processor import get_user_xmls
+    
+    # Simular usuário logado
+    user_id = 1
+    
+    page = request.args.get('page', 1, type=int)
+    limit = 20
+    offset = (page - 1) * limit
+    
+    result = get_user_xmls(user_id, limit, offset)
+    
+    return render_template('labels.html', 
+                         xmls=result['xmls'],
+                         total=result['total'],
+                         page=page,
+                         total_pages=((result['total'] - 1) // limit) + 1 if result['total'] > 0 else 1)
+
+@app.route('/labels/bulk-generate', methods=['POST'])
+def bulk_generate_labels_route():
+    """Gera etiquetas em lote"""
+    try:
+        from label_generator import bulk_generate_labels
+        
+        xml_ids = request.form.getlist('xml_ids')
+        xml_ids = [int(x) for x in xml_ids if x.isdigit()]
+        
+        if not xml_ids:
+            flash('Nenhum XML selecionado.', 'warning')
+            return redirect(url_for('labels_module'))
+        
+        result = bulk_generate_labels(xml_ids)
+        
+        if result['success']:
+            flash(f"Etiquetas geradas com sucesso: {result['generated']} de {len(xml_ids)}", 'success')
+            if result['errors']:
+                flash(f"Erros: {result['errors']}", 'warning')
+        else:
+            flash(f"Erro na geração: {result['error']}", 'error')
+            
+        return redirect(url_for('labels_module'))
+        
+    except Exception as e:
+        logger.error(f"Error in bulk label generation: {str(e)}")
+        flash('Erro na geração em lote.', 'error')
+        return redirect(url_for('labels_module'))
+
+# Inicializar painel administrativo
+from admin_panel import init_admin_panel
+init_admin_panel(app)
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
