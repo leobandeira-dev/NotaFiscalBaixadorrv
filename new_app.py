@@ -15,9 +15,11 @@ from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
 from itsdangerous import URLSafeTimedSerializer
 from authlib.integrations.flask_client import OAuth
-from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, ImportedXML, StripeTransaction, CreditBalance, init_default_data
+from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, ImportedXML, StripeTransaction, CreditBalance, XMLFile, init_default_data
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
+from transport_label_generator import TransportLabelGenerator, generate_label_from_database_xml
+from xml_processor import extract_xml_data
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

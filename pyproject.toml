@@ -27,4 +27,5 @@ dependencies = [
     "sqlalchemy>=2.0.41",
     "brazilfiscalreport>=0.5.31",
     "stripe>=12.2.0",
+    "qrcode>=8.2",
 ]
