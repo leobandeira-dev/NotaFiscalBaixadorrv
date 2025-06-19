@@ -28,19 +28,35 @@ class InvoiceDownloader:
             os.makedirs(downloads_dir, exist_ok=True)
             logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Chrome options
+            # Chrome options optimized for speed
             chrome_options = Options()
             chrome_options.add_argument('--headless')
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--window-size=1920,1080')
+            chrome_options.add_argument('--window-size=1280,720')  # Smaller window for speed
             chrome_options.add_argument('--disable-web-security')
             chrome_options.add_argument('--allow-running-insecure-content')
             chrome_options.add_argument('--disable-extensions')
             chrome_options.add_argument('--disable-plugins')
             chrome_options.add_argument('--disable-images')
-            chrome_options.add_argument('--disable-javascript')
+            chrome_options.add_argument('--disable-background-networking')
+            chrome_options.add_argument('--disable-background-timer-throttling')
+            chrome_options.add_argument('--disable-renderer-backgrounding')
+            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+            chrome_options.add_argument('--disable-client-side-phishing-detection')
+            chrome_options.add_argument('--disable-component-extensions-with-background-pages')
+            chrome_options.add_argument('--disable-default-apps')
+            chrome_options.add_argument('--disable-ipc-flooding-protection')
+            chrome_options.add_argument('--disable-sync')
+            chrome_options.add_argument('--no-first-run')
+            chrome_options.add_argument('--no-default-browser-check')
+            chrome_options.add_argument('--disable-hang-monitor')
+            chrome_options.add_argument('--disable-prompt-on-repost')
+            chrome_options.add_argument('--disable-domain-reliability')
+            chrome_options.add_argument('--disable-features=TranslateUI,BlinkGenPropertyTrees')
+            chrome_options.add_argument('--aggressive-cache-discard')
+            chrome_options.add_argument('--enable-features=NetworkService,NetworkServiceLogging')
             
             # Download preferences
             prefs = {
@@ -90,68 +106,43 @@ class InvoiceDownloader:
             logger.info(f"[Job {job_id}] Navigating to invoice system...")
             self.driver.get(url)
             
-            # Wait for page to load
-            logger.info(f"[Job {job_id}] Waiting for page to load...")
-            WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.TAG_NAME, "body"))
-            )
-            
-            logger.info(f"[Job {job_id}] Page loaded - URL: {self.driver.current_url}")
-            
-            # Find and fill input field
+            # Wait for input field directly (faster than waiting for body)
             logger.info(f"[Job {job_id}] Looking for input field...")
-            input_element = WebDriverWait(self.driver, 10).until(
+            input_element = WebDriverWait(self.driver, 15).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[placeholder="Digite a CHAVE DE ACESSO"]'))
             )
+            logger.info(f"[Job {job_id}] Page loaded - URL: {self.driver.current_url}")
             
             logger.info(f"[Job {job_id}] Entering invoice key...")
             input_element.clear()
             input_element.send_keys(invoice_key)
             
-            # Find and click submit button
+            # Find and click submit button with faster targeting
             logger.info(f"[Job {job_id}] Looking for submit button...")
-            buttons = self.driver.find_elements(By.TAG_NAME, "button")
-            
-            submit_button = None
-            for btn in buttons:
-                btn_text = btn.text.lower().strip()
-                if 'buscar' in btn_text and ('danfe' in btn_text or 'xml' in btn_text):
-                    submit_button = btn
-                    break
-            
-            if not submit_button:
+            try:
+                submit_button = WebDriverWait(self.driver, 5).until(
+                    EC.element_to_be_clickable((By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]"))
+                )
+            except:
                 raise Exception("Submit button not found")
             
             logger.info(f"[Job {job_id}] Clicking submit button...")
             submit_button.click()
             
-            # Wait for results page
+            # Wait for results page with intelligent waiting
             logger.info(f"[Job {job_id}] Waiting for response page...")
-            time.sleep(8)  # Reduced wait time
+            time.sleep(3)  # Much faster initial wait
             
             logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
             
-            # Find XML download button
+            # Find XML download button with optimized xpath
             logger.info(f"[Job {job_id}] Looking for XML download button...")
-            xml_button = None
-            buttons = self.driver.find_elements(By.TAG_NAME, "button")
-            
-            for btn in buttons:
-                btn_text = btn.text.lower().strip()
-                if 'xml' in btn_text and 'baixar' in btn_text:
-                    xml_button = btn
-                    break
-            
-            if not xml_button:
-                # Try with 'a' tags
-                links = self.driver.find_elements(By.TAG_NAME, "a")
-                for link in links:
-                    link_text = link.text.lower().strip()
-                    if 'xml' in link_text and 'baixar' in link_text:
-                        xml_button = link
-                        break
-            
-            if not xml_button:
+            try:
+                # Use single xpath query for faster element location
+                xml_button = WebDriverWait(self.driver, 6).until(
+                    EC.element_to_be_clickable((By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"))
+                )
+            except:
                 raise Exception("XML download button not found")
             
             logger.info(f"[Job {job_id}] Found XML button, clicking...")
@@ -175,21 +166,16 @@ class InvoiceDownloader:
                 if result['success']:
                     return result
             
-            # Strategy 2: Wait and check for browser downloads
+            # Strategy 2: Optimized polling for browser downloads
             logger.info(f"[Job {job_id}] Strategy 2: Checking for browser downloads...")
-            time.sleep(10)  # Wait for download
-            download_result = self.check_downloaded_file(invoice_key, job_id)
-            if download_result['success']:
-                logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - file downloaded and found")
-                return download_result
             
-            # Strategy 2b: Wait a bit more and check again
-            logger.info(f"[Job {job_id}] Strategy 2b: Extended wait for download...")
-            time.sleep(8)
-            download_result = self.check_downloaded_file(invoice_key, job_id)
-            if download_result['success']:
-                logger.info(f"[Job {job_id}] Strategy 2b SUCCESS - file found after extended wait")
-                return download_result
+            # Fast polling: check every 1.5 seconds for up to 10 seconds
+            for attempt in range(7):
+                time.sleep(1.5)
+                download_result = self.check_downloaded_file(invoice_key, job_id)
+                if download_result['success']:
+                    logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - file downloaded and found")
+                    return download_result
             
             # Strategy 3: Extract XML from page source
             logger.info(f"[Job {job_id}] Strategy 3: Extracting XML from page source...")
