@@ -130,11 +130,33 @@ def job_status(job_id):
     """API endpoint to get job status"""
     with jobs_lock:
         job = download_jobs.get(job_id)
-    
-    if not job:
-        return jsonify({'error': 'Job not found'}), 404
-    
-    return jsonify(job.to_dict())
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        # Check for untracked downloaded files
+        if job.status in ["running", "completed"] and job.processed == 0:
+            logger.info(f"Checking for untracked downloads for job {job_id}")
+            
+            # Look for files that match this job's invoice keys
+            downloads_dir = 'downloads'
+            if os.path.exists(downloads_dir):
+                for invoice_key in job.invoice_keys:
+                    file_path = os.path.join(downloads_dir, f"{invoice_key}.xml")
+                    if os.path.exists(file_path) and file_path not in job.downloaded_files:
+                        # Found a file that was downloaded but not tracked
+                        logger.info(f"Found untracked download: {file_path}")
+                        job.downloaded_files.append(file_path)
+                        job.successful += 1
+                        job.processed += 1
+                        
+                        # If all files are processed, mark as completed
+                        if job.processed >= job.total_keys:
+                            job.status = "completed"
+                            job.end_time = datetime.now()
+                            logger.info(f"Job {job_id} marked as completed after finding untracked files")
+        
+        return jsonify(job.to_dict())
 
 @app.route('/download_zip/<job_id>')
 def download_zip(job_id):
