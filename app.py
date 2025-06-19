@@ -41,6 +41,7 @@ class DownloadJob:
         self.start_time = datetime.now()
         self.end_time = None
         self.callback_url = None  # Optional webhook URL for API usage
+        self.download_type = 'xml'  # xml, danfe, both
 
     def to_dict(self):
         return {
@@ -277,16 +278,44 @@ def process_download_job(job_id):
                 try:
                     downloader = InvoiceDownloader()
                     
-                    # Download XML for this invoice key
-                    result = downloader.download_invoice_xml(invoice_key, job_id)
+                    # Download based on job download type
+                    download_type = getattr(job, 'download_type', 'xml')
+                    
+                    if download_type == 'both':
+                        # Download both XML and DANFE
+                        xml_result = downloader.download_invoice_xml(invoice_key, job_id, 'xml')
+                        danfe_result = downloader.download_invoice_xml(invoice_key, job_id, 'danfe')
+                        
+                        # Consider successful if at least one succeeds
+                        if xml_result['success'] or danfe_result['success']:
+                            result = {'success': True, 'file_paths': []}
+                            if xml_result['success']:
+                                result['file_paths'].append(xml_result['file_path'])
+                            if danfe_result['success']:
+                                result['file_paths'].append(danfe_result['file_path'])
+                        else:
+                            result = {
+                                'success': False,
+                                'error': f"XML: {xml_result.get('error', 'erro desconhecido')}, DANFE: {danfe_result.get('error', 'erro desconhecido')}"
+                            }
+                    else:
+                        # Download single type
+                        result = downloader.download_invoice_xml(invoice_key, job_id, download_type)
                     
                     # Update job status with thread safety
                     job.processed += 1
                     
                     if result['success']:
                         job.successful += 1
-                        job.downloaded_files.append(result['file_path'])
-                        logger.info(f"Successfully downloaded: {result['file_path']}")
+                        if download_type == 'both':
+                            # Handle multiple files
+                            for file_path in result['file_paths']:
+                                job.downloaded_files.append(file_path)
+                                logger.info(f"Successfully downloaded: {file_path}")
+                        else:
+                            # Handle single file
+                            job.downloaded_files.append(result['file_path'])
+                            logger.info(f"Successfully downloaded: {result['file_path']}")
                     else:
                         job.failed += 1
                         job.errors.append({
