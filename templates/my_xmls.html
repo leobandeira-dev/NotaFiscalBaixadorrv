@@ -1,40 +1,21 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meus XMLs - XMLDownloader</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        .main-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            margin: 2rem auto;
-            max-width: 1200px;
-            padding: 2rem;
-        }
-        
-        .header-section {
-            text-align: center;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #8A05BE;
-        }
-        
-        .header-section h1 {
-            color: #8A05BE;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
+{% extends "base.html" %}
+
+{% block title %}Meus XMLs - XMLDownloader{% endblock %}
+
+{% block extra_css %}
+<style>
+.header-section {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #8A05BE;
+}
+
+.header-section h1 {
+    color: #8A05BE;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
         
         .xml-card {
             background: white;
@@ -144,31 +125,19 @@
             color: #6b7280;
         }
         
-        .empty-state i {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            color: #d1d5db;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="main-container">
-            <div class="header-section">
-                <h1><i class="fas fa-file-code"></i> Meus XMLs</h1>
-                <p class="text-muted">Gerencie seus XMLs baixados, gere DANFEs e faça downloads</p>
-                <div class="btn-group">
-                    <a href="/" class="btn btn-outline-primary btn-custom">
-                        <i class="fas fa-home"></i> Dashboard
-                    </a>
-                    <a href="/labels" class="btn btn-outline-warning btn-custom">
-                        <i class="fas fa-tags"></i> Módulo Etiquetas
-                    </a>
-                    <a href="/admin" class="btn btn-outline-danger btn-custom">
-                        <i class="fas fa-shield-alt"></i> Admin
-                    </a>
-                </div>
-            </div>
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #d1d5db;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-section">
+    <h1><i class="fas fa-file-code"></i> Meus XMLs</h1>
+    <p class="text-muted">Gerencie seus XMLs baixados, gere DANFEs e faça downloads</p>
+</div>
             
             {% if xmls %}
                 <div class="row">
@@ -317,9 +286,4 @@
                     </a>
                 </div>
             {% endif %}
-        </div>
-    </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+{% endblock %}

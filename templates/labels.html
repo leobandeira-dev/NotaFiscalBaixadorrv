@@ -1,27 +1,9 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Módulo de Etiquetas - XMLDownloader</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        .main-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            margin: 2rem auto;
-            max-width: 1400px;
-            padding: 2rem;
-        }
+{% extends "base.html" %}
+
+{% block title %}Módulo de Etiquetas - XMLDownloader{% endblock %}
+
+{% block extra_css %}
+<style>
         
         .header-section {
             text-align: center;
@@ -167,23 +149,14 @@
             margin-bottom: 1rem;
             color: #d1d5db;
         }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="main-container">
-            <div class="header-section">
-                <h1><i class="fas fa-tags"></i> Módulo de Etiquetas de Transporte</h1>
-                <p class="text-muted">Gere etiquetas personalizadas para seus XMLs importados</p>
-                <div class="btn-group">
-                    <a href="/" class="btn btn-outline-primary btn-custom">
-                        <i class="fas fa-home"></i> Dashboard
-                    </a>
-                    <a href="/my-xmls" class="btn btn-outline-secondary btn-custom">
-                        <i class="fas fa-file-code"></i> Meus XMLs
-                    </a>
-                </div>
-            </div>
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-section">
+    <h1><i class="fas fa-tags"></i> Módulo de Etiquetas de Transporte</h1>
+    <p class="text-muted">Gere etiquetas personalizadas para seus XMLs importados</p>
+</div>
             
             {% if xmls %}
                 <!-- Ações em Lote -->
