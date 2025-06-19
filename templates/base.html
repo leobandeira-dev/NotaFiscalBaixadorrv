@@ -8,9 +8,10 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            background: #f8f9fa;
             min-height: 100vh;
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: #374151;
         }
         
         .sidebar {
@@ -19,13 +20,8 @@
             left: 0;
             height: 100vh;
             width: 280px;
-            background: linear-gradient(180deg, 
-                rgba(138, 5, 190, 0.95) 0%, 
-                rgba(138, 5, 190, 0.8) 15%, 
-                rgba(138, 5, 190, 0.6) 30%, 
-                rgba(255, 255, 255, 0.95) 45%);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            background: white;
+            border-right: 1px solid #e5e7eb;
             z-index: 1000;
             transition: transform 0.3s ease;
             overflow-y: auto;
@@ -33,28 +29,15 @@
         
         .sidebar-header {
             padding: 1.5rem;
-            background: linear-gradient(135deg, #8A05BE, #a855f7);
-            color: white;
-            text-align: center;
-            position: relative;
-        }
-        
-        .sidebar-header::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 20px;
-            background: linear-gradient(180deg, 
-                rgba(138, 5, 190, 0.3) 0%, 
-                rgba(138, 5, 190, 0.1) 50%, 
-                transparent 100%);
+            border-bottom: 1px solid #e5e7eb;
+            background: white;
         }
         
         .sidebar-header h5 {
-            margin: 0;
+            color: #8A05BE;
             font-weight: 700;
+            margin: 0;
+            font-size: 1.1rem;
         }
         
         .sidebar-nav {
@@ -62,34 +45,33 @@
         }
         
         .nav-item {
-            margin: 0.25rem 1rem;
+            margin: 0.125rem 1rem;
         }
         
         .nav-link {
-            color: rgba(255, 255, 255, 0.8);
+            color: #6b7280;
             padding: 0.75rem 1rem;
-            border-radius: 10px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             text-decoration: none;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             font-weight: 500;
-            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
         }
         
         .nav-link:hover {
-            background: rgba(255, 255, 255, 0.15);
-            color: white;
-            transform: translateX(5px);
-            backdrop-filter: blur(10px);
+            background: #f3f4f6;
+            color: #374151;
+            text-decoration: none;
         }
         
         .nav-link.active {
-            background: rgba(255, 255, 255, 0.25);
-            color: white;
+            background: #f8f4ff;
+            color: #8A05BE;
             font-weight: 600;
-            backdrop-filter: blur(15px);
-            box-shadow: 0 4px 15px rgba(138, 5, 190, 0.3);
+            border-left: 3px solid #8A05BE;
+            margin-left: -3px;
         }
         
         .nav-link i {
@@ -100,16 +82,15 @@
         
         .main-content {
             margin-left: 280px;
-            padding: 2rem;
+            padding: 1.5rem;
             min-height: 100vh;
         }
         
         .content-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
         }
         
         .sidebar-toggle {

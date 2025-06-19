@@ -4,134 +4,109 @@
 
 {% block content %}
 <style>
-        /* Dashboard Cards */
+        /* Clean Dashboard Styles */
+        .dashboard-header {
+            margin-bottom: 2rem;
+        }
+        
+        .dashboard-title {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
+        
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
         }
         
         .stat-card {
             background: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-            border: 1px solid #e2e8f0;
-            transition: all 0.3s ease;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.25rem;
+            transition: all 0.2s ease;
         }
         
         .stat-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: #d1d5db;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-        
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            color: white;
-        }
-        
-        .stat-icon.purple {
-            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light));
-        }
-        
-        .stat-icon.green {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-        
-        .stat-icon.blue {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        }
-        
-        .stat-icon.orange {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
+        .stat-title {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
         }
         
         .stat-value {
-            font-size: 2rem;
-            font-weight: 800;
-            color: var(--gray-900);
+            font-size: 1.875rem;
+            font-weight: 600;
+            color: #111827;
             margin-bottom: 0.25rem;
-        }
-        
-        .stat-label {
-            color: #64748b;
-            font-size: 0.875rem;
-            font-weight: 500;
         }
         
         .stat-change {
             font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.25rem 0.5rem;
-            border-radius: 6px;
-            margin-top: 0.5rem;
-            display: inline-block;
+            font-weight: 500;
         }
         
         .stat-change.positive {
-            background: #dcfce7;
-            color: #166534;
+            color: #059669;
         }
         
-        .stat-change.negative {
-            background: #fee2e2;
-            color: #dc2626;
-        }
         
-        /* Trial Banner */
-        .trial-banner {
-            background: linear-gradient(135deg, #10b981, #059669);
-            color: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .trial-content h5 {
-            margin: 0 0 0.5rem 0;
-            font-weight: 700;
-        }
-        
-        .trial-content p {
-            margin: 0;
-            opacity: 0.9;
-        }
-        
-        /* Quick Actions */
-        .quick-actions {
+        /* Action Cards */
+        .action-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
         }
         
         .action-card {
             background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            border: 1px solid #e2e8f0;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
             text-align: center;
-            transition: all 0.3s ease;
         }
         
-        .action-card:hover {
-            transform: translateY(-2px);
+        .action-card h5 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        
+        .action-card p {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 1rem;
+        }
+        
+        .btn-purple {
+            background: #8A05BE;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.2s ease;
+        }
+        
+        .btn-purple:hover {
+            background: #7a0ca8;
+            color: white;
+            text-decoration: none;
+        }
             box-shadow: 0 8px 25px rgba(0,0,0,0.1);
             border-color: var(--primary-purple);
         }
@@ -205,24 +180,97 @@
             color: var(--gray-900);
         }
         
-        .activity-details p {
+        
+        /* Activity Section */
+        .activity-section {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+        
+        .activity-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .activity-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
             margin: 0;
-            font-size: 0.75rem;
-            color: #64748b;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
         }
 </style>
 
-<div class="page-header">
-    <h1 class="page-title">Dashboard</h1>
-    <p class="page-subtitle">Visão geral da sua gestão fiscal automatizada</p>
+<div class="dashboard-header">
+    <h1 class="dashboard-title">Dashboard</h1>
 </div>
 
-<!-- Trial Banner -->
-{% if current_user.is_trial_active() %}
-<div class="trial-banner">
-    <div class="trial-content">
-        <h5><i class="fas fa-gift me-2"></i>Período de teste ativo</h5>
-        <p>Você tem 7 dias restantes no seu teste gratuito</p>
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-title">XMLs baixados (total)</div>
+        <div class="stat-value">{{ total_usage }}</div>
+        <div class="stat-change positive">↗ +12% este mês</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-title">XMLs este mês</div>
+        <div class="stat-value">{{ this_month_usage }}</div>
+        <div class="stat-change positive">↗ +8% vs mês anterior</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-title">Saldo atual</div>
+        <div class="stat-value">R$ {{ "%.2f"|format(current_user.current_balance) }}</div>
+        {% if current_user.current_balance < 10 %}
+        <div class="stat-change negative">⚠ Saldo baixo</div>
+        {% else %}
+        <div class="stat-change positive">✓ Saldo adequado</div>
+        {% endif %}
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-title">Tempo economizado</div>
+        <div class="stat-value">{{ "%.0f"|format(total_usage * 0.85) }}h</div>
+        <div class="stat-change positive">↗ 85% de economia</div>
+    </div>
+</div>
+
+<!-- Action Cards -->
+<div class="action-grid">
+    <div class="action-card">
+        <h5>Baixar XMLs</h5>
+        <p>Faça o download automático de XMLs em lote. Cole as chaves das notas fiscais e deixe o sistema trabalhar para você.</p>
+        <a href="{{ url_for('xml_download') }}" class="btn-purple">▶ Começar Download</a>
+    </div>
+    
+    <div class="action-card">
+        <h5>Gerar DANFEs</h5>
+        <p>Converta seus XMLs em DANFEs profissionais em PDF. Geração ilimitada e gratuita para todos os usuários.</p>
+        <a href="{{ url_for('meus_xmls') }}" class="btn-purple">📄 Gerar DANFEs</a>
+    </div>
+    
+    <div class="action-card">
+        <h5>Integração API</h5>
+        <p>Conecte seu sistema ao XMLDownloader usando nossa API REST. Documentação completa e exemplos práticos.</p>
+        <a href="{{ url_for('api_credentials') }}" class="btn-purple">⚙ Configurar API</a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="activity-section">
+    <div class="activity-header">
+        <h3 class="activity-title">📈 Atividade Recente</h3>
+        <a href="{{ url_for('meus_xmls') }}" style="color: #8A05BE; text-decoration: none; font-size: 0.875rem;">Ver todas</a>
     </div>
     <a href="#" class="btn btn-outline-light">
         Adicionar Saldo
