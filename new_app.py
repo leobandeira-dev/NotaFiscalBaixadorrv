@@ -819,43 +819,51 @@ def serve_download_file(filename):
         flash('Arquivo não encontrado.', 'error')
         return redirect(url_for('meus_xmls'))
 
-@app.route('/generate-danfe-direct', methods=['POST'])
+@app.route('/generate-danfe/<filename>')
 @login_required
-def generate_danfe_direct():
-    """Gera DANFE diretamente do arquivo baixado"""
+def generate_danfe_simple(filename):
+    """Gera DANFE diretamente do arquivo baixado via GET"""
     try:
-        xml_filename = request.form.get('xml_filename')
-        if not xml_filename:
+        logger.info(f"DANFE request - filename: {filename}")
+        
+        if not filename:
+            logger.error("Nome do arquivo não fornecido")
             flash('Nome do arquivo não fornecido.', 'error')
-            return redirect(request.referrer or url_for('xml_download'))
+            return redirect(url_for('xml_download'))
         
         # Caminho do arquivo XML
-        xml_path = os.path.join(os.getcwd(), 'downloads', xml_filename)
+        xml_path = os.path.join(os.getcwd(), 'downloads', filename)
+        logger.info(f"XML path: {xml_path}")
+        logger.info(f"XML exists: {os.path.exists(xml_path)}")
         
         if not os.path.exists(xml_path):
+            logger.error(f"Arquivo XML não encontrado: {xml_path}")
             flash('Arquivo XML não encontrado.', 'error')
-            return redirect(request.referrer or url_for('xml_download'))
+            return redirect(url_for('xml_download'))
         
         # Gerar DANFE
+        logger.info("Iniciando geração DANFE...")
         from danfe_simple import generate_danfe_from_file
         danfe_path = generate_danfe_from_file(xml_path)
+        logger.info(f"DANFE path resultado: {danfe_path}")
         
-        if danfe_path:
+        if danfe_path and os.path.exists(danfe_path):
             logger.info(f"DANFE gerado com sucesso: {danfe_path}")
             return send_from_directory(
                 os.path.dirname(danfe_path), 
                 os.path.basename(danfe_path), 
                 as_attachment=True,
-                download_name=f"DANFE_{xml_filename.replace('.xml', '.pdf')}"
+                download_name=f"DANFE_{filename.replace('.xml', '.pdf')}"
             )
         else:
+            logger.error(f"Falha na geração DANFE - path: {danfe_path}")
             flash('Erro ao gerar DANFE. Verifique se o XML é válido.', 'error')
-            return redirect(request.referrer or url_for('xml_download'))
+            return redirect(url_for('xml_download'))
             
     except Exception as e:
-        logger.error(f"Error generating DANFE: {str(e)}")
+        logger.error(f"Error generating DANFE: {str(e)}", exc_info=True)
         flash(f'Erro ao gerar DANFE: {str(e)}', 'error')
-        return redirect(request.referrer or url_for('xml_download'))
+        return redirect(url_for('xml_download'))
 
 @app.route('/download-xml/<int:xml_id>')
 @login_required
