@@ -117,7 +117,7 @@ class InvoiceDownloader:
             raise
     
     def download_invoice_xml(self, invoice_key: str, job_id: str) -> Dict[str, Any]:
-        """Download XML for a specific invoice key from meudanfe.com.br"""
+        """Download XML for a specific invoice key"""
         try:
             logger.info(f"[Job {job_id}] Starting download for invoice key: {invoice_key}")
             
@@ -130,7 +130,7 @@ class InvoiceDownloader:
             
             # Navigate to the website
             url = "https://meudanfe.com.br/"
-            logger.info(f"[Job {job_id}] Navigating to: {url}")
+            logger.info(f"[Job {job_id}] Navigating to invoice system...")
             self.driver.get(url)
             
             # Wait for page to load and log page info
@@ -718,7 +718,7 @@ class InvoiceDownloader:
                     'error': 'WebDriver não está disponível'
                 }
             
-            logger.info("Testing connection to meudanfe.com.br...")
+            logger.info("Testing connection to invoice system...")
             url = "https://meudanfe.com.br/"
             
             self.driver.get(url)

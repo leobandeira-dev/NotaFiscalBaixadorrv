@@ -1,6 +1,6 @@
 """
 MeuDANFe XML Downloader API
-REST API for bulk downloading XML invoices from meudanfe.com.br
+REST API for bulk downloading XML invoices
 """
 
 import os
@@ -354,7 +354,7 @@ def list_job_files(job_id):
 @api.route('/api/v1/test', methods=['POST'])
 def test_connection():
     """
-    Test connection to meudanfe.com.br
+    Test connection to invoice system
     
     Returns:
     {

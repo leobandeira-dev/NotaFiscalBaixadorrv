@@ -118,10 +118,10 @@ curl -O https://sua-app.replit.app/api/v1/jobs/JOB_ID/files/FILENAME.xml
 Use o cliente Python incluído para integração fácil:
 
 ```python
-from api_client_example import MeuDANFeAPIClient
+from api_client_example import XMLDownloaderAPIClient
 
 # Inicializar cliente
-client = MeuDANFeAPIClient("https://sua-app.replit.app")
+client = XMLDownloaderAPIClient("https://sua-app.replit.app")
 
 # Baixar XMLs automaticamente
 invoice_keys = ["35250162954987000130550020001854371034511150"]
