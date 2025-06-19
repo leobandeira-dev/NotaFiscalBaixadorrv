@@ -197,9 +197,15 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link" onclick="alert('Funcionalidade de pagamento em desenvolvimento')">
+                    <a href="{{ url_for('comprar_creditos') }}" class="nav-link {% if request.endpoint == 'comprar_creditos' %}active{% endif %}">
                         <i class="fas fa-credit-card"></i>
-                        Adicionar Saldo
+                        Comprar Créditos
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('historico_creditos') }}" class="nav-link {% if request.endpoint == 'historico_creditos' %}active{% endif %}">
+                        <i class="fas fa-history"></i>
+                        Histórico
                     </a>
                 </div>
                 <div class="nav-item">

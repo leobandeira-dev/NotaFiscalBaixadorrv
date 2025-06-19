@@ -374,6 +374,10 @@ class InvoiceDownloader:
                         job_id=job_id
                     )
                     logger.info(f"[Job {job_id}] XML saved to database with ID: {xml_id}")
+                    
+                    # Charge credits for XML download
+                    self.charge_for_download(user_id, invoice_key)
+                    
                 except Exception as e:
                     logger.error(f"[Job {job_id}] Error saving to database: {e}")
             
@@ -390,6 +394,30 @@ class InvoiceDownloader:
                 'success': False,
                 'error': str(e)
             }
+    
+    def charge_for_download(self, user_id: int, invoice_key: str):
+        """Charge user credits for XML download"""
+        try:
+            from stripe_integration import CreditManager, PricingManager
+            
+            # Get service price
+            price = PricingManager.get_service_price('xml_download')
+            
+            # Charge credits
+            charged = CreditManager.deduct_credits(
+                user_id=user_id,
+                amount=price,
+                description=f"Download XML: {invoice_key[:10]}...",
+                service_type="xml_download"
+            )
+            
+            if charged:
+                logger.info(f"Successfully charged R$ {price:.2f} for XML download - User {user_id}")
+            else:
+                logger.warning(f"Failed to charge credits for XML download - User {user_id}")
+                
+        except Exception as e:
+            logger.error(f"Error charging for download: {e}")
     
     def test_connection(self) -> Dict[str, Any]:
         """Test if the automation system can connect to the invoice system"""

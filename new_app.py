@@ -388,15 +388,17 @@ def submit_keys():
             flash('Nenhuma chave válida encontrada. Chaves devem ter 44 dígitos.', 'error')
             return redirect(url_for('xml_download'))
         
-        # Check if user can use service
-        total_cost = len(valid_keys) * 0.10  # R$ 0.10 per XML
+        # Check if user can use service using Stripe credit system
+        from stripe_integration import PricingManager, CreditManager
         
-        if not current_user.can_use_service(total_cost):
-            if current_user.is_trial_active():
-                flash('Seu período de teste expirou. Recarregue seu saldo para continuar.', 'warning')
-            else:
-                flash(f'Saldo insuficiente. Você precisa de R$ {total_cost:.2f} para processar {len(valid_keys)} chaves.', 'warning')
-            return redirect(url_for('add_balance'))
+        xml_price = PricingManager.get_service_price('xml_download')
+        total_cost = len(valid_keys) * xml_price
+        
+        # Check if user has sufficient credits (skip for trial users)
+        if not current_user.is_trial_active():
+            if current_user.current_balance < total_cost:
+                flash(f'Saldo insuficiente. Você precisa de R$ {total_cost:.2f} para processar {len(valid_keys)} chaves. Saldo atual: R$ {current_user.current_balance:.2f}', 'warning')
+                return redirect(url_for('comprar_creditos'))
         
         # Create download job
         job_id = str(uuid.uuid4())
@@ -405,9 +407,7 @@ def submit_keys():
         with jobs_lock:
             download_jobs[job_id] = job
         
-        # Deduct balance if not in trial
-        if not current_user.is_trial_active():
-            current_user.deduct_balance(total_cost, f"Download de {len(valid_keys)} XMLs")
+        # Note: Credits will be deducted per successful download in automation_fixed.py
         
         # Record usage
         xml_module = ServiceModule.query.filter_by(name='xml_download').first()

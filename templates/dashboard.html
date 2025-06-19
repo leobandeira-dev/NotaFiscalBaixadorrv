@@ -228,13 +228,15 @@
         <div class="stat-change positive">↗ +8% vs mês anterior</div>
     </div>
     
-    <div class="stat-card">
-        <div class="stat-title">Saldo atual</div>
-        <div class="stat-value">R$ {{ "%.2f"|format(current_user.current_balance) }}</div>
-        {% if current_user.current_balance < 10 %}
-        <div class="stat-change negative">⚠ Saldo baixo</div>
+    <div class="stat-card" style="border: 2px solid #8A05BE;">
+        <div class="stat-title">💳 Saldo atual</div>
+        <div class="stat-value" style="color: #8A05BE;">R$ {{ "%.2f"|format(current_user.current_balance or 0) }}</div>
+        {% if current_user.current_balance and current_user.current_balance >= 1 %}
+        <div class="stat-change positive">{{ (current_user.current_balance / 0.10)|int }} downloads disponíveis</div>
+        {% elif current_user.is_trial_active() %}
+        <div class="stat-change positive">🎉 Período teste ativo</div>
         {% else %}
-        <div class="stat-change positive">✓ Saldo adequado</div>
+        <div class="stat-change negative">⚠ Recarregue para continuar</div>
         {% endif %}
     </div>
     
