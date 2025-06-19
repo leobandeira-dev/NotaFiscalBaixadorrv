@@ -172,28 +172,46 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="/my-xmls" class="nav-link {% if request.endpoint == 'my_xmls' %}active{% endif %}">
+                    <a href="{{ url_for('my_xmls') }}" class="nav-link {% if request.endpoint == 'my_xmls' %}active{% endif %}">
                         <i class="fas fa-file-code"></i>
-                        Meus XMLs
+                        Download XMLs
                     </a>
                 </div>
             </div>
             
-            <!-- Módulos -->
+            <!-- Funcionalidades -->
             <div class="nav-section">
-                <div class="nav-section-title">Módulos</div>
+                <div class="nav-section-title">Funcionalidades</div>
                 <div class="nav-item">
-                    <a href="/labels" class="nav-link {% if request.endpoint == 'labels_module' %}active{% endif %}">
+                    <a href="#" class="nav-link" onclick="alert('Disponível na página de XMLs')">
+                        <i class="fas fa-file-pdf"></i>
+                        DANFE PDFs
+                        <span class="badge bg-success ms-auto">GRÁTIS</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('api_docs') }}" class="nav-link {% if request.endpoint == 'api_docs' %}active{% endif %}">
+                        <i class="fas fa-code"></i>
+                        API & Integração
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link" onclick="alert('Funcionalidade de pagamento em desenvolvimento')">
+                        <i class="fas fa-credit-card"></i>
+                        Adicionar Saldo
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('labels_module') }}" class="nav-link {% if request.endpoint == 'labels_module' %}active{% endif %}">
                         <i class="fas fa-tags"></i>
-                        Etiquetas de Transporte
+                        Etiquetas (Módulo)
                         <span class="badge bg-warning text-dark ms-auto">R$ 49,90</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="/api-docs" class="nav-link {% if request.endpoint == 'api_docs' %}active{% endif %}">
-                        <i class="fas fa-code"></i>
-                        API REST
-                        <span class="badge bg-info ms-auto">Docs</span>
+                    <a href="#" class="nav-link" onclick="alert('Relatórios em desenvolvimento')">
+                        <i class="fas fa-chart-bar"></i>
+                        Relatórios
                     </a>
                 </div>
             </div>
@@ -202,7 +220,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">Ferramentas</div>
                 <div class="nav-item">
-                    <a href="/test-automation" class="nav-link">
+                    <a href="{{ url_for('test_automation') }}" class="nav-link">
                         <i class="fas fa-vial"></i>
                         Testar Conexão
                     </a>
@@ -213,7 +231,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">Administração</div>
                 <div class="nav-item">
-                    <a href="/admin" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">
+                    <a href="{{ url_for('admin.dashboard') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('admin.') %}active{% endif %}">
                         <i class="fas fa-shield-alt"></i>
                         Painel Admin
                         <span class="badge bg-danger ms-auto">Admin</span>
