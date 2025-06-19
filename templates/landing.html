@@ -1,139 +1,154 @@
 {% extends "base.html" %}
 
-{% block title %}XML Downloader - Gestão inteligente para vender mais e se preocupar menos{% endblock %}
+{% block title %}XML Downloader - Automatize sua gestão fiscal{% endblock %}
 
 {% block content %}
-<!-- Modern Hero Section -->
-<section class="hero-section py-5">
+<!-- Modern Header with Navigation -->
+<header class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
     <div class="container">
-        <div class="row align-items-center min-vh-100 py-5">
-            <div class="col-lg-6 order-2 order-lg-1">
-                <div class="pe-lg-5">
-                    <!-- Badge -->
-                    <div class="mb-4">
-                        <span class="badge bg-purple-soft text-primary px-3 py-2 rounded-pill">
-                            <i class="fas fa-gift me-2"></i>Planos a partir de R$19,90
-                        </span>
+        <a class="navbar-brand fw-bold fs-3" href="{{ url_for('index') }}">
+            <i class="fas fa-file-invoice text-primary me-2"></i>XMLDownloader
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <nav class="navbar-nav me-auto">
+                <a class="nav-link" href="#solucoes">Soluções</a>
+                <a class="nav-link" href="#precos">Preços</a>
+                <a class="nav-link" href="#como-funciona">Como Funciona</a>
+            </nav>
+            
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('login') }}" class="btn btn-outline-primary">Entrar</a>
+                <a href="{{ url_for('register') }}" class="btn btn-premium">Teste Grátis</a>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Hero Section with Modern Design -->
+<section class="py-5" style="background: linear-gradient(135deg, #FAFAFA 0%, #FFFFFF 100%);">
+    <div class="container">
+        <div class="row align-items-center py-5">
+            <div class="col-lg-6">
+                <div class="pe-lg-4">
+                    <div class="badge bg-purple-soft text-primary px-3 py-2 rounded-pill mb-4">
+                        <i class="fas fa-rocket me-2"></i>Teste grátis por 7 dias
                     </div>
                     
-                    <!-- Main Headline -->
-                    <h1 class="display-4 fw-bold text-dark mb-4" style="line-height: 1.2;">
-                        Gestão inteligente para <span class="text-primary">vender mais</span> e se preocupar menos
+                    <h1 class="display-3 fw-bold text-dark mb-4" style="line-height: 1.1;">
+                        Automatize sua <span class="text-primary">gestão fiscal</span> em minutos
                     </h1>
                     
-                    <!-- Subtitle -->
-                    <p class="lead text-secondary mb-4 fs-5">
-                        Automatize completamente o download de XMLs e geração de DANFEs. 
-                        Pare de perder tempo com processos manuais e foque no crescimento do seu negócio.
+                    <p class="lead text-secondary mb-4 fs-4">
+                        Pare de perder tempo baixando XMLs manualmente. Nossa plataforma automatiza todo o processo fiscal, 
+                        <strong>economizando até 85% do seu tempo</strong>.
                     </p>
                     
-                    <!-- Features Grid -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-6">
+                    <div class="row g-3 mb-5">
+                        <div class="col-md-6">
                             <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-check-circle text-success fs-5"></i>
+                                <div class="bg-success rounded-circle p-2 me-3">
+                                    <i class="fas fa-download text-white"></i>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <span class="text-dark fw-medium">Sistema de gestão</span>
-                                </div>
+                                <span class="fw-semibold">Download automático de XMLs</span>
                             </div>
                         </div>
-                        <div class="col-6">
+                        <div class="col-md-6">
                             <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-check-circle text-success fs-5"></i>
+                                <div class="bg-success rounded-circle p-2 me-3">
+                                    <i class="fas fa-file-pdf text-white"></i>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <span class="text-dark fw-medium">HUB de vendas</span>
-                                </div>
+                                <span class="fw-semibold">DANFE PDF gratuito</span>
                             </div>
                         </div>
-                        <div class="col-6">
+                        <div class="col-md-6">
                             <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-check-circle text-success fs-5"></i>
+                                <div class="bg-success rounded-circle p-2 me-3">
+                                    <i class="fas fa-code text-white"></i>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <span class="text-dark fw-medium">Inteligência</span>
-                                </div>
+                                <span class="fw-semibold">API para integração</span>
                             </div>
                         </div>
-                        <div class="col-6">
+                        <div class="col-md-6">
                             <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <i class="fas fa-check-circle text-success fs-5"></i>
+                                <div class="bg-success rounded-circle p-2 me-3">
+                                    <i class="fas fa-shield-alt text-white"></i>
                                 </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <span class="text-dark fw-medium">Automações</span>
-                                </div>
+                                <span class="fw-semibold">100% seguro e confiável</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- CTA Button -->
-                    <div class="d-grid d-md-block">
-                        <a href="{{ url_for('register') }}" class="btn btn-premium btn-lg px-5 py-3">
-                            Começar o teste de 7 dias grátis
+                    <div class="d-grid d-sm-flex gap-3">
+                        <a href="{{ url_for('register') }}" class="btn btn-premium btn-lg px-4 py-3">
+                            <i class="fas fa-play me-2"></i>Começar agora - Grátis
+                        </a>
+                        <a href="#precos" class="btn btn-outline-primary btn-lg px-4 py-3">
+                            <i class="fas fa-calculator me-2"></i>Ver preços
                         </a>
                     </div>
                 </div>
             </div>
             
-            <div class="col-lg-6 order-1 order-lg-2 mb-5 mb-lg-0">
-                <div class="hero-visual p-4">
-                    <!-- Dashboard Mockup -->
-                    <div class="mb-4">
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body p-3">
-                                <div class="row align-items-center">
-                                    <div class="col-8">
-                                        <div class="text-muted small mb-1">Quantidade de pedidos</div>
-                                        <div class="h4 mb-0 text-dark">27</div>
+            <div class="col-lg-6">
+                <div class="text-center">
+                    <div class="position-relative">
+                        <!-- Modern Dashboard Preview -->
+                        <div class="bg-white rounded-4 shadow-lg p-4 border">
+                            <div class="row g-3 mb-4">
+                                <div class="col-12">
+                                    <div class="bg-light rounded-3 p-3">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-muted">XMLs processados hoje</span>
+                                            <span class="h4 mb-0 text-primary">1,247</span>
+                                        </div>
+                                        <div class="progress mt-2" style="height: 6px;">
+                                            <div class="progress-bar bg-primary" style="width: 85%"></div>
+                                        </div>
                                     </div>
-                                    <div class="col-4">
-                                        <div class="progress" style="height: 8px;">
-                                            <div class="progress-bar bg-primary" style="width: 75%"></div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-primary text-white rounded-3 p-3 text-center">
+                                        <div class="h5 mb-1">R$ 124,70</div>
+                                        <small>Economia hoje</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="bg-success text-white rounded-3 p-3 text-center">
+                                        <div class="h5 mb-1">95%</div>
+                                        <small>Tempo economizado</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-gradient text-white rounded-3 p-4" style="background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);">
+                                <div class="d-flex align-items-center">
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1">Sistema em funcionamento</h6>
+                                        <p class="mb-0 small opacity-90">Processando XMLs automaticamente 24h/dia</p>
+                                    </div>
+                                    <div class="ms-3">
+                                        <div class="bg-white bg-opacity-25 rounded-circle p-3">
+                                            <i class="fas fa-check text-white fs-4"></i>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Stats Cards -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-6">
-                            <div class="card border-0 shadow-sm bg-primary text-white">
-                                <div class="card-body p-3 text-center">
-                                    <div class="h5 mb-1">R$112,77</div>
-                                    <small class="opacity-75">Vendas hoje</small>
-                                </div>
+                        
+                        <!-- Floating Elements -->
+                        <div class="position-absolute top-0 end-0 translate-middle">
+                            <div class="bg-warning text-white rounded-circle p-3 shadow">
+                                <i class="fas fa-bolt"></i>
                             </div>
                         </div>
-                        <div class="col-6">
-                            <div class="card border-0 shadow-sm">
-                                <div class="card-body p-3 text-center">
-                                    <div class="h5 mb-1 text-primary">R$ 1.000.000,00</div>
-                                    <small class="text-muted">Total de vendas</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Chat Bubble -->
-                    <div class="card border-0 shadow-sm bg-primary text-white">
-                        <div class="card-body p-4">
-                            <div class="row align-items-center">
-                                <div class="col-9">
-                                    <h6 class="mb-1">XML Downloader, qual foi o meu faturamento ontem?</h6>
-                                    <p class="mb-0 small opacity-75">Olá! Ontem você processou 2.847 XMLs com economia de 95% no tempo de gestão fiscal.</p>
-                                </div>
-                                <div class="col-3 text-end">
-                                    <div class="bg-white bg-opacity-20 rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                        <i class="fas fa-user text-white"></i>
-                                    </div>
-                                </div>
+                        <div class="position-absolute bottom-0 start-0 translate-middle">
+                            <div class="bg-success text-white rounded-circle p-3 shadow">
+                                <i class="fas fa-chart-line"></i>
                             </div>
                         </div>
                     </div>
@@ -143,87 +158,135 @@
     </div>
 </section>
 
-<!-- Stats Section -->
-<section class="py-5 bg-light">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 text-center">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-5">
-                        <i class="fas fa-chart-line text-success mb-3" style="font-size: 3rem;"></i>
-                        <h3 class="fw-bold mb-3">Empresas economizam até</h3>
-                        <div class="display-2 fw-bold text-primary mb-2">85%</div>
-                        <p class="text-muted">do tempo gasto com gestão fiscal</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Pricing Section -->
-<section id="pricing" class="py-5">
+<!-- Solutions Section -->
+<section id="solucoes" class="py-5 bg-light">
     <div class="container">
         <div class="text-center mb-5">
-            <h2 class="h1 fw-bold mb-3">Preços transparentes</h2>
-            <p class="lead text-muted">Pague apenas pelo que usar, sem surpresas</p>
+            <h2 class="display-5 fw-bold mb-3">Soluções completas para sua empresa</h2>
+            <p class="lead text-muted">Automatize todos os processos fiscais com nossa plataforma integrada</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100 hover-lift">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-4 d-inline-flex mb-4">
+                            <i class="fas fa-download text-primary fs-1"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Download Automático</h4>
+                        <p class="text-muted mb-4">Baixe milhares de XMLs em poucos minutos. Sistema inteligente que processa lotes inteiros automaticamente.</p>
+                        <ul class="list-unstyled text-start">
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Processamento em lote</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Validação automática</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Organização inteligente</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100 hover-lift">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-success bg-opacity-10 rounded-circle p-4 d-inline-flex mb-4">
+                            <i class="fas fa-file-pdf text-success fs-1"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">DANFE Gratuito</h4>
+                        <p class="text-muted mb-4">Gere DANFEs em PDF de forma ilimitada e gratuita. Layout profissional para impressão ou envio digital.</p>
+                        <ul class="list-unstyled text-start">
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Geração ilimitada</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Layout profissional</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Download individual</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm h-100 hover-lift">
+                    <div class="card-body p-4 text-center">
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-4 d-inline-flex mb-4">
+                            <i class="fas fa-code text-warning fs-1"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">API Completa</h4>
+                        <p class="text-muted mb-4">Integre nossa solução ao seu sistema. API REST completa com documentação e exemplos práticos.</p>
+                        <ul class="list-unstyled text-start">
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Documentação completa</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Exemplos de código</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Suporte técnico</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section with Modern Design -->
+<section id="precos" class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold mb-3">Preços transparentes e justos</h2>
+            <p class="lead text-muted">Pague apenas pelo que usar. Sem mensalidades, sem surpresas.</p>
         </div>
         
         <div class="row g-4 justify-content-center">
-            <!-- XML Download -->
-            <div class="col-lg-4 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-lg h-100">
                     <div class="card-body p-4 text-center">
-                        <i class="fas fa-download text-primary mb-3" style="font-size: 2.5rem;"></i>
-                        <h4 class="fw-bold mb-3">Download XML</h4>
-                        <div class="mb-3">
-                            <span class="h2 fw-bold text-primary">R$ 0,10</span>
-                            <span class="text-muted">/XML</span>
+                        <div class="bg-primary bg-opacity-10 rounded-circle p-3 d-inline-flex mb-3">
+                            <i class="fas fa-download text-primary fs-3"></i>
                         </div>
-                        <ul class="list-unstyled text-start">
+                        <h4 class="fw-bold mb-3">Download XML</h4>
+                        <div class="mb-4">
+                            <span class="display-6 fw-bold text-primary">R$ 0,10</span>
+                            <span class="text-muted fs-5">/XML</span>
+                        </div>
+                        <ul class="list-unstyled mb-4">
                             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Download automático</li>
                             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Validação de chaves</li>
                             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Processamento em lote</li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Via web e API</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Acesso via web e API</li>
                         </ul>
                     </div>
                 </div>
             </div>
             
-            <!-- DANFE PDF -->
-            <div class="col-lg-4 col-md-6">
-                <div class="card border-success h-100" style="border-width: 2px !important;">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-lg h-100 position-relative" style="transform: scale(1.05);">
+                    <div class="position-absolute top-0 start-50 translate-middle">
+                        <span class="badge bg-success px-4 py-2 fs-6">MAIS POPULAR</span>
+                    </div>
                     <div class="card-body p-4 text-center">
-                        <div class="position-relative">
-                            <span class="badge bg-success position-absolute top-0 start-50 translate-middle px-3 py-2">GRÁTIS</span>
+                        <div class="bg-success bg-opacity-10 rounded-circle p-3 d-inline-flex mb-3 mt-3">
+                            <i class="fas fa-file-pdf text-success fs-3"></i>
                         </div>
-                        <i class="fas fa-file-pdf text-success mb-3 mt-3" style="font-size: 2.5rem;"></i>
                         <h4 class="fw-bold mb-3">DANFE PDF</h4>
-                        <div class="mb-3">
-                            <span class="h2 fw-bold text-success">R$ 0,00</span>
-                            <span class="text-muted">/sempre</span>
+                        <div class="mb-4">
+                            <span class="display-6 fw-bold text-success">GRÁTIS</span>
+                            <span class="text-muted fs-5">/sempre</span>
                         </div>
-                        <ul class="list-unstyled text-start">
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Geração automática</li>
+                        <ul class="list-unstyled mb-4">
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Geração ilimitada</li>
                             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Layout profissional</li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Download individual</li>
-                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Sem limites</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Download em PDF</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Sem limites de uso</li>
                         </ul>
                     </div>
                 </div>
             </div>
             
-            <!-- Labels Module -->
-            <div class="col-lg-4 col-md-6">
-                <div class="card border-0 shadow-sm h-100">
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-lg h-100">
                     <div class="card-body p-4 text-center">
-                        <i class="fas fa-tags text-warning mb-3" style="font-size: 2.5rem;"></i>
-                        <h4 class="fw-bold mb-3">Módulo Etiquetas</h4>
-                        <div class="mb-3">
-                            <span class="h2 fw-bold text-warning">R$ 49,90</span>
-                            <span class="text-muted">/único</span>
+                        <div class="bg-warning bg-opacity-10 rounded-circle p-3 d-inline-flex mb-3">
+                            <i class="fas fa-tags text-warning fs-3"></i>
                         </div>
-                        <ul class="list-unstyled text-start">
+                        <h4 class="fw-bold mb-3">Módulo Etiquetas</h4>
+                        <div class="mb-4">
+                            <span class="display-6 fw-bold text-warning">R$ 49,90</span>
+                            <span class="text-muted fs-5">/acesso único</span>
+                        </div>
+                        <ul class="list-unstyled mb-4">
                             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Etiquetas personalizadas</li>
                             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Múltiplos formatos</li>
                             <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Integração logística</li>
@@ -234,34 +297,49 @@
             </div>
         </div>
         
-        <!-- Calculator -->
+        <!-- Interactive Calculator -->
         <div class="row mt-5">
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <h5 class="text-center mb-4 fw-bold">Calculadora de economia</h5>
+            <div class="col-lg-8 mx-auto">
+                <div class="card border-0 shadow-lg">
+                    <div class="card-body p-5">
+                        <h4 class="text-center fw-bold mb-4">
+                            <i class="fas fa-calculator text-primary me-2"></i>
+                            Calcule sua economia
+                        </h4>
                         <div class="row g-4 align-items-center">
                             <div class="col-md-4">
-                                <label class="form-label fw-semibold">XMLs por mês:</label>
-                                <input type="number" id="xmlCount" class="form-control form-control-lg" value="1000" min="1">
+                                <label class="form-label fw-bold">XMLs por mês:</label>
+                                <input type="range" id="xmlRange" class="form-range" min="100" max="10000" value="1000" step="100">
+                                <div class="text-center mt-2">
+                                    <span id="xmlDisplay" class="badge bg-primary fs-6">1.000</span>
+                                </div>
                             </div>
                             <div class="col-md-8">
                                 <div class="row text-center">
                                     <div class="col-4">
-                                        <div class="fw-bold text-muted small mb-1">Download XMLs</div>
-                                        <div class="h5 text-primary">R$ <span id="xmlCost">100.00</span></div>
+                                        <div class="border rounded-3 p-3">
+                                            <div class="text-muted small">Custo XMLs</div>
+                                            <div class="h4 text-primary">R$ <span id="xmlCost">100,00</span></div>
+                                        </div>
                                     </div>
                                     <div class="col-4">
-                                        <div class="fw-bold text-muted small mb-1">DANFE PDFs</div>
-                                        <div class="h5 text-success">R$ 0,00</div>
+                                        <div class="border rounded-3 p-3 bg-success text-white">
+                                            <div class="small opacity-75">DANFE PDFs</div>
+                                            <div class="h4">GRÁTIS</div>
+                                        </div>
                                     </div>
                                     <div class="col-4">
-                                        <div class="fw-bold text-muted small mb-1">Total Mensal</div>
-                                        <div class="h4 text-dark">R$ <span id="totalCost">100.00</span></div>
+                                        <div class="border border-primary rounded-3 p-3 bg-primary bg-opacity-10">
+                                            <div class="text-muted small">Total Mensal</div>
+                                            <div class="h4 text-primary">R$ <span id="totalCost">100,00</span></div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="text-center mt-3">
-                                    <small class="text-muted">Valor mínimo de recarga: R$ 19,90 • Sem mensalidades</small>
+                                    <small class="text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Valor mínimo de recarga: R$ 19,90 • Sem mensalidades
+                                    </small>
                                 </div>
                             </div>
                         </div>
@@ -272,23 +350,71 @@
     </div>
 </section>
 
-<!-- CTA Section -->
-<section class="py-5 bg-primary text-white">
+<!-- How it Works Section -->
+<section id="como-funciona" class="py-5 bg-light">
     <div class="container">
-        <div class="row justify-content-center text-center">
+        <div class="text-center mb-5">
+            <h2 class="display-5 fw-bold mb-3">Como funciona</h2>
+            <p class="lead text-muted">Em apenas 3 passos você automatiza toda sua gestão fiscal</p>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-lg-4 text-center">
+                <div class="position-relative mb-4">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <span class="fs-2 fw-bold">1</span>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-3">Cadastre-se grátis</h4>
+                <p class="text-muted">Crie sua conta em menos de 2 minutos. Teste grátis por 7 dias sem compromisso.</p>
+            </div>
+            
+            <div class="col-lg-4 text-center">
+                <div class="position-relative mb-4">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <span class="fs-2 fw-bold">2</span>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-3">Cole as chaves dos XMLs</h4>
+                <p class="text-muted">Insira as chaves das notas fiscais que deseja baixar. Nosso sistema valida e processa automaticamente.</p>
+            </div>
+            
+            <div class="col-lg-4 text-center">
+                <div class="position-relative mb-4">
+                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                        <span class="fs-2 fw-bold">3</span>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-3">Baixe tudo automaticamente</h4>
+                <p class="text-muted">Receba todos os XMLs e DANFEs organizados e prontos para uso. Economia de até 85% no tempo.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Final CTA Section -->
+<section class="py-5" style="background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);">
+    <div class="container">
+        <div class="row justify-content-center text-center text-white">
             <div class="col-lg-8">
-                <h2 class="h1 fw-bold mb-4">Pronto para transformar sua empresa?</h2>
+                <h2 class="display-4 fw-bold mb-4">Pronto para revolucionar sua gestão fiscal?</h2>
                 <p class="lead mb-4 opacity-90">
-                    Junte-se a centenas de empresas que já automatizaram sua gestão fiscal.
-                    Comece seu teste gratuito agora mesmo!
+                    Mais de <strong>1.000 empresas</strong> já economizam tempo e dinheiro com nossa plataforma. 
+                    Comece seu teste gratuito agora!
                 </p>
-                <div class="d-grid gap-3 d-md-flex justify-content-center">
+                <div class="d-grid d-sm-flex gap-3 justify-content-center">
                     <a href="{{ url_for('register') }}" class="btn btn-light btn-lg px-5 py-3">
-                        <i class="fas fa-rocket me-2"></i>Começar teste grátis
+                        <i class="fas fa-rocket me-2"></i>Começar teste grátis por 7 dias
                     </a>
                     <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg px-5 py-3">
                         <i class="fas fa-sign-in-alt me-2"></i>Já tenho conta
                     </a>
+                </div>
+                <div class="mt-4">
+                    <small class="opacity-75">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Teste gratuito • Sem compromisso • Cancele quando quiser
+                    </small>
                 </div>
             </div>
         </div>
@@ -298,16 +424,57 @@
 
 {% block scripts %}
 <script>
-document.getElementById('xmlCount').addEventListener('input', function() {
-    const count = parseInt(this.value) || 0;
-    const xmlCost = count * 0.10;
-    const total = xmlCost; // DANFE é gratuito
+// Calculator functionality
+const xmlRange = document.getElementById('xmlRange');
+const xmlDisplay = document.getElementById('xmlDisplay');
+const xmlCost = document.getElementById('xmlCost');
+const totalCost = document.getElementById('totalCost');
+
+function updateCalculator() {
+    const count = parseInt(xmlRange.value);
+    const cost = count * 0.10;
     
-    document.getElementById('xmlCost').textContent = xmlCost.toFixed(2);
-    document.getElementById('totalCost').textContent = total.toFixed(2);
+    xmlDisplay.textContent = count.toLocaleString('pt-BR');
+    xmlCost.textContent = cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    totalCost.textContent = cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+xmlRange.addEventListener('input', updateCalculator);
+
+// Smooth scrolling for navigation links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
 });
 
-// Trigger initial calculation
-document.getElementById('xmlCount').dispatchEvent(new Event('input'));
+// Initialize calculator
+updateCalculator();
 </script>
+
+<style>
+.hover-lift {
+    transition: transform 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-5px);
+}
+
+.form-range::-webkit-slider-thumb {
+    background: var(--primary-purple);
+}
+
+.form-range::-moz-range-thumb {
+    background: var(--primary-purple);
+    border: none;
+}
+</style>
 {% endblock %}
