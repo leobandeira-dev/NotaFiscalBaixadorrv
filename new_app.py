@@ -841,10 +841,10 @@ def generate_danfe_simple(filename):
             flash('Arquivo XML não encontrado.', 'error')
             return redirect(url_for('xml_download'))
         
-        # Gerar DANFE
-        logger.info("Iniciando geração DANFE...")
-        from danfe_simple import generate_danfe_from_file
-        danfe_path = generate_danfe_from_file(xml_path)
+        # Gerar DANFE com layout SEFAZ oficial
+        logger.info("Iniciando geração DANFE SEFAZ...")
+        from danfe_sefaz import generate_sefaz_danfe_from_file
+        danfe_path = generate_sefaz_danfe_from_file(xml_path)
         logger.info(f"DANFE path resultado: {danfe_path}")
         
         if danfe_path and os.path.exists(danfe_path):

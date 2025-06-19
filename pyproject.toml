@@ -25,4 +25,5 @@ dependencies = [
     "authlib>=1.6.0",
     "itsdangerous>=2.2.0",
     "sqlalchemy>=2.0.41",
+    "brazilfiscalreport>=0.5.31",
 ]
