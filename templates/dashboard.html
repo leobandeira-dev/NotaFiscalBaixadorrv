@@ -272,138 +272,26 @@
         <h3 class="activity-title">📈 Atividade Recente</h3>
         <a href="{{ url_for('meus_xmls') }}" style="color: #8A05BE; text-decoration: none; font-size: 0.875rem;">Ver todas</a>
     </div>
-    <a href="#" class="btn btn-outline-light">
-        Adicionar Saldo
-    </a>
-</div>
-{% endif %}
-
-<!-- Stats Grid -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-header">
-            <div class="stat-icon purple">
-                <i class="fas fa-file-download"></i>
-            </div>
-        </div>
-        <div class="stat-value">{{ total_usage }}</div>
-        <div class="stat-label">XMLs baixados (total)</div>
-        <div class="stat-change positive">
-            <i class="fas fa-arrow-up me-1"></i>+12% este mês
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-header">
-            <div class="stat-icon green">
-                <i class="fas fa-calendar-month"></i>
-            </div>
-        </div>
-        <div class="stat-value">{{ this_month_usage }}</div>
-        <div class="stat-label">XMLs este mês</div>
-        <div class="stat-change positive">
-            <i class="fas fa-arrow-up me-1"></i>+8% vs mês anterior
-        </div>
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-header">
-            <div class="stat-icon blue">
-                <i class="fas fa-wallet"></i>
-            </div>
-        </div>
-        <div class="stat-value">R$ {{ "%.2f"|format(current_user.current_balance) }}</div>
-        <div class="stat-label">Saldo atual</div>
-        {% if current_user.current_balance < 5.0 %}
-        <div class="stat-change negative">
-            <i class="fas fa-exclamation-triangle me-1"></i>Saldo baixo
-        </div>
-        {% else %}
-        <div class="stat-change positive">
-            <i class="fas fa-check me-1"></i>85% de economia
-        </div>
-        {% endif %}
-    </div>
-    
-    <div class="stat-card">
-        <div class="stat-header">
-            <div class="stat-icon orange">
-                <i class="fas fa-clock"></i>
-            </div>
-        </div>
-        <div class="stat-value">10h</div>
-        <div class="stat-label">Tempo economizado</div>
-        <div class="stat-change positive">
-            <i class="fas fa-arrow-up me-1"></i>85% de economia
-        </div>
-    </div>
-</div>
-
-<!-- Quick Actions -->
-<div class="quick-actions">
-    <div class="action-card">
-        <div class="action-icon purple">
-            <i class="fas fa-download"></i>
-        </div>
-        <h5>Baixar XMLs</h5>
-        <p>Faça o download automático de XMLs em lote. Cole as chaves das notas fiscais e deixe o sistema trabalhar para você.</p>
-        <a href="{{ url_for('xml_download') }}" class="btn btn-primary" style="background: linear-gradient(135deg, #8A05BE, #a855f7); border: none;">
-            <i class="fas fa-play me-2"></i>Começar Download
-        </a>
-    </div>
-    
-    <div class="action-card">
-        <div class="action-icon green">
-            <i class="fas fa-file-pdf"></i>
-        </div>
-        <h5>Gerar DANFEs</h5>
-        <p>Converta seus XMLs em DANFEs profissionais em PDF. Geração limitada e gratuita para todos os usuários.</p>
-        <a href="{{ url_for('meus_xmls') }}" class="btn btn-primary" style="background: linear-gradient(135deg, #8A05BE, #a855f7); border: none;">
-            <i class="fas fa-file-pdf me-2"></i>Gerar DANFEs
-        </a>
-    </div>
-    
-    <div class="action-card">
-        <div class="action-icon blue">
-            <i class="fas fa-code"></i>
-        </div>
-        <h5>Integração API</h5>
-        <p>Conecte seu sistema ao XMLDownloader usando nossa API REST. Documentação completa e exemplos práticos.</p>
-        <a href="{{ url_for('api_credentials') }}" class="btn btn-primary" style="background: linear-gradient(135deg, #8A05BE, #a855f7); border: none;">
-            <i class="fas fa-cog me-2"></i>Configurar API
-        </a>
-    </div>
-</div>
-
-<!-- Recent Activity -->
-<div class="activity-card">
-    <div class="activity-header">
-        <h5><i class="fas fa-history me-2"></i>Atividade Recente</h5>
-        <a href="{{ url_for('meus_xmls') }}" class="btn btn-sm btn-outline-primary">
-            Ver todas
-        </a>
-    </div>
     
     {% if recent_xmls %}
         {% for xml in recent_xmls %}
-        <div class="activity-item">
-            <div class="activity-icon green">
-                <i class="fas fa-check"></i>
-            </div>
-            <div class="activity-details">
-                <h6>XML baixado com sucesso</h6>
-                <p>{{ xml.created_at.strftime('%d/%m/%Y às %H:%M') }} - {{ xml.file_name }}</p>
+        <div style="padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 500; color: #111827; font-size: 0.875rem;">{{ xml.invoice_key[:44] }}</div>
+                    <div style="color: #6b7280; font-size: 0.75rem;">{{ xml.import_date.strftime('%d/%m/%Y %H:%M') }}</div>
+                </div>
+                <div style="color: #059669; font-size: 0.75rem; font-weight: 500;">✓ Baixado</div>
             </div>
         </div>
         {% endfor %}
     {% else %}
-        <div class="text-center py-4">
-            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-            <p class="text-muted">Nenhuma atividade recente</p>
-            <a href="{{ url_for('xml_download') }}" class="btn btn-primary" style="background: linear-gradient(135deg, #8A05BE, #a855f7); border: none;">
-                Fazer primeiro download
-            </a>
+        <div class="empty-state">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📄</div>
+            <p>Nenhum XML baixado ainda</p>
+            <a href="{{ url_for('xml_download') }}" class="btn-purple" style="margin-top: 0.5rem;">Começar agora</a>
         </div>
     {% endif %}
 </div>
+
 {% endblock %}
