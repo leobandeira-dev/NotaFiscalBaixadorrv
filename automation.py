@@ -449,7 +449,7 @@ class InvoiceDownloader:
                     logger.info(f"[Job {job_id}] Found download URL: {download_url}")
                     
                     # Skip if URL redirects to homepage
-                    if download_url and 'meudanfe.com.br/' == download_url.rstrip('/'):
+                    if download_url and download_url.rstrip('/').endswith('.com.br'):
                         logger.warning(f"[Job {job_id}] Download link redirects to homepage, skipping direct download")
                     elif download_url and download_url.startswith('http'):
                         logger.info(f"[Job {job_id}] Attempting direct download from URL: {download_url}")
@@ -710,7 +710,7 @@ class InvoiceDownloader:
         }
     
     def test_connection(self) -> Dict[str, Any]:
-        """Test if the automation system can connect to meudanfe.com.br"""
+        """Test if the automation system can connect to the invoice system"""
         try:
             if not self.driver:
                 return {

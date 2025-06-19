@@ -345,7 +345,7 @@ def api_health():
     return jsonify({
         'status': 'healthy',
         'version': '1.0',
-        'service': 'MeuDANFe XML Downloader API',
+        'service': 'XML Downloader API',
         'timestamp': datetime.now().isoformat()
     })
 
@@ -532,7 +532,7 @@ def api_download_file(job_id, filename):
 
 @app.route('/api/v1/test', methods=['POST'])
 def api_test_connection():
-    """Test connection to meudanfe.com.br"""
+    """Test connection to invoice system"""
     try:
         from automation import InvoiceDownloader
         

@@ -255,5 +255,5 @@ Para dúvidas ou problemas:
 
 ## Licença
 
-Sistema desenvolvido para automação de downloads do MeuDANFe.com.br.
+Sistema desenvolvido para automação de downloads de XMLs de notas fiscais.
 Uso responsável conforme os termos de serviço do site.

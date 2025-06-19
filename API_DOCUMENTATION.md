@@ -23,7 +23,7 @@ Verifica se a API está funcionando.
 {
     "status": "healthy",
     "version": "1.0",
-    "service": "MeuDANFe XML Downloader API",
+    "service": "XML Downloader API",
     "timestamp": "2025-06-19T04:00:00.000000"
 }
 ```

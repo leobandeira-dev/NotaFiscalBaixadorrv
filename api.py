@@ -1,5 +1,5 @@
 """
-MeuDANFe XML Downloader API
+XML Downloader API
 REST API for bulk downloading XML invoices
 """
 
@@ -29,7 +29,7 @@ CORS(api)
 
 # API Configuration
 API_VERSION = "1.0"
-API_TITLE = "MeuDANFe XML Downloader API"
+API_TITLE = "XML Downloader API"
 
 @api.route('/api/v1/health', methods=['GET'])
 def health_check():
