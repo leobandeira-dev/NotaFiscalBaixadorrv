@@ -201,9 +201,9 @@
             </div>
             <div class="transaction-amount">
                 <div class="amount-value amount-credit">
-                    +R$ {{ "%.2f"|format(transaction.credits_purchased) }}
+                    +R$ {{ "%.2f"|format(transaction.credits_purchased or 0) }}
                 </div>
-                <div class="amount-type">{{ transaction.credits_purchased / 0.10 | int }} downloads</div>
+                <div class="amount-type">{{ ((transaction.credits_purchased or 0) * 10) | int }} downloads</div>
                 <div class="status-badge status-{{ transaction.status }}">
                     {% if transaction.status == 'completed' %}Concluído
                     {% elif transaction.status == 'pending' %}Pendente

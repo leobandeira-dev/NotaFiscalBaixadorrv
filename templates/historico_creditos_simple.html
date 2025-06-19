@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Histórico de Créditos{% endblock %}
+
+{% block content %}
+<style>
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .history-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+    }
+    
+    .balance-card {
+        background: linear-gradient(135deg, #8A05BE, #a855f7);
+        color: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .balance-amount {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+    }
+    
+    .balance-subtitle {
+        opacity: 0.9;
+        font-size: 0.875rem;
+    }
+    
+    .section-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-title i {
+        margin-right: 0.5rem;
+        color: #8A05BE;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: #6b7280;
+    }
+    
+    .empty-state i {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+    
+    .btn-buy-credits {
+        background: #8A05BE;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 6px;
+        text-decoration: none;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background 0.2s ease;
+    }
+    
+    .btn-buy-credits:hover {
+        background: #7a0ca8;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .simple-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .simple-item:last-child {
+        border-bottom: none;
+    }
+</style>
+
+<div class="history-header">
+    <h1 class="history-title">Histórico de Créditos</h1>
+    <a href="{{ url_for('comprar_creditos') }}" class="btn-buy-credits">
+        <i class="fas fa-plus"></i> Comprar Créditos
+    </a>
+</div>
+
+<!-- Saldo Atual -->
+<div class="balance-card">
+    <div class="balance-amount">R$ {{ "%.2f"|format(current_user.current_balance or 0) }}</div>
+    <div class="balance-subtitle">
+        Saldo disponível • Downloads restantes aproximados: {{ ((current_user.current_balance or 0) * 10) | int }}
+    </div>
+</div>
+
+<!-- Compras Recentes -->
+<div class="section-card">
+    <h3 class="section-title">
+        <i class="fas fa-shopping-cart"></i>
+        Compras Recentes
+    </h3>
+    
+    {% if stripe_transactions %}
+    {% for transaction in stripe_transactions %}
+    <div class="simple-item">
+        <div>
+            <strong>Pacote de créditos</strong><br>
+            <small>{{ transaction.created_at.strftime('%d/%m/%Y às %H:%M') if transaction.created_at else 'Data não disponível' }}</small>
+        </div>
+        <div style="text-align: right;">
+            <span style="color: #059669; font-weight: 600;">+R$ {{ "%.2f"|format(transaction.credits_purchased or 0) }}</span><br>
+            <small>{{ transaction.status or 'pendente' }}</small>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-receipt"></i>
+        <p>Nenhuma compra realizada ainda</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Histórico de Uso -->
+<div class="section-card">
+    <h3 class="section-title">
+        <i class="fas fa-history"></i>
+        Uso de Créditos (Últimos 30 dias)
+    </h3>
+    
+    {% if usage_history %}
+    {% for usage in usage_history %}
+    <div class="simple-item">
+        <div>
+            <strong>{{ usage.description or 'Download XML' }}</strong><br>
+            <small>{{ usage.date }}</small>
+        </div>
+        <div style="text-align: right;">
+            <span style="color: #dc2626; font-weight: 600;">-R$ {{ "%.2f"|format(usage.amount or 0) }}</span><br>
+            <small>{{ usage.service or 'xml_download' }}</small>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-download"></i>
+        <p>Nenhum uso de créditos nos últimos 30 dias</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Informações Gerais -->
+<div class="section-card">
+    <h3 class="section-title">
+        <i class="fas fa-info-circle"></i>
+        Como funciona o sistema de créditos
+    </h3>
+    
+    <div style="color: #6b7280; font-size: 0.875rem; line-height: 1.6;">
+        <ul style="margin-left: 1rem;">
+            <li>Cada download de XML custa R$ 0,10</li>
+            <li>Geração de DANFE é sempre gratuita</li>
+            <li>Módulo de etiquetas custa R$ 49,90/mês</li>
+            <li>Período de teste de 7 dias para novos usuários</li>
+        </ul>
+        
+        <p style="margin-top: 1rem;"><strong>Dúvidas?</strong> Entre em contato conosco pelo suporte.</p>
+    </div>
+</div>
+
+{% endblock %}

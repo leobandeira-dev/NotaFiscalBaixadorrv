@@ -258,14 +258,14 @@ class CreditManager:
         
         usage_records = UsageRecord.query.filter(
             UsageRecord.user_id == user_id,
-            UsageRecord.usage_date >= start_date
-        ).order_by(UsageRecord.usage_date.desc()).all()
+            UsageRecord.created_at >= start_date
+        ).order_by(UsageRecord.created_at.desc()).all()
         
         return [{
-            'date': record.usage_date.strftime('%d/%m/%Y %H:%M'),
-            'service': record.service_type,
-            'amount': record.amount_charged,
-            'description': record.description
+            'date': record.created_at.strftime('%d/%m/%Y %H:%M') if record.created_at else 'N/A',
+            'service': 'xml_download',  # Serviço padrão
+            'amount': record.cost,
+            'description': record.description or 'Download XML'
         } for record in usage_records]
 
 class PricingManager:
