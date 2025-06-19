@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download em Progresso - MeuDANFe</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <!-- Header -->
+                <div class="text-center mb-4">
+                    <i class="fas fa-download fa-3x text-primary mb-3"></i>
+                    <h1 class="display-6 fw-bold">Download em Progresso</h1>
+                    <p class="lead text-muted">Acompanhe o progresso do download dos XMLs</p>
+                </div>
+
+                <!-- Progress Card -->
+                <div class="card shadow-lg mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-tasks me-2"></i>
+                            Status do Job: <span id="jobId">{{ job.job_id[:8] }}</span>
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <!-- Progress Bar -->
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">Progresso Geral</span>
+                                <span id="progressText">0%</span>
+                            </div>
+                            <div class="progress" style="height: 20px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" 
+                                     id="progressBar"
+                                     style="width: 0%"
+                                     aria-valuenow="0" 
+                                     aria-valuemin="0" 
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Stats -->
+                        <div class="row text-center mb-4">
+                            <div class="col-md-3">
+                                <div class="card bg-info">
+                                    <div class="card-body">
+                                        <i class="fas fa-list fa-2x mb-2"></i>
+                                        <h4 id="totalKeys">{{ job.total_keys }}</h4>
+                                        <p class="mb-0">Total</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-warning">
+                                    <div class="card-body">
+                                        <i class="fas fa-clock fa-2x mb-2"></i>
+                                        <h4 id="processedKeys">{{ job.processed }}</h4>
+                                        <p class="mb-0">Processados</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-success">
+                                    <div class="card-body">
+                                        <i class="fas fa-check fa-2x mb-2"></i>
+                                        <h4 id="successfulKeys">{{ job.successful }}</h4>
+                                        <p class="mb-0">Sucessos</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card bg-danger">
+                                    <div class="card-body">
+                                        <i class="fas fa-times fa-2x mb-2"></i>
+                                        <h4 id="failedKeys">{{ job.failed }}</h4>
+                                        <p class="mb-0">Falhas</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status Message -->
+                        <div class="alert alert-info" id="statusAlert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span id="statusMessage">Iniciando processo...</span>
+                        </div>
+
+                        <!-- Download Section (hidden initially) -->
+                        <div id="downloadSection" class="d-none">
+                            <div class="card bg-success">
+                                <div class="card-body text-center">
+                                    <i class="fas fa-check-circle fa-3x mb-3"></i>
+                                    <h4>Download Concluído!</h4>
+                                    <p class="mb-3">Seus arquivos XML estão prontos para download.</p>
+                                    <a href="{{ url_for('download_zip', job_id=job.job_id) }}" 
+                                       class="btn btn-light btn-lg">
+                                        <i class="fas fa-download me-2"></i>
+                                        Baixar Arquivo ZIP
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Errors Card (hidden initially) -->
+                <div class="card mb-4 d-none" id="errorsCard">
+                    <div class="card-header bg-danger text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Erros Encontrados
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="errorsList"></div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="text-center">
+                    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>
+                        Voltar ao Início
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const jobId = '{{ job.job_id }}';
+        
+        function updateJobStatus() {
+            fetch(`/api/job_status/${jobId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error fetching job status:', data.error);
+                        return;
+                    }
+                    
+                    // Update progress bar
+                    const progressBar = document.getElementById('progressBar');
+                    const progressText = document.getElementById('progressText');
+                    progressBar.style.width = data.progress_percentage + '%';
+                    progressBar.setAttribute('aria-valuenow', data.progress_percentage);
+                    progressText.textContent = data.progress_percentage.toFixed(1) + '%';
+                    
+                    // Update counters
+                    document.getElementById('totalKeys').textContent = data.total_keys;
+                    document.getElementById('processedKeys').textContent = data.processed;
+                    document.getElementById('successfulKeys').textContent = data.successful;
+                    document.getElementById('failedKeys').textContent = data.failed;
+                    
+                    // Update status message
+                    const statusAlert = document.getElementById('statusAlert');
+                    const statusMessage = document.getElementById('statusMessage');
+                    
+                    switch(data.status) {
+                        case 'starting':
+                            statusMessage.textContent = 'Inicializando sistema de automação...';
+                            statusAlert.className = 'alert alert-info';
+                            break;
+                        case 'running':
+                            statusMessage.textContent = `Processando chave ${data.processed} de ${data.total_keys}...`;
+                            statusAlert.className = 'alert alert-warning';
+                            progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+                            break;
+                        case 'completed':
+                            statusMessage.textContent = 'Processo concluído com sucesso!';
+                            statusAlert.className = 'alert alert-success';
+                            progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+                            progressBar.classList.add('bg-success');
+                            
+                            // Show download section
+                            document.getElementById('downloadSection').classList.remove('d-none');
+                            
+                            // Stop polling
+                            clearInterval(pollInterval);
+                            break;
+                        case 'failed':
+                            statusMessage.textContent = 'Processo falhou. Verifique os erros abaixo.';
+                            statusAlert.className = 'alert alert-danger';
+                            progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+                            progressBar.classList.add('bg-danger');
+                            
+                            // Stop polling
+                            clearInterval(pollInterval);
+                            break;
+                    }
+                    
+                    // Show errors if any
+                    if (data.errors && data.errors.length > 0) {
+                        const errorsCard = document.getElementById('errorsCard');
+                        const errorsList = document.getElementById('errorsList');
+                        
+                        errorsCard.classList.remove('d-none');
+                        
+                        errorsList.innerHTML = '';
+                        data.errors.forEach(error => {
+                            const errorDiv = document.createElement('div');
+                            errorDiv.className = 'alert alert-danger';
+                            errorDiv.innerHTML = `
+                                <strong>Chave:</strong> ${error.invoice_key}<br>
+                                <strong>Erro:</strong> ${error.error}
+                            `;
+                            errorsList.appendChild(errorDiv);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating job status:', error);
+                });
+        }
+        
+        // Poll for status updates every 2 seconds
+        const pollInterval = setInterval(updateJobStatus, 2000);
+        
+        // Initial status update
+        updateJobStatus();
+    </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+/* Custom styles for the invoice downloader */
+:root {
+    --animation-duration: 0.3s;
+}
+
+/* Card hover effects */
+.card {
+    transition: transform var(--animation-duration) ease, box-shadow var(--animation-duration) ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Progress bar animations */
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% {
+        background-position-x: 1rem;
+    }
+}
+
+/* Button loading states */
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Textarea improvements */
+textarea.form-control {
+    font-family: 'Courier New', monospace;
+    resize: vertical;
+    min-height: 200px;
+}
+
+/* Badge animations */
+.badge {
+    transition: all var(--animation-duration) ease;
+}
+
+/* Alert improvements */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+/* Custom scrollbar for textarea */
+textarea::-webkit-scrollbar {
+    width: 8px;
+}
+
+textarea::-webkit-scrollbar-track {
+    background: var(--bs-gray-800);
+    border-radius: 4px;
+}
+
+textarea::-webkit-scrollbar-thumb {
+    background: var(--bs-gray-600);
+    border-radius: 4px;
+}
+
+textarea::-webkit-scrollbar-thumb:hover {
+    background: var(--bs-gray-500);
+}
+
+/* Icon animations */
+.fa-spin {
+    animation: fa-spin 2s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(359deg);
+    }
+}
+
+/* Status cards */
+.card.bg-info,
+.card.bg-warning,
+.card.bg-success,
+.card.bg-danger {
+    color: white;
+}
+
+.card.bg-info .card-body,
+.card.bg-warning .card-body,
+.card.bg-success .card-body,
+.card.bg-danger .card-body {
+    text-align: center;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+    .display-5 {
+        font-size: 2rem;
+    }
+    
+    .display-6 {
+        font-size: 1.75rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-lg {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+}
+
+/* Loading overlay */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    text-align: center;
+    color: white;
+}
+
+/* Error list styling */
+#errorsList .alert {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Progress section spacing */
+.progress {
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* List group improvements */
+.list-group-item {
+    border: none;
+    background: transparent;
+}
+
+.list-group-numbered .list-group-item::before {
+    font-weight: bold;
+}
+
+/* Footer styling */
+.text-muted {
+    opacity: 0.7;
+}
+
+/* Success animation */
+@keyframes checkmark {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.fa-check-circle {
+    animation: checkmark 0.6s ease-in-out;
+}
+
+/* Form validation styles */
+.is-invalid {
+    border-color: var(--bs-danger);
+}
+
+.is-valid {
+    border-color: var(--bs-success);
+}
+
+/* Custom badge styles */
+.badge.bg-secondary {
+    background-color: var(--bs-gray-600) !important;
+}
+
+/* Card header improvements */
+.card-header {
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Download section styling */
+#downloadSection .card {
+    border: 2px solid var(--bs-success);
+}
+
+/* File upload area */
+.file-upload-area {
+    border: 2px dashed var(--bs-border-color);
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all var(--animation-duration) ease;
+}
+
+.file-upload-area:hover {
+    border-color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+/* Status indicators */
+.status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+}
+
+.status-indicator.running {
+    background-color: var(--bs-warning);
+    animation: pulse 1.5s infinite;
+}
+
+.status-indicator.completed {
+    background-color: var(--bs-success);
+}
+
+.status-indicator.failed {
+    background-color: var(--bs-danger);
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
