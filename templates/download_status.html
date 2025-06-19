@@ -434,7 +434,7 @@
                             <div class="file-item">
                                 <span class="file-name">{{ file }}</span>
                                 <div class="file-actions">
-                                    <a href="{{ url_for('download_individual_file', job_id=job.job_id, filename=file) }}" 
+                                    <a href="/downloads/{{ file }}" download="{{ file }}"
                                        class="btn btn-outline-primary btn-sm">
                                         <i class="fas fa-download"></i>
                                     </a>

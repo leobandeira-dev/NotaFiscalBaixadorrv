@@ -9,7 +9,7 @@ import logging
 import secrets
 from datetime import datetime, timedelta
 from threading import Thread, Lock
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -806,6 +806,18 @@ def test_automation():
         flash(f'Erro ao testar sistema: {str(e)}', 'error')
     
     return redirect(url_for('dashboard'))
+
+@app.route('/downloads/<filename>')
+@login_required  
+def serve_download_file(filename):
+    """Serve arquivos baixados"""
+    try:
+        downloads_dir = os.path.join(os.getcwd(), 'downloads')
+        return send_from_directory(downloads_dir, filename, as_attachment=True)
+    except Exception as e:
+        logger.error(f"Error serving file {filename}: {str(e)}")
+        flash('Arquivo não encontrado.', 'error')
+        return redirect(url_for('meus_xmls'))
 
 @app.route('/download-xml/<int:xml_id>')
 @login_required
