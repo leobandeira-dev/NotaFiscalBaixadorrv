@@ -2,6 +2,7 @@ import os
 import logging
 import time
 from flask import Flask, render_template, request, jsonify, send_file, flash, redirect, url_for
+from flask_cors import CORS
 from threading import Thread, Lock
 import uuid
 import zipfile
@@ -15,6 +16,9 @@ logger = logging.getLogger(__name__)
 # Create Flask app
 app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "default_secret_key_for_development")
+
+# Enable CORS for API access
+CORS(app)
 
 # Global variables for tracking downloads
 download_jobs = {}
@@ -36,6 +40,7 @@ class DownloadJob:
         self.errors = []
         self.start_time = datetime.now()
         self.end_time = None
+        self.callback_url = None  # Optional webhook URL for API usage
 
     def to_dict(self):
         return {
@@ -327,6 +332,223 @@ def process_download_job(job_id):
         job.status = "failed"
         job.end_time = datetime.now()
         logger.error(f"Job {job_id} failed with error: {str(e)}")
+
+# API Endpoints
+@app.route('/api/v1/health', methods=['GET'])
+def api_health():
+    """API Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'version': '1.0',
+        'service': 'MeuDANFe XML Downloader API',
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/v1/jobs', methods=['POST'])
+def api_create_job():
+    """Create a new download job via API"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'invoice_keys' not in data:
+            return jsonify({
+                'error': 'Missing invoice_keys in request body',
+                'code': 'MISSING_INVOICE_KEYS'
+            }), 400
+        
+        invoice_keys = data['invoice_keys']
+        
+        if not isinstance(invoice_keys, list) or len(invoice_keys) == 0:
+            return jsonify({
+                'error': 'invoice_keys must be a non-empty list',
+                'code': 'INVALID_INVOICE_KEYS'
+            }), 400
+        
+        # Validate invoice keys format (44 digits)
+        invalid_keys = []
+        for key in invoice_keys:
+            if not isinstance(key, str) or len(key) != 44 or not key.isdigit():
+                invalid_keys.append(key)
+        
+        if invalid_keys:
+            return jsonify({
+                'error': 'Invalid invoice key format. Must be 44 digits.',
+                'code': 'INVALID_KEY_FORMAT',
+                'invalid_keys': invalid_keys
+            }), 400
+        
+        # Create download job
+        job_id = str(uuid.uuid4())
+        job = DownloadJob(job_id, invoice_keys)
+        
+        if 'callback_url' in data:
+            job.callback_url = data['callback_url']
+        
+        with jobs_lock:
+            download_jobs[job_id] = job
+        
+        # Start background processing
+        thread = Thread(target=process_download_job, args=(job_id,))
+        thread.daemon = True
+        thread.start()
+        
+        logger.info(f"API: Created job {job_id} with {len(invoice_keys)} keys")
+        
+        return jsonify({
+            'job_id': job_id,
+            'status': 'created',
+            'total_keys': len(invoice_keys),
+            'created_at': job.start_time.isoformat()
+        }), 201
+        
+    except Exception as e:
+        logger.error(f"API: Error creating job: {str(e)}")
+        return jsonify({
+            'error': 'Internal server error',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+@app.route('/api/v1/jobs', methods=['GET'])
+def api_list_jobs():
+    """List all jobs with filtering"""
+    try:
+        status_filter = request.args.get('status')
+        limit = int(request.args.get('limit', 50))
+        offset = int(request.args.get('offset', 0))
+        
+        with jobs_lock:
+            all_jobs = list(download_jobs.values())
+            
+            if status_filter:
+                all_jobs = [job for job in all_jobs if job.status == status_filter]
+            
+            all_jobs.sort(key=lambda x: x.start_time, reverse=True)
+            
+            total = len(all_jobs)
+            jobs_page = all_jobs[offset:offset + limit]
+            
+            formatted_jobs = []
+            for job in jobs_page:
+                formatted_jobs.append({
+                    'job_id': job.job_id,
+                    'status': job.status,
+                    'total_keys': job.total_keys,
+                    'processed': job.processed,
+                    'successful': job.successful,
+                    'failed': job.failed,
+                    'created_at': job.start_time.isoformat() if job.start_time else None,
+                    'completed_at': job.end_time.isoformat() if job.end_time else None
+                })
+            
+            return jsonify({
+                'jobs': formatted_jobs,
+                'total': total,
+                'limit': limit,
+                'offset': offset
+            })
+            
+    except Exception as e:
+        logger.error(f"API: Error listing jobs: {str(e)}")
+        return jsonify({
+            'error': 'Internal server error',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+@app.route('/api/v1/jobs/<job_id>/files', methods=['GET'])
+def api_list_job_files(job_id):
+    """List files for a specific job"""
+    try:
+        with jobs_lock:
+            job = download_jobs.get(job_id)
+            
+            if not job:
+                return jsonify({
+                    'error': 'Job not found',
+                    'code': 'JOB_NOT_FOUND'
+                }), 404
+            
+            files = []
+            for file_path in job.downloaded_files:
+                if os.path.exists(file_path):
+                    filename = os.path.basename(file_path)
+                    file_size = os.path.getsize(file_path)
+                    
+                    files.append({
+                        'filename': filename,
+                        'size': file_size,
+                        'download_url': f'/api/v1/jobs/{job_id}/files/{filename}'
+                    })
+            
+            return jsonify({
+                'job_id': job_id,
+                'files': files
+            })
+            
+    except Exception as e:
+        logger.error(f"API: Error listing job files: {str(e)}")
+        return jsonify({
+            'error': 'Internal server error',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+@app.route('/api/v1/jobs/<job_id>/files/<filename>', methods=['GET'])
+def api_download_file(job_id, filename):
+    """Download a specific file from a job"""
+    try:
+        with jobs_lock:
+            job = download_jobs.get(job_id)
+            
+            if not job:
+                return jsonify({
+                    'error': 'Job not found',
+                    'code': 'JOB_NOT_FOUND'
+                }), 404
+            
+            file_path = None
+            for downloaded_file in job.downloaded_files:
+                if os.path.basename(downloaded_file) == filename:
+                    file_path = downloaded_file
+                    break
+            
+            if not file_path or not os.path.exists(file_path):
+                return jsonify({
+                    'error': 'File not found',
+                    'code': 'FILE_NOT_FOUND'
+                }), 404
+            
+            return send_file(file_path, as_attachment=True, download_name=filename)
+            
+    except Exception as e:
+        logger.error(f"API: Error downloading file: {str(e)}")
+        return jsonify({
+            'error': 'Internal server error',
+            'code': 'INTERNAL_ERROR'
+        }), 500
+
+@app.route('/api/v1/test', methods=['POST'])
+def api_test_connection():
+    """Test connection to meudanfe.com.br"""
+    try:
+        from automation import InvoiceDownloader
+        
+        downloader = InvoiceDownloader()
+        result = downloader.test_connection()
+        downloader.cleanup()
+        
+        return jsonify({
+            'status': 'success' if result.get('success') else 'error',
+            'message': result.get('message', 'Connection test completed'),
+            'details': result,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"API: Error testing connection: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Connection test failed: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
