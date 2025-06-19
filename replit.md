@@ -105,7 +105,27 @@ This is a Python Flask web application that automates the bulk download of XML i
 - June 19, 2025: **GENERIC SYSTEM** - Removed all specific site references, created API documentation page
 - June 19, 2025: **INTERFACE CLEANED** - Removed all site-specific references from user interface and documentation
 - June 19, 2025: **DANFE GENERATION ADDED** - Implemented PDF DANFE generation from XML using ReportLab library
+- June 19, 2025: **COMPLETE SAAS PLATFORM** - Implemented full authentication system with user registration, login, trial periods
+- June 19, 2025: **ASAAS PAYMENT INTEGRATION** - Integrated PIX payment system via Asaas API for automatic billing
+- June 19, 2025: **PRICING STRUCTURE UPDATED** - XML download R$0.10, DANFE generation FREE, Labels module R$49.90
+- June 19, 2025: **PREMIUM UI REDESIGN** - Implemented sophisticated silver gradient design with glass morphism effects
+- June 19, 2025: **STORYTELLING LANDING PAGE** - Created conversion-focused landing page with success stories and problem/solution narrative
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+## Current Pricing Structure
+- Download XML: R$ 0,10 per file (web + API)
+- DANFE Generation: FREE (always included)
+- Labels Module: R$ 49,90 (one-time access fee)
+- Minimum recharge: R$ 19,90
+- 7-day free trial for all new users
+
+## System Architecture Updates
+- **Authentication**: Flask-Login with PostgreSQL user management
+- **Payment Processing**: Asaas PIX integration with automatic webhook processing
+- **UI Framework**: Premium glass morphism design with silver gradients
+- **Pricing Logic**: Per-use billing with free DANFE generation
+- **Trial System**: 7-day free access to all features
+- **Admin Panel**: User management and pricing configuration
