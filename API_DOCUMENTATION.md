@@ -1,8 +1,8 @@
-# MeuDANFe XML Downloader API
+# XML Downloader API
 
 ## Visão Geral
 
-A API REST do MeuDANFe XML Downloader permite integração automatizada para download em lote de XMLs de notas fiscais do site meudanfe.com.br. A API oferece endpoints para criar jobs de download, monitorar progresso e baixar arquivos XML individualmente.
+A API REST do XML Downloader permite integração automatizada para download em lote de arquivos XML de notas fiscais. A API oferece endpoints para criar jobs de download, monitorar progresso e baixar arquivos XML individualmente.
 
 **Base URL:** `https://sua-aplicacao.replit.app/api/v1`
 
@@ -156,7 +156,7 @@ Baixa um arquivo XML específico de um job.
 
 ### 7. Testar Conexão
 
-Testa a conectividade com o site meudanfe.com.br.
+Testa a conectividade do sistema de automação.
 
 **Endpoint:** `POST /api/v1/test`
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cliente Python para a API do MeuDANFe XML Downloader
+Cliente Python para a API do XML Downloader
 Exemplo completo de uso da API para download automático de XMLs
 """
 

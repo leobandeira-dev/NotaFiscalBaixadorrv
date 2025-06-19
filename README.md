@@ -1,6 +1,6 @@
-# MeuDANFe XML Downloader
+# XML Downloader
 
-Sistema completo para download automático em lote de XMLs de notas fiscais do site meudanfe.com.br, com interface web e API REST.
+Sistema completo para download automático em lote de arquivos XML de notas fiscais, com interface web e API REST.
 
 ## Funcionalidades
 

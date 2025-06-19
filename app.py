@@ -195,6 +195,11 @@ def download_zip(job_id):
         flash('Erro ao criar arquivo ZIP.', 'error')
         return redirect(url_for('download_status', job_id=job_id))
 
+@app.route('/api-docs')
+def api_docs():
+    """API Documentation page"""
+    return render_template('api_docs.html')
+
 @app.route('/download_file/<job_id>/<filename>')
 def download_individual_file(job_id, filename):
     """Download individual XML file"""

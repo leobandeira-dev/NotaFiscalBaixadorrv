@@ -16,7 +16,15 @@
                 <div class="text-center mb-5">
                     <i class="fas fa-file-invoice fa-3x text-primary mb-3"></i>
                     <h1 class="display-5 fw-bold">Download XML Notas Fiscais</h1>
-                    <p class="lead text-muted">Ferramenta de automação para download em lote de XMLs do MeuDANFe.com.br</p>
+                    <p class="lead text-muted">Ferramenta de automação para download em lote de XMLs de notas fiscais</p>
+                    <div class="d-flex justify-content-center gap-2 mb-4">
+                        <a href="{{ url_for('api_docs') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-code me-1"></i>Documentação da API
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary" onclick="addSampleData()">
+                            <i class="fas fa-clipboard me-1"></i>Dados de Teste
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Flash Messages -->

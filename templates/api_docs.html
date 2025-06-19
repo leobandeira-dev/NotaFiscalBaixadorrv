@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação da API - XML Downloader</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    <style>
+        .code-block {
+            background-color: var(--bs-dark);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        .endpoint {
+            background-color: var(--bs-secondary-bg);
+            border-left: 4px solid var(--bs-primary);
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 0 0.375rem 0.375rem 0;
+        }
+        .method-get { border-left-color: #28a745; }
+        .method-post { border-left-color: #007bff; }
+        .method-delete { border-left-color: #dc3545; }
+        .status-code {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+        .status-200 { background-color: #28a745; color: white; }
+        .status-201 { background-color: #17a2b8; color: white; }
+        .status-400 { background-color: #ffc107; color: black; }
+        .status-404 { background-color: #fd7e14; color: white; }
+        .status-500 { background-color: #dc3545; color: white; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
+                <i class="fas fa-file-download me-2"></i>XML Downloader
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('index') }}">
+                    <i class="fas fa-home me-1"></i>Início
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Navegação</h6>
+                        <nav class="nav flex-column">
+                            <a class="nav-link" href="#overview">Visão Geral</a>
+                            <a class="nav-link" href="#authentication">Autenticação</a>
+                            <a class="nav-link" href="#endpoints">Endpoints</a>
+                            <a class="nav-link" href="#health">Health Check</a>
+                            <a class="nav-link" href="#jobs">Jobs</a>
+                            <a class="nav-link" href="#files">Arquivos</a>
+                            <a class="nav-link" href="#test">Teste</a>
+                            <a class="nav-link" href="#examples">Exemplos</a>
+                            <a class="nav-link" href="#errors">Códigos de Erro</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-9">
+                <h1 class="mb-4"><i class="fas fa-code me-2"></i>Documentação da API</h1>
+                
+                <section id="overview" class="mb-5">
+                    <h2>Visão Geral</h2>
+                    <p class="lead">A API REST do XML Downloader permite integração automatizada para download em lote de arquivos XML de notas fiscais. A API oferece endpoints para criar jobs de download, monitorar progresso e baixar arquivos XML individualmente.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-server me-2"></i>Base URL</h6>
+                                    <code id="base-url">{{ request.url_root }}api/v1</code>
+                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('base-url')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6><i class="fas fa-info-circle me-2"></i>Versão</h6>
+                                    <span class="badge bg-primary">v1.0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="authentication" class="mb-5">
+                    <h2>Autenticação</h2>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Atualmente a API não requer autenticação. Para uso em produção, recomenda-se implementar autenticação por API key.
+                    </div>
+                </section>
+
+                <section id="endpoints" class="mb-5">
+                    <h2>Endpoints</h2>
+                    
+                    <div id="health" class="endpoint method-get">
+                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/health</h4>
+                        <p>Verifica se a API está funcionando.</p>
+                        
+                        <h6>Resposta <span class="status-code status-200">200</span></h6>
+                        <div class="code-block">
+<pre><code>{
+    "status": "healthy",
+    "version": "1.0",
+    "service": "XML Downloader API",
+    "timestamp": "2025-06-19T04:00:00.000000"
+}</code></pre>
+                        </div>
+
+                        <button class="btn btn-primary btn-sm" onclick="testEndpoint('/api/v1/health', 'GET')">
+                            <i class="fas fa-play me-1"></i>Testar Endpoint
+                        </button>
+                    </div>
+
+                    <div id="jobs" class="endpoint method-post">
+                        <h4><span class="badge bg-primary me-2">POST</span>/api/v1/jobs</h4>
+                        <p>Cria um novo job para download de XMLs de notas fiscais.</p>
+                        
+                        <h6>Body</h6>
+                        <div class="code-block">
+<pre><code>{
+    "invoice_keys": [
+        "35250162954987000130550020001854371034511150",
+        "35250162954987000130550020001854371034511151"
+    ],
+    "callback_url": "https://seu-webhook.com/callback" // opcional
+}</code></pre>
+                        </div>
+
+                        <h6>Resposta <span class="status-code status-201">201</span></h6>
+                        <div class="code-block">
+<pre><code>{
+    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
+    "status": "created",
+    "total_keys": 2,
+    "created_at": "2025-06-19T04:00:00.000000"
+}</code></pre>
+                        </div>
+
+                        <h6>Erro <span class="status-code status-400">400</span></h6>
+                        <div class="code-block">
+<pre><code>{
+    "error": "Invalid invoice key format. Must be 44 digits.",
+    "code": "INVALID_KEY_FORMAT",
+    "invalid_keys": ["123456"]
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="endpoint method-get">
+                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/jobs</h4>
+                        <p>Lista todos os jobs com filtros opcionais.</p>
+                        
+                        <h6>Parâmetros de Query</h6>
+                        <ul>
+                            <li><code>status</code> (opcional): Filtrar por status (running, completed, failed)</li>
+                            <li><code>limit</code> (opcional): Máximo de jobs por página (padrão: 50)</li>
+                            <li><code>offset</code> (opcional): Número de jobs a pular (padrão: 0)</li>
+                        </ul>
+
+                        <h6>Exemplo</h6>
+                        <div class="code-block">
+                            <code>GET /api/v1/jobs?status=completed&limit=10&offset=0</code>
+                        </div>
+
+                        <h6>Resposta <span class="status-code status-200">200</span></h6>
+                        <div class="code-block">
+<pre><code>{
+    "jobs": [
+        {
+            "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
+            "status": "completed",
+            "total_keys": 2,
+            "processed": 2,
+            "successful": 2,
+            "failed": 0,
+            "created_at": "2025-06-19T04:00:00.000000",
+            "completed_at": "2025-06-19T04:05:00.000000"
+        }
+    ],
+    "total": 1,
+    "limit": 10,
+    "offset": 0
+}</code></pre>
+                        </div>
+
+                        <button class="btn btn-primary btn-sm" onclick="testEndpoint('/api/v1/jobs', 'GET')">
+                            <i class="fas fa-play me-1"></i>Testar Endpoint
+                        </button>
+                    </div>
+
+                    <div class="endpoint method-get">
+                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/jobs/{job_id}</h4>
+                        <p>Consulta o status e progresso de um job específico.</p>
+                        
+                        <h6>Resposta <span class="status-code status-200">200</span></h6>
+                        <div class="code-block">
+<pre><code>{
+    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
+    "status": "completed",
+    "progress": {
+        "total_keys": 2,
+        "processed": 2,
+        "successful": 2,
+        "failed": 0,
+        "percentage": 100.0
+    },
+    "files": [
+        "35250162954987000130550020001854371034511150.xml",
+        "35250162954987000130550020001854371034511151.xml"
+    ],
+    "errors": [],
+    "created_at": "2025-06-19T04:00:00.000000",
+    "completed_at": "2025-06-19T04:05:00.000000"
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div id="files" class="endpoint method-get">
+                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/jobs/{job_id}/files</h4>
+                        <p>Lista todos os arquivos XML baixados por um job específico.</p>
+                        
+                        <h6>Resposta <span class="status-code status-200">200</span></h6>
+                        <div class="code-block">
+<pre><code>{
+    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
+    "files": [
+        {
+            "filename": "35250162954987000130550020001854371034511150.xml",
+            "size": 4590,
+            "download_url": "/api/v1/jobs/cc9fc653-7b99-45fe-bafb-9cb0c7f2784f/files/35250162954987000130550020001854371034511150.xml"
+        }
+    ]
+}</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="endpoint method-get">
+                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/jobs/{job_id}/files/{filename}</h4>
+                        <p>Baixa um arquivo XML específico de um job.</p>
+                        
+                        <h6>Resposta <span class="status-code status-200">200</span></h6>
+                        <p>Arquivo XML como attachment para download.</p>
+                    </div>
+
+                    <div id="test" class="endpoint method-post">
+                        <h4><span class="badge bg-primary me-2">POST</span>/api/v1/test</h4>
+                        <p>Testa a conectividade do sistema de automação.</p>
+                        
+                        <h6>Resposta <span class="status-code status-200">200</span></h6>
+                        <div class="code-block">
+<pre><code>{
+    "status": "success",
+    "message": "Connection test completed",
+    "details": {
+        "success": true,
+        "response_time": "2.5s"
+    },
+    "timestamp": "2025-06-19T04:00:00.000000"
+}</code></pre>
+                        </div>
+
+                        <button class="btn btn-primary btn-sm" onclick="testEndpoint('/api/v1/test', 'POST')">
+                            <i class="fas fa-play me-1"></i>Testar Endpoint
+                        </button>
+                    </div>
+                </section>
+
+                <section id="examples" class="mb-5">
+                    <h2>Exemplos de Uso</h2>
+                    
+                    <div class="mb-4">
+                        <h4>cURL</h4>
+                        <div class="code-block">
+<pre><code># Verificar status da API
+curl {{ request.url_root }}api/v1/health
+
+# Criar job
+curl -X POST {{ request.url_root }}api/v1/jobs \
+  -H "Content-Type: application/json" \
+  -d '{"invoice_keys": ["35250162954987000130550020001854371034511150"]}'
+
+# Verificar status do job
+curl {{ request.url_root }}api/v1/jobs/JOB_ID
+
+# Listar arquivos
+curl {{ request.url_root }}api/v1/jobs/JOB_ID/files
+
+# Baixar arquivo
+curl -O {{ request.url_root }}api/v1/jobs/JOB_ID/files/FILENAME.xml</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h4>Python</h4>
+                        <div class="code-block">
+<pre><code>import requests
+import time
+
+# Criar job
+response = requests.post('{{ request.url_root }}api/v1/jobs', json={
+    'invoice_keys': ['35250162954987000130550020001854371034511150']
+})
+
+job_data = response.json()
+job_id = job_data['job_id']
+
+# Monitorar progresso
+while True:
+    status_response = requests.get(f'{{ request.url_root }}api/v1/jobs/{job_id}')
+    status = status_response.json()
+    
+    print(f"Status: {status['status']}, Progresso: {status['progress']['percentage']}%")
+    
+    if status['status'] in ['completed', 'failed']:
+        break
+    
+    time.sleep(5)
+
+# Baixar arquivos
+if status['status'] == 'completed':
+    files_response = requests.get(f'{{ request.url_root }}api/v1/jobs/{job_id}/files')
+    files = files_response.json()['files']
+    
+    for file_info in files:
+        file_response = requests.get(f"{{ request.url_root }}{file_info['download_url']}")
+        
+        with open(file_info['filename'], 'wb') as f:
+            f.write(file_response.content)
+        
+        print(f"Arquivo baixado: {file_info['filename']}")</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h4>JavaScript/Node.js</h4>
+                        <div class="code-block">
+<pre><code>const axios = require('axios');
+
+async function downloadInvoices(invoiceKeys) {
+    const baseUrl = '{{ request.url_root }}api/v1';
+    
+    // Criar job
+    const jobResponse = await axios.post(`${baseUrl}/jobs`, {
+        invoice_keys: invoiceKeys
+    });
+    
+    const jobId = jobResponse.data.job_id;
+    console.log(`Job criado: ${jobId}`);
+    
+    // Monitorar progresso
+    let status;
+    do {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        
+        const statusResponse = await axios.get(`${baseUrl}/jobs/${jobId}`);
+        status = statusResponse.data;
+        
+        console.log(`Progresso: ${status.progress.percentage}%`);
+    } while (status.status === 'running');
+    
+    // Baixar arquivos
+    if (status.status === 'completed') {
+        const filesResponse = await axios.get(`${baseUrl}/jobs/${jobId}/files`);
+        
+        for (const file of filesResponse.data.files) {
+            const fileResponse = await axios.get(`${baseUrl}${file.download_url}`, {
+                responseType: 'stream'
+            });
+            
+            const writer = fs.createWriteStream(file.filename);
+            fileResponse.data.pipe(writer);
+            
+            console.log(`Arquivo baixado: ${file.filename}`);
+        }
+    }
+}
+
+// Uso
+downloadInvoices(['35250162954987000130550020001854371034511150']);</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="errors" class="mb-5">
+                    <h2>Códigos de Erro</h2>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Códigos HTTP</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span class="status-code status-200">200</span> Sucesso
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span class="status-code status-201">201</span> Recurso criado
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span class="status-code status-400">400</span> Erro na requisição
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span class="status-code status-404">404</span> Recurso não encontrado
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span class="status-code status-500">500</span> Erro interno
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Códigos da API</h5>
+                            <ul class="list-group">
+                                <li class="list-group-item">
+                                    <code>MISSING_INVOICE_KEYS</code><br>
+                                    <small class="text-muted">Campo invoice_keys ausente</small>
+                                </li>
+                                <li class="list-group-item">
+                                    <code>INVALID_INVOICE_KEYS</code><br>
+                                    <small class="text-muted">Lista de chaves inválida</small>
+                                </li>
+                                <li class="list-group-item">
+                                    <code>INVALID_KEY_FORMAT</code><br>
+                                    <small class="text-muted">Formato de chave inválido</small>
+                                </li>
+                                <li class="list-group-item">
+                                    <code>JOB_NOT_FOUND</code><br>
+                                    <small class="text-muted">Job não encontrado</small>
+                                </li>
+                                <li class="list-group-item">
+                                    <code>FILE_NOT_FOUND</code><br>
+                                    <small class="text-muted">Arquivo não encontrado</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="mb-5">
+                    <h2>Status de Jobs</h2>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-clock text-warning fa-2x mb-2"></i>
+                                    <h6>starting</h6>
+                                    <small class="text-muted">Aguardando início</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-spinner text-primary fa-2x mb-2"></i>
+                                    <h6>running</h6>
+                                    <small class="text-muted">Em execução</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-check text-success fa-2x mb-2"></i>
+                                    <h6>completed</h6>
+                                    <small class="text-muted">Concluído</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body">
+                                    <i class="fas fa-times text-danger fa-2x mb-2"></i>
+                                    <h6>failed</h6>
+                                    <small class="text-muted">Falhou</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Results Modal -->
+    <div class="modal fade" id="testModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Resultado do Teste</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="testResult"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard(elementId) {
+            const element = document.getElementById(elementId);
+            navigator.clipboard.writeText(element.textContent);
+            
+            // Show feedback
+            const btn = element.nextElementSibling;
+            const originalIcon = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-check"></i>';
+            btn.classList.add('btn-success');
+            btn.classList.remove('btn-outline-secondary');
+            
+            setTimeout(() => {
+                btn.innerHTML = originalIcon;
+                btn.classList.remove('btn-success');
+                btn.classList.add('btn-outline-secondary');
+            }, 2000);
+        }
+
+        async function testEndpoint(endpoint, method) {
+            const resultDiv = document.getElementById('testResult');
+            const modal = new bootstrap.Modal(document.getElementById('testModal'));
+            
+            resultDiv.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Testando endpoint...</div>';
+            modal.show();
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: method,
+                    headers: method === 'POST' ? {'Content-Type': 'application/json'} : {}
+                });
+                
+                const data = await response.json();
+                const statusClass = response.ok ? 'success' : 'danger';
+                
+                resultDiv.innerHTML = `
+                    <div class="alert alert-${statusClass}">
+                        <h6><i class="fas fa-${response.ok ? 'check' : 'times'} me-2"></i>Status: ${response.status}</h6>
+                    </div>
+                    <h6>Resposta:</h6>
+                    <div class="code-block">
+                        <pre><code>${JSON.stringify(data, null, 2)}</code></pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-times me-2"></i>Erro</h6>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
