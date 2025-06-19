@@ -802,8 +802,12 @@ def job_status(job_id):
 @login_required
 def meus_xmls():
     """Lista XMLs do usuário logado"""
-    # Buscar XMLs do usuário
-    xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).limit(50).all()
+    # Buscar XMLs do usuário (tanto ImportedXML quanto XMLFile)
+    imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).all()
+    xml_files = XMLFile.query.filter_by(user_id=current_user.id).order_by(XMLFile.imported_at.desc()).all()
+    
+    # Combinar ambos os tipos de XML
+    xmls = imported_xmls + xml_files
     
     return render_template('meus_xmls.html', 
                          xmls=xmls,
@@ -819,8 +823,12 @@ def labels_module():
         flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
         return redirect(url_for('dashboard'))
     
-    # Buscar XMLs do usuário para geração de etiquetas
-    xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).all()
+    # Buscar XMLs do usuário para geração de etiquetas (tanto ImportedXML quanto XMLFile)
+    imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).all()
+    xml_files = XMLFile.query.filter_by(user_id=current_user.id).order_by(XMLFile.imported_at.desc()).all()
+    
+    # Combinar ambos os tipos de XML
+    xmls = imported_xmls + xml_files
     
     return render_template('labels.html', 
                          xmls=xmls,
