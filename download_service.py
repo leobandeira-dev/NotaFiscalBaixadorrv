@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, Any, Optional
 
-from models import db, User, XMLFile, UsageRecord
+from models import db, User, XMLFile, UsageRecord, ServiceModule
 from stripe_integration import CreditManager, PricingManager
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,11 @@ class DownloadService:
                 logger.error(f"Usuário {user_id} não encontrado")
                 return False
             
-            if user.current_balance < xml_price:
+            # Verificar se usuário está em período de teste
+            from datetime import datetime
+            is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
+            
+            if not is_trial_active and user.current_balance < xml_price:
                 logger.error(f"Saldo insuficiente para usuário {user_id}")
                 return False
             
@@ -81,13 +85,20 @@ class DownloadService:
             
             db.session.add(xml_file)
             
+            # Buscar módulo de serviço XML
+            xml_module = ServiceModule.query.filter_by(name='xml_download').first()
+            if not xml_module:
+                logger.error("Módulo xml_download não encontrado")
+                return False
+            
             # Criar registro de uso
             usage_record = UsageRecord(
                 user_id=user_id,
-                service_type='xml_download',
-                amount_charged=xml_price,
+                module_id=xml_module.id,
+                quantity=1,
+                cost=xml_price,
                 description=f"Download XML: {invoice_key[:10]}...",
-                created_at=datetime.utcnow()
+                job_id=job_id
             )
             
             db.session.add(usage_record)
@@ -146,9 +157,9 @@ class DownloadService:
                 activities.append({
                     'type': 'download',
                     'description': record.description,
-                    'amount': record.amount_charged,
+                    'amount': record.cost,
                     'date': record.created_at.strftime('%d/%m/%Y %H:%M'),
-                    'service': record.service_type
+                    'service': 'xml_download'
                 })
             
             return activities
