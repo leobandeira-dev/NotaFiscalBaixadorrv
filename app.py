@@ -167,6 +167,31 @@ def download_zip(job_id):
         flash('Erro ao criar arquivo ZIP.', 'error')
         return redirect(url_for('download_status', job_id=job_id))
 
+@app.route('/test_automation')
+def test_automation():
+    """Test the automation system connectivity"""
+    try:
+        from automation import InvoiceDownloader
+        
+        downloader = InvoiceDownloader()
+        result = downloader.test_connection()
+        downloader.cleanup()
+        
+        return jsonify({
+            'test_result': result,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"Error testing automation: {str(e)}")
+        return jsonify({
+            'test_result': {
+                'success': False,
+                'error': str(e)
+            },
+            'timestamp': datetime.now().isoformat()
+        }), 500
+
 def process_download_job(job_id):
     """Process download job in background"""
     from automation import InvoiceDownloader

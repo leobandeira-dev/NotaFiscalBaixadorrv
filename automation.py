@@ -56,16 +56,34 @@ class InvoiceDownloader:
             }
             chrome_options.add_experimental_option("prefs", prefs)
             
-            # Try to use system chromedriver first
+            # Auto-detect chromedriver path
+            import subprocess
+            chromedriver_path = None
+            
             try:
-                logger.info("Attempting to use system chromedriver...")
-                service = Service(executable_path='/usr/bin/chromedriver')
-                self.driver = webdriver.Chrome(service=service, options=chrome_options)
-                logger.info("Successfully initialized Chrome with system chromedriver")
-            except Exception as system_error:
-                logger.warning(f"System chromedriver failed: {system_error}, trying selenium manager...")
-                # Fallback to selenium manager
+                # Try to find chromedriver using which command
+                result = subprocess.run(['which', 'chromedriver'], capture_output=True, text=True)
+                if result.returncode == 0:
+                    chromedriver_path = result.stdout.strip()
+                    logger.info(f"Found chromedriver at: {chromedriver_path}")
+            except Exception as e:
+                logger.warning(f"Could not auto-detect chromedriver: {e}")
+            
+            # Try to use detected or system chromedriver
+            if chromedriver_path:
                 try:
+                    logger.info(f"Attempting to use chromedriver at: {chromedriver_path}")
+                    service = Service(executable_path=chromedriver_path)
+                    self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                    logger.info("Successfully initialized Chrome with detected chromedriver")
+                except Exception as detected_error:
+                    logger.warning(f"Detected chromedriver failed: {detected_error}")
+                    self.driver = None
+            
+            # Fallback to selenium manager if detection failed
+            if not self.driver:
+                try:
+                    logger.info("Using selenium manager as fallback...")
                     self.driver = webdriver.Chrome(options=chrome_options)
                     logger.info("Successfully initialized Chrome with selenium manager")
                 except Exception as selenium_error:
@@ -371,11 +389,19 @@ class InvoiceDownloader:
                 'error': f'Erro inesperado: {str(e)}'
             }
     
-    def download_file(self, url, invoice_key, job_id):
+    def download_file(self, url: str, invoice_key: str, job_id: str) -> Dict[str, Any]:
         """Download file from URL using requests"""
         try:
-            response = requests.get(url, timeout=30)
+            logger.info(f"[Job {job_id}] Downloading file from URL: {url}")
+            
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+            
+            response = requests.get(url, timeout=30, headers=headers)
             response.raise_for_status()
+            
+            logger.info(f"[Job {job_id}] File downloaded successfully, size: {len(response.content)} bytes")
             
             # Determine filename
             filename = f"{invoice_key}.xml"
@@ -385,17 +411,21 @@ class InvoiceDownloader:
             with open(file_path, 'wb') as f:
                 f.write(response.content)
             
+            logger.info(f"[Job {job_id}] File saved to: {file_path}")
+            
             return {
                 'success': True,
                 'file_path': file_path
             }
             
         except requests.RequestException as e:
+            logger.error(f"[Job {job_id}] Request error downloading file: {e}")
             return {
                 'success': False,
                 'error': f'Erro ao baixar arquivo: {str(e)}'
             }
         except Exception as e:
+            logger.error(f"[Job {job_id}] Unexpected error saving file: {e}")
             return {
                 'success': False,
                 'error': f'Erro inesperado ao salvar arquivo: {str(e)}'
@@ -434,6 +464,61 @@ class InvoiceDownloader:
             'success': False,
             'error': 'Arquivo XML não foi baixado dentro do tempo limite'
         }
+    
+    def test_connection(self) -> Dict[str, Any]:
+        """Test if the automation system can connect to meudanfe.com.br"""
+        try:
+            if not self.driver:
+                return {
+                    'success': False,
+                    'error': 'WebDriver não está disponível'
+                }
+            
+            logger.info("Testing connection to meudanfe.com.br...")
+            url = "https://meudanfe.com.br/"
+            
+            self.driver.get(url)
+            
+            # Wait for page to load
+            WebDriverWait(self.driver, 20).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            
+            current_url = self.driver.current_url
+            page_title = self.driver.title
+            
+            logger.info(f"Connection test successful - URL: {current_url}, Title: {page_title}")
+            
+            # Check if we can find basic elements
+            try:
+                inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                
+                logger.info(f"Found {len(inputs)} input elements and {len(buttons)} button elements")
+                
+                return {
+                    'success': True,
+                    'url': current_url,
+                    'title': page_title,
+                    'inputs_found': len(inputs),
+                    'buttons_found': len(buttons)
+                }
+            except Exception as element_error:
+                logger.warning(f"Could not count elements: {element_error}")
+                return {
+                    'success': True,
+                    'url': current_url,
+                    'title': page_title,
+                    'inputs_found': 0,
+                    'buttons_found': 0
+                }
+                
+        except Exception as e:
+            logger.error(f"Connection test failed: {str(e)}")
+            return {
+                'success': False,
+                'error': f'Erro no teste de conexão: {str(e)}'
+            }
     
     def cleanup(self):
         """Clean up resources"""
