@@ -633,7 +633,7 @@ def asaas_webhook():
 # Background processing functions
 def process_download_job(job_id):
     """Process download job in background"""
-    from automation import InvoiceDownloader
+    from automation_fixed import InvoiceDownloader
     
     with jobs_lock:
         job = download_jobs.get(job_id)

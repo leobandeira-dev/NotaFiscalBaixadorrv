@@ -14,7 +14,7 @@ import json
 
 # Import from main app
 from app import DownloadJob, download_jobs, jobs_lock, process_download_job
-from automation import InvoiceDownloader
+from automation_fixed import InvoiceDownloader
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
