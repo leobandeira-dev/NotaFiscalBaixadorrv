@@ -263,34 +263,94 @@ class InvoiceDownloader:
             new_title = self.driver.title
             logger.info(f"[Job {job_id}] After submit - URL: {new_url}, Title: {new_title}")
             
-            # Enhanced XML extraction for meudanfe.com.br
-            logger.info(f"[Job {job_id}] Looking for XML content or download options...")
+            # Enhanced XML extraction - look for the "Baixar XML" button specifically
+            logger.info(f"[Job {job_id}] Looking for XML download button...")
             
-            # First, look for any buttons that might trigger XML display or download
-            xml_buttons = []
+            # Look for the blue "Baixar XML" button specifically
+            xml_button_found = False
+            xml_button_selectors = [
+                'button:contains("Baixar XML")',
+                'button[class*="btn"]:contains("XML")',
+                'button[style*="background-color: rgb(52, 144, 220)"]',  # Blue button color
+                '.btn:contains("Baixar XML")',
+                'button:contains("XML")'
+            ]
+            
             try:
+                # First try with CSS selectors that might match the blue button
                 buttons = self.driver.find_elements(By.TAG_NAME, "button")
-                for btn in buttons:
+                logger.info(f"[Job {job_id}] Found {len(buttons)} buttons on page")
+                
+                for idx, btn in enumerate(buttons):
                     try:
-                        btn_text = btn.text.lower().strip()
-                        if any(keyword in btn_text for keyword in ['xml', 'download', 'baixar', 'arquivo', 'salvar']):
-                            xml_buttons.append(btn)
-                            logger.info(f"[Job {job_id}] Found potential XML button: '{btn_text}'")
-                    except:
-                        continue
+                        btn_text = btn.text.strip()
+                        btn_style = btn.get_attribute('style') or ''
+                        btn_class = btn.get_attribute('class') or ''
                         
-                # Try clicking XML-related buttons
-                for btn in xml_buttons:
-                    try:
-                        logger.info(f"[Job {job_id}] Clicking XML button: '{btn.text}'")
-                        btn.click()
-                        time.sleep(3)  # Wait for action to complete
-                        break  # Only click the first relevant button
+                        logger.debug(f"[Job {job_id}] Button {idx+1}: text='{btn_text}', class='{btn_class}', style='{btn_style[:100]}'")
+                        
+                        # Look specifically for "Baixar XML" button
+                        if 'baixar xml' in btn_text.lower() or 'xml' in btn_text.lower():
+                            logger.info(f"[Job {job_id}] Found XML button: '{btn_text}'")
+                            btn.click()
+                            xml_button_found = True
+                            time.sleep(5)  # Wait for download to initiate
+                            logger.info(f"[Job {job_id}] Clicked XML download button")
+                            break
+                            
                     except Exception as e:
-                        logger.warning(f"[Job {job_id}] Could not click button: {e}")
+                        logger.warning(f"[Job {job_id}] Error checking button {idx+1}: {e}")
+                        continue
                         
             except Exception as e:
                 logger.warning(f"[Job {job_id}] Error finding XML buttons: {e}")
+            
+            # If XML button was found and clicked, check for download or XML content
+            if xml_button_found:
+                logger.info(f"[Job {job_id}] XML button was clicked, checking for downloaded file or XML content...")
+                # First check if file was downloaded via browser
+                download_result = self.check_downloaded_file(invoice_key, job_id)
+                if download_result['success']:
+                    return download_result
+                
+                # If no file download, look for XML content displayed on page
+                time.sleep(3)  # Wait a bit more for content to load
+                
+                # Check if XML content is now displayed on the page
+                try:
+                    page_source = self.driver.page_source
+                    if '<?xml' in page_source and ('<nfeProc' in page_source or '<NFe' in page_source):
+                        logger.info(f"[Job {job_id}] XML content found in page after button click")
+                        # Extract and save XML content
+                        import re
+                        xml_match = re.search(r'(<\?xml.*?</nfeProc>)', page_source, re.DOTALL)
+                        if not xml_match:
+                            xml_match = re.search(r'(<\?xml.*?</NFe>)', page_source, re.DOTALL)
+                        
+                        if xml_match:
+                            xml_content = xml_match.group(1)
+                            # Save the XML content
+                            downloads_dir = 'downloads'
+                            os.makedirs(downloads_dir, exist_ok=True)
+                            filename = f"{invoice_key}.xml"
+                            file_path = os.path.join(downloads_dir, filename)
+                            
+                            with open(file_path, 'w', encoding='utf-8') as f:
+                                f.write(xml_content)
+                            
+                            logger.info(f"[Job {job_id}] XML content saved to: {file_path}")
+                            return {
+                                'success': True,
+                                'file_path': file_path,
+                                'filename': filename,
+                                'size': len(xml_content.encode('utf-8'))
+                            }
+                except Exception as e:
+                    logger.warning(f"[Job {job_id}] Error extracting XML from page: {e}")
+            
+            # If button click didn't work, try to find download links
+            if not xml_button_found:
+                logger.info(f"[Job {job_id}] XML button not found, looking for download links...")
             
             # Look for download links with enhanced selectors
             download_selectors = [
