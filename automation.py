@@ -373,6 +373,9 @@ class InvoiceDownloader:
                 # CRITICAL: Force execution of all XML capture strategies
                 logger.info(f"[Job {job_id}] ===== STARTING COMPREHENSIVE XML CAPTURE =====")
                 
+                xml_captured = False
+                final_result = None
+                
                 # Enhanced XML extraction strategies specifically for meudanfe.com.br
                 try:
                     # Strategy 1: Check browser downloads first
@@ -381,12 +384,38 @@ class InvoiceDownloader:
                     download_result = self.check_downloaded_file(invoice_key, job_id, download_type)
                     if download_result['success']:
                         logger.info(f"[Job {job_id}] SUCCESS: Found file via browser download")
-                        return download_result
+                        xml_captured = True
+                        final_result = download_result
                     else:
                         logger.info(f"[Job {job_id}] Strategy 1 failed: No file in downloads directory")
                     
-                    # Strategy 1.5: Try to trigger download again by looking for the actual download URL
+                    # Strategy 2: Direct page analysis for XML content
+                    logger.info(f"[Job {job_id}] Strategy 2: Analyzing current page for XML content...")
                     current_page_source = self.driver.page_source
+                    xml_content = self.extract_xml_from_page(current_page_source, job_id)
+                    if xml_content and not xml_captured:
+                        logger.info(f"[Job {job_id}] SUCCESS: Found XML content in page source")
+                        result = self.save_xml_file(xml_content, invoice_key, job_id)
+                        if result['success']:
+                            xml_captured = True
+                            final_result = result
+                    
+                    # Strategy 3: Wait longer and check for delayed downloads
+                    if not xml_captured:
+                        logger.info(f"[Job {job_id}] Strategy 3: Waiting for delayed download...")
+                        time.sleep(10)  # Wait longer for potential download
+                        download_result = self.check_downloaded_file(invoice_key, job_id, download_type)
+                        if download_result['success']:
+                            logger.info(f"[Job {job_id}] SUCCESS: Found delayed download")
+                            xml_captured = True
+                            final_result = download_result
+                    
+                    # Return result if XML was captured
+                    if xml_captured and final_result:
+                        logger.info(f"[Job {job_id}] ===== XML CAPTURE SUCCESSFUL =====")
+                        return final_result
+                    
+                    # Continue with additional strategies
                     current_url = self.driver.current_url
                     
                     # Look for direct XML content that may have been loaded in the page
