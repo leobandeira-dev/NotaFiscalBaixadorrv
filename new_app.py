@@ -9,7 +9,7 @@ import logging
 import secrets
 from datetime import datetime, timedelta
 from threading import Thread, Lock
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, send_file
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -954,32 +954,78 @@ def generate_danfe_route(xml_id):
 @login_required
 def generate_label_route(xml_id):
     """Gera e baixa etiqueta de transporte para um XML específico"""
-    # Verificar se usuário tem saldo para acessar módulos premium
-    if current_user.current_balance < 49.90 and current_user.trial_expires_at < datetime.now():
-        flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
-        return redirect(url_for('meus_xmls'))
-    
-    xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
-    
-    if not xml_record:
-        flash('XML não encontrado.', 'error')
-        return redirect(url_for('meus_xmls'))
-    
     try:
-        from label_generator import generate_label_for_xml
+        # Verificar se o XML pertence ao usuário (tanto ImportedXML quanto XMLFile)
+        xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        xml_file = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
         
-        result = generate_label_for_xml(xml_id)
+        if not xml_record and not xml_file:
+            flash('XML não encontrado.', 'error')
+            return redirect(url_for('meus_xmls'))
         
-        if result.get('success'):
-            return redirect(result['download_url'])
-        else:
-            flash(f'Erro ao gerar etiqueta: {result.get("error")}', 'error')
+        # Usar XMLFile se disponível, senão ImportedXML
+        xml_content = xml_file.xml_content if xml_file else xml_record.xml_content
+        invoice_key = xml_file.invoice_key if xml_file else xml_record.invoice_key
+        
+        # Verificar módulo de etiquetas
+        labels_module = ServiceModule.query.filter_by(name='labels_module').first()
+        if not labels_module:
+            flash('Módulo de etiquetas não disponível.', 'error')
+            return redirect(url_for('meus_xmls'))
+        
+        # Verificar se usuário pode usar o serviço (trial ou saldo)
+        is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()
+        if not is_trial_active and current_user.current_balance < labels_module.cost_per_use:
+            flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
+            return redirect(url_for('comprar_creditos'))
+        
+        # Gerar etiqueta usando o novo gerador
+        generator = TransportLabelGenerator()
+        pedido_number = request.args.get('pedido', invoice_key)
+        area_code = request.args.get('area', '01')
+        
+        label_buffer = generator.generate_transport_label(
+            xml_content=xml_content,
+            pedido_number=pedido_number,
+            area_code=area_code
+        )
+        
+        # Cobrar pelo serviço apenas se não estiver em trial
+        if not is_trial_active:
+            current_user.deduct_balance(
+                labels_module.cost_per_use,
+                f"Geração de etiqueta para XML {invoice_key[:10]}..."
+            )
             
+            # Registrar uso
+            usage_record = UsageRecord(
+                user_id=current_user.id,
+                module_id=labels_module.id,
+                quantity=1,
+                cost=labels_module.cost_per_use,
+                description=f"Etiqueta gerada para XML {invoice_key[:10]}..."
+            )
+            
+            db.session.add(usage_record)
+            db.session.commit()
+        
+        # Marcar como etiqueta gerada
+        if xml_record:
+            xml_record.label_generated = True
+            db.session.commit()
+        
+        # Retornar arquivo
+        return send_file(
+            label_buffer,
+            as_attachment=True,
+            download_name=f"etiqueta_transporte_{invoice_key}.pdf",
+            mimetype='application/pdf'
+        )
+        
     except Exception as e:
-        logger.error(f"Error generating label: {str(e)}")
-        flash('Erro ao gerar etiqueta.', 'error')
-    
-    return redirect(url_for('meus_xmls'))
+        logger.error(f"Erro ao gerar etiqueta: {e}")
+        flash('Erro ao gerar etiqueta. Tente novamente.', 'error')
+        return redirect(url_for('meus_xmls'))
 
 @app.route('/bulk-generate-labels', methods=['POST'])
 @login_required

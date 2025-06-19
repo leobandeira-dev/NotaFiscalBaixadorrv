@@ -358,8 +358,11 @@
             const checkboxes = document.querySelectorAll('input[name="xml_ids"]:checked');
             const count = checkboxes.length;
             
-            document.getElementById('selectedCount').textContent = count;
-            document.getElementById('bulkGenerateBtn').disabled = count === 0;
+            const selectedCountEl = document.getElementById('selectedCount');
+            const bulkBtn = document.getElementById('bulkGenerateBtn');
+            
+            if (selectedCountEl) selectedCountEl.textContent = count;
+            if (bulkBtn) bulkBtn.disabled = count === 0;
             
             // Update card styling
             document.querySelectorAll('.xml-card').forEach(card => {
