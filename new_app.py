@@ -6,11 +6,15 @@ import os
 import json
 import uuid
 import logging
+import secrets
 from datetime import datetime, timedelta
 from threading import Thread, Lock
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
+from itsdangerous import URLSafeTimedSerializer
+from authlib.integrations.flask_client import OAuth
 from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, init_default_data
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 
@@ -31,8 +35,35 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
     "pool_recycle": 300,
 }
 
+# Email configuration
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'noreply@xmldownloader.com')
+app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
+app.config['MAIL_DEFAULT_SENDER'] = 'XMLDownloader <noreply@xmldownloader.com>'
+
+# OAuth configuration
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '')
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+
 # Initialize database
 db.init_app(app)
+
+# Initialize Flask-Mail
+mail = Mail(app)
+
+# Initialize OAuth
+oauth = OAuth(app)
+google = oauth.register(
+    name='google',
+    client_id=app.config['GOOGLE_CLIENT_ID'],
+    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
+    server_metadata_url='https://accounts.google.com/.well-known/openid_configuration',
+    client_kwargs={
+        'scope': 'openid email profile'
+    }
+)
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -40,6 +71,9 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Faça login para acessar esta página.'
 login_manager.login_message_category = 'info'
+
+# Initialize password reset serializer
+serializer = URLSafeTimedSerializer(app.secret_key)
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -165,6 +199,123 @@ def logout():
     logout_user()
     flash('Logout realizado com sucesso.', 'success')
     return redirect(url_for('index'))
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Password reset request"""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        user = User.query.filter_by(email=email).first()
+        
+        if user:
+            # Generate reset token
+            token = serializer.dumps(email, salt='password-reset')
+            
+            # Create reset URL
+            reset_url = url_for('reset_password', token=token, _external=True)
+            
+            # Send email (simplified - in production, use proper email template)
+            try:
+                msg = Message(
+                    'Redefinição de Senha - XMLDownloader',
+                    recipients=[email],
+                    body=f'''
+Olá {user.name},
+
+Você solicitou a redefinição de sua senha. Clique no link abaixo para definir uma nova senha:
+
+{reset_url}
+
+Este link expira em 1 hora.
+
+Se você não solicitou esta redefinição, ignore este email.
+
+Atenciosamente,
+Equipe XMLDownloader
+'''
+                )
+                mail.send(msg)
+                flash('Instruções de redefinição enviadas para seu email.', 'success')
+            except Exception as e:
+                logger.error(f"Erro ao enviar email: {e}")
+                flash('Erro ao enviar email. Tente novamente mais tarde.', 'error')
+        else:
+            # Don't reveal if email exists
+            flash('Se o email existir, você receberá as instruções.', 'info')
+        
+        return redirect(url_for('login'))
+    
+    return render_template('forgot_password.html')
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Password reset with token"""
+    try:
+        email = serializer.loads(token, salt='password-reset', max_age=3600)
+    except:
+        flash('Link de redefinição inválido ou expirado.', 'error')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if password != confirm_password:
+            flash('As senhas não coincidem.', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        if len(password) < 6:
+            flash('A senha deve ter pelo menos 6 caracteres.', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        user = User.query.filter_by(email=email).first()
+        if user:
+            user.set_password(password)
+            db.session.commit()
+            flash('Senha redefinida com sucesso!', 'success')
+            return redirect(url_for('login'))
+    
+    return render_template('reset_password.html', token=token)
+
+@app.route('/auth/google')
+def google_login():
+    """Google OAuth login"""
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/auth/google/callback')
+def google_callback():
+    """Google OAuth callback"""
+    try:
+        token = google.authorize_access_token()
+        user_info = token.get('userinfo')
+        
+        if user_info:
+            email = user_info.get('email')
+            name = user_info.get('name', email.split('@')[0])
+            
+            # Check if user exists
+            user = User.query.filter_by(email=email).first()
+            
+            if not user:
+                # Create new user
+                user = User(name=name, email=email)
+                # Set a random password for OAuth users
+                user.set_password(secrets.token_urlsafe(32))
+                db.session.add(user)
+                db.session.commit()
+                flash('Conta criada com sucesso via Google!', 'success')
+            
+            login_user(user)
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Erro ao obter informações do Google.', 'error')
+            
+    except Exception as e:
+        logger.error(f"Erro no login Google: {e}")
+        flash('Erro no login com Google. Tente novamente.', 'error')
+    
+    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 @login_required
