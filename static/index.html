@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML Downloader - Automatize sua gestão fiscal</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-purple: #8A05BE;
+            --primary-purple-dark: #6B0F9A;
+            --primary-purple-light: #A855F7;
+            --gray-50: #FAFAFA;
+            --gray-100: #F5F5F5;
+            --gray-900: #1A1A1A;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .btn-primary {
+            background: var(--primary-purple);
+            border: none;
+            padding: 12px 32px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-purple-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(138, 5, 190, 0.3);
+        }
+        
+        .btn-outline-primary {
+            border: 2px solid var(--primary-purple);
+            color: var(--primary-purple);
+            padding: 10px 30px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary-purple);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Header */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-purple) !important;
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            color: #333 !important;
+            margin: 0 15px;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: var(--primary-purple) !important;
+        }
+        
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+            padding: 120px 0 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(138, 5, 190, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border-radius: 0 0 0 100px;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            color: var(--gray-900);
+        }
+        
+        .hero .highlight {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: 1.4rem;
+            color: #666;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+        
+        .feature-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+        
+        .feature-item:hover {
+            transform: translateY(-4px);
+        }
+        
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .hero-visual {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .dashboard-mockup {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .dashboard-mockup::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light));
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .dashboard-content {
+            margin-top: 40px;
+        }
+        
+        .stat-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary-purple);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary-purple);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        /* Sections */
+        .section {
+            padding: 80px 0;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 1rem;
+            color: var(--gray-900);
+        }
+        
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        /* Solution Cards */
+        .solution-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 2px solid transparent;
+        }
+        
+        .solution-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary-purple);
+            box-shadow: 0 20px 60px rgba(138, 5, 190, 0.15);
+        }
+        
+        .solution-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+            color: white;
+        }
+        
+        .icon-download { background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light)); }
+        .icon-pdf { background: linear-gradient(135deg, #10b981, #059669); }
+        .icon-api { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        
+        .solution-card h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--gray-900);
+        }
+        
+        .solution-card p {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .feature-list {
+            list-style: none;
+            text-align: left;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list i {
+            color: #10b981;
+            margin-right: 0.75rem;
+        }
+        
+        /* Pricing Cards */
+        .pricing-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            position: relative;
+            border: 2px solid transparent;
+        }
+        
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary-purple);
+        }
+        
+        .pricing-card.featured {
+            border-color: var(--primary-purple);
+            transform: scale(1.05);
+        }
+        
+        .pricing-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 8px 24px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .price {
+            font-size: 3rem;
+            font-weight: 900;
+            margin: 1rem 0;
+        }
+        
+        .price-xml { color: var(--primary-purple); }
+        .price-free { color: #10b981; }
+        .price-module { color: #f59e0b; }
+        
+        /* Calculator */
+        .calculator {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            margin-top: 3rem;
+        }
+        
+        .calculator-slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+            margin: 1rem 0;
+        }
+        
+        .calculator-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-purple);
+            cursor: pointer;
+        }
+        
+        .calculator-result {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .result-item {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .result-item.highlighted {
+            border-color: var(--primary-purple);
+            background: rgba(138, 5, 190, 0.05);
+        }
+        
+        /* Steps */
+        .steps {
+            background: var(--gray-50);
+        }
+        
+        .step-item {
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .step-number {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 800;
+            margin: 0 auto 1.5rem;
+        }
+        
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+            color: white;
+            text-align: center;
+        }
+        
+        .cta-section h2 {
+            font-size: 3rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+        }
+        
+        .cta-section p {
+            font-size: 1.3rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .btn-light {
+            background: white;
+            color: var(--primary-purple);
+            border: none;
+            padding: 15px 40px;
+            font-weight: 700;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-light:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255,255,255,0.3);
+        }
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-in {
+            animation: fadeInUp 0.8s ease forwards;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .feature-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .calculator-result {
+                grid-template-columns: 1fr;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .cta-section h2 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#home">
+                <i class="fas fa-file-invoice me-2"></i>XMLDownloader
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#solucoes">Soluções</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#precos">Preços</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#como-funciona">Como Funciona</a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex gap-2">
+                    <a href="/login" class="btn btn-outline-primary">Entrar</a>
+                    <a href="/register" class="btn btn-primary">Teste Grátis</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 hero-content">
+                    <h1 class="animate-in">
+                        Automatize sua <span class="highlight">gestão fiscal</span> em minutos
+                    </h1>
+                    
+                    <p class="animate-in">
+                        Pare de perder tempo baixando XMLs manualmente. Nossa plataforma automatiza todo o processo fiscal, 
+                        <strong>economizando até 85% do seu tempo</strong>.
+                    </p>
+                    
+                    <div class="feature-grid animate-in">
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <span><strong>Download automático</strong> de XMLs</span>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <span><strong>DANFE PDF</strong> gratuito</span>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <span><strong>API completa</strong> para integração</span>
+                        </div>
+                        
+                        <div class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <span><strong>100% seguro</strong> e confiável</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 flex-wrap animate-in">
+                        <a href="/register" class="btn btn-primary btn-lg">
+                            <i class="fas fa-play me-2"></i>Começar agora - Grátis
+                        </a>
+                        <a href="#precos" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-calculator me-2"></i>Ver preços
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="col-lg-6 hero-visual">
+                    <div class="dashboard-mockup animate-in">
+                        <div class="dashboard-content">
+                            <div class="stat-card">
+                                <div class="stat-value">1,247</div>
+                                <div class="stat-label">XMLs processados hoje</div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="stat-card">
+                                        <div class="stat-value">R$ 124,70</div>
+                                        <div class="stat-label">Economia hoje</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="stat-card">
+                                        <div class="stat-value">95%</div>
+                                        <div class="stat-label">Tempo economizado</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solutions Section -->
+    <section id="solucoes" class="section">
+        <div class="container">
+            <h2 class="section-title">Soluções completas para sua empresa</h2>
+            <p class="section-subtitle">Automatize todos os processos fiscais com nossa plataforma integrada</p>
+            
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="solution-card">
+                        <div class="solution-icon icon-download">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <h3>Download Automático</h3>
+                        <p>Baixe milhares de XMLs em poucos minutos. Sistema inteligente que processa lotes inteiros automaticamente.</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Processamento em lote</li>
+                            <li><i class="fas fa-check"></i> Validação automática</li>
+                            <li><i class="fas fa-check"></i> Organização inteligente</li>
+                            <li><i class="fas fa-check"></i> Acesso via web e API</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="solution-card">
+                        <div class="solution-icon icon-pdf">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <h3>DANFE Gratuito</h3>
+                        <p>Gere DANFEs em PDF de forma ilimitada e gratuita. Layout profissional para impressão ou envio digital.</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Geração ilimitada</li>
+                            <li><i class="fas fa-check"></i> Layout profissional</li>
+                            <li><i class="fas fa-check"></i> Download individual</li>
+                            <li><i class="fas fa-check"></i> Sem custos adicionais</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="solution-card">
+                        <div class="solution-icon icon-api">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <h3>API Completa</h3>
+                        <p>Integre nossa solução ao seu sistema. API REST completa com documentação e exemplos práticos.</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Documentação completa</li>
+                            <li><i class="fas fa-check"></i> Exemplos de código</li>
+                            <li><i class="fas fa-check"></i> Suporte técnico</li>
+                            <li><i class="fas fa-check"></i> Integração simples</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="precos" class="section">
+        <div class="container">
+            <h2 class="section-title">Preços transparentes e justos</h2>
+            <p class="section-subtitle">Pague apenas pelo que usar. Sem mensalidades, sem surpresas.</p>
+            
+            <div class="row g-4 justify-content-center">
+                <div class="col-lg-4">
+                    <div class="pricing-card">
+                        <div class="solution-icon icon-download">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <h3>Download XML</h3>
+                        <div class="price price-xml">R$ 0,10<small>/XML</small></div>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Download automático</li>
+                            <li><i class="fas fa-check"></i> Validação de chaves</li>
+                            <li><i class="fas fa-check"></i> Processamento em lote</li>
+                            <li><i class="fas fa-check"></i> Acesso via web e API</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="pricing-card featured">
+                        <div class="pricing-badge">MAIS POPULAR</div>
+                        <div class="solution-icon icon-pdf">
+                            <i class="fas fa-file-pdf"></i>
+                        </div>
+                        <h3>DANFE PDF</h3>
+                        <div class="price price-free">GRÁTIS<small>/sempre</small></div>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Geração ilimitada</li>
+                            <li><i class="fas fa-check"></i> Layout profissional</li>
+                            <li><i class="fas fa-check"></i> Download em PDF</li>
+                            <li><i class="fas fa-check"></i> Sem limites de uso</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="pricing-card">
+                        <div class="solution-icon icon-api">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <h3>Módulo Etiquetas</h3>
+                        <div class="price price-module">R$ 49,90<small>/único</small></div>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check"></i> Etiquetas personalizadas</li>
+                            <li><i class="fas fa-check"></i> Múltiplos formatos</li>
+                            <li><i class="fas fa-check"></i> Integração logística</li>
+                            <li><i class="fas fa-check"></i> Uso ilimitado</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Calculator -->
+            <div class="calculator">
+                <h4 class="text-center mb-4">
+                    <i class="fas fa-calculator me-2" style="color: var(--primary-purple);"></i>
+                    Calcule sua economia
+                </h4>
+                
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">XMLs por mês:</label>
+                        <input type="range" id="xmlSlider" class="calculator-slider" min="100" max="10000" value="1000" step="100">
+                        <div class="text-center mt-2">
+                            <span id="xmlCount" class="badge" style="background: var(--primary-purple); font-size: 1rem;">1.000</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-8">
+                        <div class="calculator-result">
+                            <div class="result-item">
+                                <div style="color: #666; font-size: 0.9rem;">Custo XMLs</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-purple);">
+                                    R$ <span id="xmlCost">100,00</span>
+                                </div>
+                            </div>
+                            
+                            <div class="result-item" style="background: #f0fdf4; border-color: #10b981;">
+                                <div style="color: #10b981; font-size: 0.9rem;">DANFE PDFs</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;">GRÁTIS</div>
+                            </div>
+                            
+                            <div class="result-item highlighted">
+                                <div style="color: #666; font-size: 0.9rem;">Total Mensal</div>
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-purple);">
+                                    R$ <span id="totalCost">100,00</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small style="color: #666;">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Valor mínimo de recarga: R$ 19,90 • Sem mensalidades
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it Works -->
+    <section id="como-funciona" class="section steps">
+        <div class="container">
+            <h2 class="section-title">Como funciona</h2>
+            <p class="section-subtitle">Em apenas 3 passos você automatiza toda sua gestão fiscal</p>
+            
+            <div class="row g-4">
+                <div class="col-lg-4">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <h4>Cadastre-se grátis</h4>
+                        <p>Crie sua conta em menos de 2 minutos. Teste grátis por 7 dias sem compromisso.</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <h4>Cole as chaves dos XMLs</h4>
+                        <p>Insira as chaves das notas fiscais que deseja baixar. Nosso sistema valida e processa automaticamente.</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <h4>Baixe tudo automaticamente</h4>
+                        <p>Receba todos os XMLs e DANFEs organizados e prontos para uso. Economia de até 85% no tempo.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section cta-section">
+        <div class="container">
+            <h2>Pronto para revolucionar sua gestão fiscal?</h2>
+            <p>
+                Mais de <strong>1.000 empresas</strong> já economizam tempo e dinheiro com nossa plataforma. 
+                Comece seu teste gratuito agora!
+            </p>
+            
+            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                <a href="/register" class="btn btn-light btn-lg">
+                    <i class="fas fa-rocket me-2"></i>Começar teste grátis por 7 dias
+                </a>
+                <a href="/login" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-sign-in-alt me-2"></i>Já tenho conta
+                </a>
+            </div>
+            
+            <div class="mt-4">
+                <small style="opacity: 0.8;">
+                    <i class="fas fa-shield-alt me-2"></i>
+                    Teste gratuito • Sem compromisso • Cancele quando quiser
+                </small>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Calculator functionality
+        const slider = document.getElementById('xmlSlider');
+        const xmlCount = document.getElementById('xmlCount');
+        const xmlCost = document.getElementById('xmlCost');
+        const totalCost = document.getElementById('totalCost');
+
+        function updateCalculator() {
+            const count = parseInt(slider.value);
+            const cost = count * 0.10;
+            
+            xmlCount.textContent = count.toLocaleString('pt-BR');
+            xmlCost.textContent = cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            totalCost.textContent = cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+        }
+
+        slider.addEventListener('input', updateCalculator);
+
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Initialize calculator
+        updateCalculator();
+
+        // Intersection Observer for animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // Observe all elements that should animate
+        document.querySelectorAll('.solution-card, .pricing-card, .step-item').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(30px)';
+            el.style.transition = 'all 0.6s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

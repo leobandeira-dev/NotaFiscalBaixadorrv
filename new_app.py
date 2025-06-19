@@ -105,7 +105,9 @@ def index():
     """Home page"""
     if current_user.is_authenticated:
         return redirect(url_for('dashboard'))
-    return render_template('landing.html')
+    # Serve static HTML landing page
+    from flask import send_from_directory
+    return send_from_directory('static', 'index.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
