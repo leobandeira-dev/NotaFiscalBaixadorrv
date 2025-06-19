@@ -1,579 +1,750 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Documentação da API - XML Downloader</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/custom.css') }}" rel="stylesheet">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Prism for syntax highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    
     <style>
+        :root {
+            --primary-purple: #8A05BE;
+            --primary-purple-dark: #6B0F9A;
+            --primary-purple-light: #A855F7;
+            --gray-50: #FAFAFA;
+            --gray-100: #F5F5F5;
+            --gray-900: #1A1A1A;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+        
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .navbar-brand {
+            font-weight: 800;
+            color: var(--primary-purple) !important;
+            font-size: 1.5rem;
+        }
+        
+        .main-content {
+            padding: 3rem 0;
+        }
+        
+        .sidebar {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
+        
+        .content-area {
+            padding-left: 2rem;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .page-title {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 1rem;
+        }
+        
+        .page-subtitle {
+            font-size: 1.3rem;
+            color: #666;
+        }
+        
+        .nav-menu {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .nav-menu li {
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-menu a {
+            color: #666;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            display: block;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-menu a:hover,
+        .nav-menu a.active {
+            background: rgba(138, 5, 190, 0.1);
+            color: var(--primary-purple);
+        }
+        
+        .nav-menu a i {
+            margin-right: 0.75rem;
+            width: 20px;
+        }
+        
+        .section {
+            margin-bottom: 4rem;
+            scroll-margin-top: 120px;
+        }
+        
+        .section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid var(--primary-purple);
+        }
+        
+        .endpoint-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+            border-left: 4px solid;
+        }
+        
+        .endpoint-get { border-left-color: #10b981; }
+        .endpoint-post { border-left-color: var(--primary-purple); }
+        .endpoint-delete { border-left-color: #ef4444; }
+        
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .method-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            margin-right: 1rem;
+            text-transform: uppercase;
+        }
+        
+        .method-get {
+            background: #f0fdf4;
+            color: #166534;
+        }
+        
+        .method-post {
+            background: #fef7ff;
+            color: var(--primary-purple-dark);
+        }
+        
+        .method-delete {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .endpoint-url {
+            font-family: 'Courier New', monospace;
+            background: #f8fafc;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            flex: 1;
+            font-size: 0.95rem;
+        }
+        
+        .endpoint-description {
+            color: #666;
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+        
+        .params-section,
+        .response-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .section-subtitle {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 1rem;
+        }
+        
         .code-block {
-            background-color: var(--bs-dark);
-            border: 1px solid var(--bs-border-color);
-            border-radius: 0.375rem;
-            padding: 1rem;
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 12px;
+            padding: 1.5rem;
             margin: 1rem 0;
             overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            position: relative;
         }
-        .endpoint {
-            background-color: var(--bs-secondary-bg);
-            border-left: 4px solid var(--bs-primary);
-            padding: 1rem;
+        
+        .code-block::before {
+            content: attr(data-language);
+            position: absolute;
+            top: 0.5rem;
+            right: 1rem;
+            background: rgba(255,255,255,0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            opacity: 0.7;
+        }
+        
+        .params-table {
+            width: 100%;
+            border-collapse: collapse;
             margin: 1rem 0;
-            border-radius: 0 0.375rem 0.375rem 0;
         }
-        .method-get { border-left-color: #28a745; }
-        .method-post { border-left-color: #007bff; }
-        .method-delete { border-left-color: #dc3545; }
-        .status-code {
-            display: inline-block;
+        
+        .params-table th,
+        .params-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .params-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+        
+        .param-name {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: var(--primary-purple);
+        }
+        
+        .param-type {
+            background: #f3f4f6;
             padding: 0.25rem 0.5rem;
-            border-radius: 0.25rem;
+            border-radius: 4px;
             font-size: 0.875rem;
-            font-weight: bold;
+            font-family: 'Courier New', monospace;
         }
-        .status-200 { background-color: #28a745; color: white; }
-        .status-201 { background-color: #17a2b8; color: white; }
-        .status-400 { background-color: #ffc107; color: black; }
-        .status-404 { background-color: #fd7e14; color: white; }
-        .status-500 { background-color: #dc3545; color: white; }
+        
+        .param-required {
+            background: #fef2f2;
+            color: #dc2626;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .param-optional {
+            background: #f0fdf4;
+            color: #166534;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-codes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .status-code {
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .status-200 {
+            background: #f0fdf4;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .status-400 {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fed7aa;
+        }
+        
+        .status-404 {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .status-500 {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .status-number {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        
+        .back-btn {
+            color: var(--primary-purple);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .back-btn:hover {
+            color: var(--primary-purple-dark);
+        }
+        
+        .back-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            left: 1rem;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #e2e8f0;
+            padding: 0.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 2rem 0;
+            }
+            
+            .page-title {
+                font-size: 2.5rem;
+            }
+            
+            .content-area {
+                padding-left: 0;
+                margin-top: 2rem;
+            }
+            
+            .sidebar {
+                position: static;
+                margin-bottom: 2rem;
+            }
+            
+            .endpoint-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .endpoint-url {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
-                <i class="fas fa-file-download me-2"></i>XML Downloader
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-file-invoice me-2"></i>XMLDownloader
             </a>
             <div class="navbar-nav ms-auto">
-                <a class="nav-link" href="{{ url_for('index') }}">
-                    <i class="fas fa-home me-1"></i>Início
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt me-1"></i>Sair
                 </a>
             </div>
         </div>
     </nav>
 
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-lg-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">Navegação</h6>
-                        <nav class="nav flex-column">
-                            <a class="nav-link" href="#overview">Visão Geral</a>
-                            <a class="nav-link" href="#authentication">Autenticação</a>
-                            <a class="nav-link" href="#endpoints">Endpoints</a>
-                            <a class="nav-link" href="#health">Health Check</a>
-                            <a class="nav-link" href="#jobs">Jobs</a>
-                            <a class="nav-link" href="#files">Arquivos</a>
-                            <a class="nav-link" href="#test">Teste</a>
-                            <a class="nav-link" href="#examples">Exemplos</a>
-                            <a class="nav-link" href="#errors">Códigos de Erro</a>
-                        </nav>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <a href="{{ url_for('dashboard') }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                Voltar ao Dashboard
+            </a>
+            
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-code me-3"></i>
+                    Documentação da API
+                </h1>
+                <p class="page-subtitle">API REST completa para automação de downloads de XML</p>
+            </div>
+
+            <div class="row">
+                <!-- Sidebar Navigation -->
+                <div class="col-lg-3">
+                    <div class="sidebar">
+                        <h6 class="mb-3">Navegação</h6>
+                        <ul class="nav-menu">
+                            <li><a href="#overview" class="active"><i class="fas fa-info-circle"></i>Visão Geral</a></li>
+                            <li><a href="#authentication"><i class="fas fa-key"></i>Autenticação</a></li>
+                            <li><a href="#endpoints"><i class="fas fa-plug"></i>Endpoints</a></li>
+                            <li><a href="#examples"><i class="fas fa-code"></i>Exemplos</a></li>
+                            <li><a href="#errors"><i class="fas fa-exclamation-triangle"></i>Códigos de Erro</a></li>
+                        </ul>
                     </div>
                 </div>
-            </div>
-            
-            <div class="col-lg-9">
-                <h1 class="mb-4"><i class="fas fa-code me-2"></i>Documentação da API</h1>
-                
-                <section id="overview" class="mb-5">
-                    <h2>Visão Geral</h2>
-                    <p class="lead">A API REST do XML Downloader permite integração automatizada para download em lote de arquivos XML de notas fiscais. A API oferece endpoints para criar jobs de download, monitorar progresso e baixar arquivos XML individualmente.</p>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h6><i class="fas fa-server me-2"></i>Base URL</h6>
-                                    <code id="base-url">{{ request.url_root }}api/v1</code>
-                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('base-url')">
-                                        <i class="fas fa-copy"></i>
-                                    </button>
+
+                <!-- Main Content -->
+                <div class="col-lg-9">
+                    <div class="content-area">
+                        <!-- Overview Section -->
+                        <section id="overview" class="section">
+                            <h2 class="section-title">Visão Geral</h2>
+                            <p>A API do XMLDownloader permite automatizar o download de XMLs de notas fiscais através de requisições HTTP. Ideal para integração com sistemas ERP, contábeis e de gestão.</p>
+                            
+                            <h4>Base URL</h4>
+                            <div class="code-block" data-language="url">
+https://sua-app.replit.app/api/v1
+                            </div>
+                            
+                            <h4>Recursos Principais</h4>
+                            <ul>
+                                <li>Download automático de XMLs via chaves de 44 dígitos</li>
+                                <li>Processamento assíncrono com acompanhamento em tempo real</li>
+                                <li>Sistema de cobrança por uso integrado</li>
+                                <li>Geração gratuita de DANFE PDF</li>
+                                <li>Rate limiting e controle de qualidade</li>
+                            </ul>
+                        </section>
+
+                        <!-- Authentication Section -->
+                        <section id="authentication" class="section">
+                            <h2 class="section-title">Autenticação</h2>
+                            <p>Todas as requisições da API requerem autenticação via headers HTTP. Você pode obter suas credenciais no <a href="{{ url_for('api_credentials') }}">painel de credenciais</a>.</p>
+                            
+                            <h4>Headers Obrigatórios</h4>
+                            <div class="code-block" data-language="http">
+X-API-Key: sua_api_key_aqui
+X-API-Secret: seu_api_secret_aqui
+Content-Type: application/json
+                            </div>
+                        </section>
+
+                        <!-- Endpoints Section -->
+                        <section id="endpoints" class="section">
+                            <h2 class="section-title">Endpoints</h2>
+                            
+                            <!-- Health Check -->
+                            <div class="endpoint-card endpoint-get">
+                                <div class="endpoint-header">
+                                    <span class="method-badge method-get">GET</span>
+                                    <code class="endpoint-url">/health</code>
+                                </div>
+                                <p class="endpoint-description">Verifica se a API está funcionando.</p>
+                                
+                                <div class="response-section">
+                                    <h5 class="section-subtitle">Resposta</h5>
+                                    <div class="code-block" data-language="json">
+{
+  "status": "healthy",
+  "timestamp": "2025-06-19T14:30:00Z"
+}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-body">
-                                    <h6><i class="fas fa-info-circle me-2"></i>Versão</h6>
-                                    <span class="badge bg-primary">v1.0</span>
+
+                            <!-- Create Job -->
+                            <div class="endpoint-card endpoint-post">
+                                <div class="endpoint-header">
+                                    <span class="method-badge method-post">POST</span>
+                                    <code class="endpoint-url">/jobs</code>
+                                </div>
+                                <p class="endpoint-description">Cria um novo job de download de XMLs.</p>
+                                
+                                <div class="params-section">
+                                    <h5 class="section-subtitle">Parâmetros do Body</h5>
+                                    <table class="params-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Parâmetro</th>
+                                                <th>Tipo</th>
+                                                <th>Obrigatório</th>
+                                                <th>Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><span class="param-name">invoice_keys</span></td>
+                                                <td><span class="param-type">array</span></td>
+                                                <td><span class="param-required">Sim</span></td>
+                                                <td>Lista de chaves de notas fiscais (44 dígitos cada)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="param-name">callback_url</span></td>
+                                                <td><span class="param-type">string</span></td>
+                                                <td><span class="param-optional">Não</span></td>
+                                                <td>URL para webhook de notificação</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="response-section">
+                                    <h5 class="section-subtitle">Exemplo de Requisição</h5>
+                                    <div class="code-block" data-language="json">
+{
+  "invoice_keys": [
+    "35200114200166000166550010000000019119090910",
+    "35200114200166000166550010000000020119090911"
+  ],
+  "callback_url": "https://seu-sistema.com/webhook"
+}
+                                    </div>
+                                    
+                                    <h5 class="section-subtitle">Resposta de Sucesso</h5>
+                                    <div class="code-block" data-language="json">
+{
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "created",
+  "total_keys": 2,
+  "created_at": "2025-06-19T14:30:00Z"
+}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </section>
 
-                <section id="authentication" class="mb-5">
-                    <h2>Autenticação</h2>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Atualmente a API não requer autenticação. Para uso em produção, recomenda-se implementar autenticação por API key.
-                    </div>
-                </section>
-
-                <section id="endpoints" class="mb-5">
-                    <h2>Endpoints</h2>
-                    
-                    <div id="health" class="endpoint method-get">
-                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/health</h4>
-                        <p>Verifica se a API está funcionando.</p>
-                        
-                        <h6>Resposta <span class="status-code status-200">200</span></h6>
-                        <div class="code-block">
-<pre><code>{
-    "status": "healthy",
-    "version": "1.0",
-    "service": "XML Downloader API",
-    "timestamp": "2025-06-19T04:00:00.000000"
-}</code></pre>
-                        </div>
-
-                        <button class="btn btn-primary btn-sm" onclick="testEndpoint('/api/v1/health', 'GET')">
-                            <i class="fas fa-play me-1"></i>Testar Endpoint
-                        </button>
-                    </div>
-
-                    <div id="jobs" class="endpoint method-post">
-                        <h4><span class="badge bg-primary me-2">POST</span>/api/v1/jobs</h4>
-                        <p>Cria um novo job para download de XMLs de notas fiscais.</p>
-                        
-                        <h6>Body</h6>
-                        <div class="code-block">
-<pre><code>{
-    "invoice_keys": [
-        "35250162954987000130550020001854371034511150",
-        "35250162954987000130550020001854371034511151"
-    ],
-    "callback_url": "https://seu-webhook.com/callback" // opcional
-}</code></pre>
-                        </div>
-
-                        <h6>Resposta <span class="status-code status-201">201</span></h6>
-                        <div class="code-block">
-<pre><code>{
-    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
-    "status": "created",
+                            <!-- Get Job Status -->
+                            <div class="endpoint-card endpoint-get">
+                                <div class="endpoint-header">
+                                    <span class="method-badge method-get">GET</span>
+                                    <code class="endpoint-url">/jobs/{job_id}</code>
+                                </div>
+                                <p class="endpoint-description">Obtém o status e progresso de um job específico.</p>
+                                
+                                <div class="response-section">
+                                    <h5 class="section-subtitle">Resposta</h5>
+                                    <div class="code-block" data-language="json">
+{
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "progress": {
     "total_keys": 2,
-    "created_at": "2025-06-19T04:00:00.000000"
-}</code></pre>
-                        </div>
+    "processed": 2,
+    "successful": 2,
+    "failed": 0,
+    "percentage": 100.0
+  },
+  "files": [
+    "35200114200166000166550010000000019119090910.xml",
+    "35200114200166000166550010000000020119090911.xml"
+  ],
+  "created_at": "2025-06-19T14:30:00Z",
+  "completed_at": "2025-06-19T14:32:00Z"
+}
+                                    </div>
+                                </div>
+                            </div>
 
-                        <h6>Erro <span class="status-code status-400">400</span></h6>
-                        <div class="code-block">
-<pre><code>{
-    "error": "Invalid invoice key format. Must be 44 digits.",
-    "code": "INVALID_KEY_FORMAT",
-    "invalid_keys": ["123456"]
-}</code></pre>
-                        </div>
-                    </div>
+                            <!-- List Jobs -->
+                            <div class="endpoint-card endpoint-get">
+                                <div class="endpoint-header">
+                                    <span class="method-badge method-get">GET</span>
+                                    <code class="endpoint-url">/jobs</code>
+                                </div>
+                                <p class="endpoint-description">Lista todos os jobs do usuário com filtros opcionais.</p>
+                                
+                                <div class="params-section">
+                                    <h5 class="section-subtitle">Query Parameters</h5>
+                                    <table class="params-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Parâmetro</th>
+                                                <th>Tipo</th>
+                                                <th>Obrigatório</th>
+                                                <th>Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><span class="param-name">status</span></td>
+                                                <td><span class="param-type">string</span></td>
+                                                <td><span class="param-optional">Não</span></td>
+                                                <td>Filtrar por status (running, completed, failed)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="param-name">limit</span></td>
+                                                <td><span class="param-type">integer</span></td>
+                                                <td><span class="param-optional">Não</span></td>
+                                                <td>Número máximo de jobs (padrão: 50)</td>
+                                            </tr>
+                                            <tr>
+                                                <td><span class="param-name">offset</span></td>
+                                                <td><span class="param-type">integer</span></td>
+                                                <td><span class="param-optional">Não</span></td>
+                                                <td>Número de jobs a pular (padrão: 0)</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
 
-                    <div class="endpoint method-get">
-                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/jobs</h4>
-                        <p>Lista todos os jobs com filtros opcionais.</p>
-                        
-                        <h6>Parâmetros de Query</h6>
-                        <ul>
-                            <li><code>status</code> (opcional): Filtrar por status (running, completed, failed)</li>
-                            <li><code>limit</code> (opcional): Máximo de jobs por página (padrão: 50)</li>
-                            <li><code>offset</code> (opcional): Número de jobs a pular (padrão: 0)</li>
-                        </ul>
+                            <!-- Download File -->
+                            <div class="endpoint-card endpoint-get">
+                                <div class="endpoint-header">
+                                    <span class="method-badge method-get">GET</span>
+                                    <code class="endpoint-url">/jobs/{job_id}/files/{filename}</code>
+                                </div>
+                                <p class="endpoint-description">Baixa um arquivo XML específico de um job concluído.</p>
+                                
+                                <div class="response-section">
+                                    <h5 class="section-subtitle">Headers de Resposta</h5>
+                                    <div class="code-block" data-language="http">
+Content-Type: application/xml
+Content-Disposition: attachment; filename="chave.xml"
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
 
-                        <h6>Exemplo</h6>
-                        <div class="code-block">
-                            <code>GET /api/v1/jobs?status=completed&limit=10&offset=0</code>
-                        </div>
+                        <!-- Examples Section -->
+                        <section id="examples" class="section">
+                            <h2 class="section-title">Exemplos de Código</h2>
+                            
+                            <h4>Python</h4>
+                            <div class="code-block" data-language="python">
+import requests
 
-                        <h6>Resposta <span class="status-code status-200">200</span></h6>
-                        <div class="code-block">
-<pre><code>{
-    "jobs": [
-        {
-            "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
-            "status": "completed",
-            "total_keys": 2,
-            "processed": 2,
-            "successful": 2,
-            "failed": 0,
-            "created_at": "2025-06-19T04:00:00.000000",
-            "completed_at": "2025-06-19T04:05:00.000000"
-        }
-    ],
-    "total": 1,
-    "limit": 10,
-    "offset": 0
-}</code></pre>
-                        </div>
+# Configuração
+api_key = "sua_api_key"
+api_secret = "seu_api_secret"
+base_url = "https://sua-app.replit.app/api/v1"
 
-                        <button class="btn btn-primary btn-sm" onclick="testEndpoint('/api/v1/jobs', 'GET')">
-                            <i class="fas fa-play me-1"></i>Testar Endpoint
-                        </button>
-                    </div>
-
-                    <div class="endpoint method-get">
-                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/jobs/{job_id}</h4>
-                        <p>Consulta o status e progresso de um job específico.</p>
-                        
-                        <h6>Resposta <span class="status-code status-200">200</span></h6>
-                        <div class="code-block">
-<pre><code>{
-    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
-    "status": "completed",
-    "progress": {
-        "total_keys": 2,
-        "processed": 2,
-        "successful": 2,
-        "failed": 0,
-        "percentage": 100.0
-    },
-    "files": [
-        "35250162954987000130550020001854371034511150.xml",
-        "35250162954987000130550020001854371034511151.xml"
-    ],
-    "errors": [],
-    "created_at": "2025-06-19T04:00:00.000000",
-    "completed_at": "2025-06-19T04:05:00.000000"
-}</code></pre>
-                        </div>
-                    </div>
-
-                    <div id="files" class="endpoint method-get">
-                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/jobs/{job_id}/files</h4>
-                        <p>Lista todos os arquivos XML baixados por um job específico.</p>
-                        
-                        <h6>Resposta <span class="status-code status-200">200</span></h6>
-                        <div class="code-block">
-<pre><code>{
-    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
-    "files": [
-        {
-            "filename": "35250162954987000130550020001854371034511150.xml",
-            "size": 4590,
-            "download_url": "/api/v1/jobs/cc9fc653-7b99-45fe-bafb-9cb0c7f2784f/files/35250162954987000130550020001854371034511150.xml"
-        }
-    ]
-}</code></pre>
-                        </div>
-                    </div>
-
-                    <div class="endpoint method-get">
-                        <h4><span class="badge bg-success me-2">GET</span>/api/v1/jobs/{job_id}/files/{filename}</h4>
-                        <p>Baixa um arquivo XML específico de um job.</p>
-                        
-                        <h6>Resposta <span class="status-code status-200">200</span></h6>
-                        <p>Arquivo XML como attachment para download.</p>
-                    </div>
-
-                    <div id="test" class="endpoint method-post">
-                        <h4><span class="badge bg-primary me-2">POST</span>/api/v1/test</h4>
-                        <p>Testa a conectividade do sistema de automação.</p>
-                        
-                        <h6>Resposta <span class="status-code status-200">200</span></h6>
-                        <div class="code-block">
-<pre><code>{
-    "status": "success",
-    "message": "Connection test completed",
-    "details": {
-        "success": true,
-        "response_time": "2.5s"
-    },
-    "timestamp": "2025-06-19T04:00:00.000000"
-}</code></pre>
-                        </div>
-
-                        <button class="btn btn-primary btn-sm" onclick="testEndpoint('/api/v1/test', 'POST')">
-                            <i class="fas fa-play me-1"></i>Testar Endpoint
-                        </button>
-                    </div>
-                </section>
-
-                <section id="examples" class="mb-5">
-                    <h2>Exemplos de Uso</h2>
-                    
-                    <div class="mb-4">
-                        <h4>cURL</h4>
-                        <div class="code-block">
-<pre><code># Verificar status da API
-curl {{ request.url_root }}api/v1/health
-
-# Criar job
-curl -X POST {{ request.url_root }}api/v1/jobs \
-  -H "Content-Type: application/json" \
-  -d '{"invoice_keys": ["35250162954987000130550020001854371034511150"]}'
-
-# Verificar status do job
-curl {{ request.url_root }}api/v1/jobs/JOB_ID
-
-# Listar arquivos
-curl {{ request.url_root }}api/v1/jobs/JOB_ID/files
-
-# Baixar arquivo
-curl -O {{ request.url_root }}api/v1/jobs/JOB_ID/files/FILENAME.xml</code></pre>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <h4>Python</h4>
-                        <div class="code-block">
-<pre><code>import requests
-import time
-
-# Criar job
-response = requests.post('{{ request.url_root }}api/v1/jobs', json={
-    'invoice_keys': ['35250162954987000130550020001854371034511150']
-})
-
-job_data = response.json()
-job_id = job_data['job_id']
-
-# Monitorar progresso
-while True:
-    status_response = requests.get(f'{{ request.url_root }}api/v1/jobs/{job_id}')
-    status = status_response.json()
-    
-    print(f"Status: {status['status']}, Progresso: {status['progress']['percentage']}%")
-    
-    if status['status'] in ['completed', 'failed']:
-        break
-    
-    time.sleep(5)
-
-# Baixar arquivos
-if status['status'] == 'completed':
-    files_response = requests.get(f'{{ request.url_root }}api/v1/jobs/{job_id}/files')
-    files = files_response.json()['files']
-    
-    for file_info in files:
-        file_response = requests.get(f"{{ request.url_root }}{file_info['download_url']}")
-        
-        with open(file_info['filename'], 'wb') as f:
-            f.write(file_response.content)
-        
-        print(f"Arquivo baixado: {file_info['filename']}")</code></pre>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <h4>JavaScript/Node.js</h4>
-                        <div class="code-block">
-<pre><code>const axios = require('axios');
-
-async function downloadInvoices(invoiceKeys) {
-    const baseUrl = '{{ request.url_root }}api/v1';
-    
-    // Criar job
-    const jobResponse = await axios.post(`${baseUrl}/jobs`, {
-        invoice_keys: invoiceKeys
-    });
-    
-    const jobId = jobResponse.data.job_id;
-    console.log(`Job criado: ${jobId}`);
-    
-    // Monitorar progresso
-    let status;
-    do {
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
-        const statusResponse = await axios.get(`${baseUrl}/jobs/${jobId}`);
-        status = statusResponse.data;
-        
-        console.log(`Progresso: ${status.progress.percentage}%`);
-    } while (status.status === 'running');
-    
-    // Baixar arquivos
-    if (status.status === 'completed') {
-        const filesResponse = await axios.get(`${baseUrl}/jobs/${jobId}/files`);
-        
-        for (const file of filesResponse.data.files) {
-            const fileResponse = await axios.get(`${baseUrl}${file.download_url}`, {
-                responseType: 'stream'
-            });
-            
-            const writer = fs.createWriteStream(file.filename);
-            fileResponse.data.pipe(writer);
-            
-            console.log(`Arquivo baixado: ${file.filename}`);
-        }
-    }
+headers = {
+    "X-API-Key": api_key,
+    "X-API-Secret": api_secret,
+    "Content-Type": "application/json"
 }
 
-// Uso
-downloadInvoices(['35250162954987000130550020001854371034511150']);</code></pre>
-                        </div>
-                    </div>
-                </section>
+# Criar job
+data = {
+    "invoice_keys": [
+        "35200114200166000166550010000000019119090910"
+    ]
+}
 
-                <section id="errors" class="mb-5">
-                    <h2>Códigos de Erro</h2>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>Códigos HTTP</h5>
-                            <ul class="list-group">
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <span class="status-code status-200">200</span> Sucesso
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <span class="status-code status-201">201</span> Recurso criado
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <span class="status-code status-400">400</span> Erro na requisição
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <span class="status-code status-404">404</span> Recurso não encontrado
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between">
-                                    <span class="status-code status-500">500</span> Erro interno
-                                </li>
-                            </ul>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>Códigos da API</h5>
-                            <ul class="list-group">
-                                <li class="list-group-item">
-                                    <code>MISSING_INVOICE_KEYS</code><br>
-                                    <small class="text-muted">Campo invoice_keys ausente</small>
-                                </li>
-                                <li class="list-group-item">
-                                    <code>INVALID_INVOICE_KEYS</code><br>
-                                    <small class="text-muted">Lista de chaves inválida</small>
-                                </li>
-                                <li class="list-group-item">
-                                    <code>INVALID_KEY_FORMAT</code><br>
-                                    <small class="text-muted">Formato de chave inválido</small>
-                                </li>
-                                <li class="list-group-item">
-                                    <code>JOB_NOT_FOUND</code><br>
-                                    <small class="text-muted">Job não encontrado</small>
-                                </li>
-                                <li class="list-group-item">
-                                    <code>FILE_NOT_FOUND</code><br>
-                                    <small class="text-muted">Arquivo não encontrado</small>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </section>
+response = requests.post(f"{base_url}/jobs", json=data, headers=headers)
+job = response.json()
 
-                <section class="mb-5">
-                    <h2>Status de Jobs</h2>
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <i class="fas fa-clock text-warning fa-2x mb-2"></i>
-                                    <h6>starting</h6>
-                                    <small class="text-muted">Aguardando início</small>
-                                </div>
+print(f"Job criado: {job['job_id']}")
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <i class="fas fa-spinner text-primary fa-2x mb-2"></i>
-                                    <h6>running</h6>
-                                    <small class="text-muted">Em execução</small>
-                                </div>
+                            
+                            <h4>cURL</h4>
+                            <div class="code-block" data-language="bash">
+curl -X POST "https://sua-app.replit.app/api/v1/jobs" \
+  -H "X-API-Key: sua_api_key" \
+  -H "X-API-Secret: seu_api_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "invoice_keys": [
+      "35200114200166000166550010000000019119090910"
+    ]
+  }'
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <i class="fas fa-check text-success fa-2x mb-2"></i>
-                                    <h6>completed</h6>
-                                    <small class="text-muted">Concluído</small>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="card text-center">
-                                <div class="card-body">
-                                    <i class="fas fa-times text-danger fa-2x mb-2"></i>
-                                    <h6>failed</h6>
-                                    <small class="text-muted">Falhou</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </div>
-    </div>
+                        </section>
 
-    <!-- Test Results Modal -->
-    <div class="modal fade" id="testModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Resultado do Teste</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="testResult"></div>
+                        <!-- Error Codes Section -->
+                        <section id="errors" class="section">
+                            <h2 class="section-title">Códigos de Erro</h2>
+                            
+                            <div class="status-codes">
+                                <div class="status-code status-200">
+                                    <div class="status-number">200</div>
+                                    <div>Sucesso</div>
+                                </div>
+                                <div class="status-code status-400">
+                                    <div class="status-number">400</div>
+                                    <div>Dados inválidos</div>
+                                </div>
+                                <div class="status-code status-404">
+                                    <div class="status-number">404</div>
+                                    <div>Recurso não encontrado</div>
+                                </div>
+                                <div class="status-code status-500">
+                                    <div class="status-number">500</div>
+                                    <div>Erro interno</div>
+                                </div>
+                            </div>
+                            
+                            <h4>Formato de Erro</h4>
+                            <div class="code-block" data-language="json">
+{
+  "error": "validation_error",
+  "message": "Chave de nota fiscal inválida",
+  "details": {
+    "field": "invoice_keys[0]",
+    "code": "invalid_format"
+  }
+}
+                            </div>
+                        </section>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <script>
-        function copyToClipboard(elementId) {
-            const element = document.getElementById(elementId);
-            navigator.clipboard.writeText(element.textContent);
-            
-            // Show feedback
-            const btn = element.nextElementSibling;
-            const originalIcon = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-check"></i>';
-            btn.classList.add('btn-success');
-            btn.classList.remove('btn-outline-secondary');
-            
-            setTimeout(() => {
-                btn.innerHTML = originalIcon;
-                btn.classList.remove('btn-success');
-                btn.classList.add('btn-outline-secondary');
-            }, 2000);
-        }
-
-        async function testEndpoint(endpoint, method) {
-            const resultDiv = document.getElementById('testResult');
-            const modal = new bootstrap.Modal(document.getElementById('testModal'));
-            
-            resultDiv.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Testando endpoint...</div>';
-            modal.show();
-            
-            try {
-                const response = await fetch(endpoint, {
-                    method: method,
-                    headers: method === 'POST' ? {'Content-Type': 'application/json'} : {}
-                });
-                
-                const data = await response.json();
-                const statusClass = response.ok ? 'success' : 'danger';
-                
-                resultDiv.innerHTML = `
-                    <div class="alert alert-${statusClass}">
-                        <h6><i class="fas fa-${response.ok ? 'check' : 'times'} me-2"></i>Status: ${response.status}</h6>
-                    </div>
-                    <h6>Resposta:</h6>
-                    <div class="code-block">
-                        <pre><code>${JSON.stringify(data, null, 2)}</code></pre>
-                    </div>
-                `;
-            } catch (error) {
-                resultDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h6><i class="fas fa-times me-2"></i>Erro</h6>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        // Smooth scrolling for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        // Smooth scrolling for navigation
+        document.querySelectorAll('.nav-menu a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
@@ -582,8 +753,53 @@ downloadInvoices(['35250162954987000130550020001854371034511150']);</code></pre>
                         behavior: 'smooth',
                         block: 'start'
                     });
+                    
+                    // Update active nav item
+                    document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
                 }
             });
+        });
+        
+        // Update active nav on scroll
+        window.addEventListener('scroll', function() {
+            const sections = document.querySelectorAll('.section');
+            const navLinks = document.querySelectorAll('.nav-menu a');
+            
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 150;
+                if (scrollY >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+        
+        // Copy code blocks
+        document.querySelectorAll('.code-block').forEach(block => {
+            const button = document.createElement('button');
+            button.className = 'copy-btn';
+            button.innerHTML = '<i class="fas fa-copy"></i>';
+            button.title = 'Copiar código';
+            
+            button.addEventListener('click', () => {
+                navigator.clipboard.writeText(block.textContent.trim()).then(() => {
+                    button.innerHTML = '<i class="fas fa-check"></i>';
+                    setTimeout(() => {
+                        button.innerHTML = '<i class="fas fa-copy"></i>';
+                    }, 2000);
+                });
+            });
+            
+            block.style.position = 'relative';
+            block.appendChild(button);
         });
     </script>
 </body>

@@ -1,221 +1,688 @@
-{% extends "base.html" %}
-
-{% block title %}Download XML - XML Downloader{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <h2><i class="fas fa-download me-2"></i>Download de XMLs</h2>
-            <p class="text-muted">Insira as chaves das notas fiscais para download automático</p>
-        </div>
-    </div>
-
-    <!-- Pricing Info -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card border-primary">
-                <div class="card-header bg-primary text-white">
-                    <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Preços</h6>
-                </div>
-                <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        <li><i class="fas fa-file-alt text-primary me-2"></i>Download XML: R$ 0,10 cada</li>
-                        <li><i class="fas fa-file-pdf text-success me-2"></i>Geração DANFE: <strong>GRATUITO</strong></li>
-                        <li><i class="fas fa-api text-info me-2"></i>Uso via API: R$ 0,10 cada</li>
-                        <li><i class="fas fa-tags text-warning me-2"></i>Módulo Etiquetas: R$ 49,90</li>
-                    </ul>
-                </div>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Download XML - XML Downloader</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-purple: #8A05BE;
+            --primary-purple-dark: #6B0F9A;
+            --primary-purple-light: #A855F7;
+            --gray-50: #FAFAFA;
+            --gray-100: #F5F5F5;
+            --gray-900: #1A1A1A;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 800;
+            color: var(--primary-purple) !important;
+            font-size: 1.5rem;
+        }
+        
+        .main-content {
+            padding: 3rem 0;
+        }
+        
+        .page-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--gray-900);
+            margin-bottom: 1rem;
+        }
+        
+        .page-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+        }
+        
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .info-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .pricing-card {
+            border-left: 4px solid var(--primary-purple);
+        }
+        
+        .status-card {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .card-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            margin-bottom: 0;
+        }
+        
+        .pricing-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .pricing-list li {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .pricing-list li:last-child {
+            border-bottom: none;
+        }
+        
+        .service-name {
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+        }
+        
+        .service-name i {
+            margin-right: 0.75rem;
+            width: 20px;
+        }
+        
+        .service-price {
+            font-weight: 700;
+            color: var(--primary-purple);
+        }
+        
+        .service-price.free {
+            color: var(--success-color);
+        }
+        
+        .balance-info {
+            background: linear-gradient(135deg, var(--success-color), #059669);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+        
+        .balance-amount {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        
+        .trial-badge {
+            background: rgba(245, 158, 11, 0.9);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+        }
+        
+        .trial-badge i {
+            margin-right: 0.5rem;
+        }
+        
+        .upload-card {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .form-label i {
+            margin-right: 0.5rem;
+            color: var(--primary-purple);
+        }
+        
+        .form-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+            min-height: 200px;
+            resize: vertical;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-purple);
+            box-shadow: 0 0 0 3px rgba(138, 5, 190, 0.1);
+            outline: none;
+        }
+        
+        .input-help {
+            color: #666;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+        
+        .cost-calculator {
+            background: #f8fafc;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .cost-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .cost-row:last-child {
+            margin-bottom: 0;
+            padding-top: 0.75rem;
+            border-top: 2px solid #e5e7eb;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+        
+        .cost-label {
+            color: #666;
+        }
+        
+        .cost-value {
+            color: var(--primary-purple);
+            font-weight: 600;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-dark));
+            border: none;
+            border-radius: 12px;
+            padding: 14px 32px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(138, 5, 190, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn-outline-secondary {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 12px 24px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .btn-outline-secondary:hover {
+            border-color: var(--primary-purple);
+            color: var(--primary-purple);
+            background: rgba(138, 5, 190, 0.05);
+        }
+        
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        
+        .alert-success {
+            background: #f0fdf4;
+            color: #166534;
+            border-left: 4px solid #10b981;
+        }
+        
+        .alert-danger {
+            background: #fef2f2;
+            color: #dc2626;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .alert-warning {
+            background: #fffbeb;
+            color: #92400e;
+            border-left: 4px solid #f59e0b;
+        }
+        
+        .back-btn {
+            color: var(--primary-purple);
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .back-btn:hover {
+            color: var(--primary-purple-dark);
+        }
+        
+        .back-btn i {
+            margin-right: 0.5rem;
+        }
+        
+        .examples {
+            background: linear-gradient(135deg, #fef7ff, #faf5ff);
+            border: 2px solid #e879f9;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .examples h6 {
+            color: var(--primary-purple);
+            margin-bottom: 1rem;
+        }
+        
+        .example-keys {
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            margin-top: 0.75rem;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 2rem 0;
+            }
+            
+            .page-title {
+                font-size: 2rem;
+            }
+            
+            .upload-card {
+                padding: 2rem;
+            }
+            
+            .info-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .cost-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-file-invoice me-2"></i>XMLDownloader
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt me-1"></i>Sair
+                </a>
             </div>
         </div>
-        
-        <div class="col-md-6">
-            <div class="card border-success">
-                <div class="card-header bg-success text-white">
-                    <h6 class="mb-0"><i class="fas fa-user me-2"></i>Seu Status</h6>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="container">
+            <a href="{{ url_for('dashboard') }}" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                Voltar ao Dashboard
+            </a>
+            
+            <div class="page-header">
+                <h1 class="page-title">
+                    <i class="fas fa-download me-3"></i>
+                    Download de XMLs
+                </h1>
+                <p class="page-subtitle">Insira as chaves das notas fiscais para download automático</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- Info Cards -->
+            <div class="info-cards">
+                <!-- Pricing Info -->
+                <div class="info-card pricing-card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-tag me-2"></i>
+                            Preços dos Serviços
+                        </h5>
+                    </div>
+                    <ul class="pricing-list">
+                        <li>
+                            <span class="service-name">
+                                <i class="fas fa-file-alt" style="color: var(--primary-purple);"></i>
+                                Download XML
+                            </span>
+                            <span class="service-price">R$ 0,10</span>
+                        </li>
+                        <li>
+                            <span class="service-name">
+                                <i class="fas fa-file-pdf" style="color: var(--success-color);"></i>
+                                Geração DANFE
+                            </span>
+                            <span class="service-price free">GRATUITO</span>
+                        </li>
+                        <li>
+                            <span class="service-name">
+                                <i class="fas fa-code" style="color: #3b82f6;"></i>
+                                Uso via API
+                            </span>
+                            <span class="service-price">R$ 0,10</span>
+                        </li>
+                        <li>
+                            <span class="service-name">
+                                <i class="fas fa-tags" style="color: var(--warning-color);"></i>
+                                Módulo Etiquetas
+                            </span>
+                            <span class="service-price">R$ 49,90</span>
+                        </li>
+                    </ul>
                 </div>
-                <div class="card-body">
-                    <p class="mb-1">
-                        <i class="fas fa-wallet text-success me-2"></i>
-                        Saldo: <strong>R$ {{ "%.2f"|format(current_user.current_balance) }}</strong>
-                    </p>
+
+                <!-- Status Info -->
+                <div class="info-card status-card">
+                    <div class="card-header">
+                        <h5 class="card-title">
+                            <i class="fas fa-user me-2"></i>
+                            Seu Status
+                        </h5>
+                    </div>
+                    <div class="balance-info">
+                        <div class="balance-amount">
+                            R$ {{ "%.2f"|format(current_user.current_balance) }}
+                        </div>
+                        <div>Saldo Disponível</div>
+                    </div>
                     {% if current_user.is_trial_active() %}
-                    <p class="mb-0">
-                        <i class="fas fa-gift text-warning me-2"></i>
-                        <span class="badge bg-warning text-dark">TRIAL ATIVO</span>
-                        Até {{ current_user.trial_expires_at.strftime('%d/%m/%Y') if current_user.trial_expires_at else 'N/A' }}
-                    </p>
+                    <div class="trial-badge">
+                        <i class="fas fa-gift"></i>
+                        TRIAL ATIVO até {{ current_user.trial_expires_at.strftime('%d/%m/%Y') if current_user.trial_expires_at else 'N/A' }}
+                    </div>
                     {% else %}
-                    <p class="mb-0">
-                        <i class="fas fa-check text-success me-2"></i>
-                        Conta ativa - Cobrança por uso
-                    </p>
+                    <div style="color: var(--success-color); font-weight: 600;">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Conta ativa
+                    </div>
+                    {% endif %}
+                    
+                    {% if current_user.current_balance < 0.10 and not current_user.is_trial_active() %}
+                    <div class="mt-3">
+                        <a href="{{ url_for('add_balance') }}" class="btn-outline-secondary">
+                            <i class="fas fa-plus me-2"></i>
+                            Adicionar Saldo
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Upload Form -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0"><i class="fas fa-upload me-2"></i>Inserir Chaves de Notas Fiscais</h5>
-                </div>
-                <div class="card-body">
-                    <form method="POST" action="{{ url_for('submit_keys') }}" onsubmit="return validateForm()">
-                        <div class="mb-3">
-                            <label for="invoice_keys" class="form-label">
-                                <i class="fas fa-key me-1"></i>Chaves das Notas Fiscais
-                            </label>
-                            <textarea class="form-control" id="invoice_keys" name="invoice_keys" rows="10" 
-                                     placeholder="Cole aqui as chaves das notas fiscais (uma por linha)&#10;Exemplo:&#10;35200507234567000123550010000001231234567890&#10;35200507234567000123550010000001241234567891" 
-                                     oninput="validateKeys()" required></textarea>
-                            <div class="form-text">
-                                <i class="fas fa-info-circle me-1"></i>
-                                Cole uma chave por linha. Cada chave deve ter 44 dígitos.
-                            </div>
-                        </div>
+            <!-- Upload Form -->
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="upload-card">
+                        <h5 class="mb-4">
+                            <i class="fas fa-upload me-2"></i>
+                            Chaves das Notas Fiscais
+                        </h5>
                         
-                        <!-- Validation Results -->
-                        <div id="validation-results" class="mb-3" style="display: none;">
-                            <div class="alert alert-info">
-                                <div class="row">
-                                    <div class="col-md-3">
-                                        <strong>Total de linhas:</strong> <span id="total-lines">0</span>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <strong>Chaves válidas:</strong> <span id="valid-keys" class="text-success">0</span>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <strong>Chaves inválidas:</strong> <span id="invalid-keys" class="text-danger">0</span>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <strong>Custo estimado:</strong> R$ <span id="estimated-cost">0.00</span>
-                                    </div>
+                        <form method="POST" action="{{ url_for('submit_keys') }}" id="uploadForm">
+                            <div class="mb-4">
+                                <label for="invoice_keys" class="form-label">
+                                    <i class="fas fa-key"></i>
+                                    Cole as chaves aqui (uma por linha)
+                                </label>
+                                <textarea class="form-control" 
+                                         id="invoice_keys" 
+                                         name="invoice_keys" 
+                                         placeholder="Cole as chaves das notas fiscais aqui, uma por linha..."
+                                         required></textarea>
+                                <div class="input-help">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Cada chave deve ter 44 dígitos. Máximo 50 chaves por vez.
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- Cost Warning -->
-                        <div id="cost-warning" class="alert alert-warning" style="display: none;">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Atenção:</strong> O custo estimado é maior que seu saldo atual.
-                            <a href="{{ url_for('add_balance') }}" class="btn btn-warning btn-sm ms-2">
-                                <i class="fas fa-plus me-1"></i>Adicionar Saldo
-                            </a>
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" id="submit-btn" class="btn btn-primary" disabled>
-                                <i class="fas fa-download me-1"></i>Iniciar Download
+                            
+                            <!-- Examples -->
+                            <div class="examples">
+                                <h6>
+                                    <i class="fas fa-lightbulb me-2"></i>
+                                    Exemplo de formato das chaves:
+                                </h6>
+                                <div class="example-keys">
+35200114200166000166550010000000019119090910<br>
+35200114200166000166550010000000020119090911<br>
+35200114200166000166550010000000021119090912
+                                </div>
+                            </div>
+                            
+                            <!-- Cost Calculator -->
+                            <div class="cost-calculator" id="costCalculator" style="display: none;">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-calculator me-2"></i>
+                                    Resumo do Custo
+                                </h6>
+                                <div class="cost-row">
+                                    <span class="cost-label">Chaves válidas encontradas:</span>
+                                    <span class="cost-value" id="validKeysCount">0</span>
+                                </div>
+                                <div class="cost-row">
+                                    <span class="cost-label">Download XML (R$ 0,10 cada):</span>
+                                    <span class="cost-value" id="xmlCost">R$ 0,00</span>
+                                </div>
+                                <div class="cost-row">
+                                    <span class="cost-label">Geração DANFE:</span>
+                                    <span class="cost-value free">GRATUITO</span>
+                                </div>
+                                <div class="cost-row">
+                                    <span class="cost-label">Total:</span>
+                                    <span class="cost-value" id="totalCost">R$ 0,00</span>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                                <i class="fas fa-rocket me-2"></i>
+                                Iniciar Download de XMLs
                             </button>
-                        </div>
-                    </form>
+                            
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    Os PDFs DANFE serão gerados gratuitamente após o download
+                                </small>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Instructions -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-question-circle me-2"></i>Como usar</h6>
-                </div>
-                <div class="card-body">
-                    <ol class="mb-0">
-                        <li>Cole as chaves das notas fiscais no campo acima (uma por linha)</li>
-                        <li>O sistema validará automaticamente as chaves (devem ter 44 dígitos)</li>
-                        <li>Clique em "Iniciar Download" para processar</li>
-                        <li>Após o download, você poderá escolher gerar DANFE em PDF</li>
-                        <li>Os arquivos ficarão disponíveis para download por 24 horas</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-let currentUserBalance = {{ current_user.current_balance }};
-let isTrialActive = {{ 'true' if current_user.is_trial_active() else 'false' }};
-
-function validateKeys() {
-    const textarea = document.getElementById('invoice_keys');
-    const text = textarea.value.trim();
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    if (!text) {
-        document.getElementById('validation-results').style.display = 'none';
-        document.getElementById('submit-btn').disabled = true;
-        return;
-    }
-    
-    const lines = text.split('\n').filter(line => line.trim());
-    const validKeys = [];
-    const invalidKeys = [];
-    
-    lines.forEach(line => {
-        const cleanKey = line.trim().replace(/\D/g, ''); // Remove non-digits
-        if (cleanKey.length === 44) {
-            validKeys.push(cleanKey);
-        } else {
-            invalidKeys.push(line.trim());
+    <script>
+        const currentBalance = {{ current_user.current_balance }};
+        const isTrialActive = {{ 'true' if current_user.is_trial_active() else 'false' }};
+        
+        function validateInvoiceKey(key) {
+            // Remove any whitespace and check if it's exactly 44 digits
+            key = key.replace(/\s/g, '');
+            return /^\d{44}$/.test(key);
         }
-    });
-    
-    // Update validation display
-    document.getElementById('total-lines').textContent = lines.length;
-    document.getElementById('valid-keys').textContent = validKeys.length;
-    document.getElementById('invalid-keys').textContent = invalidKeys.length;
-    
-    // Calculate cost
-    const xmlCost = validKeys.length * 0.10;
-    document.getElementById('estimated-cost').textContent = xmlCost.toFixed(2);
-    
-    // Show validation results
-    document.getElementById('validation-results').style.display = 'block';
-    
-    // Check balance
-    const costWarning = document.getElementById('cost-warning');
-    if (!isTrialActive && xmlCost > currentUserBalance) {
-        costWarning.style.display = 'block';
-    } else {
-        costWarning.style.display = 'none';
-    }
-    
-    // Enable/disable submit button
-    document.getElementById('submit-btn').disabled = validKeys.length === 0;
-}
-
-function validateForm() {
-    const textarea = document.getElementById('invoice_keys');
-    const text = textarea.value.trim();
-    
-    if (!text) {
-        alert('Por favor, insira pelo menos uma chave de nota fiscal.');
-        return false;
-    }
-    
-    const lines = text.split('\n').filter(line => line.trim());
-    const validKeys = lines.filter(line => {
-        const cleanKey = line.trim().replace(/\D/g, '');
-        return cleanKey.length === 44;
-    });
-    
-    if (validKeys.length === 0) {
-        alert('Nenhuma chave válida encontrada. Chaves devem ter 44 dígitos.');
-        return false;
-    }
-    
-    return confirm(`Processar ${validKeys.length} chave(s) de nota fiscal?\nCusto estimado: R$ ${(validKeys.length * 0.10).toFixed(2)}`);
-}
-
-// Real-time validation as user types
-document.getElementById('invoice_keys').addEventListener('input', validateKeys);
-</script>
-{% endblock %}
+        
+        function updateCostCalculator() {
+            const textarea = document.getElementById('invoice_keys');
+            const text = textarea.value.trim();
+            
+            if (!text) {
+                document.getElementById('costCalculator').style.display = 'none';
+                document.getElementById('submitBtn').disabled = true;
+                return;
+            }
+            
+            const lines = text.split('\n').filter(line => line.trim());
+            const validKeys = lines.filter(line => validateInvoiceKey(line.trim()));
+            const invalidKeys = lines.filter(line => !validateInvoiceKey(line.trim()));
+            
+            if (validKeys.length === 0) {
+                document.getElementById('costCalculator').style.display = 'none';
+                document.getElementById('submitBtn').disabled = true;
+                return;
+            }
+            
+            // Update calculator
+            const xmlCost = validKeys.length * 0.10;
+            const totalCost = xmlCost;
+            
+            document.getElementById('validKeysCount').textContent = validKeys.length;
+            document.getElementById('xmlCost').textContent = `R$ ${xmlCost.toFixed(2)}`;
+            document.getElementById('totalCost').textContent = `R$ ${totalCost.toFixed(2)}`;
+            
+            // Show calculator
+            document.getElementById('costCalculator').style.display = 'block';
+            
+            // Check if user can afford or has trial
+            const canAfford = isTrialActive || currentBalance >= totalCost;
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (!canAfford) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Saldo insuficiente';
+            } else if (validKeys.length > 50) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Máximo 50 chaves por vez';
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-rocket me-2"></i>Iniciar Download de XMLs';
+            }
+            
+            // Show warnings for invalid keys
+            if (invalidKeys.length > 0) {
+                console.warn(`${invalidKeys.length} chaves inválidas encontradas`);
+            }
+        }
+        
+        // Real-time validation
+        document.getElementById('invoice_keys').addEventListener('input', updateCostCalculator);
+        
+        // Form submission
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            const textarea = document.getElementById('invoice_keys');
+            const text = textarea.value.trim();
+            const lines = text.split('\n').filter(line => line.trim());
+            const validKeys = lines.filter(line => validateInvoiceKey(line.trim()));
+            
+            if (validKeys.length === 0) {
+                e.preventDefault();
+                alert('Nenhuma chave válida encontrada. Verifique se as chaves têm 44 dígitos.');
+                return;
+            }
+            
+            if (validKeys.length > 50) {
+                e.preventDefault();
+                alert('Máximo de 50 chaves por vez. Você inseriu ' + validKeys.length + ' chaves.');
+                return;
+            }
+            
+            const totalCost = validKeys.length * 0.10;
+            const canAfford = isTrialActive || currentBalance >= totalCost;
+            
+            if (!canAfford) {
+                e.preventDefault();
+                alert(`Saldo insuficiente. Você precisa de R$ ${totalCost.toFixed(2)} mas tem apenas R$ ${currentBalance.toFixed(2)}.`);
+                return;
+            }
+            
+            // Confirm submission
+            if (!confirm(`Iniciar download de ${validKeys.length} XMLs por R$ ${totalCost.toFixed(2)}?`)) {
+                e.preventDefault();
+                return;
+            }
+            
+            // Show loading state
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
+        });
+    </script>
+</body>
+</html>
