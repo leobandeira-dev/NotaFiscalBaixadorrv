@@ -246,6 +246,7 @@ def process_download_job(job_id):
                     # Download XML for this invoice key
                     result = downloader.download_invoice_xml(invoice_key, job_id)
                     
+                    # Update job status with thread safety
                     job.processed += 1
                     
                     if result['success']:
@@ -259,6 +260,10 @@ def process_download_job(job_id):
                             'error': result['error']
                         })
                         logger.error(f"Failed to download {invoice_key}: {result['error']}")
+                    
+                    # Log current progress
+                    progress = (job.processed / job.total_keys) * 100
+                    logger.info(f"Progress: {job.processed}/{job.total_keys} ({progress:.1f}%) - Success: {job.successful}, Failed: {job.failed}")
                 
                 except Exception as download_error:
                     job.processed += 1
