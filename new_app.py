@@ -651,8 +651,8 @@ def process_download_job(job_id):
                 # Create fresh downloader instance
                 downloader = InvoiceDownloader()
                 
-                # Download XML with user_id for database saving
-                result = downloader.download_invoice_xml(invoice_key, job_id, 'xml')
+                # Download XML with user_id for database saving and charging
+                result = downloader.download_invoice_xml(invoice_key, job_id, 'xml', job.user_id)
                 
                 # Update job progress immediately
                 with jobs_lock:

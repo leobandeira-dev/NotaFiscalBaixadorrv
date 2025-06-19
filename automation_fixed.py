@@ -96,7 +96,7 @@ class InvoiceDownloader:
             logger.error(f"Failed to setup Chrome WebDriver: {str(e)}")
             raise
     
-    def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml') -> Dict[str, Any]:
+    def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
         """Download XML for a specific invoice key with robust capture strategies"""
         try:
             logger.info(f"[Job {job_id}] Starting XML download for invoice key: {invoice_key}")
@@ -175,6 +175,23 @@ class InvoiceDownloader:
                 download_result = self.check_downloaded_file(invoice_key, job_id)
                 if download_result['success']:
                     logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - file downloaded and found")
+                    
+                    # Process file with user_id for charging and database saving
+                    if user_id and 'file_path' in download_result:
+                        try:
+                            # Read XML content from downloaded file
+                            with open(download_result['file_path'], 'r', encoding='utf-8') as f:
+                                xml_content = f.read()
+                            
+                            # Save to database and charge credits
+                            db_result = self.save_xml_content(xml_content, invoice_key, job_id, user_id, 'SISTEMA')
+                            
+                            # Merge results
+                            download_result.update(db_result)
+                            
+                        except Exception as e:
+                            logger.error(f"[Job {job_id}] Error processing downloaded file: {e}")
+                    
                     return download_result
             
             # Strategy 3: Extract XML from page source
