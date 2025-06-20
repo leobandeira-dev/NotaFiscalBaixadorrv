@@ -220,7 +220,18 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="imap_password" class="form-label">Senha</label>
-                        <input type="password" class="form-control" id="imap_password" name="imap_password" required>
+                        <div class="position-relative">
+                            <input type="password" class="form-control" id="imap_password" name="imap_password" required
+                                   placeholder="{% if current_user.has_imap_configured() %}••••••••{% else %}Digite sua senha{% endif %}">
+                            {% if current_user.has_imap_configured() %}
+                            <small class="text-success position-absolute" style="top: 5px; right: 10px;">
+                                <i class="fas fa-check-circle"></i>
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% if current_user.has_imap_configured() %}
+                        <small class="text-muted">Senha já configurada (campos em branco por segurança)</small>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -283,7 +294,18 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="pop3_password" class="form-label">Senha</label>
-                        <input type="password" class="form-control" id="pop3_password" name="pop3_password" required>
+                        <div class="position-relative">
+                            <input type="password" class="form-control" id="pop3_password" name="pop3_password" required
+                                   placeholder="{% if current_user.has_pop3_configured() %}••••••••{% else %}Digite sua senha{% endif %}">
+                            {% if current_user.has_pop3_configured() %}
+                            <small class="text-success position-absolute" style="top: 5px; right: 10px;">
+                                <i class="fas fa-check-circle"></i>
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% if current_user.has_pop3_configured() %}
+                        <small class="text-muted">Senha já configurada (campos em branco por segurança)</small>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -347,7 +369,18 @@
                 <div class="col-md-6">
                     <div class="mb-3">
                         <label for="smtp_password" class="form-label">Senha</label>
-                        <input type="password" class="form-control" id="smtp_password" name="smtp_password" required>
+                        <div class="position-relative">
+                            <input type="password" class="form-control" id="smtp_password" name="smtp_password" required
+                                   placeholder="{% if current_user.has_smtp_configured() %}••••••••{% else %}Digite sua senha{% endif %}">
+                            {% if current_user.has_smtp_configured() %}
+                            <small class="text-success position-absolute" style="top: 5px; right: 10px;">
+                                <i class="fas fa-check-circle"></i>
+                            </small>
+                            {% endif %}
+                        </div>
+                        {% if current_user.has_smtp_configured() %}
+                        <small class="text-muted">Senha já configurada (campos em branco por segurança)</small>
+                        {% endif %}
                     </div>
                 </div>
             </div>

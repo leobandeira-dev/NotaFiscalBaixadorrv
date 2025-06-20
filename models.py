@@ -159,6 +159,14 @@ class User(UserMixin, db.Model):
         """Verifica se o usuário configurou envio via SMTP"""
         return self.smtp_configured and self.smtp_email and self.smtp_password
     
+    def has_pop3_configured(self):
+        """Verifica se o usuário configurou recebimento via POP3"""
+        return self.pop3_configured and self.pop3_email and self.pop3_password
+    
+    def has_imap_configured(self):
+        """Verifica se o usuário configurou monitoramento via IMAP"""
+        return self.imap_configured and self.imap_email and self.imap_password
+    
     def get_smtp_password(self):
         """Retorna a senha SMTP descriptografada"""
         if self.smtp_password:
