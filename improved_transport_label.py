@@ -90,9 +90,10 @@ class ImprovedTransportLabelGenerator:
         # Extrair dados do XML
         xml_data = extract_xml_data(xml_content)
         
-        # Dimensões das seções
-        section_height = 25
-        spacing = 8
+        # Dimensões das seções com espaçamento de 2mm entre grupos
+        spacing_mm = 2  # 2mm conforme solicitado
+        spacing_pts = spacing_mm * 2.83465  # converter mm para pontos
+        section_height = max(20, int(self.page_height * 0.08))  # altura responsiva
         current_y = self.page_height - self.margin - section_height
         
         # 1. EMPRESA - COM BORDA GARANTIDA
@@ -100,7 +101,7 @@ class ImprovedTransportLabelGenerator:
             c, self.margin, current_y, self.content_width, section_height,
             None, f"{self.company_name} - {self.company_subtitle}"
         )
-        current_y -= (section_height + spacing)
+        current_y -= (section_height + spacing_pts)
         
         # 2. ID/QR - COM BORDA GARANTIDA
         nf_key = xml_data.get('chave_nfe', 'N/A')
@@ -109,7 +110,7 @@ class ImprovedTransportLabelGenerator:
             c, self.margin, current_y, self.content_width, section_height,
             None, id_display
         )
-        current_y -= (section_height + spacing)
+        current_y -= (section_height + spacing_pts)
         
         # 3. NF - COM BORDA GARANTIDA
         numero_nf = xml_data.get('numero_nf', '00000')
@@ -117,14 +118,14 @@ class ImprovedTransportLabelGenerator:
             c, self.margin, current_y, self.content_width, section_height,
             "NF", numero_nf
         )
-        current_y -= (section_height + spacing)
+        current_y -= (section_height + spacing_pts)
         
         # 4. PEDIDO - COM BORDA GARANTIDA
         self._draw_section_with_guaranteed_border(
             c, self.margin, current_y, self.content_width, section_height,
             "Pedido", pedido_number or "N/A"
         )
-        current_y -= (section_height + spacing)
+        current_y -= (section_height + spacing_pts)
         
         # 5. REMETENTE - COM BORDA GARANTIDA
         remetente = xml_data.get('remetente_razao', xml_data.get('remetente_nome', 'N/A'))[:40]
@@ -132,10 +133,10 @@ class ImprovedTransportLabelGenerator:
             c, self.margin, current_y, self.content_width, section_height,
             "Remetente", remetente
         )
-        current_y -= (section_height + spacing)
+        current_y -= (section_height + spacing_pts)
         
         # 6. DESTINATÁRIO - COM BORDA GARANTIDA (seção maior)
-        dest_height = 40
+        dest_height = int(section_height * 1.6)  # 60% maior que seção padrão
         current_y -= (dest_height - section_height)
         dest_width = self.content_width * 0.75
         
@@ -147,12 +148,12 @@ class ImprovedTransportLabelGenerator:
         
         # 7. ÁREA - COM BORDA GARANTIDA
         area_width = self.content_width * 0.22
-        area_x = self.margin + dest_width + 10
+        area_x = self.margin + dest_width + spacing_pts
         self._draw_section_with_guaranteed_border(
             c, area_x, current_y, area_width, dest_height,
             None, f"ÁREA\n{area_code}"
         )
-        current_y -= (dest_height + spacing)
+        current_y -= (dest_height + spacing_pts)
         
         # 8. CIDADE/UF - COM BORDA GARANTIDA
         cidade = xml_data.get('destinatario_cidade', 'N/A')
@@ -161,7 +162,7 @@ class ImprovedTransportLabelGenerator:
             c, self.margin, current_y, dest_width, section_height,
             "Cidade/UF", f"{cidade} {uf}"
         )
-        current_y -= (section_height + spacing)
+        current_y -= (section_height + spacing_pts)
         
         # 9. PESO/VOLUME - COM BORDA GARANTIDA
         peso = xml_data.get('peso_bruto', '0')

@@ -106,6 +106,70 @@ def generate_improved_label_with_guaranteed_borders(xml_id, user, paper_config, 
     
     return labels
 
+def generate_improved_labels_with_guaranteed_borders(xml_record, volumes_config, company_name, company_logo_path, paper_width_mm, paper_height_mm, area_code, company_subtitle, layout_style):
+    """Gera etiquetas com sistema melhorado - bordas garantidas e espaçamento de 2mm"""
+    
+    try:
+        labels = []
+        
+        # Obter conteúdo XML
+        xml_content = getattr(xml_record, 'xml_content', None) or getattr(xml_record, 'content', '')
+        
+        if not xml_content:
+            raise ValueError("XML content not found in record")
+        
+        total_volumes = len(volumes_config)
+        logger.info(f"Geração melhorada: {total_volumes} volumes com bordas garantidas")
+        
+        # Criar gerador melhorado com espaçamento de 2mm
+        generator = ImprovedTransportLabelGenerator(
+            company_name=company_name,
+            company_subtitle=company_subtitle,
+            paper_width_mm=paper_width_mm,
+            paper_height_mm=paper_height_mm,
+            layout_style=layout_style
+        )
+        
+        # Gerar etiquetas individuais
+        for volume_config in volumes_config:
+            volume_idx = volumes_config.index(volume_config) + 1
+            peso = volume_config.get('peso', 0)
+            pedido = volume_config.get('pedido', f'PED{volume_idx}')
+            
+            try:
+                volume_info = f"{volume_idx}/{total_volumes}"
+                
+                label_buffer = generator.generate_transport_label_with_volume_info(
+                    xml_content=xml_content,
+                    pedido_number=pedido,
+                    area_code=area_code,
+                    company_logo_path=company_logo_path,
+                    volume_info=volume_info,
+                    current_volume=volume_idx,
+                    total_volumes=total_volumes
+                )
+                
+                labels.append({
+                    'volume': volume_idx,
+                    'peso': peso,
+                    'pedido': pedido,
+                    'pdf_buffer': label_buffer,
+                    'filename': f'etiqueta_volume_{volume_idx}_{pedido}.pdf'
+                })
+                
+                logger.info(f"Etiqueta melhorada gerada: Volume {volume_idx}/{total_volumes} - {len(label_buffer.getvalue())} bytes")
+                
+            except Exception as e:
+                logger.error(f"Erro ao gerar etiqueta melhorada volume {volume_idx}: {e}")
+                continue
+        
+        logger.info(f"Geradas {len(labels)} etiquetas com bordas garantidas")
+        return labels
+        
+    except Exception as e:
+        logger.error(f"Erro no sistema de etiquetas melhoradas: {str(e)}")
+        raise
+
 from download_service import DownloadService
 from security import (
     SecurityManager, DataIsolationManager, BillingSecurityManager,
@@ -2274,8 +2338,8 @@ def generate_custom_labels(xml_id):
         area_code = request.form.get('area_code', current_user.default_area_code or "01")
         layout_style = request.form.get('layout_style', 'layout1')
         
-        # Gerar etiquetas com sistema de batch processing (elimina erros de memória)
-        labels = generate_multiple_responsive_labels_from_volumes(
+        # Gerar etiquetas com sistema melhorado com bordas garantidas
+        labels = generate_improved_labels_with_guaranteed_borders(
             xml_record=xml_record,
             volumes_config=volumes_config,
             company_name=company_name,
