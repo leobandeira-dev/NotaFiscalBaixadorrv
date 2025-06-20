@@ -187,7 +187,7 @@ class ResponsiveTransportLabelGenerator:
         c.setFont("Helvetica-Bold", self.fonts['company_name'])
         c.setFillColor(colors.black)
         
-        if company_logo_path and os.path.exists(company_logo_path):
+        if company_logo_path and isinstance(company_logo_path, str) and os.path.exists(company_logo_path):
             # Com logo
             logo_size = min(section_height * 0.8, self.content_width * 0.15)
             logo_x = self.margin

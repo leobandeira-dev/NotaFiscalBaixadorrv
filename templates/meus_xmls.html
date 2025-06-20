@@ -231,18 +231,26 @@
                                             </a>
                                             
                                             {% if xml.label_generated %}
-                                                <a href="{{ url_for('download_generated_label', xml_id=xml.id) }}" 
-                                                   class="btn btn-success btn-custom">
-                                                    <i class="fas fa-download"></i> Download Etiqueta
+                                                <a href="{{ url_for('generate_label_route', xml_id=xml.id) }}" 
+                                                   class="btn btn-success btn-custom"
+                                                   target="_blank"
+                                                   title="Imprimir etiqueta diretamente">
+                                                    <i class="fas fa-print"></i> Imprimir Etiqueta
                                                 </a>
                                                 <a href="{{ url_for('label_generator', xml_id=xml.id) }}" 
-                                                   class="btn btn-warning btn-custom btn-sm mt-1">
+                                                   class="btn btn-outline-warning btn-custom btn-sm mt-1">
                                                     <i class="fas fa-edit"></i> Editar Volume/Peso
                                                 </a>
                                             {% else %}
+                                                <a href="{{ url_for('generate_label_route', xml_id=xml.id) }}" 
+                                                   class="btn btn-warning btn-custom"
+                                                   target="_blank"
+                                                   title="Gerar e imprimir etiqueta diretamente">
+                                                    <i class="fas fa-print"></i> Gerar Etiqueta
+                                                </a>
                                                 <a href="{{ url_for('label_generator', xml_id=xml.id) }}" 
-                                                   class="btn btn-warning btn-custom">
-                                                    <i class="fas fa-tags"></i> Gerar Etiqueta
+                                                   class="btn btn-outline-secondary btn-custom btn-sm mt-1">
+                                                    <i class="fas fa-cogs"></i> Configurar Volumes
                                                 </a>
                                             {% endif %}
                                         </div>
