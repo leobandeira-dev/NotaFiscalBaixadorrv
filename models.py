@@ -43,6 +43,7 @@ class User(UserMixin, db.Model):
     company_subtitle = db.Column(db.String(100), nullable=True)
     company_logo_path = db.Column(db.String(500), nullable=True)
     default_area_code = db.Column(db.String(5), default='01')
+    preferred_layout = db.Column(db.String(20), default='layout1')
     
     # Relacionamentos
     usage_records = db.relationship('UsageRecord', backref='user', lazy=True, cascade='all, delete-orphan')

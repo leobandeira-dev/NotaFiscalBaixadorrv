@@ -57,6 +57,21 @@
                             <div class="form-text">Código que aparece na seção ÁREA das etiquetas</div>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="layout_style" class="form-label">
+                                <i class="fas fa-palette"></i> Estilo de Layout
+                            </label>
+                            <select class="form-select" id="layout_style" name="layout_style">
+                                <option value="layout1" {{ 'selected' if (current_user.preferred_layout or 'layout1') == 'layout1' }}>
+                                    Layout 1 - Moderno (Fundos cinza, visual suave)
+                                </option>
+                                <option value="layout2" {{ 'selected' if current_user.preferred_layout == 'layout2' }}>
+                                    Layout 2 - Transul (Faixas pretas, alto contraste)
+                                </option>
+                            </select>
+                            <div class="form-text">Escolha o estilo visual das suas etiquetas</div>
+                        </div>
+
                         <div class="d-flex justify-content-between">
                             <a href="{{ url_for('meus_xmls') }}" class="btn btn-secondary">
                                 <i class="fas fa-arrow-left"></i> Voltar

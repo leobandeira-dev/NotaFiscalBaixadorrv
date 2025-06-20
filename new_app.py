@@ -1614,6 +1614,7 @@ def configurar_etiquetas():
             current_user.company_name = request.form.get('company_name', '').strip()
             current_user.company_subtitle = request.form.get('company_subtitle', '').strip()
             current_user.default_area_code = request.form.get('area_code', '01').strip()
+            current_user.preferred_layout = request.form.get('layout_style', 'layout1').strip()
             
             # Processar upload de logo
             if 'company_logo' in request.files:
