@@ -582,27 +582,38 @@ def generate_multiple_responsive_labels_from_volumes(xml_record, volumes_config:
             peso = volume_config.get('peso', 0)
             pedido = volume_config.get('pedido', f'PED{i}')
             
-            # Criar gerador específico para este volume
-            volume_generator = ResponsiveTransportLabelGenerator(
-                company_name=company_name,
-                paper_width_mm=paper_width_mm,
-                paper_height_mm=paper_height_mm
-            )
-            
-            # Modificar temporariamente os dados XML para incluir volume específico
-            from xml_processor import extract_xml_data
-            xml_data = extract_xml_data(xml_content)
-            xml_data['current_volume'] = i
-            xml_data['total_volumes'] = total_volumes
-            xml_data['volume_weight'] = peso
-            
-            # Gerar etiqueta individual para este volume
-            label_buffer = volume_generator.generate_transport_label(
-                xml_content=xml_content,
-                pedido_number=pedido,
-                area_code=area_code,
-                company_logo_path=company_logo_path
-            )
+            # Gerar etiqueta individual para este volume usando gerador compartilhado
+            try:
+                label_buffer = generator.generate_transport_label(
+                    xml_content=xml_content,
+                    pedido_number=pedido,
+                    area_code=area_code,
+                    company_logo_path=company_logo_path
+                )
+                if label_buffer is None:
+                    logger.error(f"Label buffer é None para volume {i} - gerando PDF vazio")
+                    # Criar PDF simples para debug
+                    from io import BytesIO
+                    from reportlab.pdfgen import canvas
+                    label_buffer = BytesIO()
+                    c = canvas.Canvas(label_buffer, pagesize=(284, 426))  # 100x150mm
+                    c.setFont("Helvetica", 10)
+                    c.drawString(20, 200, f"Volume {i} - Erro na geração")
+                    c.drawString(20, 180, f"Pedido: {pedido}")
+                    c.save()
+                    label_buffer.seek(0)
+            except Exception as e:
+                logger.error(f"Erro ao gerar etiqueta para volume {i}: {e}")
+                # Criar PDF de erro
+                from io import BytesIO
+                from reportlab.pdfgen import canvas
+                label_buffer = BytesIO()
+                c = canvas.Canvas(label_buffer, pagesize=(284, 426))
+                c.setFont("Helvetica", 10)
+                c.drawString(20, 200, f"Volume {i} - Erro: {str(e)[:30]}")
+                c.drawString(20, 180, f"Pedido: {pedido}")
+                c.save()
+                label_buffer.seek(0)
             
             labels.append({
                 'volume': i,
