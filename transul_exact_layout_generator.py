@@ -460,11 +460,14 @@ class TransulExactLayoutGenerator:
             self.colors['white'], self.colors['black'], self.colors['border_gray']
         )
         
-        # ÁREA no lado direito
+        # AREA no lado direito - usando texto ASCII puro
         area_x = self.margin + destinatario_width + (self.content_width * 0.05)
+        # Garantir que apenas caracteres ASCII sejam usados
+        clean_area_code = ''.join(c for c in str(area_code) if c.isalnum())
+        area_text = f"AREA\n{clean_area_code}"
         self._draw_styled_text_section(
             c, area_x, current_y - destinatario_height, area_width, destinatario_height,
-            f"AREA\n{area_code}", self.fonts['body_bold'], 
+            area_text, self.fonts['body_bold'], 
             self.colors['black'], self.colors['white'], center_text=True
         )
         current_y -= destinatario_height + self.section_spacing
