@@ -267,7 +267,7 @@ class CustomTransportLabelGenerator:
         
         # Voltar cor para preto
         c.setFillColor(colors.black)
-        return y_pos
+        return y_pos - 15*mm
     
     def _draw_peso_section(self, c, xml_data, y_pos):
         """Desenha seção Peso com fundo preto"""
@@ -287,7 +287,7 @@ class CustomTransportLabelGenerator:
         c.setFont("Helvetica", 12)
         c.drawString(self.margin + peso_width + 10, y_pos - 8, f"Transportadora: {self.company_name}")
         
-        return y_pos
+        return y_pos - 15*mm
     
     def _draw_volume_section(self, c, xml_data, y_pos):
         """Desenha seção Volume com fundo preto"""
@@ -304,7 +304,7 @@ class CustomTransportLabelGenerator:
         
         # Voltar cor para preto
         c.setFillColor(colors.black)
-        return y_pos
+        return y_pos - 15*mm
     
     def _draw_area_section(self, c, area_code):
         """Desenha seção ÁREA no canto inferior direito"""
