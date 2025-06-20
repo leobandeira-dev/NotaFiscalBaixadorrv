@@ -130,6 +130,7 @@ This is a Python Flask web application that automates the bulk download of XML i
 - June 20, 2025: **ALL DATABASE FIELDS EXTRACTION COMPLETE** - Fixed critical bug where emitente address data was not being extracted due to incorrect code structure, corrected remetente field mapping to properly extract and save cidade/UF/endereço from emitente data, implemented fallback logic to copy emitente data to remetente fields when no separate remetente exists, verified complete data extraction: remetente CORSUL (JOINVILLE/SC), endereço "RUA GUARUJA, 434, ITAUM", destinatário CONSORCIO ALUMAR (SAO LUIS/MA), all 19 XML fields now properly extracted and stored in database
 - June 20, 2025: **TRANSPORT LABEL LAYOUT REDESIGNED** - Updated label design from high-contrast black sections to professional framed layout with light gray backgrounds, gray borders, and improved readability while maintaining all transport information (NF, Pedido, Remetente, Destinatário, Cidade/UF, Peso, Volume, Área), created test implementation generating 2.3KB PDF with modern enquadrado styling similar to professional logistics companies
 - June 20, 2025: **COMPREHENSIVE LANDING PAGE REDESIGN** - Updated main dashboard with hero gradient section showcasing XMLDownloader Pro branding, added feature highlight cards displaying all platform capabilities (XML Download R$0.10, DANFE sempre grátis, Etiquetas Multi-Layout R$49.90, API Completa), created dedicated advanced features section highlighting multi-layout label system and detailed credit history functionality, implemented modern CSS styling with hover effects and responsive design
+- June 20, 2025: **PREMIUM LABELS MODULE HIGHLIGHTING** - Enhanced landing page to prominently feature labels module as premium offering with dedicated 8-column section, added shimmer animations and pulse effects for visual emphasis, corrected pricing information to show R$49.90/mês (monthly subscription) instead of one-time fee, implemented feature badge and golden gradient styling to highlight premium nature of labels functionality
 
 ## User Preferences
 
@@ -138,7 +139,7 @@ Preferred communication style: Simple, everyday language.
 ## Current Pricing Structure
 - Download XML: R$ 0,10 per file (web + API)
 - DANFE Generation: FREE (always included)
-- Labels Module: R$ 49,90 (one-time access fee)
+- Labels Module: R$ 49,90/mês (monthly subscription)
 - Minimum recharge: R$ 19,90
 - 7-day free trial for all new users
 

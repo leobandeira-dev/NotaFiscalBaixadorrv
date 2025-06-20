@@ -28,10 +28,11 @@
                             </div>
                         </div>
                         <div class="col-md-3">
-                            <div class="feature-card">
+                            <div class="feature-card feature-highlight">
                                 <i class="fas fa-tags text-warning fa-2x mb-2"></i>
                                 <h6>Etiquetas Multi-Layout</h6>
-                                <small class="text-muted">Módulo R$ 49,90</small>
+                                <small class="text-warning fw-bold">R$ 49,90/mês</small>
+                                <div class="feature-badge">DESTAQUE</div>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -181,36 +182,64 @@
                             Funcionalidades Avançadas
                         </h3>
                     </div>
-                    <div class="col-md-6 mb-4">
-                        <div class="card h-100 border-0 shadow-sm">
-                            <div class="card-body text-center">
-                                <i class="fas fa-tags fa-3x text-warning mb-3"></i>
-                                <h5>Sistema de Etiquetas Multi-Layout</h5>
-                                <p class="text-muted">Gere etiquetas de transporte profissionais com múltiplos layouts, volumes editáveis e personalização completa da empresa.</p>
-                                <ul class="list-unstyled text-start">
-                                    <li><i class="fas fa-check text-success me-2"></i>Layout 1: Moderno com fundos cinza</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Layout 2: Estilo Transul com seções pretas</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Volumes e pesos editáveis</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>5 tamanhos de papel diferentes</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Logo e branding personalizável</li>
-                                </ul>
-                                <a href="{{ url_for('labels_module') }}" class="btn btn-warning">
-                                    <i class="fas fa-play me-1"></i>Testar Agora
-                                </a>
+                    <div class="col-md-8 mb-4">
+                        <div class="card h-100 border-warning border-2 shadow-lg premium-card">
+                            <div class="card-header bg-warning text-dark text-center">
+                                <h4 class="mb-0"><i class="fas fa-crown me-2"></i>MÓDULO PREMIUM - ETIQUETAS MULTI-LAYOUT</h4>
+                                <small class="fw-bold">R$ 49,90/mês - Acesso completo a todas as funcionalidades</small>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-warning"><i class="fas fa-palette me-2"></i>Layouts Profissionais</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="fas fa-check text-success me-2"></i><strong>Layout 1:</strong> Moderno com fundos cinza elegantes</li>
+                                            <li><i class="fas fa-check text-success me-2"></i><strong>Layout 2:</strong> Estilo Transul com seções destacadas</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>Design profissional para logística</li>
+                                        </ul>
+                                        
+                                        <h6 class="text-warning mt-3"><i class="fas fa-cogs me-2"></i>Personalização Total</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="fas fa-check text-success me-2"></i>Logo da empresa personalizável</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>Nome e subtítulo customizáveis</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>Código de área configurável</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-warning"><i class="fas fa-boxes me-2"></i>Volumes Inteligentes</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="fas fa-check text-success me-2"></i>Volumes e pesos editáveis</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>Etiquetas separadas por volume</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>Download individual ou em lote</li>
+                                        </ul>
+                                        
+                                        <h6 class="text-warning mt-3"><i class="fas fa-print me-2"></i>Formatos de Papel</h6>
+                                        <ul class="list-unstyled">
+                                            <li><i class="fas fa-check text-success me-2"></i>A4, A5, 10x15cm, 7x10cm, 5x8cm</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>Tamanhos personalizados</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>Qualidade profissional (PDF)</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <a href="{{ url_for('labels_module') }}" class="btn btn-warning btn-lg px-4">
+                                        <i class="fas fa-rocket me-2"></i>ATIVAR MÓDULO PREMIUM
+                                    </a>
+                                    <p class="small text-muted mt-2">7 dias de teste grátis • Cancele quando quiser</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6 mb-4">
+                    <div class="col-md-4 mb-4">
                         <div class="card h-100 border-0 shadow-sm">
                             <div class="card-body text-center">
-                                <i class="fas fa-credit-card fa-3x text-info mb-3"></i>
-                                <h5>Histórico de Créditos Detalhado</h5>
-                                <p class="text-muted">Acompanhe todo uso de créditos com filtros avançados, estatísticas por módulo e relatórios detalhados.</p>
+                                <i class="fas fa-chart-line fa-3x text-info mb-3"></i>
+                                <h5>Histórico de Créditos</h5>
+                                <p class="text-muted">Acompanhe todo uso com filtros avançados e relatórios detalhados.</p>
                                 <ul class="list-unstyled text-start">
                                     <li><i class="fas fa-check text-success me-2"></i>Filtros por data e módulo</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Estatísticas mensais e totais</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Histórico paginado completo</li>
-                                    <li><i class="fas fa-check text-success me-2"></i>Rastreamento de Job IDs</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Estatísticas mensais</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Rastreamento completo</li>
                                     <li><i class="fas fa-check text-success me-2"></i>Custos por transação</li>
                                 </ul>
                                 <a href="{{ url_for('credit_history') }}" class="btn btn-info">
@@ -307,6 +336,59 @@
 
 .feature-card small {
     font-size: 0.875rem;
+}
+
+.feature-highlight {
+    background: linear-gradient(135deg, #fff9c4 0%, #ffffff 100%);
+    border: 2px solid #ffc107 !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-highlight::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(45deg, #ffc107, #ffeb3b, #ffc107);
+    z-index: -1;
+    border-radius: 0.75rem;
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+}
+
+.feature-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 4px 8px;
+    border-radius: 12px;
+    transform: rotate(15deg);
+    z-index: 10;
+}
+
+.premium-card {
+    background: linear-gradient(135deg, #fff9c4 0%, #ffffff 100%);
+    animation: pulse-glow 3s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 20px rgba(255, 193, 7, 0.3);
+    }
+    50% {
+        box-shadow: 0 0 30px rgba(255, 193, 7, 0.5);
+    }
 }
 
 .card.border-0 {
