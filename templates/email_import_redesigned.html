@@ -578,13 +578,7 @@ async function testPop3Connection() {
         const response = await fetch('/test-pop3-connection', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({
-                server: document.getElementById('pop3_server').value,
-                port: document.getElementById('pop3_port').value,
-                email: document.getElementById('pop3_email').value,
-                password: document.getElementById('pop3_password').value,
-                ssl: document.getElementById('pop3_ssl').checked
-            })
+            body: JSON.stringify({})
         });
         
         const result = await response.json();

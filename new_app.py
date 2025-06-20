@@ -2232,18 +2232,29 @@ def view_pop3_credentials():
 @login_required
 @rate_limit_check(max_requests=5, window_minutes=10)
 def test_pop3_connection():
-    """Testa conexão POP3 com as credenciais informadas no formulário"""
+    """Testa conexão POP3 com as credenciais armazenadas do usuário"""
     try:
-        # Obter dados do formulário
-        data = request.get_json()
-        email = data.get('email')
-        password = data.get('password')
-        server = data.get('server')
-        port = int(data.get('port', 995))
-        use_ssl = data.get('ssl', True)
+        # Verificar se usuário tem POP3 configurado
+        if not current_user.has_pop3_configured():
+            return jsonify({'success': False, 'message': 'POP3 não configurado. Salve as credenciais primeiro.'})
         
-        if not all([email, password, server]):
-            return jsonify({'success': False, 'message': 'Email, senha e servidor são obrigatórios'})
+        # Usar credenciais armazenadas do usuário
+        email = current_user.pop3_email
+        server = current_user.pop3_server
+        port = current_user.pop3_port
+        use_ssl = current_user.pop3_ssl
+        
+        # Descriptografar a senha armazenada
+        encrypted_password = current_user.pop3_password_hash
+        if not encrypted_password:
+            return jsonify({'success': False, 'message': 'Senha POP3 não encontrada'})
+        
+        password = decrypt_email_password(encrypted_password)
+        if not password:
+            return jsonify({'success': False, 'message': 'Erro ao descriptografar senha POP3'})
+        
+        if not all([email, server]):
+            return jsonify({'success': False, 'message': 'Configurações POP3 incompletas'})
         
         import poplib
         
