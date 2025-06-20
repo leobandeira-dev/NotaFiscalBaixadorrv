@@ -1923,7 +1923,8 @@ def generate_custom_labels(xml_id):
         # Se apenas uma etiqueta, retornar diretamente
         if len(labels) == 1:
             label = labels[0]
-            response = make_response(label['buffer'].getvalue())
+            pdf_buffer = label.get('pdf_buffer') or label.get('buffer')
+            response = make_response(pdf_buffer.getvalue())
             response.headers['Content-Type'] = 'application/pdf'
             response.headers['Content-Disposition'] = f'inline; filename="{label["filename"]}"'
             return response
@@ -1934,7 +1935,8 @@ def generate_custom_labels(xml_id):
         zip_buffer = BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             for label in labels:
-                zip_file.writestr(label['filename'], label['buffer'].getvalue())
+                pdf_buffer = label.get('pdf_buffer') or label.get('buffer')
+                zip_file.writestr(label['filename'], pdf_buffer.getvalue())
         
         zip_buffer.seek(0)
         
