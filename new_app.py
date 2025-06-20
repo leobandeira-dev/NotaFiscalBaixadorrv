@@ -141,7 +141,9 @@ def generate_improved_labels_with_guaranteed_borders(xml_record, volumes_config,
                     company_logo_path=company_logo_path,
                     volume_info=volume_info,
                     paper_width_mm=paper_width_mm,
-                    paper_height_mm=paper_height_mm
+                    paper_height_mm=paper_height_mm,
+                    company_name=company_name,
+                    company_subtitle=company_subtitle
                 )
                 
                 labels.append({

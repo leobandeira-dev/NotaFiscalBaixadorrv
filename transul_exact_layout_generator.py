@@ -4,6 +4,7 @@ Layout específico baseado na análise visual da imagem fornecida com styling ha
 """
 
 import io
+import os
 import logging
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
@@ -243,6 +244,29 @@ class TransulExactLayoutGenerator:
         Returns:
             BytesIO buffer com PDF gerado
         """
+        return self.generate_transul_exact_label_with_company(
+            xml_content, pedido_number, area_code, company_logo_path, volume_info,
+            'SUA EMPRESA', 'TRANSPORTE'
+        )
+    
+    def generate_transul_exact_label_with_company(self, xml_content, pedido_number, area_code="01", 
+                                                company_logo_path=None, volume_info="1/1",
+                                                company_name="SUA EMPRESA", company_subtitle="TRANSPORTE"):
+        """
+        Gera etiqueta com layout exato usando configurações personalizadas da empresa
+        
+        Args:
+            xml_content: Conteúdo XML da NFe
+            pedido_number: Número do pedido
+            area_code: Código da área
+            company_logo_path: Caminho da logo da empresa
+            volume_info: Informação do volume (ex: "1/2")
+            company_name: Nome da empresa configurada pelo usuário
+            company_subtitle: Subtítulo da empresa
+            
+        Returns:
+            BytesIO buffer com PDF gerado
+        """
         try:
             # Extrair dados do XML
             xml_data = extract_xml_data(xml_content)
@@ -256,8 +280,7 @@ class TransulExactLayoutGenerator:
             # Desenhar layout exato baseado na imagem
             self._draw_transul_exact_layout(c, xml_data, pedido_number, area_code, 
                                           company_logo_path, volume_info, 
-                                          xml_data.get('nome_emitente', 'SUA EMPRESA'), 
-                                          'TRANSPORTE')
+                                          company_name, company_subtitle)
             
             # Finalizar PDF
             c.save()
@@ -516,7 +539,8 @@ class TransulExactLayoutGenerator:
 
 def generate_transul_exact_label_from_xml(xml_content, pedido_number=None, area_code="01", 
                                         company_logo_path=None, volume_info="1/1",
-                                        paper_width_mm=100, paper_height_mm=150):
+                                        paper_width_mm=100, paper_height_mm=150,
+                                        company_name="SUA EMPRESA", company_subtitle="TRANSPORTE"):
     """
     Função wrapper para gerar etiqueta Transul exata com styling harmonioso
     
@@ -528,11 +552,16 @@ def generate_transul_exact_label_from_xml(xml_content, pedido_number=None, area_
         volume_info: Informação do volume
         paper_width_mm: Largura do papel em mm
         paper_height_mm: Altura do papel em mm
+        company_name: Nome da empresa configurada pelo usuário
+        company_subtitle: Subtítulo da empresa
         
     Returns:
         BytesIO buffer com PDF estilizado
     """
     generator = TransulExactLayoutGenerator(paper_width_mm, paper_height_mm)
-    return generator.generate_transul_exact_label(
-        xml_content, pedido_number, area_code, company_logo_path, volume_info
+    
+    # Atualizar método para aceitar parâmetros da empresa
+    return generator.generate_transul_exact_label_with_company(
+        xml_content, pedido_number, area_code, company_logo_path, volume_info,
+        company_name, company_subtitle
     )
