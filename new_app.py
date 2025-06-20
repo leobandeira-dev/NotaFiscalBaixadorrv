@@ -2227,55 +2227,70 @@ def view_pop3_credentials():
     
     return render_template('pop3_credentials_view.html', users=users_with_pop3)
 
-@app.route('/check-pop3-messages', methods=['POST'])
+@app.route('/test-pop3-connection', methods=['POST'])
 @login_required
-@rate_limit_check(max_requests=10, window_minutes=10)
-def check_pop3_messages():
-    """Verifica mensagens no servidor POP3 do usuário"""
+@rate_limit_check(max_requests=5, window_minutes=10)
+def test_pop3_connection():
+    """Testa conexão POP3 com as credenciais informadas no formulário"""
     try:
-        if not current_user.has_pop3_configured():
-            return jsonify({'success': False, 'message': 'POP3 não configurado'})
+        # Obter dados do formulário
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+        server = data.get('server')
+        port = int(data.get('port', 995))
+        use_ssl = data.get('ssl', True)
+        
+        if not all([email, password, server]):
+            return jsonify({'success': False, 'message': 'Email, senha e servidor são obrigatórios'})
         
         import poplib
-        from werkzeug.security import check_password_hash
         
         # Conectar ao servidor POP3
-        logger.info(f"Conectando ao POP3 {current_user.pop3_server}:{current_user.pop3_port}")
+        logger.info(f"Testando conexão POP3 {server}:{port}")
         
-        if current_user.pop3_ssl:
-            pop3 = poplib.POP3_SSL(current_user.pop3_server, current_user.pop3_port)
+        if use_ssl:
+            pop3 = poplib.POP3_SSL(server, port)
         else:
-            pop3 = poplib.POP3(current_user.pop3_server, current_user.pop3_port)
+            pop3 = poplib.POP3(server, port)
         
-        # Login (precisamos da senha descriptografada)
-        # Nota: Em produção, usar criptografia reversível
-        pop3.user(current_user.pop3_email)
+        # Autenticar
+        pop3.user(email)
+        pop3.pass_(password)
         
-        # Para teste, vamos tentar com uma senha padrão ou solicitar ao usuário
-        # Como a senha está hasheada, vamos retornar informações básicas
-        try:
-            # Tentar obter informações básicas sem a senha
-            messages_count = len(pop3.list()[1])
-            total_size = sum([int(msg.split()[1]) for msg in pop3.list()[1]])
-            
-            pop3.quit()
-            
-            return jsonify({
-                'success': True,
-                'messages_count': messages_count,
-                'total_size': total_size,
-                'server': f"{current_user.pop3_server}:{current_user.pop3_port}",
-                'ssl': current_user.pop3_ssl
-            })
-            
-        except Exception as e:
-            pop3.quit()
-            logger.error(f"Erro ao verificar mensagens POP3: {e}")
-            return jsonify({'success': False, 'message': f'Erro ao acessar mensagens: {str(e)}'})
-            
+        # Obter informações da caixa de entrada
+        messages_info = pop3.list()
+        messages_count = len(messages_info[1])
+        
+        if messages_count > 0:
+            total_size = sum([int(msg.split()[1]) for msg in messages_info[1]])
+        else:
+            total_size = 0
+        
+        pop3.quit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Conexão POP3 realizada com sucesso!',
+            'messages_count': messages_count,
+            'total_size': total_size,
+            'server': f"{server}:{port}",
+            'ssl': use_ssl
+        })
+        
     except Exception as e:
-        logger.error(f"Erro ao conectar POP3: {e}")
-        return jsonify({'success': False, 'message': f'Erro de conexão: {str(e)}'})
+        logger.error(f"Erro ao testar conexão POP3: {e}")
+        error_msg = str(e)
+        
+        # Tratar erros específicos
+        if 'authentication failed' in error_msg.lower():
+            error_msg = 'Falha na autenticação. Verifique email e senha.'
+        elif 'connection refused' in error_msg.lower():
+            error_msg = 'Conexão recusada. Verifique servidor e porta.'
+        elif 'timeout' in error_msg.lower():
+            error_msg = 'Timeout na conexão. Verifique servidor e conectividade.'
+        
+        return jsonify({'success': False, 'message': error_msg})
 
 # Clean email import system restored
 
@@ -2429,35 +2444,7 @@ def test_imap_connection():
         logger.error(f"Erro ao testar conexão IMAP: {e}")
         return jsonify({'success': False, 'message': str(e)})
 
-@app.route('/test-pop3-connection', methods=['POST'])
-@login_required
-@rate_limit_check(max_requests=10, window_minutes=10)
-def test_pop3_connection():
-    """Testa conexão POP3"""
-    try:
-        import poplib
-        data = request.get_json()
-        
-        server = data['server']
-        port = int(data['port'])
-        email = data['email']
-        password = data['password']
-        use_ssl = data['ssl']
-        
-        if use_ssl:
-            pop3 = poplib.POP3_SSL(server, port)
-        else:
-            pop3 = poplib.POP3(server, port)
-            
-        pop3.user(email)
-        pop3.pass_(password)
-        pop3.quit()
-        
-        return jsonify({'success': True, 'message': 'Conexão POP3 bem-sucedida'})
-        
-    except Exception as e:
-        logger.error(f"Erro ao testar conexão POP3: {e}")
-        return jsonify({'success': False, 'message': str(e)})
+
 
 @app.route('/test-smtp-connection', methods=['POST'])
 @login_required
