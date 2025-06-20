@@ -713,58 +713,86 @@ function toggleSmtpCustomServer() {
 
 // Test POP3 connection
 function testPop3Connection() {
-    const btn = document.getElementById('testPop3Btn');
-    const originalText = btn.innerHTML;
-    
-    // Get form values
-    const email = document.getElementById('pop3_email').value;
-    const password = document.getElementById('pop3_password').value;
-    const server = document.getElementById('pop3_server').value;
-    const port = document.getElementById('pop3_port').value;
-    const ssl = document.getElementById('pop3_ssl').checked;
-    
-    if (!email || !password || !server) {
-        alert('Por favor, preencha todos os campos obrigatórios');
-        return;
-    }
-    
-    // Update button state
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testando...';
-    btn.disabled = true;
-    
-    // Make API call
-    fetch('/test-pop3-connection', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            email: email,
-            password: password,
-            server: server,
-            port: parseInt(port),
-            ssl: ssl
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        
-        if (data.success) {
-            alert(`✅ Conexão POP3 realizada com sucesso!\n\n` +
-                  `Servidor: ${data.server}\n` +
-                  `Mensagens: ${data.messages_count}\n` +
-                  `Tamanho total: ${Math.round(data.total_size / 1024)} KB`);
-        } else {
-            alert(`❌ Erro na conexão POP3:\n\n${data.message}`);
+    try {
+        const btn = document.getElementById('testPop3Btn');
+        if (!btn) {
+            alert('Botão de teste não encontrado');
+            return;
         }
-    })
-    .catch(error => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        alert(`❌ Erro na conexão:\n\n${error.message}`);
-    });
+        
+        const originalText = btn.innerHTML;
+        
+        // Get form values with error checking
+        const emailElement = document.getElementById('pop3_email');
+        const passwordElement = document.getElementById('pop3_password');
+        const portElement = document.getElementById('pop3_port');
+        const sslElement = document.getElementById('pop3_ssl');
+        const serverSelectElement = document.getElementById('pop3_server_select');
+        const serverCustomElement = document.getElementById('pop3_server_custom');
+        
+        if (!emailElement || !passwordElement || !portElement || !sslElement || !serverSelectElement || !serverCustomElement) {
+            alert('Alguns campos do formulário não foram encontrados');
+            return;
+        }
+        
+        const email = emailElement.value;
+        const password = passwordElement.value;
+        const port = portElement.value;
+        const ssl = sslElement.checked;
+        
+        // Get server value (from dropdown or custom input)
+        let server;
+        if (serverSelectElement.value === 'custom') {
+            server = serverCustomElement.value;
+        } else {
+            server = serverSelectElement.value;
+        }
+        
+        if (!email || !password || !server) {
+            alert('Por favor, preencha todos os campos obrigatórios (email, senha e servidor)');
+            return;
+        }
+        
+        // Update button state
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testando...';
+        btn.disabled = true;
+        
+        // Make API call
+        fetch('/test-pop3-connection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                email: email,
+                password: password,
+                server: server,
+                port: parseInt(port),
+                ssl: ssl
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            
+            if (data.success) {
+                alert(`✅ Conexão POP3 realizada com sucesso!\n\n` +
+                      `Servidor: ${data.server}\n` +
+                      `Mensagens: ${data.messages_count}\n` +
+                      `Tamanho total: ${Math.round(data.total_size / 1024)} KB`);
+            } else {
+                alert(`❌ Erro na conexão POP3:\n\n${data.message}`);
+            }
+        })
+        .catch(error => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert(`❌ Erro na conexão:\n\n${error.message}`);
+        });
+    } catch (error) {
+        alert(`❌ Erro JavaScript: ${error.message}`);
+    }
 }
 
 // Initialize on page load
