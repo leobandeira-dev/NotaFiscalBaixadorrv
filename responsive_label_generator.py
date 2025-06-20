@@ -493,7 +493,7 @@ class ResponsiveTransportLabelGenerator:
                 cep_formatado = f"{cep[:5]}-{cep[5:]}"
                 cidade_texto += f" - CEP: {cep_formatado}"
             
-            c.drawString(self.margin + self.spacing['field'], current_y, cidade_texto)
+            c.drawString(self.margin + margin_interna, current_y, cidade_texto)
         
         # Resetar cor para preto
         c.setFillColor(colors.black)
