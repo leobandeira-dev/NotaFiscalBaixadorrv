@@ -5,15 +5,53 @@
 {% block content %}
                 <!-- Header -->
                 <div class="text-center mb-5">
-                    <i class="fas fa-file-invoice fa-3x text-primary mb-3"></i>
-                    <h1 class="display-5 fw-bold">Download XML Notas Fiscais</h1>
-                    <p class="lead text-muted">Ferramenta de automação para download em lote de XMLs de notas fiscais</p>
+                    <div class="hero-gradient mb-4">
+                        <i class="fas fa-file-invoice fa-4x text-white mb-3"></i>
+                        <h1 class="display-4 fw-bold text-white">XMLDownloader Pro</h1>
+                        <p class="lead text-white-50 mb-4">Plataforma completa para automação de documentos fiscais</p>
+                    </div>
+                    
+                    <!-- Feature Highlights -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="feature-card">
+                                <i class="fas fa-download text-primary fa-2x mb-2"></i>
+                                <h6>Download XML</h6>
+                                <small class="text-muted">R$ 0,10 por arquivo</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="feature-card">
+                                <i class="fas fa-file-pdf text-success fa-2x mb-2"></i>
+                                <h6>DANFE Oficial</h6>
+                                <small class="text-success">Sempre GRÁTIS</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="feature-card">
+                                <i class="fas fa-tags text-warning fa-2x mb-2"></i>
+                                <h6>Etiquetas Multi-Layout</h6>
+                                <small class="text-muted">Módulo R$ 49,90</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="feature-card">
+                                <i class="fas fa-code text-info fa-2x mb-2"></i>
+                                <h6>API Completa</h6>
+                                <small class="text-muted">Integração total</small>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="d-flex justify-content-center gap-2 mb-4">
                         <a href="{{ url_for('api_docs') }}" class="btn btn-outline-primary">
-                            <i class="fas fa-code me-1"></i>Documentação da API
+                            <i class="fas fa-code me-1"></i>Documentação API
+                        </a>
+                        <a href="{{ url_for('labels_module') }}" class="btn btn-outline-warning">
+                            <i class="fas fa-tags me-1"></i>Módulo Etiquetas
                         </a>
                         <button type="button" class="btn btn-outline-secondary" onclick="addSampleData()">
-                            <i class="fas fa-clipboard me-1"></i>Dados de Teste
+                            <i class="fas fa-clipboard me-1"></i>Teste Grátis
                         </button>
                     </div>
                 </div>
@@ -135,6 +173,54 @@
                     </div>
                 </div>
 
+                <!-- Latest Features Section -->
+                <div class="row mt-5 mb-4">
+                    <div class="col-12">
+                        <h3 class="text-center mb-4">
+                            <i class="fas fa-star text-warning me-2"></i>
+                            Funcionalidades Avançadas
+                        </h3>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-tags fa-3x text-warning mb-3"></i>
+                                <h5>Sistema de Etiquetas Multi-Layout</h5>
+                                <p class="text-muted">Gere etiquetas de transporte profissionais com múltiplos layouts, volumes editáveis e personalização completa da empresa.</p>
+                                <ul class="list-unstyled text-start">
+                                    <li><i class="fas fa-check text-success me-2"></i>Layout 1: Moderno com fundos cinza</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Layout 2: Estilo Transul com seções pretas</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Volumes e pesos editáveis</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>5 tamanhos de papel diferentes</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Logo e branding personalizável</li>
+                                </ul>
+                                <a href="{{ url_for('labels_module') }}" class="btn btn-warning">
+                                    <i class="fas fa-play me-1"></i>Testar Agora
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body text-center">
+                                <i class="fas fa-credit-card fa-3x text-info mb-3"></i>
+                                <h5>Histórico de Créditos Detalhado</h5>
+                                <p class="text-muted">Acompanhe todo uso de créditos com filtros avançados, estatísticas por módulo e relatórios detalhados.</p>
+                                <ul class="list-unstyled text-start">
+                                    <li><i class="fas fa-check text-success me-2"></i>Filtros por data e módulo</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Estatísticas mensais e totais</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Histórico paginado completo</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Rastreamento de Job IDs</li>
+                                    <li><i class="fas fa-check text-success me-2"></i>Custos por transação</li>
+                                </ul>
+                                <a href="{{ url_for('credit_history') }}" class="btn btn-info">
+                                    <i class="fas fa-chart-line me-1"></i>Ver Histórico
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Instructions Card -->
                 <div class="card mt-4">
                     <div class="card-header">
@@ -188,4 +274,77 @@
 
 {% block extra_js %}
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<style>
+.hero-gradient {
+    background: linear-gradient(135deg, #8A05BE 0%, #A855F7 50%, #6366F1 100%);
+    padding: 3rem 2rem;
+    border-radius: 1rem;
+    margin-bottom: 2rem;
+}
+
+.feature-card {
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    height: 100%;
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+}
+
+.feature-card h6 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+.feature-card small {
+    font-size: 0.875rem;
+}
+
+.card.border-0 {
+    transition: transform 0.2s ease;
+}
+
+.card.border-0:hover {
+    transform: translateY(-3px);
+}
+
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-danger:hover {
+    color: #c82333 !important;
+}
+
+@media (max-width: 768px) {
+    .hero-gradient {
+        padding: 2rem 1rem;
+    }
+    
+    .feature-card {
+        margin-bottom: 1rem;
+    }
+}
+</style>
 {% endblock %}

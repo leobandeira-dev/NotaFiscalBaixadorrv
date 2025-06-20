@@ -240,7 +240,25 @@
                 </div>
             </div>
             
+            <!-- Conta -->
+            <div class="nav-section">
+                <div class="nav-section-title">Conta</div>
+                <div class="nav-item">
+                    <a href="{{ url_for('credit_history') }}" class="nav-link {% if request.endpoint == 'credit_history' %}active{% endif %}">
+                        <i class="fas fa-credit-card"></i>
+                        Histórico de Créditos
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="{{ url_for('logout') }}" class="nav-link text-danger" onclick="return confirm('Tem certeza que deseja sair?')">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Sair
+                    </a>
+                </div>
+            </div>
+            
             <!-- Administração -->
+            {% if current_user.is_authenticated and current_user.is_admin %}
             <div class="nav-section">
                 <div class="nav-section-title">Administração</div>
                 <div class="nav-item">
@@ -251,6 +269,7 @@
                     </a>
                 </div>
             </div>
+            {% endif %}
         </div>
         
 
