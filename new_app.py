@@ -322,6 +322,18 @@ with app.app_context():
         db.session.commit()
         logger.info("Admin user created: admin@xmldownloader.com / admin123")
 
+# Context processors
+@app.context_processor
+def inject_xml_credits():
+    """Injetar função de créditos XML nos templates"""
+    if current_user.is_authenticated:
+        try:
+            from stripe_pricing_system import get_user_xml_credits
+            return {'get_user_xml_credits': get_user_xml_credits}
+        except:
+            return {'get_user_xml_credits': lambda x: 0}
+    return {'get_user_xml_credits': lambda x: 0}
+
 # Routes
 
 @app.route('/')

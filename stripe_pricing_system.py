@@ -244,3 +244,226 @@ def create_stripe_checkout_session(tier_data, user_email, success_url, cancel_ur
             'success': False,
             'error': str(e)
         }
+
+def get_user_xml_credits(user_id: int) -> int:
+    """
+    Obter quantidade de créditos XML disponíveis para o usuário
+    
+    Args:
+        user_id: ID do usuário
+        
+    Returns:
+        Quantidade de créditos XML disponíveis
+    """
+    try:
+        from models import db
+        from package_models import StripeTransaction, FeatureUsage
+        from sqlalchemy import func
+        
+        # Somar todas as compras de créditos XML
+        total_purchased = db.session.query(func.sum(StripeTransaction.credits_added))\
+            .filter(
+                StripeTransaction.user_id == user_id,
+                StripeTransaction.status == 'paid',
+                StripeTransaction.product_type == 'xml_credits'
+            ).scalar() or 0
+        
+        # Somar todos os créditos consumidos
+        total_consumed = db.session.query(func.sum(FeatureUsage.credits_consumed))\
+            .filter(
+                FeatureUsage.user_id == user_id,
+                FeatureUsage.feature_key == 'xml_download'
+            ).scalar() or 0
+        
+        # Créditos disponíveis = comprados - consumidos
+        available_credits = int(total_purchased) - int(total_consumed)
+        
+        return max(0, available_credits)  # Nunca retornar negativo
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter créditos XML do usuário {user_id}: {e}")
+        return 0
+
+def consume_xml_credit(user_id: int) -> bool:
+    """
+    Consumir 1 crédito XML do usuário
+    
+    Args:
+        user_id: ID do usuário
+        
+    Returns:
+        True se crédito foi consumido com sucesso
+    """
+    try:
+        # Verificar se usuário tem créditos suficientes
+        available_credits = get_user_xml_credits(user_id)
+        if available_credits <= 0:
+            return False
+        
+        # Registrar consumo será feito pelo decorator automaticamente
+        return True
+        
+    except Exception as e:
+        logger.error(f"Erro ao consumir crédito XML do usuário {user_id}: {e}")
+        return False
+
+def get_xml_usage_stats(user_id: int) -> dict:
+    """
+    Obter estatísticas completas de uso de créditos XML
+    
+    Args:
+        user_id: ID do usuário
+        
+    Returns:
+        Dicionário com estatísticas de uso
+    """
+    try:
+        from models import db
+        from package_models import StripeTransaction, FeatureUsage
+        from sqlalchemy import func
+        from datetime import datetime, timedelta
+        
+        # Total comprado
+        total_purchased = db.session.query(func.sum(StripeTransaction.credits_added))\
+            .filter(
+                StripeTransaction.user_id == user_id,
+                StripeTransaction.status == 'paid',
+                StripeTransaction.product_type == 'xml_credits'
+            ).scalar() or 0
+        
+        # Total consumido
+        total_consumed = db.session.query(func.sum(FeatureUsage.credits_consumed))\
+            .filter(
+                FeatureUsage.user_id == user_id,
+                FeatureUsage.feature_key == 'xml_download'
+            ).scalar() or 0
+        
+        # Consumo este mês
+        month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        this_month_consumed = db.session.query(func.sum(FeatureUsage.credits_consumed))\
+            .filter(
+                FeatureUsage.user_id == user_id,
+                FeatureUsage.feature_key == 'xml_download',
+                FeatureUsage.created_at >= month_start
+            ).scalar() or 0
+        
+        # Média diária dos últimos 30 dias
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        last_30_days_consumed = db.session.query(func.sum(FeatureUsage.credits_consumed))\
+            .filter(
+                FeatureUsage.user_id == user_id,
+                FeatureUsage.feature_key == 'xml_download',
+                FeatureUsage.created_at >= thirty_days_ago
+            ).scalar() or 0
+        
+        avg_daily_usage = last_30_days_consumed / 30 if last_30_days_consumed > 0 else 0
+        
+        return {
+            'total_purchased': int(total_purchased),
+            'total_consumed': int(total_consumed),
+            'this_month_consumed': int(this_month_consumed),
+            'avg_daily_usage': round(avg_daily_usage, 1)
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter estatísticas de uso XML do usuário {user_id}: {e}")
+        return {
+            'total_purchased': 0,
+            'total_consumed': 0,
+            'this_month_consumed': 0,
+            'avg_daily_usage': 0
+        }
+
+def add_xml_credits_to_user(user_id: int, credits: int, transaction_id: str = None) -> bool:
+    """
+    Adicionar créditos XML ao usuário após compra
+    
+    Args:
+        user_id: ID do usuário
+        credits: Quantidade de créditos a adicionar
+        transaction_id: ID da transação Stripe
+        
+    Returns:
+        True se créditos foram adicionados com sucesso
+    """
+    try:
+        from models import db
+        from package_models import StripeTransaction
+        from datetime import datetime
+        
+        # Criar registro da transação
+        transaction = StripeTransaction(
+            user_id=user_id,
+            stripe_transaction_id=transaction_id or f"manual_{datetime.now().timestamp()}",
+            amount=0.0,  # Será atualizado pelo webhook
+            status='paid',
+            product_type='xml_credits',
+            credits_added=credits,
+            package_name=f"Pacote {credits} XMLs",
+            created_at=datetime.utcnow()
+        )
+        
+        db.session.add(transaction)
+        db.session.commit()
+        
+        logger.info(f"Adicionados {credits} créditos XML ao usuário {user_id}")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Erro ao adicionar créditos XML ao usuário {user_id}: {e}")
+        db.session.rollback()
+        return False
+
+def get_pricing_recommendations(user_id: int) -> dict:
+    """
+    Obter recomendações de pacotes baseadas no histórico do usuário
+    
+    Args:
+        user_id: ID do usuário
+        
+    Returns:
+        Dicionário com recomendações
+    """
+    try:
+        stats = get_xml_usage_stats(user_id)
+        current_credits = get_user_xml_credits(user_id)
+        
+        # Calcular uso médio mensal
+        monthly_usage = stats.get('avg_daily_usage', 0) * 30
+        
+        # Recomendação baseada no uso
+        if monthly_usage <= 100:
+            recommended_tier = 'starter'
+            recommended_message = "Baseado no seu uso, o pacote Starter (100 XMLs) é ideal para você."
+        elif monthly_usage <= 500:
+            recommended_tier = 'professional'
+            recommended_message = "Baseado no seu uso, o pacote Professional (500 XMLs) oferece melhor custo-benefício."
+        elif monthly_usage <= 1000:
+            recommended_tier = 'business'
+            recommended_message = "Baseado no seu uso, o pacote Business (1000 XMLs) é recomendado."
+        else:
+            recommended_tier = 'enterprise'
+            recommended_message = "Baseado no seu alto volume, o pacote Enterprise (2000 XMLs) oferece o melhor preço por XML."
+        
+        # Previsão de duração dos créditos atuais
+        days_remaining = 0
+        if current_credits > 0 and stats.get('avg_daily_usage', 0) > 0:
+            days_remaining = current_credits / stats.get('avg_daily_usage', 1)
+        
+        return {
+            'recommended_tier': recommended_tier,
+            'recommended_message': recommended_message,
+            'monthly_usage_estimate': int(monthly_usage),
+            'days_remaining': int(days_remaining),
+            'should_buy_soon': days_remaining < 7 and current_credits < 20
+        }
+        
+    except Exception as e:
+        logger.error(f"Erro ao obter recomendações para usuário {user_id}: {e}")
+        return {
+            'recommended_tier': 'starter',
+            'recommended_message': "Comece com o pacote Starter para testar o sistema.",
+            'monthly_usage_estimate': 0,
+            'days_remaining': 0,
+            'should_buy_soon': False
+        }

@@ -1,433 +1,217 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Comprar Créditos XML - CROSS XML Downloader PRO</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script async src="https://js.stripe.com/v3/buy-button.js"></script>
-    <style>
-        body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        .container-main {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            margin: 20px auto;
-            padding: 40px;
-            max-width: 1200px;
-        }
-        
-        .pricing-card {
-            background: white;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .pricing-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-        }
-        
-        .pricing-card.recommended {
-            border-color: #28a745;
-            transform: scale(1.05);
-        }
-        
-        .pricing-card.recommended::before {
-            content: 'MAIS POPULAR';
-            position: absolute;
-            top: 20px;
-            right: -35px;
-            background: #28a745;
-            color: white;
-            padding: 5px 40px;
-            transform: rotate(45deg);
-            font-size: 0.8em;
-            font-weight: bold;
-        }
-        
-        .tier-name {
-            font-size: 1.5em;
-            font-weight: 700;
-            margin-bottom: 10px;
-            color: #333;
-        }
-        
-        .tier-description {
-            color: #666;
-            margin-bottom: 20px;
-        }
-        
-        .xml-count {
-            font-size: 3em;
-            font-weight: 800;
-            color: #667eea;
-            margin: 20px 0;
-            text-align: center;
-        }
-        
-        .xml-label {
-            color: #666;
-            font-size: 0.9em;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .price-display {
-            text-align: center;
-            margin: 25px 0;
-        }
-        
-        .total-price {
-            font-size: 2.5em;
-            font-weight: 700;
-            color: #28a745;
-        }
-        
-        .price-per-xml {
-            color: #666;
-            font-size: 1.1em;
-            margin-top: 5px;
-        }
-        
-        .savings-badge {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a52);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            margin: 15px 0;
-            display: inline-block;
-        }
-        
-        .features-list {
-            list-style: none;
-            padding: 0;
-            margin: 25px 0;
-        }
-        
-        .features-list li {
-            padding: 8px 0;
-            color: #666;
-        }
-        
-        .features-list i {
-            color: #28a745;
-            margin-right: 10px;
-        }
-        
-        .credits-status {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            text-align: center;
-        }
-        
-        .current-credits {
-            font-size: 2em;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-        
-        .buy-button-container {
-            margin-top: 25px;
-        }
-        
-        .stripe-buy-button {
-            width: 100%;
-        }
-        
-        .comparison-table {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-            margin-top: 40px;
-        }
-        
-        .table th {
-            background: #667eea;
-            color: white;
-            border: none;
-            font-weight: 600;
-        }
-        
-        .calculator-section {
-            background: #f8f9fa;
-            padding: 30px;
-            border-radius: 15px;
-            margin: 30px 0;
-        }
-        
-        .calculator-input {
-            text-align: center;
-            font-size: 1.2em;
-            font-weight: 600;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            padding: 15px;
-        }
-        
-        .calculator-result {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 20px;
-            border-left: 4px solid #28a745;
-        }
-    </style>
-</head>
-<body>
-    <div class="container-main">
-        <!-- Header -->
-        <div class="text-center mb-5">
-            <h1 class="display-4 fw-bold mb-3">Comprar Créditos XML</h1>
-            <p class="lead text-muted">Escolha o pacote ideal para suas necessidades de download de XMLs</p>
-        </div>
+{% extends "base.html" %}
+{% block title %}Comprar Créditos XML - CROSS XML Downloader PRO{% endblock %}
 
-        <!-- Status Atual de Créditos -->
-        <div class="credits-status">
-            <div class="current-credits">{{ current_credits }} créditos</div>
-            <div>Seu saldo atual de créditos XML</div>
-        </div>
-
-        <!-- Calculadora de Economia -->
-        <div class="calculator-section">
-            <h4 class="text-center mb-4"><i class="fas fa-calculator"></i> Calculadora de Economia</h4>
-            <div class="row align-items-center">
-                <div class="col-md-4">
-                    <label class="form-label">Quantos XMLs você baixa por mês?</label>
-                    <input type="number" id="xmlCalculator" class="form-control calculator-input" 
-                           placeholder="Ex: 150" min="1" max="5000" value="150">
-                </div>
-                <div class="col-md-8">
-                    <div id="calculatorResult" class="calculator-result">
-                        <div class="row text-center">
-                            <div class="col-md-3">
-                                <strong>Recomendado:</strong><br>
-                                <span class="text-primary" id="recommendedTier">-</span>
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Economia:</strong><br>
-                                <span class="text-success" id="savingsAmount">-</span>
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Preço por XML:</strong><br>
-                                <span class="text-info" id="pricePerXml">-</span>
-                            </div>
-                            <div class="col-md-3">
-                                <strong>Total:</strong><br>
-                                <span class="text-warning" id="totalPrice">-</span>
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header com saldo atual -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                    <h2 class="mb-3">Comprar Créditos XML</h2>
+                    <p class="lead text-muted mb-3">Escolha o pacote ideal para suas necessidades</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mx-auto">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Saldo atual:</strong> {{ current_credits }} créditos XML disponíveis
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Pacotes de Preços -->
-        <div class="row g-4">
-            {% for tier in pricing_tiers %}
-            <div class="col-lg-3 col-md-6">
-                <div class="pricing-card {% if tier.name == 'Pacote Profissional' %}recommended{% endif %}">
-                    <div class="tier-name">{{ tier.name }}</div>
-                    <div class="tier-description">{{ tier.description }}</div>
+    <!-- Recomendação personalizada -->
+    {% if recommendations and recommendations.should_buy_soon %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Recomendação:</strong> {{ recommendations.recommended_message }}
+                {% if recommendations.days_remaining > 0 %}
+                    Com seu uso atual, seus créditos durarão aproximadamente {{ recommendations.days_remaining }} dias.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Pacotes de créditos -->
+    <div class="row">
+        {% for tier in pricing_tiers %}
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm {% if recommendations and recommendations.recommended_tier == tier.name.lower() %}border-primary border-3{% endif %}">
+                {% if recommendations and recommendations.recommended_tier == tier.name.lower() %}
+                <div class="card-header bg-primary text-white text-center">
+                    <small><i class="fas fa-star me-1"></i>RECOMENDADO</small>
+                </div>
+                {% endif %}
+                
+                <div class="card-body text-center d-flex flex-column">
+                    <h5 class="card-title">{{ tier.name }}</h5>
+                    <p class="text-muted small mb-3">{{ tier.description }}</p>
                     
-                    <div class="xml-count">{{ tier.xml_count }}</div>
-                    <div class="xml-label">XMLs inclusos</div>
-                    
-                    <div class="price-display">
-                        <div class="total-price">R$ {{ "%.2f"|format(tier.total_price) }}</div>
-                        <div class="price-per-xml">R$ {{ "%.3f"|format(tier.price_per_xml) }} por XML</div>
+                    <!-- Preço principal -->
+                    <div class="mb-3">
+                        <h3 class="text-primary mb-1">R$ {{ "%.2f"|format(tier.total_price) }}</h3>
+                        <small class="text-muted">{{ tier.xml_count }} créditos XML</small>
                     </div>
                     
-                    {% if tier.savings > 0 %}
-                    <div class="text-center">
-                        <span class="savings-badge">
-                            <i class="fas fa-piggy-bank"></i> 
-                            Economize {{ tier.savings }}%
-                        </span>
+                    <!-- Detalhes do preço -->
+                    <div class="mb-3">
+                        <div class="text-success">
+                            <small><strong>R$ {{ "%.3f"|format(tier.price_per_xml) }}</strong> por XML</small>
+                        </div>
+                        {% if tier.savings > 0 %}
+                        <div class="text-warning">
+                            <small><i class="fas fa-piggy-bank me-1"></i>{{ tier.savings }}% desconto</small>
+                        </div>
+                        {% endif %}
                     </div>
-                    {% endif %}
                     
-                    <ul class="features-list">
-                        <li><i class="fas fa-check"></i> {{ tier.xml_count }} downloads de XML</li>
-                        <li><i class="fas fa-check"></i> DANFE gratuito sempre</li>
-                        <li><i class="fas fa-check"></i> Créditos válidos por 1 ano</li>
-                        <li><i class="fas fa-check"></i> Suporte técnico</li>
+                    <!-- Benefícios -->
+                    <ul class="list-unstyled text-start mb-4 flex-grow-1">
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            {{ tier.xml_count }} downloads de XML
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            DANFE grátis ilimitado
+                        </li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Suporte por email
+                        </li>
                         {% if tier.xml_count >= 500 %}
-                        <li><i class="fas fa-check"></i> API de integração</li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            API de integração
+                        </li>
                         {% endif %}
                         {% if tier.xml_count >= 1000 %}
-                        <li><i class="fas fa-check"></i> Processamento prioritário</li>
+                        <li class="mb-2">
+                            <i class="fas fa-check text-success me-2"></i>
+                            Suporte prioritário
+                        </li>
                         {% endif %}
                     </ul>
                     
-                    <div class="buy-button-container">
-                        <stripe-buy-button
-                            buy-button-id="{{ tier.stripe_buy_button_id }}"
-                            publishable-key="pk_live_51RQIfFKpjVGFiyHC3B3YHQdPnWSaMxIiXVSvVU616lILTuAG2Nah74pLlIHb7ElFA9TWr7YKwMN2Hf6adFOWweeJ00LboMl31o"
-                        ></stripe-buy-button>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Tabela de Comparação -->
-        <div class="comparison-table">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Características</th>
-                        <th>Básico</th>
-                        <th>Profissional</th>
-                        <th>Empresarial</th>
-                        <th>Corporativo</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>XMLs Inclusos</strong></td>
-                        <td>100</td>
-                        <td>500</td>
-                        <td>1.000</td>
-                        <td>2.000</td>
-                    </tr>
-                    <tr>
-                        <td><strong>Preço por XML</strong></td>
-                        <td>R$ 0,10</td>
-                        <td>R$ 0,08</td>
-                        <td>R$ 0,07</td>
-                        <td>R$ 0,06</td>
-                    </tr>
-                    <tr>
-                        <td><strong>DANFE Gratuito</strong></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                    </tr>
-                    <tr>
-                        <td><strong>API de Integração</strong></td>
-                        <td><i class="fas fa-times text-danger"></i></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Processamento Prioritário</strong></td>
-                        <td><i class="fas fa-times text-danger"></i></td>
-                        <td><i class="fas fa-times text-danger"></i></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Suporte Dedicado</strong></td>
-                        <td><i class="fas fa-times text-danger"></i></td>
-                        <td><i class="fas fa-times text-danger"></i></td>
-                        <td><i class="fas fa-times text-danger"></i></td>
-                        <td><i class="fas fa-check text-success"></i></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Informações Adicionais -->
-        <div class="row mt-5">
-            <div class="col-md-6">
-                <div class="card border-0 h-100">
-                    <div class="card-body">
-                        <h5><i class="fas fa-shield-alt text-primary"></i> Segurança Garantida</h5>
-                        <p class="text-muted">Todas as transações são processadas pelo Stripe com a mais alta segurança e criptografia.</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="card border-0 h-100">
-                    <div class="card-body">
-                        <h5><i class="fas fa-clock text-success"></i> Créditos Duradouros</h5>
-                        <p class="text-muted">Seus créditos são válidos por 1 ano a partir da data de compra, sem pressa para usar.</p>
-                    </div>
+                    <!-- Botão de compra -->
+                    <form method="POST" action="{{ url_for('create_checkout_session') }}" class="mt-auto">
+                        <input type="hidden" name="tier_name" value="{{ tier.name }}">
+                        <input type="hidden" name="xml_count" value="{{ tier.xml_count }}">
+                        <input type="hidden" name="total_price" value="{{ tier.total_price }}">
+                        <input type="hidden" name="price_per_xml" value="{{ tier.price_per_xml }}">
+                        <input type="hidden" name="description" value="{{ tier.description }}">
+                        
+                        <button type="submit" class="btn {% if recommendations and recommendations.recommended_tier == tier.name.lower() %}btn-primary{% else %}btn-outline-primary{% endif %} w-100">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Comprar Agora
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
+        {% endfor %}
+    </div>
 
-        <!-- Botão Voltar -->
-        <div class="text-center mt-4">
-            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-lg">
-                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
-            </a>
+    <!-- Informações adicionais -->
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-shield-alt text-success me-2"></i>
+                        Pagamento Seguro
+                    </h5>
+                    <p class="card-text">
+                        Todos os pagamentos são processados de forma segura pelo Stripe. 
+                        Aceitamos cartões de crédito e débito das principais bandeiras.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="fab fa-cc-visa me-2"></i>Visa</li>
+                        <li><i class="fab fa-cc-mastercard me-2"></i>Mastercard</li>
+                        <li><i class="fab fa-cc-amex me-2"></i>American Express</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-clock text-info me-2"></i>
+                        Ativação Imediata
+                    </h5>
+                    <p class="card-text">
+                        Seus créditos XML são ativados automaticamente após a confirmação do pagamento. 
+                        Você pode começar a usar imediatamente.
+                    </p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Ativação em até 2 minutos</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Sem necessidade de configuração</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Válido por 12 meses</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Dados dos tiers para cálculos
-        const pricingTiers = {{ pricing_tiers | tojson }};
-        
-        // Calculadora de economia
-        document.getElementById('xmlCalculator').addEventListener('input', function() {
-            const xmlCount = parseInt(this.value) || 0;
-            
-            if (xmlCount > 0) {
-                // Encontrar tier recomendado
-                let recommendedTier = pricingTiers[0];
-                for (let tier of pricingTiers) {
-                    if (xmlCount <= tier.xml_count) {
-                        recommendedTier = tier;
-                        break;
-                    }
-                }
-                
-                // Calcular valores
-                const basicPrice = xmlCount * 0.10;
-                const tierPrice = xmlCount * recommendedTier.price_per_xml;
-                const savings = basicPrice - tierPrice;
-                
-                // Atualizar interface
-                document.getElementById('recommendedTier').textContent = recommendedTier.name;
-                document.getElementById('savingsAmount').textContent = `R$ ${savings.toFixed(2)}`;
-                document.getElementById('pricePerXml').textContent = `R$ ${recommendedTier.price_per_xml.toFixed(3)}`;
-                document.getElementById('totalPrice').textContent = `R$ ${tierPrice.toFixed(2)}`;
-            } else {
-                // Limpar resultados
-                document.getElementById('recommendedTier').textContent = '-';
-                document.getElementById('savingsAmount').textContent = '-';
-                document.getElementById('pricePerXml').textContent = '-';
-                document.getElementById('totalPrice').textContent = '-';
-            }
-        });
-        
-        // Trigger inicial da calculadora
-        document.getElementById('xmlCalculator').dispatchEvent(new Event('input'));
-        
-        // Animação de entrada das cartas
-        const cards = document.querySelectorAll('.pricing-card');
-        cards.forEach((card, index) => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(30px)';
-            
-            setTimeout(() => {
-                card.style.transition = 'all 0.6s ease';
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, index * 150);
-        });
-    </script>
-</body>
-</html>
+    <!-- FAQ -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Perguntas Frequentes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Como funciona o sistema de créditos?</h6>
+                            <p class="small text-muted mb-3">
+                                Cada crédito XML permite baixar 1 arquivo XML completo. Os créditos são debitados automaticamente a cada download.
+                            </p>
+                            
+                            <h6>Os créditos expiram?</h6>
+                            <p class="small text-muted mb-3">
+                                Sim, os créditos são válidos por 12 meses a partir da data da compra.
+                            </p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6>Posso combinar diferentes pacotes?</h6>
+                            <p class="small text-muted mb-3">
+                                Sim, você pode comprar quantos pacotes quiser. Os créditos se acumulam no seu saldo total.
+                            </p>
+                            
+                            <h6>Como acompanho meu consumo?</h6>
+                            <p class="small text-muted mb-3">
+                                No dashboard de créditos XML você pode ver seu saldo atual, histórico de compras e relatórios de uso detalhados.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Destacar pacote recomendado com animação
+document.addEventListener('DOMContentLoaded', function() {
+    const recommended = document.querySelector('.border-primary.border-3');
+    if (recommended) {
+        recommended.style.transform = 'scale(1.02)';
+        recommended.style.transition = 'transform 0.3s ease';
+    }
+});
+</script>
+{% endblock %}
