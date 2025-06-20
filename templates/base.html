@@ -216,6 +216,12 @@
                     </a>
                 </div>
                 <div class="nav-item">
+                    <a href="{{ url_for('configurar_etiquetas') }}" class="nav-link {% if request.endpoint == 'configurar_etiquetas' %}active{% endif %}">
+                        <i class="fas fa-cog"></i>
+                        Configurar Etiquetas
+                    </a>
+                </div>
+                <div class="nav-item">
                     <a href="#" class="nav-link" onclick="alert('Relatórios em desenvolvimento')">
                         <i class="fas fa-chart-bar"></i>
                         Relatórios

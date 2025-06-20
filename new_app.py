@@ -1379,11 +1379,18 @@ def generate_label_route(xml_id):
         area_code = current_user.default_area_code or '01'
         logo_path = current_user.company_logo_path
         
-        label_buffer = generate_custom_label_from_database_xml(
-            xml_record or xml_file,
+        # Gerar etiqueta personalizada usando transport_label_generator_v2
+        from transport_label_generator_v2 import CustomTransportLabelGenerator
+        
+        generator = CustomTransportLabelGenerator(
+            company_name=company_name,
+            company_subtitle=current_user.company_subtitle or "TRANSPORTE"
+        )
+        
+        label_buffer = generator.generate_transport_label(
+            xml_content=xml_content,
             pedido_number=pedido_number,
             area_code=area_code,
-            company_name=company_name,
             company_logo_path=logo_path
         )
         
@@ -1656,6 +1663,60 @@ def charge_for_xml_download(user_id: int, invoice_key: str) -> bool:
         description=f"Download XML: {invoice_key[:10]}...",
         service_type="xml_download"
     )
+
+@app.route('/configurar-etiquetas', methods=['GET', 'POST'])
+@login_required
+def configurar_etiquetas():
+    """Configurar etiquetas personalizadas"""
+    if request.method == 'POST':
+        try:
+            # Atualizar dados da empresa
+            current_user.company_name = request.form.get('company_name', '').strip()
+            current_user.company_subtitle = request.form.get('company_subtitle', '').strip()
+            current_user.default_area_code = request.form.get('area_code', '01').strip()
+            
+            # Processar upload de logo
+            if 'company_logo' in request.files:
+                logo_file = request.files['company_logo']
+                if logo_file and logo_file.filename:
+                    # Validar tipo de arquivo
+                    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+                    file_extension = logo_file.filename.rsplit('.', 1)[1].lower()
+                    
+                    if file_extension in allowed_extensions:
+                        # Criar diretório se não existir
+                        logo_dir = os.path.join('static', 'uploads', 'logos')
+                        os.makedirs(logo_dir, exist_ok=True)
+                        
+                        # Gerar nome único para o arquivo
+                        import uuid
+                        unique_filename = f"{current_user.id}_{uuid.uuid4().hex[:8]}.{file_extension}"
+                        logo_path = os.path.join(logo_dir, unique_filename)
+                        
+                        # Salvar arquivo
+                        logo_file.save(logo_path)
+                        
+                        # Atualizar caminho no banco
+                        current_user.company_logo_path = logo_path
+                        
+                        flash('Logo enviado com sucesso!', 'success')
+                    else:
+                        flash('Formato de arquivo não suportado. Use PNG, JPG, JPEG ou GIF.', 'error')
+            
+            db.session.commit()
+            flash('Configurações de etiquetas salvas com sucesso!', 'success')
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Erro ao salvar configurações: {e}")
+            flash('Erro ao salvar configurações. Tente novamente.', 'error')
+    
+    return render_template('configurar_etiquetas.html')
+
+@app.route('/static/uploads/logos/<filename>')
+def serve_logo(filename):
+    """Servir logos das empresas"""
+    return send_from_directory(os.path.join('static', 'uploads', 'logos'), filename)
 
 # Importar admin panel
 try:
