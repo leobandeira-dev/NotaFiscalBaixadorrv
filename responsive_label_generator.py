@@ -73,11 +73,11 @@ class ResponsiveTransportLabelGenerator:
         }
     
     def _setup_responsive_spacing(self):
-        """Configura espaçamentos responsivos"""
-        base_spacing = 3 * mm
+        """Configura espaçamentos responsivos com melhor distribuição"""
+        base_spacing = 4 * mm  # Aumentado para mais espaço entre seções
         self.spacing = {
-            'section': max(2 * mm, base_spacing * self.scale_factor),
-            'line': max(1.5 * mm, base_spacing * 0.7 * self.scale_factor),
+            'section': max(3 * mm, base_spacing * self.scale_factor),  # Espaço entre containers
+            'line': max(2 * mm, base_spacing * 0.8 * self.scale_factor),  # Espaço entre linhas
             'field': max(1 * mm, base_spacing * 0.5 * self.scale_factor),
             'header': max(4 * mm, base_spacing * 1.3 * self.scale_factor)
         }
@@ -184,21 +184,21 @@ class ResponsiveTransportLabelGenerator:
         """Desenha etiqueta com layout responsivo e informações de volume dinâmicas"""
         
         # Usar o mesmo layout da função principal, mas modificar seção de peso/volume
-        # Configurar margens e altura das seções
+        # Configurar margens e altura das seções com melhor espaçamento
         margin = 15 * self.scale_factor
         current_y = self.page_height - margin
-        section_spacing = 5 * self.scale_factor
+        section_spacing = 8 * self.scale_factor  # Aumentado para mais espaço entre containers
         
-        # Definir alturas das seções de forma responsiva
-        base_section_height = self.spacing['section'] * 2
-        company_section_height = base_section_height * 0.8
-        id_qr_section_height = base_section_height * 1.2
-        nf_section_height = base_section_height * 0.8
-        pedido_section_height = base_section_height * 0.8
-        remetente_section_height = base_section_height * 1.5
-        destinatario_section_height = base_section_height * 2.2
-        cidade_section_height = base_section_height * 1.0
-        peso_volume_section_height = base_section_height * 1.2
+        # Definir alturas das seções com melhor proporção e espaçamento
+        base_section_height = self.spacing['section'] * 3  # Aumentado para containers maiores
+        company_section_height = base_section_height * 1.0  # Aumentado
+        id_qr_section_height = base_section_height * 1.4   # Aumentado
+        nf_section_height = base_section_height * 1.0      # Aumentado
+        pedido_section_height = base_section_height * 1.0  # Aumentado
+        remetente_section_height = base_section_height * 1.8  # Aumentado
+        destinatario_section_height = base_section_height * 2.5  # Aumentado significativamente
+        cidade_section_height = base_section_height * 1.2  # Aumentado
+        peso_volume_section_height = base_section_height * 1.4  # Aumentado
         
         # 1. Seção da empresa/logo
         current_y -= company_section_height
@@ -249,63 +249,65 @@ class ResponsiveTransportLabelGenerator:
     def _draw_responsive_label(self, c, xml_data, pedido_number, area_code, company_logo_path):
         """Desenha etiqueta com layout verdadeiramente responsivo"""
         
-        # Calcular altura disponível para distribuição de conteúdo
-        header_height = self.spacing['header'] * 2
-        footer_height = self.spacing['section'] * 2
-        available_height = self.content_height - header_height - footer_height
+        # Usar o mesmo sistema de espaçamento da função com volume dinâmico
+        margin = 15 * self.scale_factor
+        current_y = self.page_height - margin
+        section_spacing = 8 * self.scale_factor  # Espaço entre containers
         
-        # Divisão proporcional do espaço - FOCO MÁXIMO NO DESTINATÁRIO
-        sections = {
-            'company_header': 0.10,    # 10% - Header compacto
-            'id_qr': 0.08,             # 8% - ID e QR reduzidos  
-            'nf_info': 0.07,           # 7% - NF compacta
-            'pedido_info': 0.07,       # 7% - Pedido compacto
-            'remetente': 0.07,         # 7% - Remetente básico
-            'destinatario': 0.40,      # 40% - MÁXIMO ESPAÇO PARA DESTINATÁRIO
-            'cidade_uf': 0.05,         # 5% - Cidade reduzida
-            'peso_volume': 0.12,       # 12% - Peso/Volume
-            'area_info': 0.04          # 4% - Área compacta
-        }
+        # Definir alturas das seções com melhor proporção e espaçamento
+        base_section_height = self.spacing['section'] * 3  # Containers maiores
+        company_section_height = base_section_height * 1.0
+        id_qr_section_height = base_section_height * 1.4
+        nf_section_height = base_section_height * 1.0
+        pedido_section_height = base_section_height * 1.0
+        remetente_section_height = base_section_height * 1.8
+        destinatario_section_height = base_section_height * 2.5  # Aumentado significativamente
+        cidade_section_height = base_section_height * 1.2
+        peso_volume_section_height = base_section_height * 1.4
         
-        # Posição inicial
-        current_y = self.page_height - self.margin
+        # 1. Seção da empresa/logo
+        current_y -= company_section_height
+        self._draw_company_section(c, current_y, company_section_height, company_logo_path)
+        current_y -= section_spacing
         
-        # 1. Header da empresa
-        section_height = available_height * sections['company_header']
-        current_y = self._draw_company_section(c, current_y, section_height, company_logo_path)
+        # 2. Seção ID e QR Code
+        current_y -= id_qr_section_height
+        self._draw_id_qr_section(c, xml_data, current_y, id_qr_section_height)
+        current_y -= section_spacing
         
-        # 2. ID e QR Code
-        section_height = available_height * sections['id_qr']
-        current_y = self._draw_id_qr_section(c, xml_data, current_y, section_height)
+        # 3. Seção NF
+        current_y -= nf_section_height
+        self._draw_nf_section(c, xml_data, current_y, nf_section_height)
+        current_y -= section_spacing
         
-        # 3. Informações NF
-        section_height = available_height * sections['nf_info']
-        current_y = self._draw_nf_section(c, xml_data, current_y, section_height)
+        # 4. Seção Pedido
+        current_y -= pedido_section_height
+        self._draw_pedido_section(c, pedido_number, current_y, pedido_section_height)
+        current_y -= section_spacing
         
-        # 4. Informações Pedido
-        section_height = available_height * sections['pedido_info']
-        current_y = self._draw_pedido_section(c, pedido_number or xml_data.get('numero_nf', '00000'), current_y, section_height)
+        # 5. Seção Remetente
+        current_y -= remetente_section_height
+        self._draw_remetente_section(c, xml_data, current_y, remetente_section_height)
+        current_y -= section_spacing
         
-        # 5. Remetente
-        section_height = available_height * sections['remetente']
-        current_y = self._draw_remetente_section(c, xml_data, current_y, section_height)
+        # 6. Seção Destinatário
+        current_y -= destinatario_section_height
+        self._draw_destinatario_section(c, xml_data, current_y, destinatario_section_height)
+        current_y -= section_spacing
         
-        # 6. Destinatário
-        section_height = available_height * sections['destinatario']
-        current_y = self._draw_destinatario_section(c, xml_data, current_y, section_height)
+        # 7. Seção Cidade/UF
+        current_y -= cidade_section_height
+        self._draw_cidade_section(c, xml_data, current_y, cidade_section_height)
+        current_y -= section_spacing
         
-        # 7. Cidade/UF
-        section_height = available_height * sections['cidade_uf']
-        current_y = self._draw_cidade_section(c, xml_data, current_y, section_height)
+        # 8. Seção Peso e Volume
+        current_y -= peso_volume_section_height
+        self._draw_peso_volume_section(c, xml_data, current_y, peso_volume_section_height)
         
-        # 8. Peso e Volume
-        section_height = available_height * sections['peso_volume']
-        current_y = self._draw_peso_volume_section(c, xml_data, current_y, section_height)
-        
-        # 9. Área (posição fixa inferior direita)
+        # 9. Seção ÁREA (canto inferior direito)
         self._draw_area_section(c, area_code)
         
-        # 10. Footer
+        # 10. Rodapé
         self._draw_footer(c)
     
     def _draw_company_section(self, c, y_pos, section_height, company_logo_path):
