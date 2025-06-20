@@ -136,6 +136,7 @@ This is a Python Flask web application that automates the bulk download of XML i
 - June 20, 2025: **COMPREHENSIVE PRODUCTION SECURITY IMPLEMENTATION COMPLETE** - Implemented systematic user data isolation across ALL platform routes (100+ routes), added bulletproof security middleware with rate limiting, CSRF protection, comprehensive logging, admin-only route protection, file access validation, and multi-tenant data segregation
 - June 20, 2025: **PRODUCTION READINESS VALIDATION ACHIEVED** - Production security check passed all 15 critical validation tests (100% success rate), functional testing achieved 87.5% success rate, system now fully production-ready with enterprise-grade security implementation and comprehensive multi-user data isolation
 - June 20, 2025: **OFFICIAL STRIPE PRODUCTS INTEGRATION COMPLETE** - Updated entire platform with official Stripe product IDs: prod_SWv7Mmc4YDzCal for XML downloads (R$0.10 each) and prod_SSVViDPzXYZHhO for transport labels module (R$49.90/month), integrated product references across pricing page, landing page, and stripe_integration.py for consistent billing system with official Stripe dashboard products
+- June 20, 2025: **USER INTERFACE PRICING CORRECTIONS** - Corrected labels module pricing from monthly subscription to one-time payment (R$49.90 único), removed technical Stripe product references from user-facing interfaces while maintaining backend integration, cleaned pricing display across landing page and pricing templates for professional presentation
 
 ## User Preferences
 
@@ -144,7 +145,7 @@ Preferred communication style: Simple, everyday language.
 ## Current Pricing Structure
 - Download XML: R$ 0,10 per file (web + API)
 - DANFE Generation: FREE (always included)
-- Labels Module: R$ 49,90/mês (monthly subscription)
+- Labels Module: R$ 49,90 (one-time payment)
 - Minimum recharge: R$ 19,90
 - 7-day free trial for all new users
 
