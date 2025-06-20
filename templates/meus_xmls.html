@@ -185,10 +185,34 @@
                                                 <span>{{ 'R$ {:,.2f}'.format(xml.valor_total) if xml.valor_total else 'N/A' }}</span>
                                             </div>
                                             <div class="col-sm-6">
+                                                <small class="text-muted">Peso Bruto:</small><br>
+                                                <span>{{ '{:,.1f} kg'.format(xml.peso_bruto) if xml.peso_bruto else 'N/A' }}</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row mt-2">
+                                            <div class="col-sm-6">
+                                                <small class="text-muted">Volumes:</small><br>
+                                                <span>{{ '{:,} unidades'.format(xml.quantidade_volumes) if xml.quantidade_volumes else 'N/A' }}</span>
+                                            </div>
+                                            <div class="col-sm-6">
                                                 <small class="text-muted">Importado via:</small><br>
                                                 <span class="badge bg-{{ 'primary' if xml.import_type == 'API' else 'secondary' }}">
                                                     {{ xml.import_type }}
                                                 </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row mt-3">
+                                            <div class="col-sm-6">
+                                                <small class="text-muted"><i class="fas fa-arrow-up text-success"></i> Remetente:</small><br>
+                                                <span style="font-size: 0.85rem;">{{ xml.remetente_razao or 'N/A' }}</span><br>
+                                                <small class="text-muted">{{ xml.remetente_cidade or 'N/A' }}/{{ xml.remetente_uf or 'N/A' }}</small>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <small class="text-muted"><i class="fas fa-arrow-down text-primary"></i> Destinatário:</small><br>
+                                                <span style="font-size: 0.85rem;">{{ xml.destinatario_razao or 'N/A' }}</span><br>
+                                                <small class="text-muted">{{ xml.destinatario_cidade or 'N/A' }}/{{ xml.destinatario_uf or 'N/A' }}</small>
                                             </div>
                                         </div>
                                     </div>
@@ -215,7 +239,7 @@
                                         </div>
                                         
                                         <small class="text-muted d-block mt-2">
-                                            Importado em: {{ xml.imported_at.strftime('%d/%m/%Y') if xml.imported_at else 'N/A' }}
+                                            Importado em: {{ xml.imported_at.strftime('%d/%m/%Y às %H:%M') if xml.imported_at else 'N/A' }}
                                         </small>
                                     </div>
                                 </div>
