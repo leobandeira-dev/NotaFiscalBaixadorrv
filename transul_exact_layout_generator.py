@@ -318,10 +318,21 @@ class TransulExactLayoutGenerator:
         header_height = 15 * mm
         
         # Se há logo, desenhar cabeçalho com logo
-        if company_logo_path and os.path.exists(company_logo_path):
+        # Construir caminho completo se apenas filename foi fornecido
+        full_logo_path = None
+        if company_logo_path:
+            if os.path.exists(company_logo_path):
+                full_logo_path = company_logo_path
+            else:
+                # Tentar construir caminho completo
+                full_path = os.path.join('static', 'uploads', 'logos', company_logo_path)
+                if os.path.exists(full_path):
+                    full_logo_path = full_path
+        
+        if full_logo_path:
             self._draw_company_header_with_logo(c, self.margin, current_y - header_height, 
                                               self.content_width, header_height, 
-                                              company_name, company_logo_path)
+                                              company_name, full_logo_path)
         else:
             # Cabeçalho apenas com texto
             self._draw_styled_text_section(

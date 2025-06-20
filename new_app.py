@@ -2320,6 +2320,17 @@ def generate_custom_labels(xml_id):
                 current_user.company_logo_path = logo_path
                 db.session.commit()
         
+        # Construir caminho completo da logo se existe
+        full_logo_path = None
+        if logo_path:
+            if os.path.exists(logo_path):
+                full_logo_path = logo_path
+            else:
+                # Construir caminho completo se apenas filename foi armazenado
+                full_path = os.path.join('static', 'uploads', 'logos', logo_path)
+                if os.path.exists(full_path):
+                    full_logo_path = full_path
+        
         # Atualizar configurações do usuário
         current_user.company_name = company_name
         current_user.company_subtitle = company_subtitle
@@ -2352,7 +2363,7 @@ def generate_custom_labels(xml_id):
         # Configurações da empresa (usando configurações do formulário)
         company_name = request.form.get('company_name', current_user.company_name or "SUA EMPRESA")
         company_subtitle = request.form.get('company_subtitle', current_user.company_subtitle or "TRANSPORTE")
-        company_logo_path = logo_path  # Já processado acima
+        company_logo_path = full_logo_path  # Usar caminho completo corrigido
         area_code = request.form.get('area_code', current_user.default_area_code or "01")
         layout_style = request.form.get('layout_style', current_user.preferred_layout or 'transul')
         
