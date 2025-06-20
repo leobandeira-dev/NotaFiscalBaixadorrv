@@ -345,8 +345,11 @@ def dashboard():
         UsageRecord.created_at >= datetime.now().replace(day=1)
     ).count()
     
-    # Get recent activities using the new service
-    recent_activities = DownloadService.get_recent_activity(current_user.id, days=7)
+    # Get recent activities from UsageRecord
+    recent_activities = UsageRecord.query.filter_by(user_id=current_user.id)\
+        .filter(UsageRecord.created_at >= datetime.now() - timedelta(days=7))\
+        .order_by(UsageRecord.created_at.desc())\
+        .limit(10).all()
     
     # Get pending charges
     pending_charges = Charge.query.filter_by(
