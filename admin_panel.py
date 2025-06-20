@@ -98,7 +98,7 @@ def user_detail(user_id):
     
     # Atividade recente
     recent_xmls = XMLFile.query.filter_by(user_id=user_id).order_by(
-        XMLFile.uploaded_at.desc()
+        XMLFile.imported_at.desc()
     ).limit(10).all()
     
     recent_charges = Charge.query.filter_by(user_id=user_id).order_by(
