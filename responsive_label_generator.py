@@ -327,7 +327,9 @@ class ResponsiveTransportLabelGenerator:
         
         c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
-        peso = xml_data.get('peso_bruto', '0.000')
+        
+        # Usar peso específico do volume se disponível, senão peso bruto total
+        peso = xml_data.get('volume_weight') or xml_data.get('peso_bruto', '0.000')
         try:
             peso_formatado = f"{float(peso):.3f}".replace('.', ',')
         except:
@@ -342,8 +344,11 @@ class ResponsiveTransportLabelGenerator:
         c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
         
         c.setFillColor(colors.white)
-        quantidade_volumes = xml_data.get('quantidade_volumes', '1')
-        c.drawString(volume_x + self.spacing['field'], text_y, f"Volume: 1/{quantidade_volumes}")
+        
+        # Usar volume específico se disponível
+        current_volume = xml_data.get('current_volume', 1)
+        total_volumes = xml_data.get('total_volumes') or xml_data.get('quantidade_volumes', '1')
+        c.drawString(volume_x + self.spacing['field'], text_y, f"Volume: {current_volume}/{total_volumes}")
         
         # Restaurar cor
         c.setFillColor(colors.black)
@@ -500,12 +505,27 @@ def generate_multiple_responsive_labels_from_volumes(xml_record, volumes_config:
         )
         
         # Gerar uma etiqueta para cada volume
+        total_volumes = len(volumes_config)
         for i, volume_config in enumerate(volumes_config, 1):
             peso = volume_config.get('peso', 0)
             pedido = volume_config.get('pedido', f'PED{i}')
             
+            # Criar gerador específico para este volume
+            volume_generator = ResponsiveTransportLabelGenerator(
+                company_name=company_name,
+                paper_width_mm=paper_width_mm,
+                paper_height_mm=paper_height_mm
+            )
+            
+            # Modificar temporariamente os dados XML para incluir volume específico
+            from xml_processor import extract_xml_data
+            xml_data = extract_xml_data(xml_content)
+            xml_data['current_volume'] = i
+            xml_data['total_volumes'] = total_volumes
+            xml_data['volume_weight'] = peso
+            
             # Gerar etiqueta individual para este volume
-            label_buffer = generator.generate_transport_label(
+            label_buffer = volume_generator.generate_transport_label(
                 xml_content=xml_content,
                 pedido_number=pedido,
                 area_code=area_code,
