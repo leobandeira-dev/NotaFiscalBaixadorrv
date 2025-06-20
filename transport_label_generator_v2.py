@@ -79,34 +79,69 @@ class CustomTransportLabelGenerator:
     def _draw_transport_label(self, c, xml_data, pedido_number, area_code, company_logo_path):
         """Desenha a etiqueta completa personalizada com layout responsivo"""
         
-        # Posição inicial Y (começa do topo)
-        y_pos = self.page_height - 15 * mm
+        # Calcular espaço disponível considerando margem e área inferior
+        top_margin = 10 * mm
+        bottom_margin = 40 * mm  # Espaço para área e rodapé
+        available_height = self.page_height - top_margin - bottom_margin
+        
+        # Distribuição responsiva por seção (percentual do espaço disponível)
+        section_heights = {
+            'header': 0.12,      # 12%
+            'id_qr': 0.15,       # 15%
+            'nf': 0.08,          # 8%
+            'pedido': 0.08,      # 8%
+            'remetente': 0.08,   # 8%
+            'destinatario': 0.20, # 20%
+            'cidade': 0.08,      # 8%
+            'peso': 0.11,        # 11%
+            'volume': 0.10       # 10%
+        }
+        
+        # Posição inicial Y
+        y_pos = self.page_height - top_margin
         
         # 1. Header da empresa
+        section_height = available_height * section_heights['header']
         y_pos = self._draw_company_header(c, y_pos, company_logo_path)
+        y_pos -= section_height
         
         # 2. ID e QR Code
+        section_height = available_height * section_heights['id_qr']
         y_pos = self._draw_id_section(c, xml_data, y_pos)
+        y_pos -= section_height * 0.7  # Usar menos espaço
         
         # 3. NF Section
+        section_height = available_height * section_heights['nf']
         y_pos = self._draw_nf_section(c, xml_data, y_pos)
+        y_pos -= section_height
         
         # 4. Pedido Section
+        section_height = available_height * section_heights['pedido']
         y_pos = self._draw_pedido_section(c, pedido_number or xml_data.get('numero_nf', '00000'), y_pos)
+        y_pos -= section_height
         
         # 5. Remetente
+        section_height = available_height * section_heights['remetente']
         y_pos = self._draw_remetente_section(c, xml_data, y_pos)
+        y_pos -= section_height
         
         # 6. Destinatário (seção expandida)
+        section_height = available_height * section_heights['destinatario']
         y_pos = self._draw_destinatario_section(c, xml_data, y_pos)
+        y_pos -= section_height * 0.8  # Ajustar para não ocupar todo o espaço
         
         # 7. Cidade/UF
+        section_height = available_height * section_heights['cidade']
         y_pos = self._draw_cidade_section(c, xml_data, y_pos)
+        y_pos -= section_height
         
         # 8. Peso Section
+        section_height = available_height * section_heights['peso']
         y_pos = self._draw_peso_section(c, xml_data, y_pos)
+        y_pos -= section_height
         
         # 9. Volume Section
+        section_height = available_height * section_heights['volume']
         y_pos = self._draw_volume_section(c, xml_data, y_pos, volume_number=1)
         
         # 10. Área e Rodapé (posicionamento fixo no canto inferior)

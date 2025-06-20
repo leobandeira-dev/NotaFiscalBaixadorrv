@@ -1380,19 +1380,21 @@ def generate_label_route(xml_id):
         area_code = current_user.default_area_code or '01'
         logo_path = current_user.company_logo_path
         
-        # Gerar etiqueta personalizada usando transport_label_generator_v2
-        from transport_label_generator_v2 import CustomTransportLabelGenerator
+        # Gerar etiqueta responsiva
+        from responsive_label_generator import generate_responsive_label_from_database_xml
         
-        generator = CustomTransportLabelGenerator(
-            company_name=company_name,
-            company_subtitle=current_user.company_subtitle or "TRANSPORTE"
-        )
+        # Obter configurações de papel do usuário (padrão: 100x150mm)
+        paper_width = getattr(current_user, 'paper_width_mm', 100)
+        paper_height = getattr(current_user, 'paper_height_mm', 150)
         
-        label_buffer = generator.generate_transport_label(
-            xml_content=xml_content,
+        label_buffer = generate_responsive_label_from_database_xml(
+            xml_record=xml_record,
             pedido_number=pedido_number,
             area_code=area_code,
-            company_logo_path=logo_path
+            company_name=company_name,
+            company_logo_path=logo_path,
+            paper_width_mm=paper_width,
+            paper_height_mm=paper_height
         )
         
         # Cobrar pelo serviço apenas se não estiver em trial
