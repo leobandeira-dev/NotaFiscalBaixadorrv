@@ -23,6 +23,7 @@ from stripe_integration import StripePaymentManager, CreditManager, PricingManag
 from transport_label_generator import TransportLabelGenerator, generate_label_from_database_xml
 from transport_label_generator_v2 import CustomTransportLabelGenerator, generate_custom_label_from_database_xml
 from improved_transport_label import ImprovedTransportLabelGenerator
+from transul_exact_layout_generator import generate_transul_exact_label_from_xml
 from xml_processor import extract_xml_data
 
 def generate_improved_label_with_guaranteed_borders(xml_id, user, paper_config, layout_style='layout1'):
@@ -109,7 +110,7 @@ def generate_improved_label_with_guaranteed_borders(xml_id, user, paper_config, 
     return labels
 
 def generate_improved_labels_with_guaranteed_borders(xml_record, volumes_config, company_name, company_logo_path, paper_width_mm, paper_height_mm, area_code, company_subtitle, layout_style):
-    """Gera etiquetas com sistema melhorado - bordas garantidas e espaçamento de 2mm"""
+    """Gera etiquetas com sistema melhorado - bordas garantidas e espaçamento de 4mm"""
     
     try:
         labels = []
@@ -121,18 +122,9 @@ def generate_improved_labels_with_guaranteed_borders(xml_record, volumes_config,
             raise ValueError("XML content not found in record")
         
         total_volumes = len(volumes_config)
-        logger.info(f"Geração melhorada: {total_volumes} volumes com bordas garantidas")
+        logger.info(f"Geração otimizada: {total_volumes} volumes com layout Transul Exato")
         
-        # Criar gerador melhorado com espaçamento de 2mm
-        generator = ImprovedTransportLabelGenerator(
-            company_name=company_name,
-            company_subtitle=company_subtitle,
-            paper_width_mm=paper_width_mm,
-            paper_height_mm=paper_height_mm,
-            layout_style=layout_style
-        )
-        
-        # Gerar etiquetas individuais
+        # Gerar etiquetas individuais usando TransulExactLayoutGenerator
         for volume_config in volumes_config:
             volume_idx = volumes_config.index(volume_config) + 1
             peso = volume_config.get('peso', 0)
@@ -141,14 +133,15 @@ def generate_improved_labels_with_guaranteed_borders(xml_record, volumes_config,
             try:
                 volume_info = f"{volume_idx}/{total_volumes}"
                 
-                label_buffer = generator.generate_transport_label_with_volume_info(
+                # Usar o gerador corrigido com espaçamento de 4mm
+                label_buffer = generate_transul_exact_label_from_xml(
                     xml_content=xml_content,
                     pedido_number=pedido,
                     area_code=area_code,
                     company_logo_path=company_logo_path,
                     volume_info=volume_info,
-                    current_volume=volume_idx,
-                    total_volumes=total_volumes
+                    paper_width_mm=paper_width_mm,
+                    paper_height_mm=paper_height_mm
                 )
                 
                 labels.append({
@@ -159,17 +152,17 @@ def generate_improved_labels_with_guaranteed_borders(xml_record, volumes_config,
                     'filename': f'etiqueta_volume_{volume_idx}_{pedido}.pdf'
                 })
                 
-                logger.info(f"Etiqueta melhorada gerada: Volume {volume_idx}/{total_volumes} - {len(label_buffer.getvalue())} bytes")
+                logger.info(f"Etiqueta otimizada gerada: Volume {volume_idx}/{total_volumes} - {len(label_buffer.getvalue())} bytes")
                 
             except Exception as e:
-                logger.error(f"Erro ao gerar etiqueta melhorada volume {volume_idx}: {e}")
+                logger.error(f"Erro ao gerar etiqueta otimizada volume {volume_idx}: {e}")
                 continue
         
-        logger.info(f"Geradas {len(labels)} etiquetas com bordas garantidas")
+        logger.info(f"Geradas {len(labels)} etiquetas otimizadas com layout Transul Exato")
         return labels
         
     except Exception as e:
-        logger.error(f"Erro no sistema de etiquetas melhoradas: {str(e)}")
+        logger.error(f"Erro no sistema de etiquetas otimizadas: {str(e)}")
         raise
 
 from download_service import DownloadService
