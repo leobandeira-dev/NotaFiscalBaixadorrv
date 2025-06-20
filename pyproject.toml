@@ -31,5 +31,4 @@ dependencies = [
     "pytz>=2025.2",
     "trafilatura>=2.0.0",
     "pypdf2>=3.0.1",
-    "webdriver-manager>=4.0.2",
 ]
