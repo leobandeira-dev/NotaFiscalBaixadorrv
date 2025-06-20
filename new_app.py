@@ -805,16 +805,29 @@ def job_status(job_id):
 @login_required
 def meus_xmls():
     """Lista XMLs do usuário logado"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 12
+    
     # Buscar XMLs do usuário (tanto ImportedXML quanto XMLFile)
     imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).all()
     xml_files = XMLFile.query.filter_by(user_id=current_user.id).order_by(XMLFile.imported_at.desc()).all()
     
     # Combinar ambos os tipos de XML
-    xmls = imported_xmls + xml_files
+    all_xmls = imported_xmls + xml_files
+    
+    # Simular paginação manual
+    total_xmls = len(all_xmls)
+    total_pages = (total_xmls + per_page - 1) // per_page
+    start = (page - 1) * per_page
+    end = start + per_page
+    xmls = all_xmls[start:end]
     
     return render_template('meus_xmls.html', 
                          xmls=xmls,
-                         current_user=current_user)
+                         current_user=current_user,
+                         page=page,
+                         total_pages=total_pages,
+                         total_xmls=total_xmls)
 
 @app.route('/download-xml/<xml_id>')
 @login_required
@@ -854,16 +867,29 @@ def labels_module():
         flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
         return redirect(url_for('dashboard'))
     
+    page = request.args.get('page', 1, type=int)
+    per_page = 12
+    
     # Buscar XMLs do usuário para geração de etiquetas (tanto ImportedXML quanto XMLFile)
     imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).all()
     xml_files = XMLFile.query.filter_by(user_id=current_user.id).order_by(XMLFile.imported_at.desc()).all()
     
     # Combinar ambos os tipos de XML
-    xmls = imported_xmls + xml_files
+    all_xmls = imported_xmls + xml_files
+    
+    # Simular paginação manual
+    total_xmls = len(all_xmls)
+    total_pages = (total_xmls + per_page - 1) // per_page
+    start = (page - 1) * per_page
+    end = start + per_page
+    xmls = all_xmls[start:end]
     
     return render_template('labels.html', 
                          xmls=xmls,
-                         current_user=current_user)
+                         current_user=current_user,
+                         page=page,
+                         total_pages=total_pages,
+                         total_xmls=total_xmls)
 
 @app.route('/api-docs')
 @login_required
