@@ -181,17 +181,30 @@ class EmailXMLProcessor:
         messages_with_xml = []
         
         try:
-            # Obter lista de mensagens
-            messages_info = pop3.list()[1]
-            total_messages = len(messages_info)
-            logger.info(f"Total de mensagens: {total_messages}")
+            # Verificar estado da conexão primeiro
+            try:
+                stat_info = pop3.stat()
+                total_messages = stat_info[0]
+                logger.info(f"Total de mensagens (STAT): {total_messages}")
+            except Exception as stat_error:
+                logger.error(f"Erro ao obter STAT: {stat_error}")
+                return messages_with_xml
             
-            # Processar cada mensagem
+            if total_messages == 0:
+                logger.info("Nenhuma mensagem encontrada")
+                return messages_with_xml
+            
+            # Processar cada mensagem usando apenas RETR (sem LIST)
             for i in range(1, total_messages + 1):
                 try:
-                    # Baixar mensagem completa
-                    raw_message = b'\n'.join(pop3.retr(i)[1])
-                    message = email.message_from_bytes(raw_message)
+                    # Baixar mensagem diretamente com RETR
+                    try:
+                        raw_message_lines = pop3.retr(i)[1]
+                        raw_message = b'\n'.join(raw_message_lines)
+                        message = email.message_from_bytes(raw_message)
+                    except Exception as retr_error:
+                        logger.error(f"Erro RETR na mensagem {i}: {retr_error}")
+                        continue
                     
                     # Verificar se tem anexos XML
                     xml_attachments = self.extract_xml_attachments(message)
@@ -337,7 +350,7 @@ class EmailXMLProcessor:
             pop3 = self.connect_pop3()
             self.authenticate_pop3(pop3, password)
             
-            # Buscar mensagens com XML
+            # Buscar mensagens com XML usando abordagem robusta
             messages_with_xml = self.get_messages_with_xml(pop3)
             logger.info(f"Encontradas {len(messages_with_xml)} mensagens com XML")
             
