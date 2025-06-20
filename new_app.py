@@ -1145,10 +1145,22 @@ def labels_module():
                          all_cidades=sorted(all_cidades))
 
 @app.route('/api-docs')
-@login_required
+@rate_limit_check(max_requests=30, window_minutes=10)
 def api_docs():
-    """Documentação da API"""
-    return render_template('api_docs.html', current_user=current_user)
+    """Documentação da API com isolamento de dados"""
+    return render_template('api_docs.html')
+
+@app.route('/pricing')
+@rate_limit_check(max_requests=30, window_minutes=10)
+def pricing():
+    """Página de preços"""
+    pricing_data = {
+        'xml_price': 'R$ 0,10',
+        'danfe_price': 'Grátis',
+        'labels_price': 'R$ 49,90',
+        'minimum_charge': 'R$ 19,90'
+    }
+    return render_template('pricing.html', **pricing_data)
 
 @app.route('/test-automation')
 @login_required
