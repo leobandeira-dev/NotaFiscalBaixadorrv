@@ -69,36 +69,36 @@ class DownloadService:
             xml_data = extract_xml_data(xml_content)
             
             # Salvar XML no banco com dados extraídos
-            xml_file = XMLFile(
-                user_id=user_id,
-                filename=f"{invoice_key}.xml",
-                invoice_key=invoice_key,
-                file_path=file_path,
-                xml_content=xml_content,
-                import_type='SISTEMA',
-                job_id=job_id,
-                imported_at=datetime.utcnow(),
-                # Dados extraídos do XML
-                numero_nf=xml_data.get('numero_nf', 'N/A'),
-                serie_nf=xml_data.get('serie_nf', 'N/A'),
-                data_emissao=xml_data.get('data_emissao'),
-                valor_total=xml_data.get('valor_total', 0.0),
-                peso_bruto=xml_data.get('peso_bruto', 0.0),
-                quantidade_volumes=xml_data.get('volumes', 0),
-                cnpj_emitente=xml_data.get('cnpj_emitente', 'N/A'),
-                nome_emitente=xml_data.get('nome_emitente', 'N/A'),
-                remetente_razao=xml_data.get('nome_emitente', 'N/A'),
-                remetente_cidade=xml_data.get('cidade_emitente', 'N/A'),
-                remetente_uf=xml_data.get('uf_emitente', 'N/A'),
-                remetente_endereco=xml_data.get('endereco_emitente', 'N/A'),
-                remetente_cep=xml_data.get('cep_emitente', 'N/A'),
-                destinatario_cnpj_cpf=xml_data.get('cnpj_destinatario', 'N/A'),
-                destinatario_razao=xml_data.get('nome_destinatario', 'N/A'),
-                destinatario_cidade=xml_data.get('cidade_destinatario', 'N/A'),
-                destinatario_uf=xml_data.get('uf_destinatario', 'N/A'),
-                destinatario_endereco=xml_data.get('endereco_destinatario', 'N/A'),
-                destinatario_cep=xml_data.get('cep_destinatario', 'N/A')
-            )
+            xml_file = XMLFile()
+            xml_file.user_id = user_id
+            xml_file.filename = f"{invoice_key}.xml"
+            xml_file.invoice_key = invoice_key
+            xml_file.file_path = file_path
+            xml_file.xml_content = xml_content
+            xml_file.import_type = 'SISTEMA'
+            xml_file.job_id = job_id
+            xml_file.imported_at = datetime.utcnow()
+            
+            # Dados extraídos do XML
+            xml_file.numero_nf = xml_data.get('numero_nf', 'N/A')
+            xml_file.serie_nf = xml_data.get('serie_nf', 'N/A')
+            xml_file.data_emissao = xml_data.get('data_emissao')
+            xml_file.valor_total = xml_data.get('valor_total', 0.0)
+            xml_file.peso_bruto = xml_data.get('peso_bruto', 0.0)
+            xml_file.quantidade_volumes = xml_data.get('volumes', 0)
+            xml_file.cnpj_emitente = xml_data.get('cnpj_emitente', 'N/A')
+            xml_file.nome_emitente = xml_data.get('nome_emitente', 'N/A')
+            xml_file.remetente_razao = xml_data.get('nome_emitente', 'N/A')
+            xml_file.remetente_cidade = xml_data.get('cidade_emitente', 'N/A')
+            xml_file.remetente_uf = xml_data.get('uf_emitente', 'N/A')
+            xml_file.remetente_endereco = xml_data.get('endereco_emitente', 'N/A')
+            xml_file.remetente_cep = xml_data.get('cep_emitente', 'N/A')
+            xml_file.destinatario_cnpj_cpf = xml_data.get('cnpj_destinatario', 'N/A')
+            xml_file.destinatario_razao = xml_data.get('nome_destinatario', 'N/A')
+            xml_file.destinatario_cidade = xml_data.get('cidade_destinatario', 'N/A')
+            xml_file.destinatario_uf = xml_data.get('uf_destinatario', 'N/A')
+            xml_file.destinatario_endereco = xml_data.get('endereco_destinatario', 'N/A')
+            xml_file.destinatario_cep = xml_data.get('cep_destinatario', 'N/A')
             
             db.session.add(xml_file)
             
@@ -109,14 +109,13 @@ class DownloadService:
                 return False
             
             # Criar registro de uso
-            usage_record = UsageRecord(
-                user_id=user_id,
-                module_id=xml_module.id,
-                quantity=1,
-                cost=xml_price,
-                description=f"Download XML: {invoice_key[:10]}...",
-                job_id=job_id
-            )
+            usage_record = UsageRecord()
+            usage_record.user_id = user_id
+            usage_record.module_id = xml_module.id
+            usage_record.quantity = 1
+            usage_record.cost = xml_price
+            usage_record.description = f"Download XML: {invoice_key[:10]}..."
+            usage_record.job_id = job_id
             
             db.session.add(usage_record)
             
