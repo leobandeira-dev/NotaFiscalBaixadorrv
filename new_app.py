@@ -2489,25 +2489,25 @@ def create_checkout_session():
         if not package_id:
             return jsonify({'error': 'Package ID é obrigatório'}), 400
         
-        # Mapear pacotes para produtos Stripe reais
+        # Mapear pacotes para produtos Stripe reais com preços atualizados
         stripe_products = {
             'starter': {
-                'price_id': 'price_1QbxXeRsGJVUUfOAh4vA3iGF',  # 100 créditos XML
+                'price_id': 'price_1RcB6ZKpjVGFiyHCqBx0uFom',  # 100 créditos XML - R$ 10,00
                 'credits': 100,
                 'name': 'Pacote Starter - 100 Créditos XML'
             },
             'professional': {
-                'price_id': 'price_1QbxYeRsGJVUUfOAtPfJlIwT',  # 500 créditos XML
+                'price_id': 'price_1RcB6aKpjVGFiyHCnzyt2Gkg',  # 500 créditos XML - R$ 40,00
                 'credits': 500,
                 'name': 'Pacote Professional - 500 Créditos XML'
             },
             'enterprise': {
-                'price_id': 'price_1QbxZPRsGJVUUfOA7K6HvFQo',  # 1000 créditos XML
+                'price_id': 'price_1RcB6aKpjVGFiyHCsOIWwjsH',  # 1000 créditos XML - R$ 70,00
                 'credits': 1000,
                 'name': 'Pacote Enterprise - 1000 Créditos XML'
             },
             'corporate': {
-                'price_id': 'price_1QbxZvRsGJVUUfOAkfpDGKK6',  # 2000 créditos XML
+                'price_id': 'price_1RcB6aKpjVGFiyHCjEAUSie0',  # 2000 créditos XML - R$ 120,00
                 'credits': 2000,
                 'name': 'Pacote Corporate - 2000 Créditos XML'
             }
@@ -2522,7 +2522,7 @@ def create_checkout_session():
         stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
         
         success_url = url_for('payment_success_simple', _external=True) + '?session_id={CHECKOUT_SESSION_ID}'
-        cancel_url = url_for('comprar_creditos', _external=True)
+        cancel_url = url_for('comprar_creditos_simple', _external=True)
         
         checkout_session = stripe.checkout.Session.create(
             payment_method_types=['card'],
