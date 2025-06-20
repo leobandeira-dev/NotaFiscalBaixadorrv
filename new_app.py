@@ -22,7 +22,90 @@ from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_p
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
 from transport_label_generator import TransportLabelGenerator, generate_label_from_database_xml
 from transport_label_generator_v2 import CustomTransportLabelGenerator, generate_custom_label_from_database_xml
+from improved_transport_label import ImprovedTransportLabelGenerator
 from xml_processor import extract_xml_data
+
+def generate_improved_label_with_guaranteed_borders(xml_id, user, paper_config, layout_style='layout1'):
+    """Função de integração que usa o novo sistema com bordas garantidas"""
+    
+    # Buscar XML
+    xml_file = XMLFile.query.filter_by(id=xml_id, user_id=user.id).first()
+    if not xml_file:
+        return None
+    
+    # Ler conteúdo do XML
+    try:
+        with open(xml_file.file_path, 'r', encoding='utf-8') as f:
+            xml_content = f.read()
+    except Exception as e:
+        logger.error(f"Erro ao ler XML {xml_file.file_path}: {e}")
+        return None
+    
+    # Configurações da empresa
+    company_name = user.company_name or "SUA EMPRESA"
+    company_subtitle = user.company_subtitle or "TRANSPORTE"
+    area_code = user.default_area_code or "01"
+    
+    # Extrair dimensões do papel
+    paper_size = paper_config.get('size', '10x15cm')
+    if paper_size == 'A4':
+        width_mm, height_mm = 210, 297
+    elif paper_size == 'A5':
+        width_mm, height_mm = 148, 210
+    elif paper_size == '10x15cm':
+        width_mm, height_mm = 100, 150
+    elif paper_size == '7x10cm':
+        width_mm, height_mm = 70, 100
+    elif paper_size == '5x8cm':
+        width_mm, height_mm = 50, 80
+    else:
+        width_mm, height_mm = 100, 150
+    
+    # Criar gerador melhorado
+    generator = ImprovedTransportLabelGenerator(
+        company_name=company_name,
+        company_subtitle=company_subtitle,
+        paper_width_mm=width_mm,
+        paper_height_mm=height_mm,
+        layout_style=layout_style
+    )
+    
+    # Gerar etiquetas com volume info
+    labels = []
+    total_volumes = paper_config.get('total_volumes', 1)
+    volume_weights = paper_config.get('volume_weights', [0.0] * total_volumes)
+    
+    for i in range(total_volumes):
+        volume_number = i + 1
+        volume_info = f"{volume_number}/{total_volumes}"
+        
+        # Gerar pedido dinâmico baseado no XML ID
+        pedido_number = f"PED{xml_id}{volume_number:03d}"
+        
+        try:
+            pdf_buffer = generator.generate_transport_label_with_volume_info(
+                xml_content=xml_content,
+                pedido_number=pedido_number,
+                area_code=area_code,
+                company_logo_path=user.company_logo_path,
+                volume_info=volume_info,
+                current_volume=volume_number,
+                total_volumes=total_volumes
+            )
+            
+            labels.append({
+                'volume': volume_number,
+                'pdf_data': pdf_buffer.getvalue(),
+                'filename': f"etiqueta_volume_{volume_number}.pdf",
+                'size': len(pdf_buffer.getvalue())
+            })
+            
+        except Exception as e:
+            logger.error(f"Erro ao gerar etiqueta volume {volume_number}: {e}")
+            continue
+    
+    return labels
+
 from download_service import DownloadService
 from security import (
     SecurityManager, DataIsolationManager, BillingSecurityManager,
@@ -2014,7 +2097,7 @@ def download_generated_label(xml_id):
             'volume_weights': [xml_data.peso_bruto or 0.0] * (xml_data.quantidade_volumes or 1)
         }
         
-        labels = generate_custom_label_with_layout(
+        labels = generate_improved_label_with_guaranteed_borders(
             xml_id=xml_id,
             user=current_user,
             paper_config=paper_config,
