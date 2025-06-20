@@ -2593,6 +2593,23 @@ def payment_success_simple():
     
     return redirect(url_for('dashboard'))
 
+@app.route('/comprar-creditos-simple')
+@login_required
+def comprar_creditos_simple():
+    """Página simplificada para compra de créditos XML"""
+    try:
+        # Obter saldo atual usando sistema simplificado
+        from simple_credit_system import get_user_xml_balance
+        xml_balance = get_user_xml_balance(current_user.id)
+        
+        return render_template('comprar_creditos_simple.html',
+                             xml_balance=xml_balance)
+        
+    except Exception as e:
+        logger.error(f"Erro na página de compra de créditos: {e}")
+        flash('Erro ao carregar página de compra de créditos', 'error')
+        return redirect(url_for('dashboard'))
+
 # Webhook já existe em outra parte do código - removido para evitar duplicação
 
 @app.route('/payment-success')
