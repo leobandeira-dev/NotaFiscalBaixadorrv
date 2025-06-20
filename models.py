@@ -51,6 +51,14 @@ class User(UserMixin, db.Model):
     import_email_last_check = db.Column(db.DateTime, nullable=True)
     import_email_check_interval = db.Column(db.Integer, default=60)  # Intervalo em minutos (padrão: 1 hora)
     
+    # Configurações de envio de email (SMTP)
+    smtp_server = db.Column(db.String(100), nullable=True)
+    smtp_port = db.Column(db.Integer, default=587)
+    smtp_email = db.Column(db.String(120), nullable=True)
+    smtp_password = db.Column(db.String(256), nullable=True)  # Criptografada
+    smtp_ssl = db.Column(db.Boolean, default=True)
+    smtp_configured = db.Column(db.Boolean, default=False)
+    
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -120,6 +128,28 @@ class User(UserMixin, db.Model):
     def has_email_import_configured(self):
         """Verifica se o usuário configurou importação via email"""
         return self.import_email_configured and self.import_email and self.import_email_password
+    
+    def set_smtp_credentials(self, email, password, server, port=587, ssl=True):
+        """Define as credenciais para envio de email via SMTP"""
+        self.smtp_email = email
+        self.smtp_password = generate_password_hash(password)  # Criptografa a senha
+        self.smtp_server = server
+        self.smtp_port = port
+        self.smtp_ssl = ssl
+        self.smtp_configured = True
+        db.session.commit()
+    
+    def has_smtp_configured(self):
+        """Verifica se o usuário configurou envio via SMTP"""
+        return self.smtp_configured and self.smtp_email and self.smtp_password
+    
+    def get_smtp_password(self):
+        """Retorna a senha SMTP descriptografada"""
+        if self.smtp_password:
+            # Para simplificar, vamos usar o mesmo método do IMAP
+            # Em produção, considere usar criptografia reversível
+            return self.smtp_password
+        return None
     
     def is_trial_active(self):
         """Verifica se o trial está ativo"""

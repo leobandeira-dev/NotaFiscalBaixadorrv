@@ -394,6 +394,131 @@
     </div>
 </div>
 
+<!-- SMTP Configuration Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="config-card">
+            <div class="config-card-header">
+                <h5 class="config-card-title">
+                    <i class="fas fa-paper-plane"></i>
+                    Configurações de Envio de Email (SMTP)
+                </h5>
+            </div>
+            <div class="config-card-body">
+                <!-- SMTP Status Display -->
+                {% if current_user.has_smtp_configured() %}
+                <div class="status-card status-configured mb-4">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-check-circle text-success me-3 mt-1 fs-5"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold text-success mb-2">SMTP configurado com sucesso</h6>
+                            <p class="mb-2">
+                                <strong>Email:</strong> {{ current_user.smtp_email }}<br>
+                                <strong>Servidor:</strong> {{ current_user.smtp_server }}:{{ current_user.smtp_port }}<br>
+                                <strong>SSL/TLS:</strong> {{ 'Ativado' if current_user.smtp_ssl else 'Desativado' }}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="action-buttons mt-3">
+                        <button type="button" class="btn btn-outline-secondary" onclick="showSmtpEditForm()">
+                            <i class="fas fa-edit"></i> Editar Configurações
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="removeSmtpConfig()">
+                            <i class="fas fa-trash"></i> Remover Configuração
+                        </button>
+                    </div>
+                </div>
+                {% else %}
+                <div class="status-card status-not-configured mb-4">
+                    <div class="d-flex align-items-start">
+                        <i class="fas fa-exclamation-circle text-warning me-3 mt-1 fs-5"></i>
+                        <div>
+                            <h6 class="fw-bold text-warning mb-2">SMTP não configurado</h6>
+                            <p class="mb-0">Configure suas credenciais SMTP para enviar emails automaticamente do sistema.</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- SMTP Configuration Form -->
+                <form method="POST" action="{{ url_for('save_smtp_credentials') }}" id="smtpForm" 
+                      {% if current_user.has_smtp_configured() %}style="display: none;"{% endif %}>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="smtp_email" class="form-label">Email de Envio</label>
+                                <input type="email" class="form-control" id="smtp_email" name="smtp_email" 
+                                       value="{{ current_user.smtp_email or '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="smtp_password" class="form-label">Senha do Email</label>
+                                <input type="password" class="form-control" id="smtp_password" name="smtp_password" 
+                                       placeholder="Digite sua senha de email" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="smtp_server" class="form-label">Servidor SMTP</label>
+                                <select class="form-select" id="smtp_server" name="smtp_server" onchange="updateSmtpServerSettings()" required>
+                                    <option value="">Selecione o provedor</option>
+                                    <option value="smtp.gmail.com" {% if current_user.smtp_server == 'smtp.gmail.com' %}selected{% endif %}>Gmail</option>
+                                    <option value="smtp-mail.outlook.com" {% if current_user.smtp_server == 'smtp-mail.outlook.com' %}selected{% endif %}>Outlook/Hotmail</option>
+                                    <option value="smtp.mail.yahoo.com" {% if current_user.smtp_server == 'smtp.mail.yahoo.com' %}selected{% endif %}>Yahoo Mail</option>
+                                    <option value="custom">Outro (configurar manualmente)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="smtp_port" class="form-label">Porta SMTP</label>
+                                <input type="number" class="form-control" id="smtp_port" name="smtp_port" 
+                                       value="{{ current_user.smtp_port or 587 }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="custom_smtp_server" style="display: none;">
+                        <label for="custom_smtp_server_input" class="form-label">Servidor SMTP Personalizado</label>
+                        <input type="text" class="form-control" id="custom_smtp_server_input" name="custom_smtp_server" 
+                               placeholder="Ex: mail.suaempresa.com">
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="smtp_ssl" name="smtp_ssl" 
+                                           {% if current_user.smtp_ssl != False %}checked{% endif %}>
+                                    <label class="form-check-label" for="smtp_ssl">
+                                        Usar SSL/TLS (recomendado)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Credenciais criptografadas e armazenadas com segurança
+                        </small>
+                        <button type="submit" class="btn btn-purple">
+                            <i class="fas fa-save"></i>
+                            Salvar Configurações SMTP
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 function updateServerSettings() {
     const server = document.getElementById('server').value;
