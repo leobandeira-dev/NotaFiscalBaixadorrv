@@ -23,12 +23,12 @@ class DownloadService:
             if not user:
                 raise ValueError("Usuário não encontrado")
             
-            # Verificar saldo para todos os downloads
-            xml_price = PricingManager.get_service_price('xml_download')
-            total_cost = len(invoice_keys) * xml_price
+            # Verificar créditos XML para todos os downloads
+            from simple_credit_system import get_user_xml_balance
+            available_credits = get_user_xml_balance(user_id)
             
-            if user.current_balance < total_cost:
-                raise ValueError(f"Saldo insuficiente. Necessário: R$ {total_cost:.2f}, Disponível: R$ {user.current_balance:.2f}")
+            if available_credits < len(invoice_keys):
+                raise ValueError(f"Créditos XML insuficientes. Necessário: {len(invoice_keys)}, Disponível: {available_credits}")
             
             job_id = str(uuid.uuid4())
             logger.info(f"Job {job_id} criado para usuário {user_id} com {len(invoice_keys)} XMLs")
@@ -47,8 +47,7 @@ class DownloadService:
             # Permitir downloads múltiplos - cada download gera registro único
             logger.info(f"Processando novo download de XML {invoice_key} para usuário {user_id}")
             
-            # Obter preço do serviço
-            xml_price = PricingManager.get_service_price('xml_download')
+            # Sistema baseado em créditos XML
             
             # Verificar e deduzir créditos
             user = User.query.get(user_id)
@@ -60,9 +59,18 @@ class DownloadService:
             from datetime import datetime
             is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
             
-            if not is_trial_active and user.current_balance < xml_price:
-                logger.error(f"Saldo insuficiente para usuário {user_id}")
-                return False
+            # Verificar e consumir crédito XML
+            if not is_trial_active:
+                from simple_credit_system import get_user_xml_balance, consume_xml_credit
+                available_credits = get_user_xml_balance(user_id)
+                if available_credits < 1:
+                    logger.error(f"Créditos XML insuficientes para usuário {user_id}")
+                    return False
+                
+                # Consumir 1 crédito XML
+                if not consume_xml_credit(user_id):
+                    logger.error(f"Falha ao consumir crédito XML para usuário {user_id}")
+                    return False
             
             # Extrair dados do XML antes de salvar
             from xml_processor import extract_xml_data
