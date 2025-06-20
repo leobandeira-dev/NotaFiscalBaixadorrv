@@ -412,7 +412,7 @@ class ResponsiveTransportLabelGenerator:
         
         # Posicionamento no canto inferior direito com margem adequada
         area_x = self.page_width - self.margin - area_width
-        area_y = self.margin + (area_height * 0.2)  # Melhor alinhamento vertical
+        area_y = self.margin + (area_height * 0.1)  # Alinhamento mais baixo
         
         # Fundo cinza claro mais suave
         c.setFillColor(colors.Color(0.94, 0.94, 0.94))
@@ -425,13 +425,13 @@ class ResponsiveTransportLabelGenerator:
         
         # Título "ÁREA" menor e mais elegante
         c.setFillColor(colors.black)
-        c.setFont("Helvetica-Bold", max(8, self.fonts['small_text']))
-        title_y = area_y + area_height * 0.75
+        c.setFont("Helvetica-Bold", max(9, self.fonts['small_text'] + 1))
+        title_y = area_y + area_height * 0.78
         c.drawCentredString(area_x + area_width/2, title_y, "ÁREA")
         
         # Código da área maior e em destaque
-        c.setFont("Helvetica-Bold", max(14, self.fonts['section_content'] + 3))
-        code_y = area_y + area_height * 0.35
+        c.setFont("Helvetica-Bold", max(16, self.fonts['section_content'] + 4))
+        code_y = area_y + area_height * 0.32
         c.drawCentredString(area_x + area_width/2, code_y, area_code)
         
         # Linha separadora sutil entre título e código
