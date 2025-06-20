@@ -1925,7 +1925,7 @@ def generate_custom_labels(xml_id):
             label = labels[0]
             response = make_response(label['buffer'].getvalue())
             response.headers['Content-Type'] = 'application/pdf'
-            response.headers['Content-Disposition'] = f'attachment; filename="{label["filename"]}"'
+            response.headers['Content-Disposition'] = f'inline; filename="{label["filename"]}"'
             return response
         
         # Múltiplas etiquetas - criar ZIP

@@ -36,8 +36,9 @@ class CustomTransportLabelGenerator:
         self.large_font_size = max(14, int(18 * self.scale_factor))
         
         # Configurações específicas para impressão responsiva
-        self.line_height = max(3 * mm, self.base_font_size * 1.2)
-        self.section_spacing = max(2 * mm, self.line_height * 0.5)
+        self.line_height = max(3 * mm, self.base_font_size * 1.4)
+        self.section_spacing = max(2 * mm, self.line_height * 0.6)
+        self.field_spacing = max(1.5 * mm, self.line_height * 0.3)
     
     def generate_transport_label(self, xml_content: str, pedido_number: str = None, 
                                area_code: str = "01", company_logo_path: str = None) -> BytesIO:

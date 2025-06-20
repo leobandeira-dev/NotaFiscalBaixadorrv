@@ -375,8 +375,8 @@
                                             <button onclick="generateLabelWithConfig({{ xml.id }})" 
                                                     class="btn btn-warning-custom btn-custom"
                                                     title="Gerar etiqueta com configurações do painel lateral">
-                                                <i class="fas fa-tags"></i> 
-                                                {{ 'Baixar Etiqueta' if xml.label_generated else 'Gerar Etiqueta' }}
+                                                <i class="fas fa-print"></i> 
+                                                {{ 'Imprimir Etiqueta' if xml.label_generated else 'Gerar Etiqueta' }}
                                             </button>
                                             
                                             <a href="{{ url_for('label_generator', xml_id=xml.id) }}" 
