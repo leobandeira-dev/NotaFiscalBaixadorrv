@@ -428,70 +428,80 @@ class ResponsiveTransportLabelGenerator:
         return self._draw_highlighted_section(c, "Remetente", remetente, y_pos, section_height)
     
     def _draw_destinatario_section(self, c, xml_data, y_pos, section_height):
-        """Desenha seção Destinatário com enquadramento baseado no estilo de layout"""
+        """Desenha seção Destinatário com controle dinâmico de limites"""
         section_y = y_pos - section_height
         
-        # Aplicar enquadramento baseado no estilo
-        self._apply_section_frame(c, self.margin, section_y, self.content_width, section_height)
+        # Calcular largura disponível (considerando área ÁREA no canto direito)
+        area_width = self.content_width * 0.25  # 25% para área
+        available_width = self.content_width - area_width - (self.spacing['field'] * 2)  # Espaçamento
         
-        # Calcular espaçamentos proporcionais à altura da seção (40% de espaço total)
-        line_spacing = section_height * 0.18  # 18% da altura para cada linha (mais espaço)
-        start_y = section_y + section_height * 0.85  # Começar mais alto para usar todo o espaço
+        # Aplicar enquadramento baseado no estilo com largura controlada
+        self._apply_section_frame(c, self.margin, section_y, available_width, section_height)
         
-        # TÍTULO "DESTINATÁRIO" com margem interna
-        c.setFont("Helvetica-Bold", self.fonts['section_content'])
+        # Calcular espaçamentos proporcionais dinamicamente
+        line_spacing = max(8, section_height * 0.15)  # Mínimo 8 pontos
+        start_y = section_y + section_height * 0.85
         margin_interna = 8
+        
+        # TÍTULO "DESTINATÁRIO" com controle de largura
+        c.setFont("Helvetica-Bold", self.fonts['section_content'])
         c.drawString(self.margin + margin_interna, start_y, "DESTINATÁRIO")
         current_y = start_y - line_spacing
         
-        # Nome da empresa destinatária
+        # Nome da empresa destinatária com quebra dinâmica
         dest_nome = xml_data.get('destinatario_razao', xml_data.get('destinatario_nome', 'N/A'))
         c.setFont("Helvetica-Bold", self.fonts['normal_text'])
         
-        # Quebrar nome se muito longo
-        if len(dest_nome) > 40:
-            linha1 = dest_nome[:40]
-            linha2 = dest_nome[40:80]
+        # Calcular caracteres por linha baseado na largura disponível
+        chars_per_line = max(25, int((available_width - margin_interna * 2) / 6))  # ~6 pontos por char
+        
+        if len(dest_nome) > chars_per_line:
+            linha1 = dest_nome[:chars_per_line]
+            linha2 = dest_nome[chars_per_line:chars_per_line*2] if len(dest_nome) > chars_per_line else ""
             c.drawString(self.margin + margin_interna, current_y, linha1)
-            current_y -= line_spacing * 0.8
-            c.drawString(self.margin + margin_interna, current_y, linha2)
-            current_y -= line_spacing * 0.8
+            current_y -= line_spacing * 0.9
+            if linha2:
+                c.drawString(self.margin + margin_interna, current_y, linha2)
+                current_y -= line_spacing * 0.9
         else:
             c.drawString(self.margin + margin_interna, current_y, dest_nome)
             current_y -= line_spacing
         
-        # Endereço
+        # Endereço com controle de largura
         endereco = xml_data.get('destinatario_endereco', '')
-        if endereco:
+        if endereco and current_y > section_y + line_spacing:  # Verificar se há espaço
             c.setFont("Helvetica", self.fonts['small_text'])
-            # Quebrar endereço se muito longo
-            if len(endereco) > 50:
-                linha1_end = endereco[:50]
-                linha2_end = endereco[50:100] if len(endereco) > 50 else ""
+            
+            # Quebrar endereço baseado na largura disponível
+            if len(endereco) > chars_per_line:
+                linha1_end = endereco[:chars_per_line]
+                linha2_end = endereco[chars_per_line:chars_per_line*2] if len(endereco) > chars_per_line else ""
                 c.drawString(self.margin + margin_interna, current_y, linha1_end)
-                current_y -= line_spacing * 0.7
-                if linha2_end:
+                current_y -= line_spacing * 0.8
+                if linha2_end and current_y > section_y + line_spacing * 0.5:
                     c.drawString(self.margin + margin_interna, current_y, linha2_end)
-                    current_y -= line_spacing * 0.7
+                    current_y -= line_spacing * 0.8
             else:
                 c.drawString(self.margin + margin_interna, current_y, endereco)
                 current_y -= line_spacing * 0.8
         
-        # Cidade/UF + CEP na mesma linha
-        cidade = xml_data.get('destinatario_cidade', '')
-        uf = xml_data.get('destinatario_uf', '')
-        cep = xml_data.get('destinatario_cep', '')
-        
-        if cidade and uf:
-            c.setFont("Helvetica-Bold", self.fonts['small_text'])
-            cidade_texto = f"{cidade}/{uf}"
+        # Cidade/UF + CEP (apenas se houver espaço)
+        if current_y > section_y + line_spacing * 0.5:
+            cidade = xml_data.get('destinatario_cidade', '')
+            uf = xml_data.get('destinatario_uf', '')
+            cep = xml_data.get('destinatario_cep', '')
             
-            # Adicionar CEP se disponível
-            if cep and len(cep) == 8 and cep.isdigit():
-                cep_formatado = f"{cep[:5]}-{cep[5:]}"
-                cidade_texto += f" - CEP: {cep_formatado}"
-            
-            c.drawString(self.margin + margin_interna, current_y, cidade_texto)
+            if cidade and uf:
+                c.setFont("Helvetica-Bold", self.fonts['small_text'])
+                cidade_texto = f"{cidade}/{uf}"
+                
+                # Adicionar CEP se couber na largura
+                if cep and len(cep) == 8 and cep.isdigit():
+                    cep_formatado = f"{cep[:5]}-{cep[5:]}"
+                    if len(cidade_texto + f" - CEP: {cep_formatado}") <= chars_per_line:
+                        cidade_texto += f" - CEP: {cep_formatado}"
+                
+                c.drawString(self.margin + margin_interna, current_y, cidade_texto)
         
         # Resetar cor para preto
         c.setFillColor(colors.black)
@@ -505,36 +515,59 @@ class ResponsiveTransportLabelGenerator:
         return self._draw_highlighted_section(c, "Cidade/UF", cidade_uf, y_pos, section_height)
     
     def _draw_peso_volume_section(self, c, xml_data, y_pos, section_height):
-        """Desenha seção Peso e Volume com enquadramento baseado no estilo de layout"""
+        """Desenha seção Peso e Volume com controle dinâmico de limites"""
         section_y = y_pos - section_height
         
-        # Dividir seção em duas partes: peso e volume
-        half_width = self.content_width / 2
+        # Calcular largura disponível considerando área ÁREA
+        area_width = self.content_width * 0.25
+        available_width = self.content_width - area_width - (self.spacing['field'] * 2)
         
-        # Seção Peso (lado esquerdo) - aplicar enquadramento
-        self._apply_section_frame(c, self.margin, section_y, half_width - self.spacing['field']/2, section_height)
+        # Dividir largura disponível entre peso e volume
+        half_width = available_width / 2
+        spacing_between = self.spacing['field']
         
-        c.setFont("Helvetica-Bold", self.fonts['section_content'])
+        # Seção Peso (lado esquerdo)
+        peso_width = half_width - spacing_between/2
+        self._apply_section_frame(c, self.margin, section_y, peso_width, section_height)
         
-        # Usar peso específico do volume se disponível, senão peso bruto total
+        # Calcular posições verticais com melhor espaçamento
+        title_y = section_y + section_height * 0.75
+        value_y = section_y + section_height * 0.35
+        margin_interna = 8
+        
+        # Título e valor do peso
+        c.setFont("Helvetica-Bold", self.fonts['small_text'])
+        c.drawString(self.margin + margin_interna, title_y, "PESO (KG)")
+        
+        # Usar peso específico do volume se disponível
         peso = xml_data.get('volume_weight') or xml_data.get('peso_bruto', '0.000')
         try:
-            peso_formatado = f"{float(peso):.3f}".replace('.', ',')
+            peso_formatado = f"{float(peso):.1f}".replace('.', ',')
         except:
-            peso_formatado = peso
+            peso_formatado = str(peso)
         
-        text_y = section_y + section_height * 0.3
-        c.drawString(self.margin + self.spacing['field'], text_y, f"Peso: {peso_formatado}")
+        c.setFont("Helvetica-Bold", self.fonts['normal_text'])
+        c.drawString(self.margin + margin_interna, value_y, peso_formatado)
         
-        # Seção Volume (lado direito) - aplicar enquadramento
-        volume_x = self.margin + half_width + self.spacing['field']/2
-        self._apply_section_frame(c, volume_x, section_y, half_width - self.spacing['field']/2, section_height)
+        # Seção Volume (lado direito)
+        volume_x = self.margin + half_width + spacing_between
+        volume_width = half_width - spacing_between/2
+        self._apply_section_frame(c, volume_x, section_y, volume_width, section_height)
+        
+        # Título e valor do volume
+        c.setFont("Helvetica-Bold", self.fonts['small_text'])
+        c.drawString(volume_x + margin_interna, title_y, "VOLUME")
         
         # Usar volume específico se disponível
         current_volume = xml_data.get('current_volume', 1)
         total_volumes = xml_data.get('total_volumes') or xml_data.get('quantidade_volumes', '1')
-        c.drawString(volume_x + self.spacing['field'], text_y, f"Volume: {current_volume}/{total_volumes}")
+        volume_text = f"{current_volume}/{total_volumes}"
         
+        c.setFont("Helvetica-Bold", self.fonts['normal_text'])
+        c.drawString(volume_x + margin_interna, value_y, volume_text)
+        
+        # Resetar cor
+        c.setFillColor(colors.black)
         return section_y
     
     def _draw_peso_volume_section_with_dynamic_info(self, c, xml_data, y_pos, section_height, 
@@ -597,19 +630,19 @@ class ResponsiveTransportLabelGenerator:
         return section_y
     
     def _draw_area_section(self, c, area_code):
-        """Desenha seção ÁREA no canto inferior direito com layout enquadrado profissional"""
-        # Dimensões mais proporcionais e bem enquadradas
-        area_width = max(22 * mm, self.content_width * 0.22)
-        area_height = max(18 * mm, self.content_height * 0.12)
+        """Desenha seção ÁREA posicionada para não sobrepor outras seções"""
+        # Dimensões responsivas baseadas no papel
+        area_width = self.content_width * 0.22  # 22% da largura
+        area_height = self.content_height * 0.10  # 10% da altura
         
-        # Posicionamento no canto inferior direito com margem adequada
+        # Posicionamento no canto direito, alinhado com seções peso/volume
         area_x = self.page_width - self.margin - area_width
-        area_y = self.margin + (area_height * 0.1)  # Alinhamento mais baixo
+        area_y = self.margin + (area_height * 0.2)  # Margem do fundo
         
         # Aplicar enquadramento baseado no estilo
         self._apply_section_frame(c, area_x, area_y, area_width, area_height)
         
-        # Título "ÁREA" - ajustar cor baseado no layout
+        # Configurar cor do texto baseado no layout
         if self.layout_style == "layout2":
             c.setFillColor(colors.white)  # Texto branco para fundo preto
         else:
