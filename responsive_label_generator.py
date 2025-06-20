@@ -240,11 +240,11 @@ class ResponsiveTransportLabelGenerator:
         section_y = y_pos - section_height
         
         # Fundo cinza muito claro
-        c.setFillColor(colors.Color(0.95, 0.95, 0.95))
+        c.setFillColor(colors.lightgrey)
         c.rect(self.margin, section_y, self.content_width, section_height, fill=1)
         
         # Borda cinza média
-        c.setStrokeColor(colors.Color(0.6, 0.6, 0.6))
+        c.setStrokeColor(colors.grey)
         c.setLineWidth(1)
         c.rect(self.margin, section_y, self.content_width, section_height, fill=0)
         
@@ -335,11 +335,11 @@ class ResponsiveTransportLabelGenerator:
         half_width = self.content_width / 2
         
         # Seção Peso (lado esquerdo)
-        c.setFillColor(colors.Color(0.95, 0.95, 0.95))  # Fundo cinza claro
+        c.setFillColor(colors.lightgrey)
         c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
         
         # Borda cinza
-        c.setStrokeColor(colors.Color(0.6, 0.6, 0.6))
+        c.setStrokeColor(colors.grey)
         c.setLineWidth(1)
         c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
         
@@ -358,11 +358,11 @@ class ResponsiveTransportLabelGenerator:
         
         # Seção Volume (lado direito)
         volume_x = self.margin + half_width + self.spacing['field']/2
-        c.setFillColor(colors.Color(0.95, 0.95, 0.95))  # Fundo cinza claro
+        c.setFillColor(colors.lightgrey)
         c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
         
         # Borda cinza
-        c.setStrokeColor(colors.Color(0.6, 0.6, 0.6))
+        c.setStrokeColor(colors.grey)
         c.setLineWidth(1)
         c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
         
@@ -376,26 +376,28 @@ class ResponsiveTransportLabelGenerator:
         return section_y
     
     def _draw_area_section(self, c, area_code):
-        """Desenha seção ÁREA no canto inferior direito"""
+        """Desenha seção ÁREA no canto inferior direito com layout enquadrado"""
         area_width = max(20 * mm, self.content_width * 0.2)
         area_height = max(15 * mm, self.content_height * 0.08)
         area_x = self.page_width - self.margin - area_width
         area_y = self.margin + area_height
         
-        # Fundo preto
-        c.setFillColor(colors.black)
+        # Fundo cinza claro
+        c.setFillColor(colors.lightgrey)
         c.rect(area_x, area_y, area_width, area_height, fill=1)
         
-        # Texto branco
-        c.setFillColor(colors.white)
+        # Borda cinza
+        c.setStrokeColor(colors.grey)
+        c.setLineWidth(2)
+        c.rect(area_x, area_y, area_width, area_height, fill=0)
+        
+        # Texto preto
+        c.setFillColor(colors.black)
         c.setFont("Helvetica-Bold", self.fonts['section_header'])
         c.drawCentredString(area_x + area_width/2, area_y + area_height * 0.7, "ÁREA")
         
         c.setFont("Helvetica-Bold", max(12, self.fonts['section_content'] + 2))
         c.drawCentredString(area_x + area_width/2, area_y + area_height * 0.2, area_code)
-        
-        # Restaurar cor
-        c.setFillColor(colors.black)
     
     def _draw_footer(self, c):
         """Desenha rodapé"""
