@@ -1419,13 +1419,11 @@ def generate_label_route(xml_id):
             xml_record.label_generated = True
             db.session.commit()
         
-        # Retornar arquivo
-        return send_file(
-            label_buffer,
-            as_attachment=True,
-            download_name=f"etiqueta_transporte_{invoice_key}.pdf",
-            mimetype='application/pdf'
-        )
+        # Retornar arquivo para impressão no navegador
+        response = make_response(label_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'inline; filename="etiqueta_transporte_{invoice_key}.pdf"'
+        return response
         
     except Exception as e:
         logger.error(f"Erro ao gerar etiqueta: {e}")
