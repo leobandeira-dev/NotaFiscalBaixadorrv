@@ -196,8 +196,8 @@ class TransulExactLayoutGenerator:
         y_start = self.page_height - self.margin
         current_y = y_start
         
-        # Espaço de 2mm antes do container da empresa
-        current_y -= 2 * mm
+        # Espaço de 4mm após a borda antes do primeiro container
+        current_y -= 4 * mm
         
         # 1. CABEÇALHO EMPRESA (LAF LOGISTICA / OPERADOR LOGISTICO) - Centralizado
         header_height = 15 * mm
