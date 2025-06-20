@@ -36,7 +36,7 @@ def dashboard():
         'total_xmls': XMLFile.query.count(),
         'total_revenue': 0,  # Calcular baseado em cobranças
         'this_month_xmls': XMLFile.query.filter(
-            XMLFile.uploaded_at >= datetime.now().replace(day=1)
+            XMLFile.imported_at >= datetime.now().replace(day=1)
         ).count()
     }
     
