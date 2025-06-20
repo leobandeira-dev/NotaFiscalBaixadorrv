@@ -67,7 +67,8 @@ def generate_improved_label_with_guaranteed_borders(xml_id, user, paper_config, 
         company_subtitle=company_subtitle,
         paper_width_mm=width_mm,
         paper_height_mm=height_mm,
-        layout_style=layout_style
+        layout_style=layout_style,
+        company_logo_path=company_logo_path
     )
     
     # Gerar etiquetas com volume info
@@ -1912,8 +1913,22 @@ def configurar_etiquetas():
             current_user.default_area_code = area_code[:5] if area_code else '01'
             current_user.preferred_layout = layout_style[:20] if layout_style else 'layout1'
             
-            # Processar upload de logo
-            if 'company_logo' in request.files:
+            # Verificar se deve remover logo
+            remove_logo = request.form.get('remove_logo', 'false').lower() == 'true'
+            if remove_logo and current_user.company_logo_path:
+                # Remover arquivo físico se existir
+                try:
+                    if os.path.exists(current_user.company_logo_path):
+                        os.remove(current_user.company_logo_path)
+                except Exception as e:
+                    logger.warning(f"Erro ao remover arquivo de logo: {e}")
+                
+                # Limpar caminho no banco
+                current_user.company_logo_path = None
+                flash('Logo removida com sucesso!', 'success')
+            
+            # Processar upload de logo (trocar ou adicionar nova)
+            elif 'company_logo' in request.files:
                 logo_file = request.files['company_logo']
                 if logo_file and logo_file.filename:
                     # Validar tipo de arquivo
@@ -1921,6 +1936,13 @@ def configurar_etiquetas():
                     file_extension = logo_file.filename.rsplit('.', 1)[1].lower()
                     
                     if file_extension in allowed_extensions:
+                        # Remover logo anterior se existir
+                        if current_user.company_logo_path and os.path.exists(current_user.company_logo_path):
+                            try:
+                                os.remove(current_user.company_logo_path)
+                            except Exception as e:
+                                logger.warning(f"Erro ao remover logo anterior: {e}")
+                        
                         # Criar diretório se não existir
                         logo_dir = os.path.join('static', 'uploads', 'logos')
                         os.makedirs(logo_dir, exist_ok=True)
@@ -1936,7 +1958,7 @@ def configurar_etiquetas():
                         # Atualizar caminho no banco
                         current_user.company_logo_path = logo_path
                         
-                        flash('Logo enviado com sucesso!', 'success')
+                        flash('Logo atualizada com sucesso!', 'success')
                     else:
                         flash('Formato de arquivo não suportado. Use PNG, JPG, JPEG ou GIF.', 'error')
             

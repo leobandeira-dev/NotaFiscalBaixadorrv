@@ -31,22 +31,48 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="company_logo" class="form-label">Logo da Empresa</label>
-                            <input type="file" class="form-control" id="company_logo" name="company_logo" 
-                                   accept="image/*">
-                            <div class="form-text">Formatos aceitos: PNG, JPG, JPEG. Tamanho máximo: 2MB</div>
+                            <label for="company_logo" class="form-label">
+                                <i class="fas fa-image"></i> Logo da Empresa
+                            </label>
                             
                             {% if current_user.company_logo_path %}
-                            <div class="mt-2">
-                                <small class="text-success">
-                                    <i class="fas fa-check"></i> Logo atual: {{ current_user.company_logo_path.split('/')[-1] }}
-                                </small>
-                                <div class="mt-1">
+                            <!-- Logo atual -->
+                            <div class="card border-success mb-3">
+                                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                                    <small><i class="fas fa-check"></i> Logo configurada</small>
+                                    <button type="button" class="btn btn-sm btn-outline-light" onclick="removeLogo()">
+                                        <i class="fas fa-trash"></i> Remover
+                                    </button>
+                                </div>
+                                <div class="card-body text-center">
                                     <img src="{{ url_for('serve_logo', filename=current_user.company_logo_path.split('/')[-1]) }}" 
-                                         alt="Logo atual" style="max-height: 60px;" class="border rounded">
+                                         alt="Logo atual" style="max-height: 80px; max-width: 120px;" class="border rounded">
+                                    <div class="mt-2">
+                                        <small class="text-muted">{{ current_user.company_logo_path.split('/')[-1] }}</small>
+                                    </div>
                                 </div>
                             </div>
+                            
+                            <!-- Trocar logo -->
+                            <div class="mb-2">
+                                <label class="form-label text-muted">Trocar logo</label>
+                                <input type="file" class="form-control" id="company_logo" name="company_logo" 
+                                       accept="image/png,image/jpg,image/jpeg">
+                            </div>
+                            {% else %}
+                            <!-- Upload inicial -->
+                            <input type="file" class="form-control" id="company_logo" name="company_logo" 
+                                   accept="image/png,image/jpg,image/jpeg">
                             {% endif %}
+                            
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i> 
+                                Formatos aceitos: PNG, JPG, JPEG. Tamanho máximo: 2MB<br>
+                                <strong>A logo será impressa automaticamente em todas as etiquetas geradas</strong>
+                            </div>
+                            
+                            <!-- Campo oculto para remoção -->
+                            <input type="hidden" id="remove_logo" name="remove_logo" value="false">
                         </div>
 
                         <div class="mb-3">
@@ -198,4 +224,25 @@
         </div>
     </div>
 </div>
+
+<script>
+function removeLogo() {
+    if (confirm('Tem certeza que deseja remover a logo da empresa? Ela será removida de todas as etiquetas futuras.')) {
+        document.getElementById('remove_logo').value = 'true';
+        
+        // Mostrar feedback visual
+        const logoCard = document.querySelector('.card.border-success');
+        logoCard.innerHTML = `
+            <div class="card-header bg-warning text-dark">
+                <small><i class="fas fa-exclamation-triangle"></i> Logo será removida ao salvar</small>
+            </div>
+            <div class="card-body text-center text-muted">
+                <i class="fas fa-trash fa-2x"></i>
+                <div class="mt-2">Logo marcada para remoção</div>
+            </div>
+        `;
+        logoCard.className = 'card border-warning mb-3';
+    }
+}
+</script>
 {% endblock %}

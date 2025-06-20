@@ -19,12 +19,14 @@ class ImprovedTransportLabelGenerator:
     """Gerador com enquadramento garantido em todas as seções"""
     
     def __init__(self, company_name="SUA EMPRESA", company_subtitle="TRANSPORTE", 
-                 paper_width_mm=100, paper_height_mm=150, layout_style="layout1"):
+                 paper_width_mm=100, paper_height_mm=150, layout_style="layout1", 
+                 company_logo_path=None):
         self.company_name = company_name
         self.company_subtitle = company_subtitle
         self.paper_width_mm = paper_width_mm
         self.paper_height_mm = paper_height_mm
         self.layout_style = layout_style
+        self.company_logo_path = company_logo_path
         
         # Converter mm para pontos
         self.page_width = paper_width_mm * 2.83465
