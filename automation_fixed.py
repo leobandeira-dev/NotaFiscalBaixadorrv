@@ -376,7 +376,7 @@ class InvoiceDownloader:
             return None
     
     def save_xml_content(self, xml_content: str, invoice_key: str, job_id: str, user_id: int = None, import_type: str = 'SISTEMA') -> Dict[str, Any]:
-        """Save XML content to file and database"""
+        """Save XML content to file and database with proper Flask context"""
         try:
             filename = f"{invoice_key}.xml"
             file_path = os.path.join('downloads', filename)
@@ -390,22 +390,91 @@ class InvoiceDownloader:
             xml_id = None
             if user_id:
                 try:
-                    from xml_processor import save_xml_to_database
-                    xml_id = save_xml_to_database(
-                        user_id=user_id,
-                        invoice_key=invoice_key,
-                        xml_content=xml_content,
-                        file_path=file_path,
-                        import_type=import_type,
-                        job_id=job_id
-                    )
-                    logger.info(f"[Job {job_id}] XML saved to database with ID: {xml_id}")
+                    # Import Flask app and use application context
+                    from new_app import app, db
+                    from models import XMLFile, ImportedXML, User, UsageRecord, ServiceModule
+                    from datetime import datetime
+                    import xml.etree.ElementTree as ET
                     
-                    # Charge credits for XML download
-                    self.charge_for_download(user_id, invoice_key)
+                    with app.app_context():
+                        # Verificar se XML já existe
+                        existing = ImportedXML.query.filter_by(
+                            user_id=user_id, 
+                            invoice_key=invoice_key
+                        ).first()
+                        
+                        if existing:
+                            logger.info(f"[Job {job_id}] XML {invoice_key} already exists for user {user_id}")
+                            return {
+                                'success': True,
+                                'file_path': file_path,
+                                'xml_id': existing.id,
+                                'filename': filename
+                            }
+                        
+                        # Parse XML para extrair dados
+                        try:
+                            root = ET.fromstring(xml_content)
+                            ns = {'nfe': 'http://www.portalfiscal.inf.br/nfe'}
+                            
+                            # Extrair dados básicos
+                            emit = root.find('.//nfe:emit', ns)
+                            ide = root.find('.//nfe:ide', ns)
+                            total = root.find('.//nfe:total/nfe:ICMSTot', ns)
+                            
+                            cnpj_emitente = emit.find('nfe:CNPJ', ns).text if emit is not None and emit.find('nfe:CNPJ', ns) is not None else ''
+                            nome_emitente = emit.find('nfe:xNome', ns).text if emit is not None and emit.find('nfe:xNome', ns) is not None else ''
+                            numero_nf = ide.find('nfe:nNF', ns).text if ide is not None and ide.find('nfe:nNF', ns) is not None else ''
+                            serie_nf = ide.find('nfe:serie', ns).text if ide is not None and ide.find('nfe:serie', ns) is not None else ''
+                            data_emissao_str = ide.find('nfe:dhEmi', ns).text if ide is not None and ide.find('nfe:dhEmi', ns) is not None else ''
+                            valor_total = float(total.find('nfe:vNF', ns).text) if total is not None and total.find('nfe:vNF', ns) is not None else 0.0
+                            
+                            # Parse data
+                            data_emissao = None
+                            if data_emissao_str:
+                                try:
+                                    data_emissao = datetime.strptime(data_emissao_str[:10], '%Y-%m-%d').date()
+                                except:
+                                    pass
+                            
+                        except Exception as parse_error:
+                            logger.warning(f"[Job {job_id}] Error parsing XML data: {parse_error}")
+                            cnpj_emitente = nome_emitente = numero_nf = serie_nf = ''
+                            data_emissao = None
+                            valor_total = 0.0
+                        
+                        # Criar registro ImportedXML
+                        imported_xml = ImportedXML(
+                            user_id=user_id,
+                            invoice_key=invoice_key,
+                            xml_content=xml_content,
+                            file_path=file_path,
+                            import_type=import_type,
+                            job_id=job_id,
+                            cnpj_emitente=cnpj_emitente,
+                            nome_emitente=nome_emitente,
+                            numero_nf=numero_nf,
+                            serie_nf=serie_nf,
+                            data_emissao=data_emissao,
+                            valor_total=valor_total,
+                            danfe_generated=False,
+                            label_generated=False,
+                            imported_at=datetime.utcnow()
+                        )
+                        
+                        db.session.add(imported_xml)
+                        db.session.commit()
+                        xml_id = imported_xml.id
+                        
+                        logger.info(f"[Job {job_id}] XML saved to database with ID: {xml_id}")
+                        
+                        # Charge credits for XML download
+                        self.charge_for_download(user_id, invoice_key)
                     
                 except Exception as e:
                     logger.error(f"[Job {job_id}] Error saving to database: {e}")
+                    import traceback
+                    logger.error(f"[Job {job_id}] Traceback: {traceback.format_exc()}")
             
             return {
                 'success': True,
@@ -422,28 +491,73 @@ class InvoiceDownloader:
             }
     
     def charge_for_download(self, user_id: int, invoice_key: str):
-        """Charge user credits for XML download"""
+        """Charge user credits for XML download with proper Flask context"""
         try:
-            from stripe_integration import CreditManager, PricingManager
+            from new_app import app, db
+            from models import User, UsageRecord, ServiceModule
+            from stripe_integration import PricingManager
+            from datetime import datetime
             
-            # Get service price
-            price = PricingManager.get_service_price('xml_download')
-            
-            # Charge credits
-            charged = CreditManager.deduct_credits(
-                user_id=user_id,
-                amount=price,
-                description=f"Download XML: {invoice_key[:10]}...",
-                service_type="xml_download"
-            )
-            
-            if charged:
-                logger.info(f"Successfully charged R$ {price:.2f} for XML download - User {user_id}")
-            else:
-                logger.warning(f"Failed to charge credits for XML download - User {user_id}")
+            with app.app_context():
+                # Get user and check trial status
+                user = User.query.get(user_id)
+                if not user:
+                    logger.error(f"User {user_id} not found for charging")
+                    return
+                
+                # Check if user is in trial period
+                is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
+                
+                # Get service module and price
+                xml_module = ServiceModule.query.filter_by(name='xml_download').first()
+                if not xml_module:
+                    logger.error("XML download module not found")
+                    return
+                
+                price = xml_module.cost_per_use
+                
+                # Only charge if not in trial
+                if not is_trial_active:
+                    if user.current_balance >= price:
+                        user.current_balance -= price
+                        user.updated_at = datetime.utcnow()
+                        
+                        # Create usage record
+                        usage_record = UsageRecord(
+                            user_id=user_id,
+                            module_id=xml_module.id,
+                            quantity=1,
+                            cost=price,
+                            description=f"Download XML: {invoice_key[:10]}...",
+                            created_at=datetime.utcnow()
+                        )
+                        
+                        db.session.add(usage_record)
+                        db.session.commit()
+                        
+                        logger.info(f"Successfully charged R$ {price:.2f} for XML download - User {user_id}")
+                    else:
+                        logger.warning(f"Insufficient balance for user {user_id} - Required: R$ {price:.2f}, Available: R$ {user.current_balance:.2f}")
+                else:
+                    # Create free usage record for trial
+                    usage_record = UsageRecord(
+                        user_id=user_id,
+                        module_id=xml_module.id,
+                        quantity=1,
+                        cost=0.0,
+                        description=f"Download XML (Trial): {invoice_key[:10]}...",
+                        created_at=datetime.utcnow()
+                    )
+                    
+                    db.session.add(usage_record)
+                    db.session.commit()
+                    
+                    logger.info(f"Free XML download for trial user {user_id}")
                 
         except Exception as e:
             logger.error(f"Error charging for download: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
     
     def test_connection(self) -> Dict[str, Any]:
         """Test if the automation system can connect to the invoice system"""

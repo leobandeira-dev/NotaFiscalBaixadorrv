@@ -813,6 +813,34 @@ def meus_xmls():
                          xmls=xmls,
                          current_user=current_user)
 
+@app.route('/download-xml/<xml_id>')
+@login_required
+def download_xml_file(xml_id):
+    """Download arquivo XML específico"""
+    # Buscar XML tanto em ImportedXML quanto XMLFile
+    xml = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    if not xml:
+        xml = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    
+    if not xml:
+        flash('XML não encontrado.', 'error')
+        return redirect(url_for('meus_xmls'))
+    
+    # Verificar se arquivo existe
+    if hasattr(xml, 'file_path') and xml.file_path and os.path.exists(xml.file_path):
+        return send_file(xml.file_path, as_attachment=True, download_name=f"{xml.invoice_key}.xml")
+    
+    # Se não tem arquivo físico, criar a partir do conteúdo
+    if xml.xml_content:
+        from flask import make_response
+        response = make_response(xml.xml_content)
+        response.headers['Content-Type'] = 'application/xml'
+        response.headers['Content-Disposition'] = f'attachment; filename="{xml.invoice_key}.xml"'
+        return response
+    
+    flash('Arquivo XML não disponível.', 'error')
+    return redirect(url_for('meus_xmls'))
+
 @app.route('/labels-module')
 @login_required 
 def labels_module():
