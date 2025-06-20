@@ -323,24 +323,24 @@ def save_xml_to_database(user_id: int, invoice_key: str, xml_content: str,
         ID do XML salvo no banco
     """
     try:
-        from models import XMLFile, ImportedXML
+        from models import XMLFile
         from new_app import db
         
-        # Verificar se XML já existe na tabela xml_files
+        # Verificar se XML já existe
         existing_xml = XMLFile.query.filter_by(
             user_id=user_id,
             invoice_key=invoice_key
         ).first()
         
         if existing_xml:
-            logger.info(f"XML já existe na tabela xml_files para chave {invoice_key}")
+            logger.info(f"XML já existe para chave {invoice_key}")
             return existing_xml.id
         
         # Extrair dados do XML
         xml_data = extract_xml_data(xml_content)
         logger.info(f"Dados extraídos do XML: NF {xml_data.get('numero_nf')}, Valor R$ {xml_data.get('valor_total', 0):.2f}")
         
-        # Criar novo registro na tabela xml_files
+        # Criar novo registro com todos os dados extraídos
         xml_file = XMLFile(
             user_id=user_id,
             filename=f"{invoice_key}.xml",
@@ -348,27 +348,13 @@ def save_xml_to_database(user_id: int, invoice_key: str, xml_content: str,
             file_path=file_path,
             xml_content=xml_content,
             import_type=import_type,
-            job_id=job_id
-        )
-        
-        # Salvar na tabela xml_files
-        db.session.add(xml_file)
-        db.session.commit()
-        
-        # Também criar registro na tabela imported_xmls com dados completos
-        imported_xml = ImportedXML(
-            user_id=user_id,
-            invoice_key=invoice_key,
-            xml_content=xml_content,
-            file_path=file_path,
-            import_type=import_type,
             job_id=job_id,
-            # Dados extraídos
+            # Dados extraídos do XML
+            cnpj_emitente=xml_data.get('cnpj_emitente', ''),
+            nome_emitente=xml_data.get('nome_emitente', ''),
             numero_nf=xml_data.get('numero_nf', ''),
             serie_nf=xml_data.get('serie_nf', ''),
             data_emissao=xml_data.get('data_emissao'),
-            cnpj_emitente=xml_data.get('cnpj_emitente', ''),
-            nome_emitente=xml_data.get('nome_emitente', ''),
             valor_total=xml_data.get('valor_total', 0.0),
             peso_bruto=xml_data.get('peso_bruto', 0.0),
             quantidade_volumes=xml_data.get('quantidade_volumes', 1),
@@ -382,15 +368,15 @@ def save_xml_to_database(user_id: int, invoice_key: str, xml_content: str,
             destinatario_cidade=xml_data.get('destinatario_cidade', ''),
             destinatario_uf=xml_data.get('destinatario_uf', ''),
             destinatario_endereco=xml_data.get('destinatario_endereco', ''),
-            destinatario_cep=xml_data.get('destinatario_cep', '')
+            destinatario_cep=xml_data.get('destinatario_cep', ''),
+            danfe_generated=False,
+            label_generated=False
         )
         
-        # Salvar também na tabela imported_xmls
-        db.session.add(imported_xml)
+        db.session.add(xml_file)
         db.session.commit()
         
-        logger.info(f"XML salvo na tabela xml_files com ID {xml_file.id} para usuário {user_id}")
-        logger.info(f"XML salvo na tabela imported_xmls com ID {imported_xml.id}")
+        logger.info(f"XML salvo com ID {xml_file.id} para usuário {user_id}")
         logger.info(f"Dados extraídos: NF {xml_data.get('numero_nf', 'N/A')}, Emitente: {xml_data.get('nome_emitente', 'N/A')}")
         
         return xml_file.id

@@ -434,7 +434,7 @@ def init_default_data():
 
 
 class XMLFile(db.Model):
-    """Modelo para armazenar arquivos XML baixados"""
+    """Modelo consolidado para armazenar arquivos XML baixados com dados extraídos"""
     __tablename__ = 'xml_files'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -446,6 +446,37 @@ class XMLFile(db.Model):
     import_type = db.Column(db.String(50), default='SISTEMA')  # SISTEMA, MANUAL, API
     job_id = db.Column(db.String(50), nullable=True)  # ID do job de download
     
+    # Dados básicos da nota fiscal (expandidos de ImportedXML)
+    cnpj_emitente = db.Column(db.String(14))
+    nome_emitente = db.Column(db.String(255))
+    numero_nf = db.Column(db.String(50))
+    serie_nf = db.Column(db.String(10))
+    data_emissao = db.Column(db.Date)
+    valor_total = db.Column(db.Float)
+    
+    # Informações de transporte e volumes
+    peso_bruto = db.Column(db.Float)
+    quantidade_volumes = db.Column(db.Integer)
+    
+    # Dados do remetente (emitente)
+    remetente_razao = db.Column(db.String(255))
+    remetente_cidade = db.Column(db.String(100))
+    remetente_uf = db.Column(db.String(2))
+    remetente_endereco = db.Column(db.String(500))
+    remetente_cep = db.Column(db.String(8))
+    
+    # Dados do destinatário
+    destinatario_cnpj_cpf = db.Column(db.String(14))
+    destinatario_razao = db.Column(db.String(255))
+    destinatario_cidade = db.Column(db.String(100))
+    destinatario_uf = db.Column(db.String(2))
+    destinatario_endereco = db.Column(db.String(500))
+    destinatario_cep = db.Column(db.String(8))
+    
+    # Controle de processamento
+    danfe_generated = db.Column(db.Boolean, default=False)
+    label_generated = db.Column(db.Boolean, default=False)
+    
     # Timestamps
     imported_at = db.Column(db.DateTime, default=datetime.utcnow)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -453,6 +484,36 @@ class XMLFile(db.Model):
     
     # Relacionamento com usuário
     user = db.relationship('User', backref='xml_files')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'filename': self.filename,
+            'invoice_key': self.invoice_key,
+            'import_type': self.import_type,
+            'cnpj_emitente': self.cnpj_emitente,
+            'nome_emitente': self.nome_emitente,
+            'numero_nf': self.numero_nf,
+            'serie_nf': self.serie_nf,
+            'data_emissao': self.data_emissao.isoformat() if self.data_emissao else None,
+            'valor_total': self.valor_total,
+            'peso_bruto': self.peso_bruto,
+            'quantidade_volumes': self.quantidade_volumes,
+            'remetente_razao': self.remetente_razao,
+            'remetente_cidade': self.remetente_cidade,
+            'remetente_uf': self.remetente_uf,
+            'remetente_endereco': self.remetente_endereco,
+            'remetente_cep': self.remetente_cep,
+            'destinatario_cnpj_cpf': self.destinatario_cnpj_cpf,
+            'destinatario_razao': self.destinatario_razao,
+            'destinatario_cidade': self.destinatario_cidade,
+            'destinatario_uf': self.destinatario_uf,
+            'destinatario_endereco': self.destinatario_endereco,
+            'destinatario_cep': self.destinatario_cep,
+            'danfe_generated': self.danfe_generated,
+            'label_generated': self.label_generated,
+            'imported_at': self.imported_at.isoformat()
+        }
     
     def __repr__(self):
         return f'<XMLFile {self.filename}>'

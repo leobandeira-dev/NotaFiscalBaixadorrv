@@ -838,25 +838,8 @@ def meus_xmls():
     uf_filter = request.args.get('uf', '')
     cidade_filter = request.args.get('cidade', '')
     
-    # Buscar XMLs de ambas as tabelas
-    imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).all()
-    xml_files = XMLFile.query.filter_by(user_id=current_user.id).all()
-    
-    # Combinar todos os XMLs e remover duplicatas por invoice_key
-    all_xmls_dict = {}
-    
-    # Adicionar ImportedXML (prioridade para dados completos)
-    for xml in imported_xmls:
-        if xml.invoice_key:
-            all_xmls_dict[xml.invoice_key] = xml
-    
-    # Adicionar XMLFile apenas se não existir na ImportedXML
-    for xml in xml_files:
-        if xml.invoice_key and xml.invoice_key not in all_xmls_dict:
-            all_xmls_dict[xml.invoice_key] = xml
-    
-    # Converter para lista e aplicar filtros
-    all_xmls_list = list(all_xmls_dict.values())
+    # Buscar XMLs da tabela unificada
+    all_xmls_list = XMLFile.query.filter_by(user_id=current_user.id).all()
     
     # Aplicar filtros de busca
     if search_term:
