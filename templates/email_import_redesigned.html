@@ -709,7 +709,7 @@ function checkEmails() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
     btn.disabled = true;
 
-    fetch('{{ url_for("check_emails_now") }}', {
+    fetch('{{ url_for("process_xmls_from_email") }}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
