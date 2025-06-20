@@ -415,9 +415,19 @@ class EmailXMLProcessor:
             return {'success': False, 'error': 'POP3 não configurado para este usuário'}
         
         try:
-            # Usar senha descriptografada (simplificado para demo)
-            password = self.user.pop3_password  # Em produção, descriptografar
-            return self.process_email_xmls(password)
+            # Descriptografar a senha armazenada
+            from email_encryption import decrypt_email_password
+            
+            stored_password_hash = getattr(self.user, 'pop3_password_hash', None)
+            if not stored_password_hash:
+                return {'success': False, 'error': 'Senha POP3 não encontrada'}
+            
+            # Descriptografar a senha para autenticação
+            decrypted_password = decrypt_email_password(stored_password_hash)
+            if not decrypted_password:
+                return {'success': False, 'error': 'Erro ao descriptografar senha POP3'}
+            
+            return self.process_email_xmls(decrypted_password)
             
         except Exception as e:
             logger.error(f"Erro ao processar emails do usuário {self.user.id}: {e}")

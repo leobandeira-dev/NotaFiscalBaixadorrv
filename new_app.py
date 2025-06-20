@@ -2340,7 +2340,7 @@ def save_pop3_credentials():
             return redirect(url_for('email_import'))
             
         current_user.pop3_email = request.form.get('pop3_email')
-        current_user.pop3_password = generate_password_hash(password)
+        current_user.pop3_password_hash = encrypt_email_password(password)
         current_user.pop3_server = request.form.get('pop3_server')
         current_user.pop3_port = int(request.form.get('pop3_port', 995))
         current_user.pop3_ssl = 'pop3_ssl' in request.form
