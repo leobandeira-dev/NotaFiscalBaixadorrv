@@ -2133,16 +2133,100 @@ def upload_xml():
         return redirect(url_for('upload_xml'))
 
 @app.route('/email-import')
-@login_required  
+@login_required
 @rate_limit_check(max_requests=10, window_minutes=10)
 def email_import():
-    """Página de importação via email"""
-    # Gerar email único para o usuário
-    user_email = f"xml-import-{current_user.id}@crossxml.com"
+    """Página de configuração para importação via email"""
+    return render_template('email_import_fixed.html',
+                         current_user=current_user)
+
+@app.route('/save-email-credentials', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=10)
+def save_email_credentials():
+    """Salva as credenciais de email do usuário"""
+    try:
+        email = request.form.get('email')
+        password = request.form.get('password')
+        server = request.form.get('server')
+        custom_server = request.form.get('custom_server')
+        port = int(request.form.get('port', 993))
+        ssl = 'ssl' in request.form
+        
+        # Use custom server if specified
+        if server == 'custom' and custom_server:
+            server = custom_server
+        
+        # Validate inputs
+        if not email or not password or not server:
+            flash('Todos os campos obrigatórios devem ser preenchidos', 'error')
+            return redirect(url_for('email_import'))
+        
+        # Test connection before saving
+        import imaplib
+        
+        try:
+            if ssl:
+                imap = imaplib.IMAP4_SSL(server, port)
+            else:
+                imap = imaplib.IMAP4(server, port)
+            
+            imap.login(email, password)
+            imap.select('INBOX')
+            imap.close()
+            imap.logout()
+            
+        except Exception as e:
+            flash(f'Erro ao conectar com o servidor de email: {str(e)}', 'error')
+            return redirect(url_for('email_import'))
+        
+        # Save credentials
+        current_user.set_email_credentials(email, password, server, port, ssl)
+        flash('Credenciais de email salvas com sucesso! Importação automática ativa.', 'success')
+        
+    except Exception as e:
+        flash(f'Erro ao salvar credenciais: {str(e)}', 'error')
     
-    return render_template('email_import.html', 
-                         user_email=user_email,
-                         user_id=current_user.id)
+    return redirect(url_for('email_import'))
+
+@app.route('/check-emails-now', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=10, window_minutes=10)
+def check_emails_now():
+    """Verifica emails imediatamente"""
+    try:
+        if not current_user.has_email_import_configured():
+            return jsonify({'success': False, 'message': 'Email não configurado'})
+        
+        from email_processor import check_user_emails
+        processed_count = check_user_emails(current_user.id)
+        return jsonify({
+            'success': True, 
+            'message': f'{processed_count} XMLs processados'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/remove-email-config', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=10)
+def remove_email_config():
+    """Remove configuração de email"""
+    try:
+        current_user.import_email = None
+        current_user.import_email_password = None
+        current_user.import_email_server = None
+        current_user.import_email_port = None
+        current_user.import_email_ssl = True
+        current_user.import_email_configured = False
+        current_user.import_email_last_check = None
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Configuração removida'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
 
 @app.route('/process-email-xml', methods=['POST'])
 @rate_limit_check(max_requests=100, window_minutes=60)

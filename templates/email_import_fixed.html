@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+
+{% block title %}Importar XMLs via Email{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar (part of base.html) -->
+        
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="margin-left: 280px;">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2"><i class="fas fa-envelope text-success"></i> Importar XMLs via Email</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <div class="btn-group me-2">
+                        <a href="{{ url_for('meus_xmls') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-file-code"></i> Meus XMLs
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alertas de feedback -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }}"></i>
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <h5><i class="fas fa-info-circle"></i> Como funciona a Importação via Email</h5>
+                        <p>Configure suas credenciais de email para monitorar automaticamente XMLs recebidos em sua caixa de entrada.</p>
+                        {% if current_user.has_email_import_configured() %}
+                        <div class="alert alert-success mt-3">
+                            <i class="fas fa-check-circle"></i> <strong>Email configurado:</strong> {{ current_user.import_email }}
+                            <br><small>Sistema monitora automaticamente este email para novos XMLs</small>
+                        </div>
+                        {% else %}
+                        <p><strong>Configure suas credenciais abaixo para começar a importar XMLs automaticamente</strong></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-cog"></i> Configurações de Email</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if current_user.has_email_import_configured() %}
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> <strong>Email configurado:</strong> {{ current_user.import_email }}
+                                <br><small>Servidor: {{ current_user.import_email_server }}:{{ current_user.import_email_port }} 
+                                {% if current_user.import_email_ssl %}(SSL){% endif %}</small>
+                                <br><small>Última verificação: {{ current_user.import_email_last_check.strftime('%d/%m/%Y %H:%M') if current_user.import_email_last_check else 'Nunca' }}</small>
+                            </div>
+                            
+                            <div class="d-flex gap-2 mb-3">
+                                <button type="button" class="btn btn-primary" onclick="checkEmails()">
+                                    <i class="fas fa-sync"></i> Verificar Emails Agora
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="showEditForm()">
+                                    <i class="fas fa-edit"></i> Editar Configurações
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="removeEmailConfig()">
+                                    <i class="fas fa-trash"></i> Remover Configuração
+                                </button>
+                            </div>
+                            {% endif %}
+                            
+                            <form method="POST" action="{{ url_for('save_email_credentials') }}" id="emailForm" 
+                                  {% if current_user.has_email_import_configured() %}style="display: none;"{% endif %}>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Seu Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" 
+                                           value="{{ current_user.import_email or '' }}" required>
+                                    <div class="form-text">Email onde você recebe os XMLs das notas fiscais</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Senha do Email</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                    <div class="form-text">Para Gmail, use senha de aplicativo. Para outros, use a senha normal.</div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <label for="server" class="form-label">Servidor IMAP</label>
+                                        <select class="form-control" id="server" name="server" onchange="updateServerSettings()" required>
+                                            <option value="imap.gmail.com" {% if current_user.import_email_server == 'imap.gmail.com' %}selected{% endif %}>Gmail (imap.gmail.com)</option>
+                                            <option value="outlook.office365.com" {% if current_user.import_email_server == 'outlook.office365.com' %}selected{% endif %}>Outlook/Hotmail (outlook.office365.com)</option>
+                                            <option value="imap.yahoo.com" {% if current_user.import_email_server == 'imap.yahoo.com' %}selected{% endif %}>Yahoo (imap.yahoo.com)</option>
+                                            <option value="custom">Outro servidor...</option>
+                                        </select>
+                                        <input type="text" class="form-control mt-2" id="custom_server" name="custom_server" 
+                                               placeholder="Digite o servidor IMAP" style="display: none;">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="port" class="form-label">Porta</label>
+                                        <input type="number" class="form-control" id="port" name="port" 
+                                               value="{{ current_user.import_email_port or 993 }}" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3 mt-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="ssl" name="ssl" 
+                                               {% if current_user.import_email_ssl != False %}checked{% endif %}>
+                                        <label class="form-check-label" for="ssl">
+                                            Usar SSL/TLS (recomendado para segurança)
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save"></i> Salvar Configurações
+                                    </button>
+                                    {% if current_user.has_email_import_configured() %}
+                                    <button type="button" class="btn btn-secondary" onclick="hideEditForm()">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6><i class="fas fa-question-circle"></i> Ajuda e Configuração</h6>
+                        </div>
+                        <div class="card-body">
+                            <h6>Gmail:</h6>
+                            <ul class="small">
+                                <li>Ative autenticação em duas etapas</li>
+                                <li>Gere uma senha de aplicativo</li>
+                                <li>Use a senha de aplicativo, não sua senha normal</li>
+                            </ul>
+
+                            <h6>Outlook/Hotmail:</h6>
+                            <ul class="small">
+                                <li>Use sua senha normal da conta Microsoft</li>
+                                <li>Certifique-se que IMAP está habilitado</li>
+                            </ul>
+
+                            <h6>Como funciona:</h6>
+                            <ul class="small">
+                                <li>Sistema verifica emails de hora em hora</li>
+                                <li>XMLs anexados são automaticamente processados</li>
+                                <li>Arquivos aparecem em "Meus XMLs" instantaneamente</li>
+                                <li>Importação via email é <strong>gratuita</strong></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<script>
+function updateServerSettings() {
+    const server = document.getElementById('server').value;
+    const customServer = document.getElementById('custom_server');
+    const port = document.getElementById('port');
+    const ssl = document.getElementById('ssl');
+
+    if (server === 'custom') {
+        customServer.style.display = 'block';
+        customServer.required = true;
+    } else {
+        customServer.style.display = 'none';
+        customServer.required = false;
+        
+        // Auto-configure based on provider
+        switch(server) {
+            case 'imap.gmail.com':
+                port.value = 993;
+                ssl.checked = true;
+                break;
+            case 'outlook.office365.com':
+                port.value = 993;
+                ssl.checked = true;
+                break;
+            case 'imap.yahoo.com':
+                port.value = 993;
+                ssl.checked = true;
+                break;
+        }
+    }
+}
+
+function showEditForm() {
+    document.getElementById('emailForm').style.display = 'block';
+}
+
+function hideEditForm() {
+    document.getElementById('emailForm').style.display = 'none';
+}
+
+function checkEmails() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+    btn.disabled = true;
+
+    fetch('{{ url_for("check_emails_now") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Verificação concluída! ${data.message}`);
+            location.reload();
+        } else {
+            alert('Erro: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Erro ao verificar emails: ' + error);
+    })
+    .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+function removeEmailConfig() {
+    if (confirm('Tem certeza que deseja remover a configuração de email? Isso desabilitará a importação automática.')) {
+        fetch('{{ url_for("remove_email_config") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Configuração removida com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao remover configuração: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}
