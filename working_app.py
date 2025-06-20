@@ -77,12 +77,7 @@ def handle_custom_domain():
 def index():
     """Landing page"""
     try:
-        # Check if we have the static landing page
-        static_index_path = os.path.join(app.static_folder, 'index.html')
-        if os.path.exists(static_index_path):
-            return app.send_static_file('index.html')
-        
-        # Fallback to simple HTML
+        # Always render our dynamic status page
         return render_landing_page()
         
     except Exception as e:
