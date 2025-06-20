@@ -339,9 +339,9 @@ class ResponsiveTransportLabelGenerator:
             try:
                 c.drawImage(company_logo_path, logo_x, logo_y, width=logo_size, height=logo_size)
                 text_x = logo_x + logo_size + self.spacing['field']
-                c.drawString(text_x, section_y + section_height * 0.65, self.company_name)
+                c.drawString(text_x, section_y + section_height * 0.75, self.company_name)
                 c.setFont("Helvetica", self.fonts['company_sub'])
-                c.drawString(text_x, section_y + section_height * 0.25, self.company_subtitle)
+                c.drawString(text_x, section_y + section_height * 0.35, self.company_subtitle)
             except Exception as e:
                 logger.warning(f"Erro ao carregar logo: {e}")
                 # Fallback sem logo
@@ -349,10 +349,10 @@ class ResponsiveTransportLabelGenerator:
                 c.setFont("Helvetica", self.fonts['company_sub'])
                 c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.3, self.company_subtitle)
         else:
-            # Sem logo - Melhor espaçamento vertical
-            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.65, self.company_name)
+            # Sem logo - Espaçamento vertical corrigido
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.75, self.company_name)
             c.setFont("Helvetica", self.fonts['company_sub'])
-            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.25, self.company_subtitle)
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.35, self.company_subtitle)
         
         # Resetar cor para preto
         c.setFillColor(colors.black)
@@ -403,11 +403,13 @@ class ResponsiveTransportLabelGenerator:
         # Aplicar enquadramento baseado no estilo
         self._apply_section_frame(c, self.margin, section_y, self.content_width, section_height)
         
-        # Texto com posicionamento melhorado para evitar sobreposições
+        # Texto com margens internas adequadas
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
-        # Centralizar verticalmente o texto com mais precisão
-        text_y = section_y + (section_height - self.fonts['section_content']) / 2 + self.fonts['section_content'] * 0.3
-        c.drawString(self.margin + self.spacing['field'], text_y, f"{title}: {content}")
+        # Posicionamento vertical centralizado com margem interna
+        text_y = section_y + section_height * 0.6  # Centralizar com margem interna
+        # Margem interna horizontal de 8 pontos
+        margin_interna = 8
+        c.drawString(self.margin + margin_interna, text_y, f"{title}: {content}")
         
         # Resetar cor para preto
         c.setFillColor(colors.black)
@@ -438,9 +440,10 @@ class ResponsiveTransportLabelGenerator:
         line_spacing = section_height * 0.18  # 18% da altura para cada linha (mais espaço)
         start_y = section_y + section_height * 0.85  # Começar mais alto para usar todo o espaço
         
-        # TÍTULO "DESTINATÁRIO" 
+        # TÍTULO "DESTINATÁRIO" com margem interna
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
-        c.drawString(self.margin + self.spacing['field'], start_y, "DESTINATÁRIO")
+        margin_interna = 8
+        c.drawString(self.margin + margin_interna, start_y, "DESTINATÁRIO")
         current_y = start_y - line_spacing
         
         # Nome da empresa destinatária
@@ -451,12 +454,12 @@ class ResponsiveTransportLabelGenerator:
         if len(dest_nome) > 40:
             linha1 = dest_nome[:40]
             linha2 = dest_nome[40:80]
-            c.drawString(self.margin + self.spacing['field'], current_y, linha1)
+            c.drawString(self.margin + margin_interna, current_y, linha1)
             current_y -= line_spacing * 0.8
-            c.drawString(self.margin + self.spacing['field'], current_y, linha2)
+            c.drawString(self.margin + margin_interna, current_y, linha2)
             current_y -= line_spacing * 0.8
         else:
-            c.drawString(self.margin + self.spacing['field'], current_y, dest_nome)
+            c.drawString(self.margin + margin_interna, current_y, dest_nome)
             current_y -= line_spacing
         
         # Endereço
@@ -467,13 +470,13 @@ class ResponsiveTransportLabelGenerator:
             if len(endereco) > 50:
                 linha1_end = endereco[:50]
                 linha2_end = endereco[50:100] if len(endereco) > 50 else ""
-                c.drawString(self.margin + self.spacing['field'], current_y, linha1_end)
+                c.drawString(self.margin + margin_interna, current_y, linha1_end)
                 current_y -= line_spacing * 0.7
                 if linha2_end:
-                    c.drawString(self.margin + self.spacing['field'], current_y, linha2_end)
+                    c.drawString(self.margin + margin_interna, current_y, linha2_end)
                     current_y -= line_spacing * 0.7
             else:
-                c.drawString(self.margin + self.spacing['field'], current_y, endereco)
+                c.drawString(self.margin + margin_interna, current_y, endereco)
                 current_y -= line_spacing * 0.8
         
         # Cidade/UF + CEP na mesma linha
