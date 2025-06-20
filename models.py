@@ -71,7 +71,8 @@ class User(UserMixin, db.Model):
     pop3_server = db.Column(db.String(100), nullable=True)
     pop3_port = db.Column(db.Integer, default=995)
     pop3_email = db.Column(db.String(120), nullable=True)
-    pop3_password = db.Column(db.String(256), nullable=True)  # Criptografada
+    pop3_password = db.Column(db.String(256), nullable=True)  # Criptografada (legacy)
+    pop3_password_hash = db.Column(db.String(256), nullable=True)  # Encrypted password
     pop3_ssl = db.Column(db.Boolean, default=True)
     pop3_configured = db.Column(db.Boolean, default=False)
     
