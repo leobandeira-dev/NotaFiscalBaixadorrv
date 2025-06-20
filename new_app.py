@@ -17,7 +17,7 @@ from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
 from itsdangerous import URLSafeTimedSerializer
 from authlib.integrations.flask_client import OAuth
-from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, ImportedXML, StripeTransaction, CreditBalance, XMLFile, init_default_data
+from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, init_default_data
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
 from transport_label_generator import TransportLabelGenerator, generate_label_from_database_xml
@@ -913,12 +913,12 @@ def meus_xmls():
     xmls = all_xmls_list[start:end]
     
     # Obter listas para filtros
-    ufs = db.session.query(ImportedXML.remetente_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_uf.isnot(None)).distinct().all()
-    ufs_dest = db.session.query(ImportedXML.destinatario_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.destinatario_uf.isnot(None)).distinct().all()
+    ufs = db.session.query(XMLFile.remetente_uf).filter(XMLFile.user_id == current_user.id, XMLFile.remetente_uf.isnot(None)).distinct().all()
+    ufs_dest = db.session.query(XMLFile.destinatario_uf).filter(XMLFile.user_id == current_user.id, XMLFile.destinatario_uf.isnot(None)).distinct().all()
     all_ufs = list(set([uf[0] for uf in ufs] + [uf[0] for uf in ufs_dest if uf[0]]))
     
-    cidades = db.session.query(ImportedXML.remetente_cidade).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_cidade.isnot(None)).distinct().all()
-    cidades_dest = db.session.query(ImportedXML.destinatario_cidade).filter(ImportedXML.user_id == current_user.id, ImportedXML.destinatario_cidade.isnot(None)).distinct().all()
+    cidades = db.session.query(XMLFile.remetente_cidade).filter(XMLFile.user_id == current_user.id, XMLFile.remetente_cidade.isnot(None)).distinct().all()
+    cidades_dest = db.session.query(XMLFile.destinatario_cidade).filter(XMLFile.user_id == current_user.id, XMLFile.destinatario_cidade.isnot(None)).distinct().all()
     all_cidades = list(set([cidade[0] for cidade in cidades] + [cidade[0] for cidade in cidades_dest if cidade[0]]))
     
     return render_template('meus_xmls.html', 
@@ -939,8 +939,8 @@ def meus_xmls():
 @login_required
 def download_xml_file(xml_id):
     """Download arquivo XML específico"""
-    # Buscar XML tanto em ImportedXML quanto XMLFile
-    xml = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    # Buscar XML tanto em XMLFile quanto XMLFile
+    xml = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
     if not xml:
         xml = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
     
@@ -987,25 +987,8 @@ def labels_module():
     valor_min = request.args.get('valor_min', '')
     valor_max = request.args.get('valor_max', '')
     
-    # Buscar XMLs de ambas as tabelas para o módulo de etiquetas
-    imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).all()
-    xml_files = XMLFile.query.filter_by(user_id=current_user.id).all()
-    
-    # Combinar todos os XMLs e remover duplicatas por invoice_key
-    all_xmls_dict = {}
-    
-    # Adicionar ImportedXML (prioridade para dados completos)
-    for xml in imported_xmls:
-        if xml.invoice_key:
-            all_xmls_dict[xml.invoice_key] = xml
-    
-    # Adicionar XMLFile apenas se não existir na ImportedXML
-    for xml in xml_files:
-        if xml.invoice_key and xml.invoice_key not in all_xmls_dict:
-            all_xmls_dict[xml.invoice_key] = xml
-    
-    # Converter para lista e aplicar filtros
-    all_xmls_list = list(all_xmls_dict.values())
+    # Buscar XMLs da tabela unificada
+    all_xmls_list = XMLFile.query.filter_by(user_id=current_user.id).all()
     
     # Aplicar filtros de busca
     if search_term:
@@ -1127,12 +1110,12 @@ def labels_module():
     xmls = all_xmls_list[start:end]
     
     # Obter listas para filtros
-    ufs = db.session.query(ImportedXML.remetente_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_uf.isnot(None)).distinct().all()
-    ufs_dest = db.session.query(ImportedXML.destinatario_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.destinatario_uf.isnot(None)).distinct().all()
+    ufs = db.session.query(XMLFile.remetente_uf).filter(XMLFile.user_id == current_user.id, XMLFile.remetente_uf.isnot(None)).distinct().all()
+    ufs_dest = db.session.query(XMLFile.destinatario_uf).filter(XMLFile.user_id == current_user.id, XMLFile.destinatario_uf.isnot(None)).distinct().all()
     all_ufs = list(set([uf[0] for uf in ufs] + [uf[0] for uf in ufs_dest if uf[0]]))
     
-    cidades = db.session.query(ImportedXML.remetente_cidade).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_cidade.isnot(None)).distinct().all()
-    cidades_dest = db.session.query(ImportedXML.destinatario_cidade).filter(ImportedXML.user_id == current_user.id, ImportedXML.destinatario_cidade.isnot(None)).distinct().all()
+    cidades = db.session.query(XMLFile.remetente_cidade).filter(XMLFile.user_id == current_user.id, XMLFile.remetente_cidade.isnot(None)).distinct().all()
+    cidades_dest = db.session.query(XMLFile.destinatario_cidade).filter(XMLFile.user_id == current_user.id, XMLFile.destinatario_cidade.isnot(None)).distinct().all()
     all_cidades = list(set([cidade[0] for cidade in cidades] + [cidade[0] for cidade in cidades_dest if cidade[0]]))
     
     return render_template('labels.html', 
@@ -1242,11 +1225,11 @@ def generate_danfe_simple(filename):
 @login_required
 def download_xml(xml_id):
     """Download arquivo XML específico"""
-    from models import ImportedXML
+    # XMLFile removido - usando XMLFile
     from flask import send_file
     import io
     
-    xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    xml_record = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
     
     if not xml_record:
         flash('XML não encontrado.', 'error')
@@ -1267,12 +1250,12 @@ def download_xml(xml_id):
 @login_required
 def generate_danfe_route(xml_id):
     """Gera e baixa DANFE para um XML específico"""
-    from models import ImportedXML
+    # XMLFile removido - usando XMLFile
     from danfe_generator import DANFEGenerator
     from flask import send_file
     import io
     
-    xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    xml_record = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
     
     if not xml_record:
         flash('XML não encontrado.', 'error')
@@ -1319,8 +1302,8 @@ def generate_danfe_route(xml_id):
 def generate_label_route(xml_id):
     """Gera e baixa etiqueta de transporte para um XML específico"""
     try:
-        # Buscar XML primeiro na ImportedXML (dados completos), depois XMLFile
-        xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        # Buscar XML primeiro na XMLFile (dados completos), depois XMLFile
+        xml_record = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
         xml_file = None
         
         if not xml_record:
@@ -1767,7 +1750,7 @@ def label_generator(xml_id):
     """Página de configuração avançada de etiquetas"""
     try:
         # Buscar XML nas duas tabelas
-        xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        xml_record = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
         xml_file = None
         
         if not xml_record:
@@ -1806,7 +1789,7 @@ def generate_custom_labels(xml_id):
     """Gera etiquetas personalizadas com volumes configuráveis"""
     try:
         # Buscar XML
-        xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        xml_record = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
         xml_file = None
         
         if not xml_record:
