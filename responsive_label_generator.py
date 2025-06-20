@@ -265,7 +265,7 @@ class ResponsiveTransportLabelGenerator:
     
     def _draw_remetente_section(self, c, xml_data, y_pos, section_height):
         """Desenha seção Remetente"""
-        remetente = xml_data.get('remetente_nome', 'N/A')[:30]  # Truncar se muito longo
+        remetente = xml_data.get('remetente_razao', xml_data.get('remetente_nome', 'N/A'))[:50]  # Truncar se muito longo
         return self._draw_black_section(c, "Remetente", remetente, y_pos, section_height)
     
     def _draw_destinatario_section(self, c, xml_data, y_pos, section_height):
@@ -273,10 +273,21 @@ class ResponsiveTransportLabelGenerator:
         section_y = y_pos - section_height
         
         # Nome do destinatário
-        dest_nome = xml_data.get('destinatario_nome', 'N/A')
+        dest_nome = xml_data.get('destinatario_razao', xml_data.get('destinatario_nome', 'N/A'))[:50]
+        dest_endereco = xml_data.get('destinatario_endereco', '')
+        dest_cidade = xml_data.get('destinatario_cidade', '')
+        dest_uf = xml_data.get('destinatario_uf', '')
+        dest_cep = xml_data.get('destinatario_cep', '')
+        
+        # Formatação igual ao modelo Transul
         c.setFont("Helvetica-Bold", self.fonts['normal_text'])
         c.setFillColor(colors.black)
         c.drawString(self.margin, section_y + section_height * 0.85, f"Destinatário: {dest_nome}")
+        
+        # Endereço na linha inferior
+        endereco_completo = f"Endereço: {dest_endereco}, {dest_cidade} - {dest_uf}, CEP: {dest_cep}"
+        c.setFont("Helvetica", self.fonts['small_text'])
+        c.drawString(self.margin, section_y + section_height * 0.5, endereco_completo[:80])
         
         # Endereço completo
         endereco_parts = []
@@ -547,3 +558,53 @@ def generate_multiple_responsive_labels_from_volumes(xml_record, volumes_config:
     except Exception as e:
         logger.error(f"Erro ao gerar etiquetas responsivas múltiplas: {str(e)}")
         raise
+
+
+def merge_labels_into_single_pdf(labels: list) -> BytesIO:
+    """
+    Mescla múltiplas etiquetas em um único PDF com múltiplas páginas usando PyPDF2
+    """
+    try:
+        from PyPDF2 import PdfWriter, PdfReader
+        
+        merged_buffer = BytesIO()
+        
+        if not labels:
+            return merged_buffer
+            
+        # Se apenas uma etiqueta, retornar diretamente
+        if len(labels) == 1:
+            pdf_buffer = labels[0].get('pdf_buffer') or labels[0].get('buffer')
+            return pdf_buffer
+        
+        # Criar writer para mesclar PDFs
+        writer = PdfWriter()
+        
+        # Adicionar cada etiqueta como uma página
+        for i, label in enumerate(labels):
+            pdf_buffer = label.get('pdf_buffer') or label.get('buffer')
+            pdf_buffer.seek(0)
+            
+            try:
+                reader = PdfReader(pdf_buffer)
+                # Adicionar todas as páginas do PDF atual
+                for page in reader.pages:
+                    writer.add_page(page)
+                    
+            except Exception as e:
+                logger.error(f"Erro ao adicionar etiqueta {i+1} ao PDF: {e}")
+                continue
+        
+        # Escrever PDF final
+        writer.write(merged_buffer)
+        merged_buffer.seek(0)
+        
+        logger.info(f"PDF multipáginas criado com {len(labels)} páginas usando PyPDF2")
+        return merged_buffer
+        
+    except Exception as e:
+        logger.error(f"Erro ao mesclar PDFs com PyPDF2: {str(e)}")
+        # Fallback: retornar primeira etiqueta
+        if labels:
+            return labels[0].get('pdf_buffer') or labels[0].get('buffer')
+        return BytesIO()

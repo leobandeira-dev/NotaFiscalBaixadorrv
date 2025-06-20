@@ -1937,8 +1937,9 @@ def generate_custom_labels(xml_id):
             
             db.session.commit()
         
-        # Se apenas uma etiqueta, retornar diretamente em nova aba
+        # Sempre gerar um PDF único (uma ou múltiplas páginas)
         if len(labels) == 1:
+            # Uma etiqueta - PDF direto
             label = labels[0]
             pdf_buffer = label.get('pdf_buffer') or label.get('buffer')
             response = make_response(pdf_buffer.getvalue())
@@ -1946,21 +1947,17 @@ def generate_custom_labels(xml_id):
             response.headers['Content-Disposition'] = f'inline; filename="{label["filename"]}"'
             response.headers['X-Frame-Options'] = 'ALLOWALL'
             return response
-        
-        # Múltiplas etiquetas - criar ZIP
-        import zipfile
-        
-        zip_buffer = BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            for label in labels:
-                pdf_buffer = label.get('pdf_buffer') or label.get('buffer')
-                zip_file.writestr(label['filename'], pdf_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        response = make_response(zip_buffer.getvalue())
-        response.headers['Content-Type'] = 'application/zip'
-        response.headers['Content-Disposition'] = f'attachment; filename="etiquetas_nf_{getattr(xml_data, "numero_nf", xml_id)}.zip"'
+        else:
+            # Múltiplas etiquetas - PDF único com múltiplas páginas
+            from responsive_label_generator import merge_labels_into_single_pdf
+            
+            merged_pdf = merge_labels_into_single_pdf(labels)
+            nf_number = getattr(xml_data, "numero_nf", xml_id)
+            
+            response = make_response(merged_pdf.getvalue())
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'inline; filename="etiquetas_nf_{nf_number}_multipaginas.pdf"'
+            response.headers['X-Frame-Options'] = 'ALLOWALL'
         
         flash(f'{len(labels)} etiquetas geradas com sucesso!', 'success')
         return response
