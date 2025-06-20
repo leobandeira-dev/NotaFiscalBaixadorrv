@@ -1,333 +1,316 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Adquirir Módulo de Etiquetas - CROSS XML Downloader PRO</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-        
-        .main-container {
-            background: var(--bs-body-bg);
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-            margin: 2rem auto;
-            max-width: 1000px;
-            overflow: hidden;
-        }
-        
-        .header-section {
-            background: linear-gradient(135deg, #8A05BE 0%, #6a1b9a 100%);
-            color: white;
-            padding: 3rem 0;
-            text-align: center;
-            position: relative;
-        }
-        
-        .header-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-        }
-        
-        .header-section .container {
-            position: relative;
-            z-index: 2;
-        }
-        
-        .content-section {
-            padding: 3rem 2rem;
-        }
-        
-        .feature-card {
-            background: var(--bs-card-bg);
-            border: 1px solid var(--bs-border-color);
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            margin-bottom: 2rem;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(138, 5, 190, 0.15);
-        }
-        
-        .price-badge {
-            background: linear-gradient(45deg, #8A05BE 0%, #6a1b9a 100%);
-            color: white;
-            padding: 1rem 1.5rem;
-            border-radius: 25px;
-            font-weight: 600;
-            font-size: 1.3rem;
-            display: inline-block;
-            box-shadow: 0 4px 15px rgba(138, 5, 190, 0.3);
-        }
-        
-        .btn-purchase {
-            background: linear-gradient(45deg, #8A05BE 0%, #6a1b9a 100%);
-            border: none;
-            color: white;
-            padding: 15px 40px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(138, 5, 190, 0.3);
-        }
-        
-        .btn-purchase:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(138, 5, 190, 0.4);
-            color: white;
-        }
-        
-        .btn-outline-purple {
-            border: 2px solid #8A05BE;
-            color: #8A05BE;
-            background: transparent;
-            padding: 15px 40px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-outline-purple:hover {
-            background: #8A05BE;
-            color: white;
-            transform: translateY(-2px);
-        }
-        
-        .check-icon {
-            color: #28a745;
-            margin-right: 15px;
-            font-size: 1.1rem;
-        }
-        
-        .benefit-item {
-            display: flex;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding: 0.5rem 0;
-        }
-        
-        .benefit-icon {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(45deg, #8A05BE 0%, #6a1b9a 100%);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-            color: white;
-        }
-        
-        .security-note {
-            background: linear-gradient(45deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
-            border-left: 4px solid #28a745;
-            border-radius: 8px;
-        }
-        
-        .alert-warning {
-            background: linear-gradient(45deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
-            border-left: 4px solid #ffc107;
-            border-radius: 8px;
-        }
-        
-        .alert-info {
-            background: linear-gradient(45deg, rgba(13, 202, 240, 0.1) 0%, rgba(13, 202, 240, 0.05) 100%);
-            border-left: 4px solid #0dcaf0;
-            border-radius: 8px;
-        }
-    </style>
-</head>
-<body>
-    <div class="main-container">
-        <!-- Header -->
-        <div class="header-section">
-            <div class="container">
-                <h1 class="display-4 mb-3">
-                    <i class="fas fa-tags me-3"></i>
-                    Módulo de Etiquetas de Transporte
-                </h1>
-                <p class="lead">Gere etiquetas profissionais personalizadas para seus volumes transportados</p>
+{% extends "base.html" %}
+
+{% block title %}Módulo de Etiquetas - XMLDownloader{% endblock %}
+
+{% block content %}
+<style>
+    .page-header {
+        margin-bottom: 2rem;
+    }
+    
+    .page-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #111827;
+        margin: 0;
+    }
+    
+    .feature-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.2s ease;
+    }
+    
+    .feature-card:hover {
+        border-color: #d1d5db;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+    
+    .price-badge {
+        background: linear-gradient(135deg, #8A05BE, #6a1b9a);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 1.25rem;
+        display: inline-block;
+        margin-bottom: 1rem;
+    }
+    
+    .btn-primary-purple {
+        background: #8A05BE;
+        border: 1px solid #8A05BE;
+        color: white;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-primary-purple:hover {
+        background: #6a1b9a;
+        border-color: #6a1b9a;
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    .btn-outline-purple {
+        background: white;
+        border: 1px solid #8A05BE;
+        color: #8A05BE;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-outline-purple:hover {
+        background: #8A05BE;
+        border-color: #8A05BE;
+        color: white;
+    }
+    
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .feature-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .feature-item:last-child {
+        border-bottom: none;
+    }
+    
+    .feature-icon {
+        width: 32px;
+        height: 32px;
+        background: #f0fdf4;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: #16a34a;
+        font-size: 0.875rem;
+    }
+    
+    .alert-custom {
+        background: #fef3c7;
+        border: 1px solid #fbbf24;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert-custom .alert-icon {
+        color: #d97706;
+        margin-right: 0.5rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+    
+    .info-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 1.25rem;
+    }
+    
+    .info-card.security {
+        border-left: 4px solid #16a34a;
+    }
+    
+    .info-card.billing {
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .info-title {
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .info-title i {
+        margin-right: 0.5rem;
+    }
+</style>
+
+<div class="page-header">
+    <h1 class="page-title">Módulo de Etiquetas de Transporte</h1>
+    <p class="text-muted">Gere etiquetas profissionais personalizadas para seus volumes transportados</p>
+</div>
+
+<!-- Alert Notice -->
+<div class="alert-custom">
+    <i class="fas fa-exclamation-triangle alert-icon"></i>
+    <strong>Acesso Necessário:</strong> Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.
+</div>
+
+<!-- Main Product Card -->
+<div class="feature-card">
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="d-flex align-items-start mb-3">
+                <div class="me-3">
+                    <i class="fas fa-tags text-purple" style="color: #8A05BE; font-size: 2rem;"></i>
+                </div>
+                <div>
+                    <h3 class="h4 mb-2">Etiquetas de Transporte Integrada</h3>
+                    <p class="text-muted mb-3">
+                        Identifique seus volumes transportados e evite erros de conferência, 
+                        troca, envios para destinos errados e perda de volumes por ausência de identificação.
+                    </p>
+                    <div class="price-badge">R$ 49,90/mês</div>
+                </div>
             </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="content-section">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <!-- Alert Notice -->
-                    <div class="alert alert-warning mb-4">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Acesso Necessário:</strong> Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.
-                    </div>
-
-                    <!-- Product Card -->
-                    <div class="feature-card">
-                        <div class="card-body p-5">
-                            <div class="text-center mb-5">
-                                <h3 class="h2 mb-4">
-                                    <i class="fas fa-tags me-3" style="color: #8A05BE;"></i>
-                                    Etiquetas de Transporte Integrada
-                                </h3>
-                                <div class="price-badge mb-4">
-                                    R$ 49,90/mês
-                                </div>
-                                <p class="text-muted fs-5">
-                                    Identifique seus volumes transportados e evite erros de conferência, 
-                                    troca, envios para destinos errados e perda de volumes por ausência de identificação.
-                                </p>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">Recursos Inclusos</h6>
+                    <ul class="feature-list">
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-check"></i>
                             </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h5 class="mb-4 d-flex align-items-center">
-                                        <div class="benefit-icon me-3">
-                                            <i class="fas fa-check"></i>
-                                        </div>
-                                        Recursos Inclusos
-                                    </h5>
-                                    <div class="ms-5">
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Múltiplos layouts profissionais</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Personalização com logo da empresa</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Geração de QR codes únicos</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Suporte a múltiplos volumes</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Vários tamanhos de papel</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Geração automática de dados</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <h5 class="mb-4 d-flex align-items-center">
-                                        <div class="benefit-icon me-3">
-                                            <i class="fas fa-star"></i>
-                                        </div>
-                                        Benefícios Exclusivos
-                                    </h5>
-                                    <div class="ms-5">
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Identifique volumes transportados</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Evite erros de conferência</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Previna trocas de volumes</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Evite envios para destinos errados</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Elimine perda de volumes</span>
-                                        </div>
-                                        <div class="benefit-item">
-                                            <i class="check-icon fas fa-check"></i>
-                                            <span>Rastreamento eficiente</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            <span>Múltiplos layouts profissionais</span>
+                        </li>
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-check"></i>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Purchase Section -->
-                    <div class="feature-card text-center">
-                        <div class="card-body p-5">
-                            <h4 class="mb-4">Pronto para começar?</h4>
-                            <p class="text-muted mb-4">
-                                Assine agora e comece a gerar etiquetas profissionais para seus transportes.
-                            </p>
-                            
-                            <div class="d-grid gap-3 d-md-flex justify-content-center">
-                                <form action="{{ url_for('create_labels_subscription') }}" method="POST" class="d-inline">
-                                    <button type="submit" class="btn btn-purchase btn-lg">
-                                        <i class="fas fa-credit-card me-2"></i>
-                                        Assinar por R$ 49,90/mês
-                                    </button>
-                                </form>
-                                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-purple btn-lg">
-                                    <i class="fas fa-arrow-left me-2"></i>
-                                    Voltar ao Dashboard
-                                </a>
+                            <span>Personalização com logo da empresa</span>
+                        </li>
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-check"></i>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Security and Info -->
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <div class="alert security-note p-4">
-                                <h6 class="alert-heading">
-                                    <i class="fas fa-shield-alt me-2"></i>
-                                    Pagamento Seguro
-                                </h6>
-                                <p class="mb-0">
-                                    Processamento seguro via Stripe. Seus dados estão protegidos com criptografia de nível bancário.
-                                </p>
+                            <span>Geração de QR codes únicos</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="fw-bold mb-3">Benefícios Exclusivos</h6>
+                    <ul class="feature-list">
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-check"></i>
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="alert alert-info p-4">
-                                <h6 class="alert-heading">
-                                    <i class="fas fa-calendar-alt me-2"></i>
-                                    Assinatura Flexível
-                                </h6>
-                                <p class="mb-0">
-                                    Cancele a qualquer momento. Sem compromissos de longo prazo ou taxas ocultas.
-                                </p>
+                            <span>Suporte a múltiplos volumes</span>
+                        </li>
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-check"></i>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Trial Info -->
-                    {% if user.trial_expires_at %}
-                    <div class="alert alert-info text-center mt-4">
-                        <i class="fas fa-gift me-2"></i>
-                        <strong>Período de Teste:</strong> Disponível até {{ user.trial_expires_at.strftime('%d/%m/%Y às %H:%M') }}.
-                    </div>
-                    {% endif %}
+                            <span>Vários tamanhos de papel</span>
+                        </li>
+                        <li class="feature-item">
+                            <div class="feature-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <span>Geração automática de dados</span>
+                        </li>
+                    </ul>
                 </div>
             </div>
         </div>
+        <div class="col-lg-4 text-center">
+            <div class="d-grid gap-2">
+                <form action="{{ url_for('create_labels_subscription') }}" method="POST">
+                    <button type="submit" class="btn btn-primary-purple w-100">
+                        <i class="fas fa-credit-card me-2"></i>
+                        Assinar por R$ 49,90/mês
+                    </button>
+                </form>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-purple w-100">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
     </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+<!-- Benefits Details -->
+<div class="feature-card">
+    <h5 class="fw-bold mb-3">Como funciona o sistema de etiquetas?</h5>
+    <div class="row">
+        <div class="col-md-3 text-center mb-3">
+            <div class="mb-2">
+                <i class="fas fa-upload" style="color: #8A05BE; font-size: 2rem;"></i>
+            </div>
+            <h6 class="fw-bold">1. Upload do XML</h6>
+            <p class="text-muted small">Faça upload ou use XMLs já baixados no sistema</p>
+        </div>
+        <div class="col-md-3 text-center mb-3">
+            <div class="mb-2">
+                <i class="fas fa-cog" style="color: #8A05BE; font-size: 2rem;"></i>
+            </div>
+            <h6 class="fw-bold">2. Configuração</h6>
+            <p class="text-muted small">Configure layout, logo e dados da empresa</p>
+        </div>
+        <div class="col-md-3 text-center mb-3">
+            <div class="mb-2">
+                <i class="fas fa-magic" style="color: #8A05BE; font-size: 2rem;"></i>
+            </div>
+            <h6 class="fw-bold">3. Geração</h6>
+            <p class="text-muted small">Sistema gera etiquetas automaticamente</p>
+        </div>
+        <div class="col-md-3 text-center mb-3">
+            <div class="mb-2">
+                <i class="fas fa-download" style="color: #8A05BE; font-size: 2rem;"></i>
+            </div>
+            <h6 class="fw-bold">4. Download</h6>
+            <p class="text-muted small">Baixe PDFs prontos para impressão</p>
+        </div>
+    </div>
+</div>
+
+<!-- Security and Info -->
+<div class="info-grid">
+    <div class="info-card security">
+        <div class="info-title">
+            <i class="fas fa-shield-alt" style="color: #16a34a;"></i>
+            Pagamento Seguro
+        </div>
+        <p class="text-muted mb-0">
+            Processamento seguro via Stripe. Seus dados estão protegidos com criptografia de nível bancário.
+        </p>
+    </div>
+    <div class="info-card billing">
+        <div class="info-title">
+            <i class="fas fa-calendar-alt" style="color: #3b82f6;"></i>
+            Assinatura Flexível
+        </div>
+        <p class="text-muted mb-0">
+            Cancele a qualquer momento. Sem compromissos de longo prazo ou taxas ocultas.
+        </p>
+    </div>
+</div>
+
+<!-- Trial Info -->
+{% if user.trial_expires_at %}
+<div class="feature-card" style="background: #f0f9ff; border-color: #0ea5e9;">
+    <div class="text-center">
+        <i class="fas fa-gift me-2" style="color: #0ea5e9;"></i>
+        <strong>Período de Teste:</strong> Disponível até {{ user.trial_expires_at.strftime('%d/%m/%Y às %H:%M') }}.
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

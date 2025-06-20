@@ -171,6 +171,31 @@ This is a Python Flask web application that automates the bulk download of XML i
 
 Preferred communication style: Simple, everyday language.
 
+## Layout Design Standards
+
+Based on system dashboard layout pattern (established June 20, 2025):
+
+### Template Structure
+- All internal pages must extend `base.html` template
+- Use sidebar navigation with main content area
+- Background: #f8f9fa (light gray)
+- Main content margin-left: 280px (sidebar width)
+
+### Visual Components
+- **Cards**: White background, 1px border (#e5e7eb), 12px border-radius
+- **Typography**: Inter font family, consistent font weights
+- **Colors**: Primary purple #8A05BE, text #111827, muted #6b7280
+- **Spacing**: 1.5rem margins, 2rem padding for cards
+- **Buttons**: 8px border-radius, consistent hover effects
+- **Icons**: Font Awesome 6.0, consistent sizing and colors
+
+### Layout Patterns
+- Page headers with title and description
+- Grid layouts for cards and components
+- Consistent alert styling with left borders
+- Hover effects for interactive elements
+- Feature lists with circular check icons
+
 ## Current Pricing Structure
 - Download XML: Volume-based pricing (R$ 0,06-0,10 per file)
   - 1-500 XMLs: R$ 0,10 each
