@@ -2183,6 +2183,8 @@ def save_email_credentials():
         
         # Save credentials
         current_user.set_email_credentials(email, password, server, port, ssl)
+        current_user.import_email_check_interval = check_interval
+        db.session.commit()
         flash('Credenciais de email salvas com sucesso! Importação automática ativa.', 'success')
         
     except Exception as e:
