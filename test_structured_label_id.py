@@ -53,17 +53,19 @@ def test_structured_label_id():
             print(f"✅ Etiqueta gerada: {output_file}")
             print(f"📊 Tamanho do arquivo: {file_size:,} bytes")
             
-            # Calcular ID esperado
+            # Calcular ID esperado com separadores
             now = datetime.now()
             nf_numero = ''.join(filter(str.isdigit, str(numero_nf)))
-            timestamp = now.strftime("%d%m%H%M")
+            data_str = now.strftime("%d%m")
+            hora_str = now.strftime("%H%M")
             volume_number = volume_info.split('/')[0]
-            expected_id = f"{nf_numero}{timestamp}{volume_number}"
+            expected_id = f"{nf_numero}-{data_str}-{hora_str}-{volume_number}"
             
             print(f"🔢 ID estruturado esperado: {expected_id}")
-            print(f"   📋 Formato: NF({nf_numero}) + Data/Hora({timestamp}) + Volume({volume_number})")
+            print(f"   📋 Formato: NF({nf_numero}) - Data({data_str}) - Hora({hora_str}) - Volume({volume_number})")
             print(f"   📅 Data/Hora atual: {now.strftime('%d/%m %H:%M')}")
             print(f"   📦 Volume: {volume_number} de {volume_info.split('/')[1] if '/' in volume_info else '1'}")
+            print(f"   🔍 QR Code contém: {expected_id}")
             
             return True
         else:
@@ -105,13 +107,14 @@ def test_multiple_volumes():
                 with open(output_file, 'wb') as f:
                     f.write(pdf_buffer.getvalue())
                 
-                # Calcular ID para este volume
+                # Calcular ID para este volume com separadores
                 xml_data = extract_xml_data(xml_content)
                 numero_nf = xml_data.get('numero_nf', 'N/A')
                 now = datetime.now()
                 nf_numero = ''.join(filter(str.isdigit, str(numero_nf)))
-                timestamp = now.strftime("%d%m%H%M")
-                expected_id = f"{nf_numero}{timestamp}{volume}"
+                data_str = now.strftime("%d%m")
+                hora_str = now.strftime("%H%M")
+                expected_id = f"{nf_numero}-{data_str}-{hora_str}-{volume}"
                 
                 file_size = len(pdf_buffer.getvalue())
                 print(f"   📦 Volume {volume}: {output_file} ({file_size:,} bytes)")

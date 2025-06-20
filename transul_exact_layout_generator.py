@@ -59,22 +59,25 @@ class TransulExactLayoutGenerator:
     
     def _generate_label_id(self, numero_nf, volume_number):
         """
-        Gera ID único da etiqueta no formato: NumeroNF + Data + Hora + Min + Volume
-        Exemplo: 417549201206143 (NF 417549 + 20/12/06 + 14:32 + Volume 3)
+        Gera ID único da etiqueta no formato: NumeroNF-Data-Hora-Volume
+        Exemplo: 417549-2012-0614-3 (NF 417549 - 20/12 - 06:14 - Volume 3)
         """
         now = datetime.now()
         
         # Extrair apenas números da NF
         nf_numero = ''.join(filter(str.isdigit, str(numero_nf)))
         
-        # Formato: DDMMHHMM (dia/mês/hora/minuto)
-        timestamp = now.strftime("%d%m%H%M")
+        # Formato: DDMM (dia/mês)
+        data_str = now.strftime("%d%m")
+        
+        # Formato: HHMM (hora:minuto)
+        hora_str = now.strftime("%H%M")
         
         # Volume com 1 dígito
         volume_str = str(volume_number)
         
-        # Combinar: NF + Data/Hora + Volume
-        label_id = f"{nf_numero}{timestamp}{volume_str}"
+        # Combinar com separadores: NF-Data-Hora-Volume
+        label_id = f"{nf_numero}-{data_str}-{hora_str}-{volume_str}"
         
         return label_id
     
@@ -397,29 +400,53 @@ class TransulExactLayoutGenerator:
         c.drawString(self.margin, footer_y, "CROSS WMS")
     
     def _draw_qr_code(self, c, x, y, width, height, data):
-        """Desenha QR code estilizado"""
+        """Desenha QR code estilizado com geração confiável"""
         try:
             import qrcode
-            qr = qrcode.QRCode(version=1, box_size=2, border=1)
-            qr.add_data(data or "N/A")
+            from reportlab.lib.utils import ImageReader
+            import io
+            
+            # Criar QR code com configurações otimizadas
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(str(data) if data else "ID-NOT-AVAILABLE")
             qr.make(fit=True)
             
+            # Gerar imagem do QR code
             qr_img = qr.make_image(fill_color="black", back_color="white")
             
-            # Converter para ReportLab
-            from reportlab.lib.utils import ImageReader
-            qr_size = min(width, height) * 0.8
+            # Converter para buffer BytesIO
+            img_buffer = io.BytesIO()
+            qr_img.save(img_buffer, format='PNG')
+            img_buffer.seek(0)
+            
+            # Calcular tamanho e posição
+            qr_size = min(width, height) * 0.85
             qr_x = x + (width - qr_size) / 2
             qr_y = y + (height - qr_size) / 2
             
-            c.drawImage(ImageReader(qr_img), qr_x, qr_y, qr_size, qr_size)
+            # Desenhar QR code no canvas
+            c.drawImage(ImageReader(img_buffer), qr_x, qr_y, qr_size, qr_size)
+            
+            logger.info(f"QR code gerado com sucesso para dados: {data}")
             
         except Exception as e:
-            # Fallback: desenhar retângulo com texto
-            self._draw_styled_text_section(
-                c, x, y, width, height, "QR", self.fonts['body_small'],
-                self.colors['light_gray'], self.colors['black'], center_text=True
-            )
+            logger.error(f"Erro ao gerar QR code: {e}")
+            # Fallback: desenhar borda com texto QR
+            c.setStrokeColor(self.colors['black'])
+            c.setFillColor(self.colors['light_gray'])
+            c.rect(x, y, width, height, fill=1, stroke=1)
+            
+            # Texto QR centralizado
+            c.setFillColor(self.colors['black'])
+            c.setFont(*self.fonts['body_small'])
+            text_x = x + width / 2
+            text_y = y + height / 2
+            c.drawCentredString(text_x, text_y, "QR")
 
 def generate_transul_exact_label_from_xml(xml_content, pedido_number=None, area_code="01", 
                                         company_logo_path=None, volume_info="1/1",
