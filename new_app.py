@@ -1369,21 +1369,22 @@ def generate_label_route(xml_id):
         area_code = request.args.get('area', '01')
         company_name = request.args.get('empresa', 'SUA EMPRESA')
         
+        # Extrair dados do XML primeiro
+        from xml_processor import extract_xml_data
+        xml_data = extract_xml_data(xml_content)
+        
         # Usar configurações do usuário para personalização
         company_name = current_user.company_name or 'SUA EMPRESA'
         if xml_record:
-            extracted_data = extract_xml_data(xml_content)
             # Usar nome do emitente se usuário não configurou empresa
             if not current_user.company_name:
-                company_name = extracted_data.get('nome_emitente', company_name)
+                company_name = xml_data.get('nome_emitente', company_name)
         
         # Usar configurações salvas do usuário
         area_code = current_user.default_area_code or '01'
         logo_path = current_user.company_logo_path
         
-        # Extrair dados do XML para verificar quantidade de volumes
-        from xml_processor import extract_xml_data
-        xml_data = extract_xml_data(xml_content)
+        # Verificar quantidade de volumes (já extraído acima)
         volumes_qty = xml_data.get('quantidade_volumes', 1)
         
         # Obter configurações de papel do usuário (padrão: 100x150mm)

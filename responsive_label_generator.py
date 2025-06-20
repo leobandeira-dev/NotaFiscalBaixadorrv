@@ -568,60 +568,80 @@ def generate_multiple_responsive_labels_from_volumes(xml_record, volumes_config:
         if not xml_content:
             raise ValueError("XML content not found in record")
         
-        # Criar gerador responsivo
-        generator = ResponsiveTransportLabelGenerator(
-            company_name=company_name,
-            paper_width_mm=paper_width_mm,
-            paper_height_mm=paper_height_mm
-        )
-        
-        # Gerar uma etiqueta para cada volume
         total_volumes = len(volumes_config)
-        logger.info(f"Configuração multi-volume: {len(volumes_config)} volumes configurados")
-        for i, volume_config in enumerate(volumes_config, 1):
-            peso = volume_config.get('peso', 0)
-            pedido = volume_config.get('pedido', f'PED{i}')
+        logger.info(f"Configuração multi-volume: {total_volumes} volumes configurados")
+        
+        # Processar em lotes de 8 volumes para evitar problemas de memória
+        batch_size = 8
+        batches = [volumes_config[i:i + batch_size] for i in range(0, len(volumes_config), batch_size)]
+        
+        for batch_idx, batch in enumerate(batches):
+            logger.info(f"Processando lote {batch_idx + 1}/{len(batches)} com {len(batch)} volumes")
             
-            # Gerar etiqueta individual para este volume usando gerador compartilhado
-            try:
-                label_buffer = generator.generate_transport_label(
-                    xml_content=xml_content,
-                    pedido_number=pedido,
-                    area_code=area_code,
-                    company_logo_path=company_logo_path
-                )
-                if label_buffer is None:
-                    logger.error(f"Label buffer é None para volume {i} - gerando PDF vazio")
-                    # Criar PDF simples para debug
+            # Criar novo gerador para cada lote para evitar acúmulo de memória
+            generator = ResponsiveTransportLabelGenerator(
+                company_name=company_name,
+                paper_width_mm=paper_width_mm,
+                paper_height_mm=paper_height_mm
+            )
+            
+            # Gerar etiquetas do lote atual
+            for volume_config in batch:
+                volume_idx = volumes_config.index(volume_config) + 1
+                peso = volume_config.get('peso', 0)
+                pedido = volume_config.get('pedido', f'PED{volume_idx}')
+                
+                try:
+                    label_buffer = generator.generate_transport_label(
+                        xml_content=xml_content,
+                        pedido_number=pedido,
+                        area_code=area_code,
+                        company_logo_path=company_logo_path
+                    )
+                    
+                    if label_buffer is None:
+                        logger.warning(f"Label buffer é None para volume {volume_idx} - criando PDF de fallback")
+                        # Criar PDF funcional de fallback
+                        from io import BytesIO
+                        from reportlab.pdfgen import canvas
+                        label_buffer = BytesIO()
+                        c = canvas.Canvas(label_buffer, pagesize=(284, 426))  # 100x150mm
+                        c.setFont("Helvetica-Bold", 14)
+                        c.drawString(50, 380, f"VOLUME {volume_idx} DE {total_volumes}")
+                        c.setFont("Helvetica", 12)
+                        c.drawString(50, 360, f"Pedido: {pedido}")
+                        c.drawString(50, 340, f"Peso: {peso} kg")
+                        c.drawString(50, 320, f"Área: {area_code}")
+                        c.drawString(50, 300, f"Empresa: {company_name}")
+                        c.save()
+                        label_buffer.seek(0)
+                        
+                except Exception as e:
+                    logger.error(f"Erro ao gerar etiqueta para volume {volume_idx}: {e}")
+                    # Criar PDF de erro funcional
                     from io import BytesIO
                     from reportlab.pdfgen import canvas
                     label_buffer = BytesIO()
-                    c = canvas.Canvas(label_buffer, pagesize=(284, 426))  # 100x150mm
+                    c = canvas.Canvas(label_buffer, pagesize=(284, 426))
+                    c.setFont("Helvetica-Bold", 12)
+                    c.drawString(50, 380, f"ERRO - VOLUME {volume_idx}")
                     c.setFont("Helvetica", 10)
-                    c.drawString(20, 200, f"Volume {i} - Erro na geração")
-                    c.drawString(20, 180, f"Pedido: {pedido}")
+                    c.drawString(50, 360, f"Pedido: {pedido}")
+                    c.drawString(50, 340, f"Peso: {peso} kg")
+                    c.drawString(50, 320, f"Erro: {str(e)[:40]}")
                     c.save()
                     label_buffer.seek(0)
-            except Exception as e:
-                logger.error(f"Erro ao gerar etiqueta para volume {i}: {e}")
-                # Criar PDF de erro
-                from io import BytesIO
-                from reportlab.pdfgen import canvas
-                label_buffer = BytesIO()
-                c = canvas.Canvas(label_buffer, pagesize=(284, 426))
-                c.setFont("Helvetica", 10)
-                c.drawString(20, 200, f"Volume {i} - Erro: {str(e)[:30]}")
-                c.drawString(20, 180, f"Pedido: {pedido}")
-                c.save()
-                label_buffer.seek(0)
+                
+                labels.append({
+                    'volume': volume_idx,
+                    'peso': peso,
+                    'pedido': pedido,
+                    'pdf_buffer': label_buffer,
+                    'filename': f'etiqueta_volume_{volume_idx}_{pedido}.pdf'
+                })
             
-            labels.append({
-                'volume': i,
-                'peso': peso,
-                'pedido': pedido,
-                'pdf_buffer': label_buffer,
-                'filename': f'etiqueta_volume_{i}_{pedido}.pdf'
-            })
+            # Limpar gerador do lote para liberar memória
+            del generator
         
         logger.info(f"Geradas {len(labels)} etiquetas responsivas separadas")
         return labels
