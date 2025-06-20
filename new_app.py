@@ -1670,6 +1670,93 @@ def configurar_etiquetas():
     
     return render_template('configurar_etiquetas.html')
 
+@app.route('/historico-creditos')
+@login_required
+def credit_history():
+    """Histórico detalhado de uso de créditos"""
+    # Paginação
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    
+    # Filtros
+    module_filter = request.args.get('module', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    
+    # Query base com tratamento de erro
+    try:
+        query = db.session.query(UsageRecord, ServiceModule.name.label('module_name'))\
+            .outerjoin(ServiceModule, UsageRecord.module_id == ServiceModule.id)\
+            .filter(UsageRecord.user_id == current_user.id)
+        
+        # Aplicar filtros
+        if module_filter:
+            query = query.filter(ServiceModule.name == module_filter)
+        
+        if date_from:
+            try:
+                from_date = datetime.strptime(date_from, '%Y-%m-%d')
+                query = query.filter(UsageRecord.created_at >= from_date)
+            except ValueError:
+                pass
+        
+        if date_to:
+            try:
+                to_date = datetime.strptime(date_to, '%Y-%m-%d')
+                to_date = to_date.replace(hour=23, minute=59, second=59)
+                query = query.filter(UsageRecord.created_at <= to_date)
+            except ValueError:
+                pass
+        
+        # Ordenar por data (mais recente primeiro)
+        query = query.order_by(UsageRecord.created_at.desc())
+        
+        # Paginação
+        records = query.paginate(page=page, per_page=per_page, error_out=False)
+        
+        # Estatísticas
+        total_spent = db.session.query(db.func.sum(UsageRecord.cost))\
+            .filter(UsageRecord.user_id == current_user.id).scalar() or 0
+        
+        this_month_spent = db.session.query(db.func.sum(UsageRecord.cost))\
+            .filter(
+                UsageRecord.user_id == current_user.id,
+                UsageRecord.created_at >= datetime.now().replace(day=1, hour=0, minute=0, second=0)
+            ).scalar() or 0
+        
+        # Estatísticas por módulo
+        module_stats = db.session.query(
+            ServiceModule.name,
+            db.func.sum(UsageRecord.cost).label('total_cost'),
+            db.func.count(UsageRecord.id).label('usage_count')
+        ).outerjoin(ServiceModule, UsageRecord.module_id == ServiceModule.id)\
+         .filter(UsageRecord.user_id == current_user.id)\
+         .group_by(ServiceModule.name).all()
+        
+        # Módulos disponíveis para filtro
+        available_modules = db.session.query(ServiceModule.name).distinct().all()
+        
+    except Exception as e:
+        logger.error(f"Erro ao buscar histórico de créditos: {e}")
+        db.session.rollback()
+        records = None
+        total_spent = 0
+        this_month_spent = 0
+        module_stats = []
+        available_modules = []
+    
+    return render_template('credit_history.html',
+                         records=records,
+                         total_spent=total_spent,
+                         this_month_spent=this_month_spent,
+                         module_stats=module_stats,
+                         available_modules=available_modules,
+                         current_filters={
+                             'module': module_filter,
+                             'date_from': date_from,
+                             'date_to': date_to
+                         })
+
 def save_company_logo(logo_file, user_id):
     """Salvar logo da empresa"""
     try:
