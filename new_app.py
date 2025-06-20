@@ -1876,6 +1876,7 @@ def generate_custom_labels(xml_id):
         
         # Construir configuração de volumes
         volumes_config = []
+        logger.info(f"Configurando {total_volumes} volumes para geração de etiquetas")
         for i in range(1, total_volumes + 1):
             peso = float(request.form.get(f'peso_volume_{i}', 0))
             pedido = request.form.get(f'pedido_volume_{i}', f'PED{getattr(xml_data, "numero_nf", "00000")}-{i}')
@@ -1883,6 +1884,9 @@ def generate_custom_labels(xml_id):
                 'peso': peso,
                 'pedido': pedido
             })
+            logger.info(f"Volume {i}: peso={peso}, pedido={pedido}")
+        
+        logger.info(f"Total de volumes configurados: {len(volumes_config)}")
         
         # Gerar etiquetas múltiplas responsivas
         from responsive_label_generator import generate_multiple_responsive_labels_from_volumes

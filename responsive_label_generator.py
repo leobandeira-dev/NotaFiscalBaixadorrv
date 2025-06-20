@@ -506,6 +506,7 @@ def generate_multiple_responsive_labels_from_volumes(xml_record, volumes_config:
         
         # Gerar uma etiqueta para cada volume
         total_volumes = len(volumes_config)
+        logger.info(f"Configuração multi-volume: {len(volumes_config)} volumes configurados")
         for i, volume_config in enumerate(volumes_config, 1):
             peso = volume_config.get('peso', 0)
             pedido = volume_config.get('pedido', f'PED{i}')
