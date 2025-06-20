@@ -239,7 +239,7 @@
                                         </div>
                                         
                                         <small class="text-muted d-block mt-2">
-                                            Importado em: {{ xml.imported_at.strftime('%d/%m/%Y às %H:%M') if xml.imported_at else 'N/A' }}
+                                            Importado em: {{ xml.imported_at|sp_datetime }}
                                         </small>
                                     </div>
                                 </div>

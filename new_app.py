@@ -1042,19 +1042,21 @@ def labels_module():
         except:
             pass
     
-    # Buscar XMLs filtrados
-    imported_xmls = query.order_by(ImportedXML.imported_at.desc()).all()
-    xml_files = XMLFile.query.filter_by(user_id=current_user.id).order_by(XMLFile.imported_at.desc()).all()
+    # Filtrar apenas XMLs com dados completos para evitar duplicatas
+    query = query.filter(
+        ImportedXML.numero_nf.isnot(None),
+        ImportedXML.nome_emitente.isnot(None),
+        ImportedXML.valor_total.isnot(None)
+    )
     
-    # Combinar ambos os tipos de XML
-    all_xmls = imported_xmls + xml_files
+    # Paginar diretamente no banco
+    xmls_pagination = query.order_by(ImportedXML.imported_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     
-    # Simular paginação manual
-    total_xmls = len(all_xmls)
-    total_pages = (total_xmls + per_page - 1) // per_page
-    start = (page - 1) * per_page
-    end = start + per_page
-    xmls = all_xmls[start:end]
+    xmls = xmls_pagination.items
+    total_xmls = xmls_pagination.total
+    total_pages = xmls_pagination.pages
     
     # Obter listas para filtros
     ufs = db.session.query(ImportedXML.remetente_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_uf.isnot(None)).distinct().all()
