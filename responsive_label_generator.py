@@ -380,15 +380,17 @@ class ResponsiveTransportLabelGenerator:
             c.setFillColor(colors.black)  # Preparar texto preto
     
     def _draw_id_qr_section(self, c, xml_data, y_pos, section_height):
-        """Desenha seção ID e QR Code"""
+        """Desenha seção ID e QR Code COM ENQUADRAMENTO"""
         section_y = y_pos - section_height
+        
+        # Aplicar enquadramento na seção ID/QR
+        self._apply_section_frame(c, self.margin, section_y, self.content_width, section_height)
         
         # ID da NF
         nf_key = xml_data.get('chave_nfe', 'N/A')
         id_display = f"ID: {nf_key[-6:]}" if len(nf_key) >= 6 else f"ID: {nf_key}"
         
         c.setFont("Helvetica", self.fonts['id_text'])
-        c.setFillColor(colors.black)
         margin_interna = 8
         c.drawString(self.margin + margin_interna, section_y + section_height * 0.7, id_display)
         
@@ -400,6 +402,8 @@ class ResponsiveTransportLabelGenerator:
         
         self._draw_qr_code(c, qr_data, qr_x, qr_y, qr_size)
         
+        # Resetar cor
+        c.setFillColor(colors.black)
         return section_y
     
     def _draw_highlighted_section(self, c, title, content, y_pos, section_height):
@@ -523,20 +527,17 @@ class ResponsiveTransportLabelGenerator:
         return self._draw_highlighted_section(c, "Cidade/UF", cidade_uf, y_pos, section_height)
     
     def _draw_peso_volume_section(self, c, xml_data, y_pos, section_height):
-        """Desenha seção Peso e Volume com controle dinâmico de limites"""
+        """Desenha seção Peso e Volume com controle dinâmico de limites COM ENQUADRAMENTO COMPLETO"""
         section_y = y_pos - section_height
         
-        # Calcular largura disponível considerando área ÁREA
+        # Aplicar enquadramento em toda a seção peso/volume primeiro
         area_width = self.content_width * 0.25
         available_width = self.content_width - area_width - (self.spacing['field'] * 2)
+        self._apply_section_frame(c, self.margin, section_y, available_width, section_height)
         
         # Dividir largura disponível entre peso e volume
         half_width = available_width / 2
         spacing_between = self.spacing['field']
-        
-        # Seção Peso (lado esquerdo)
-        peso_width = half_width - spacing_between/2
-        self._apply_section_frame(c, self.margin, section_y, peso_width, section_height)
         
         # Calcular posições verticais com melhor espaçamento
         title_y = section_y + section_height * 0.75
