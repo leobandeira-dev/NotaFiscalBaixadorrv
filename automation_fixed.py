@@ -28,18 +28,21 @@ class InvoiceDownloader:
             os.makedirs(downloads_dir, exist_ok=True)
             logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Chrome options optimized for speed
+            # Chrome options ultra-optimized for maximum speed
             chrome_options = Options()
             chrome_options.add_argument('--headless')
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--window-size=1280,720')  # Smaller window for speed
+            chrome_options.add_argument('--window-size=800,600')  # Minimal window size
             chrome_options.add_argument('--disable-web-security')
             chrome_options.add_argument('--allow-running-insecure-content')
             chrome_options.add_argument('--disable-extensions')
             chrome_options.add_argument('--disable-plugins')
             chrome_options.add_argument('--disable-images')
+            chrome_options.add_argument('--disable-javascript')  # Disable JS where not needed
+            chrome_options.add_argument('--disable-css-animations')
+            chrome_options.add_argument('--disable-transitions')
             chrome_options.add_argument('--disable-background-networking')
             chrome_options.add_argument('--disable-background-timer-throttling')
             chrome_options.add_argument('--disable-renderer-backgrounding')
@@ -54,9 +57,14 @@ class InvoiceDownloader:
             chrome_options.add_argument('--disable-hang-monitor')
             chrome_options.add_argument('--disable-prompt-on-repost')
             chrome_options.add_argument('--disable-domain-reliability')
-            chrome_options.add_argument('--disable-features=TranslateUI,BlinkGenPropertyTrees')
+            chrome_options.add_argument('--disable-features=TranslateUI,BlinkGenPropertyTrees,VizDisplayCompositor')
             chrome_options.add_argument('--aggressive-cache-discard')
-            chrome_options.add_argument('--enable-features=NetworkService,NetworkServiceLogging')
+            chrome_options.add_argument('--memory-pressure-off')
+            chrome_options.add_argument('--max_old_space_size=4096')
+            chrome_options.add_argument('--disable-logging')
+            chrome_options.add_argument('--silent')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36')
             
             # Download preferences
             prefs = {
@@ -106,9 +114,9 @@ class InvoiceDownloader:
             logger.info(f"[Job {job_id}] Navigating to invoice system...")
             self.driver.get(url)
             
-            # Wait for input field directly (faster than waiting for body)
+            # Ultra-fast element targeting with minimal waits
             logger.info(f"[Job {job_id}] Looking for input field...")
-            input_element = WebDriverWait(self.driver, 15).until(
+            input_element = WebDriverWait(self.driver, 8).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[placeholder="Digite a CHAVE DE ACESSO"]'))
             )
             logger.info(f"[Job {job_id}] Page loaded - URL: {self.driver.current_url}")
@@ -117,10 +125,10 @@ class InvoiceDownloader:
             input_element.clear()
             input_element.send_keys(invoice_key)
             
-            # Find and click submit button with faster targeting
+            # Find and click submit button with minimal wait
             logger.info(f"[Job {job_id}] Looking for submit button...")
             try:
-                submit_button = WebDriverWait(self.driver, 5).until(
+                submit_button = WebDriverWait(self.driver, 3).until(
                     EC.element_to_be_clickable((By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]"))
                 )
             except:
@@ -129,17 +137,17 @@ class InvoiceDownloader:
             logger.info(f"[Job {job_id}] Clicking submit button...")
             submit_button.click()
             
-            # Wait for results page with intelligent waiting
+            # Minimal wait for results page
             logger.info(f"[Job {job_id}] Waiting for response page...")
-            time.sleep(3)  # Much faster initial wait
+            time.sleep(1.5)  # Ultra-fast initial wait
             
             logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
             
-            # Find XML download button with optimized xpath
+            # Find XML download button with ultra-optimized xpath
             logger.info(f"[Job {job_id}] Looking for XML download button...")
             try:
-                # Use single xpath query for faster element location
-                xml_button = WebDriverWait(self.driver, 6).until(
+                # Ultra-fast element location with reduced timeout
+                xml_button = WebDriverWait(self.driver, 4).until(
                     EC.element_to_be_clickable((By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"))
                 )
             except:
@@ -166,12 +174,12 @@ class InvoiceDownloader:
                 if result['success']:
                     return result
             
-            # Strategy 2: Optimized polling for browser downloads
+            # Strategy 2: Ultra-fast polling for browser downloads
             logger.info(f"[Job {job_id}] Strategy 2: Checking for browser downloads...")
             
-            # Fast polling: check every 1.5 seconds for up to 10 seconds
-            for attempt in range(7):
-                time.sleep(1.5)
+            # Ultra-fast polling: check every 0.8 seconds for up to 6 seconds
+            for attempt in range(8):
+                time.sleep(0.8)
                 download_result = self.check_downloaded_file(invoice_key, job_id)
                 if download_result['success']:
                     logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - file downloaded and found")
@@ -262,24 +270,25 @@ class InvoiceDownloader:
             }
     
     def download_file_direct(self, url: str, invoice_key: str, job_id: str) -> Dict[str, Any]:
-        """Download file directly from URL"""
+        """Ultra-fast direct download from URL with optimized settings"""
         try:
-            logger.info(f"[Job {job_id}] Downloading directly from: {url}")
+            logger.info(f"[Job {job_id}] Ultra-fast download from: {url}")
             
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36'
-            }
+            # Minimal headers for speed
+            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
             
-            response = requests.get(url, headers=headers, timeout=30)
+            # Ultra-fast request with minimal timeout
+            response = requests.get(url, headers=headers, timeout=4, stream=False)
             response.raise_for_status()
             
+            # Direct save without validation for speed
             filename = f"{invoice_key}.xml"
             file_path = os.path.join('downloads', filename)
             
             with open(file_path, 'wb') as f:
                 f.write(response.content)
             
-            logger.info(f"[Job {job_id}] File downloaded: {file_path}")
+            logger.info(f"[Job {job_id}] Ultra-fast download complete: {file_path}")
             
             return {
                 'success': True,
@@ -287,57 +296,57 @@ class InvoiceDownloader:
             }
             
         except Exception as e:
-            logger.error(f"[Job {job_id}] Direct download failed: {e}")
+            logger.error(f"[Job {job_id}] Ultra-fast download failed: {e}")
             return {
                 'success': False,
                 'error': str(e)
             }
     
     def check_downloaded_file(self, invoice_key: str, job_id: str) -> Dict[str, Any]:
-        """Check if file was downloaded to downloads directory"""
+        """Ultra-fast file check with minimal operations"""
         try:
             downloads_dir = 'downloads'
             
-            # Check for various filename patterns
-            possible_files = [
-                f"{invoice_key}.xml",
+            # Ultra-fast check: look for exact filename first
+            exact_file = os.path.join(downloads_dir, f"{invoice_key}.xml")
+            if os.path.exists(exact_file):
+                return {
+                    'success': True,
+                    'file_path': exact_file
+                }
+            
+            # Quick pattern check with minimal list
+            quick_patterns = [
                 f"{invoice_key[:8]}.xml",
-                "download.xml",
-                "nfe.xml"
+                "download.xml"
             ]
             
-            for filename in possible_files:
+            for filename in quick_patterns:
                 file_path = os.path.join(downloads_dir, filename)
                 if os.path.exists(file_path):
-                    # Rename to proper filename if needed
-                    proper_filename = f"{invoice_key}.xml"
-                    proper_path = os.path.join(downloads_dir, proper_filename)
-                    
-                    if file_path != proper_path:
-                        os.rename(file_path, proper_path)
-                        file_path = proper_path
-                    
-                    logger.info(f"[Job {job_id}] Found downloaded file: {file_path}")
-                    
-                    return {
-                        'success': True,
-                        'file_path': file_path
-                    }
-            
-            # Check all XML files in downloads directory
-            for filename in os.listdir(downloads_dir):
-                if filename.endswith('.xml'):
-                    file_path = os.path.join(downloads_dir, filename)
-                    proper_filename = f"{invoice_key}.xml"
-                    proper_path = os.path.join(downloads_dir, proper_filename)
-                    
+                    # Fast rename without logging
+                    proper_path = os.path.join(downloads_dir, f"{invoice_key}.xml")
                     os.rename(file_path, proper_path)
-                    logger.info(f"[Job {job_id}] Found and renamed XML file: {proper_path}")
                     
                     return {
                         'success': True,
                         'file_path': proper_path
                     }
+            
+            # Last resort: check for any XML file
+            try:
+                for filename in os.listdir(downloads_dir):
+                    if filename.endswith('.xml'):
+                        file_path = os.path.join(downloads_dir, filename)
+                        proper_path = os.path.join(downloads_dir, f"{invoice_key}.xml")
+                        os.rename(file_path, proper_path)
+                        
+                        return {
+                            'success': True,
+                            'file_path': proper_path
+                        }
+            except:
+                pass
             
             return {
                 'success': False,
