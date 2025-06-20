@@ -2487,6 +2487,49 @@ def comprar_creditos_xml():
         flash('Erro ao carregar página de compra de créditos', 'error')
         return redirect(url_for('dashboard'))
 
+@app.route('/create-labels-subscription', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=10)
+def create_labels_subscription():
+    """Criar assinatura do módulo de etiquetas via Stripe"""
+    try:
+        from package_models import StripeProduct
+        
+        # Buscar produto do módulo de etiquetas
+        labels_product = StripeProduct.query.filter_by(
+            stripe_product_id='prod_SSVViDPzXYZHhO'
+        ).first()
+        
+        if not labels_product or not labels_product.default_price_id:
+            flash('Produto não encontrado ou sem preço configurado.', 'error')
+            return redirect(url_for('labels_module'))
+        
+        # Criar sessão de checkout Stripe para assinatura
+        import stripe
+        session = stripe.checkout.Session.create(
+            customer_email=current_user.email,
+            payment_method_types=['card'],
+            mode='subscription',
+            line_items=[{
+                'price': labels_product.default_price_id,
+                'quantity': 1,
+            }],
+            success_url=url_for('labels_subscription_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('labels_module', _external=True),
+            metadata={
+                'user_id': str(current_user.id),
+                'product_id': str(labels_product.id),
+                'product_type': 'labels_subscription'
+            }
+        )
+        
+        return redirect(session.url, code=303)
+        
+    except Exception as e:
+        app.logger.error(f"Erro ao criar assinatura Stripe: {str(e)}")
+        flash('Erro ao processar pagamento. Tente novamente.', 'error')
+        return redirect(url_for('labels_module'))
+
 @app.route('/create-checkout-session', methods=['POST'])
 @login_required
 @rate_limit_check(max_requests=10, window_minutes=5)
@@ -2624,6 +2667,63 @@ def comprar_creditos_simple():
         logger.error(f"Erro na página de compra de créditos: {e}")
         flash('Erro ao carregar página de compra de créditos', 'error')
         return redirect(url_for('dashboard'))
+
+@app.route('/labels-subscription-success')
+@login_required
+@rate_limit_check(max_requests=10, window_minutes=5)
+def labels_subscription_success():
+    """Página de sucesso da assinatura do módulo de etiquetas"""
+    try:
+        session_id = request.args.get('session_id')
+        if not session_id:
+            flash('Sessão de pagamento não encontrada.', 'error')
+            return redirect(url_for('labels_module'))
+        
+        # Verificar sessão no Stripe
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        if session.payment_status == 'paid' and session.metadata.get('product_type') == 'labels_subscription':
+            from package_models import UserSubscription, StripeProduct
+            
+            # Buscar produto
+            product_id = session.metadata.get('product_id')
+            product = StripeProduct.query.get(product_id)
+            
+            if product:
+                # Verificar se já existe assinatura
+                existing_subscription = UserSubscription.query.filter_by(
+                    user_id=current_user.id,
+                    product_id=product.id,
+                    status='active'
+                ).first()
+                
+                if not existing_subscription:
+                    # Criar nova assinatura
+                    subscription = UserSubscription(
+                        user_id=current_user.id,
+                        product_id=product.id,
+                        stripe_subscription_id=session.subscription,
+                        status='active',
+                        starts_at=datetime.utcnow(),
+                        expires_at=datetime.utcnow() + timedelta(days=product.subscription_duration_days)
+                    )
+                    db.session.add(subscription)
+                    db.session.commit()
+                    
+                    flash('Assinatura do módulo de etiquetas ativada com sucesso!', 'success')
+                else:
+                    flash('Você já possui uma assinatura ativa do módulo de etiquetas.', 'info')
+            else:
+                flash('Erro ao processar assinatura.', 'error')
+        else:
+            flash('Pagamento não confirmado.', 'error')
+            
+        return redirect(url_for('labels_module'))
+        
+    except Exception as e:
+        app.logger.error(f"Erro no sucesso da assinatura: {str(e)}")
+        flash('Erro ao processar confirmação de pagamento.', 'error')
+        return redirect(url_for('labels_module'))
 
 # Webhook já existe em outra parte do código - removido para evitar duplicação
 
