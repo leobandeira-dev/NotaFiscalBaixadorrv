@@ -124,6 +124,126 @@ class ResponsiveTransportLabelGenerator:
             buffer.seek(0)
             return buffer
     
+    def generate_transport_label_with_volume_info(self, xml_content: str, pedido_number: str = None, 
+                                                area_code: str = "01", company_logo_path: str = None,
+                                                volume_info: str = None, current_volume: int = 1, 
+                                                total_volumes: int = 1) -> BytesIO:
+        """
+        Gera etiqueta de transporte com informações dinâmicas de volume (1/62, 2/62, etc.)
+        
+        Args:
+            xml_content: Conteúdo XML da NFe
+            pedido_number: Número do pedido (opcional)
+            area_code: Código da área (padrão: "01")
+            company_logo_path: Caminho para logo da empresa (opcional)
+            volume_info: String formatada "X/Y" para exibição
+            current_volume: Número do volume atual
+            total_volumes: Total de volumes
+            
+        Returns:
+            BytesIO contendo o PDF da etiqueta com numeração dinâmica
+        """
+        try:
+            # Parse XML
+            from xml_processor import extract_xml_data
+            xml_data = extract_xml_data(xml_content)
+            
+            # Criar PDF em memória
+            buffer = BytesIO()
+            c = canvas.Canvas(buffer, pagesize=(self.page_width, self.page_height))
+            
+            # Desenhar etiqueta com informações de volume dinâmicas
+            self._draw_responsive_label_with_volume_info(c, xml_data, pedido_number, area_code, 
+                                                       company_logo_path, volume_info, current_volume, total_volumes)
+            
+            # Finalizar PDF
+            c.save()
+            buffer.seek(0)
+            
+            logger.info(f"Etiqueta responsiva gerada com volume {volume_info}: {self.paper_width_mm}x{self.paper_height_mm}mm")
+            return buffer
+            
+        except Exception as e:
+            logger.error(f"Erro ao gerar etiqueta responsiva com volume: {str(e)}")
+            # Return a minimal PDF with volume info
+            buffer = BytesIO()
+            c = canvas.Canvas(buffer, pagesize=(self.page_width, self.page_height))
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(50, 380, f"VOLUME {volume_info}")
+            c.setFont("Helvetica", 12)
+            c.drawString(50, 360, f"Pedido: {pedido_number}")
+            c.drawString(50, 340, f"Erro: {str(e)[:40]}")
+            c.save()
+            buffer.seek(0)
+            return buffer
+    
+    def _draw_responsive_label_with_volume_info(self, c, xml_data, pedido_number, area_code, 
+                                               company_logo_path, volume_info, current_volume, total_volumes):
+        """Desenha etiqueta com layout responsivo e informações de volume dinâmicas"""
+        
+        # Usar o mesmo layout da função principal, mas modificar seção de peso/volume
+        # Configurar margens e altura das seções
+        margin = 15 * self.scale_factor
+        current_y = self.page_height - margin
+        section_spacing = 5 * self.scale_factor
+        
+        # Definir alturas das seções de forma responsiva
+        base_section_height = self.spacing['section'] * 2
+        company_section_height = base_section_height * 0.8
+        id_qr_section_height = base_section_height * 1.2
+        nf_section_height = base_section_height * 0.8
+        pedido_section_height = base_section_height * 0.8
+        remetente_section_height = base_section_height * 1.5
+        destinatario_section_height = base_section_height * 2.2
+        cidade_section_height = base_section_height * 1.0
+        peso_volume_section_height = base_section_height * 1.2
+        
+        # 1. Seção da empresa/logo
+        current_y -= company_section_height
+        self._draw_company_section(c, current_y, company_section_height, company_logo_path)
+        current_y -= section_spacing
+        
+        # 2. Seção ID e QR Code
+        current_y -= id_qr_section_height
+        self._draw_id_qr_section(c, xml_data, current_y, id_qr_section_height)
+        current_y -= section_spacing
+        
+        # 3. Seção NF
+        current_y -= nf_section_height
+        self._draw_nf_section(c, xml_data, current_y, nf_section_height)
+        current_y -= section_spacing
+        
+        # 4. Seção Pedido
+        current_y -= pedido_section_height
+        self._draw_pedido_section(c, pedido_number, current_y, pedido_section_height)
+        current_y -= section_spacing
+        
+        # 5. Seção Remetente
+        current_y -= remetente_section_height
+        self._draw_remetente_section(c, xml_data, current_y, remetente_section_height)
+        current_y -= section_spacing
+        
+        # 6. Seção Destinatário
+        current_y -= destinatario_section_height
+        self._draw_destinatario_section(c, xml_data, current_y, destinatario_section_height)
+        current_y -= section_spacing
+        
+        # 7. Seção Cidade/UF
+        current_y -= cidade_section_height
+        self._draw_cidade_section(c, xml_data, current_y, cidade_section_height)
+        current_y -= section_spacing
+        
+        # 8. Seção Peso e Volume com informações dinâmicas
+        current_y -= peso_volume_section_height
+        self._draw_peso_volume_section_with_dynamic_info(c, xml_data, current_y, peso_volume_section_height, 
+                                                        volume_info, current_volume, total_volumes)
+        
+        # 9. Seção ÁREA (canto inferior direito)
+        self._draw_area_section(c, area_code)
+        
+        # 10. Rodapé
+        self._draw_footer(c)
+    
     def _draw_responsive_label(self, c, xml_data, pedido_number, area_code, company_logo_path):
         """Desenha etiqueta com layout verdadeiramente responsivo"""
         
@@ -411,6 +531,69 @@ class ResponsiveTransportLabelGenerator:
         
         return section_y
     
+    def _draw_peso_volume_section_with_dynamic_info(self, c, xml_data, y_pos, section_height, 
+                                                   volume_info, current_volume, total_volumes):
+        """Desenha seção Peso e Volume com informações dinâmicas de volume (1/62, 2/62, etc.)"""
+        section_y = y_pos - section_height
+        
+        # Dividir seção em duas partes: peso e volume
+        half_width = self.content_width / 2
+        
+        # Seção Peso (lado esquerdo)
+        c.setFillColor(colors.lightgrey)
+        c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
+        
+        # Borda cinza
+        c.setStrokeColor(colors.grey)
+        c.setLineWidth(1)
+        c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
+        
+        # Título Peso
+        c.setFillColor(colors.black)
+        c.setFont("Helvetica-Bold", self.fonts['small_text'])
+        c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.7, "PESO (KG)")
+        
+        # Valor do peso
+        peso = xml_data.get('peso_bruto', 'N/A')
+        if peso and peso != 'N/A':
+            try:
+                peso_num = float(peso.replace(',', '.'))
+                peso_formatado = f"{peso_num:.1f}" if peso_num % 1 != 0 else f"{int(peso_num)}"
+            except (ValueError, AttributeError):
+                peso_formatado = str(peso)
+        else:
+            peso_formatado = "N/A"
+        
+        c.setFont("Helvetica", self.fonts['normal_text'])
+        c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.3, peso_formatado)
+        
+        # Seção Volume (lado direito) - COM INFORMAÇÃO DINÂMICA
+        volume_x = self.margin + half_width + self.spacing['field']/2
+        c.setFillColor(colors.lightgrey)
+        c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
+        
+        # Borda cinza
+        c.setStrokeColor(colors.grey)
+        c.setLineWidth(1)
+        c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
+        
+        # Título Volume
+        c.setFillColor(colors.black)
+        c.setFont("Helvetica-Bold", self.fonts['small_text'])
+        c.drawString(volume_x + self.spacing['field'], section_y + section_height * 0.7, "VOLUME")
+        
+        # Valor do volume dinâmico (1/62, 2/62, etc.)
+        c.setFont("Helvetica-Bold", self.fonts['normal_text'])
+        c.setFillColor(colors.black)
+        if volume_info:
+            volume_display = volume_info  # "1/62", "2/62", etc.
+        else:
+            volume_display = f"{current_volume}/{total_volumes}"
+        
+        c.drawString(volume_x + self.spacing['field'], section_y + section_height * 0.3, volume_display)
+        
+        return section_y
+    
     def _draw_area_section(self, c, area_code):
         """Desenha seção ÁREA no canto inferior direito com layout enquadrado profissional"""
         # Dimensões mais proporcionais e bem enquadradas
@@ -592,11 +775,17 @@ def generate_multiple_responsive_labels_from_volumes(xml_record, volumes_config:
                 pedido = volume_config.get('pedido', f'PED{volume_idx}')
                 
                 try:
-                    label_buffer = generator.generate_transport_label(
+                    # Criar volume dinâmico com numeração X/Y
+                    volume_info = f"{volume_idx}/{total_volumes}"
+                    
+                    label_buffer = generator.generate_transport_label_with_volume_info(
                         xml_content=xml_content,
                         pedido_number=pedido,
                         area_code=area_code,
-                        company_logo_path=company_logo_path
+                        company_logo_path=company_logo_path,
+                        volume_info=volume_info,
+                        current_volume=volume_idx,
+                        total_volumes=total_volumes
                     )
                     
                     if label_buffer is None:

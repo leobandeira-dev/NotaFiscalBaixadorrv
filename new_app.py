@@ -2183,10 +2183,10 @@ def generate_custom_labels(xml_id):
             flash('XML não encontrado.', 'error')
             return redirect(url_for('label_generator', xml_id=xml_id))
         
-        # Configurações da empresa
+        # Configurações da empresa (usando configurações salvas do usuário)
         company_name = current_user.company_name or "SUA EMPRESA"
-        company_logo_path = os.path.join('static', 'logos', current_user.logo_filename) if current_user.logo_filename else None
-        area_code = current_user.area_code or "01"
+        company_logo_path = current_user.company_logo_path
+        area_code = current_user.default_area_code or "01"
         
         # Gerar etiquetas com sistema de batch processing (elimina erros de memória)
         labels = generate_multiple_responsive_labels_from_volumes(
