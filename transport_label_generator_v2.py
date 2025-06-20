@@ -126,7 +126,7 @@ class CustomTransportLabelGenerator:
         y_pos -= peso_height
         
         # 9. Volume Section (8% do espaço)
-        y_pos = self._draw_volume_section(c, xml_data, y_pos)
+        y_pos = self._draw_volume_section(c, xml_data, y_pos, volume_number=1)
         
         # 10. Área e Rodapé (posicionamento fixo no canto inferior)
         self._draw_area_section(c, area_code)
@@ -230,28 +230,39 @@ class CustomTransportLabelGenerator:
         return y_pos - 15*mm
     
     def _draw_destinatario_section(self, c, xml_data, y_pos):
-        """Desenha informações do destinatário"""
-        c.setFont("Helvetica", 12)
+        """Desenha informações completas do destinatário"""
+        c.setFont("Helvetica", 10)
         
-        # Destinatário
+        # Razão social do destinatário (linha completa)
         destinatario = xml_data.get('destinatario_razao', 'EMPRESA DESTINATÁRIA')
-        c.drawString(self.margin, y_pos, f"Destinatário: {destinatario}")
+        c.drawString(self.margin, y_pos, f"Destinatário: {destinatario.upper()}")
         
-        # Endereço
-        endereco_parts = []
+        # Endereço completo (logradouro, número, bairro)
+        endereco_linha1 = []
         if xml_data.get('destinatario_logradouro'):
-            endereco_parts.append(xml_data.get('destinatario_logradouro'))
+            endereco_linha1.append(xml_data.get('destinatario_logradouro'))
+        if xml_data.get('destinatario_numero'):
+            endereco_linha1.append(xml_data.get('destinatario_numero'))
+        if xml_data.get('destinatario_bairro'):
+            endereco_linha1.append(xml_data.get('destinatario_bairro'))
+            
+        endereco1 = ", ".join(endereco_linha1) if endereco_linha1 else "Endereço não informado"
+        c.drawString(self.margin, y_pos - 12, f"Endereço: {endereco1}")
+        
+        # Cidade, UF e CEP (segunda linha)
+        endereco_linha2 = []
         if xml_data.get('destinatario_cidade'):
-            endereco_parts.append(xml_data.get('destinatario_cidade'))
+            endereco_linha2.append(xml_data.get('destinatario_cidade'))
         if xml_data.get('destinatario_uf'):
-            endereco_parts.append(xml_data.get('destinatario_uf'))
+            endereco_linha2.append(xml_data.get('destinatario_uf'))
         if xml_data.get('destinatario_cep'):
-            endereco_parts.append(f"CEP: {xml_data.get('destinatario_cep')}")
+            endereco_linha2.append(f"CEP: {xml_data.get('destinatario_cep')}")
         
-        endereco = ", ".join(endereco_parts) or "Endereço não informado"
-        c.drawString(self.margin, y_pos - 15, f"Endereço: {endereco}")
+        endereco2 = ", ".join(endereco_linha2) if endereco_linha2 else ""
+        if endereco2:
+            c.drawString(self.margin, y_pos - 24, endereco2)
         
-        return y_pos - 20*mm
+        return y_pos - 30*mm
     
     def _draw_cidade_section(self, c, xml_data, y_pos):
         """Desenha seção Cidade/UF com fundo preto"""
@@ -273,35 +284,40 @@ class CustomTransportLabelGenerator:
     def _draw_peso_section(self, c, xml_data, y_pos):
         """Desenha seção Peso com fundo preto"""
         # Fundo preto para peso
-        peso_width = 60 * mm
+        peso_width = 70 * mm
         c.setFillColor(colors.black)
         c.rect(self.margin, y_pos - 12, peso_width, 12 * mm, fill=1)
         
-        # Texto branco peso
+        # Texto branco peso com formatação correta
         c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 14)
-        peso = xml_data.get('peso_bruto', '0.000')
-        c.drawString(self.margin + 5, y_pos - 8, f"Peso: {peso}")
+        c.setFont("Helvetica-Bold", 12)
+        peso_bruto = xml_data.get('peso_bruto', '0.000')
+        # Formatar peso para exibir com 3 casas decimais
+        try:
+            peso_formatado = f"{float(peso_bruto):.3f}".replace('.', ',')
+        except:
+            peso_formatado = peso_bruto
+        c.drawString(self.margin + 5, y_pos - 8, f"Peso: {peso_formatado}")
         
-        # Transportadora (texto normal)
+        # Transportadora (texto normal ao lado)
         c.setFillColor(colors.black)
-        c.setFont("Helvetica", 12)
-        c.drawString(self.margin + peso_width + 10, y_pos - 8, f"Transportadora: {self.company_name}")
+        c.setFont("Helvetica", 10)
+        c.drawString(self.margin + peso_width + 5, y_pos - 8, f"Transportadora: {self.company_name}")
         
         return y_pos - 15*mm
     
-    def _draw_volume_section(self, c, xml_data, y_pos):
+    def _draw_volume_section(self, c, xml_data, y_pos, volume_number=1):
         """Desenha seção Volume com fundo preto"""
         # Fundo preto
         volume_width = 60 * mm
         c.setFillColor(colors.black)
         c.rect(self.margin, y_pos - 12, volume_width, 12 * mm, fill=1)
         
-        # Texto branco
+        # Texto branco com número específico do volume
         c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 14)
-        volumes = xml_data.get('quantidade_volumes', '1')
-        c.drawString(self.margin + 5, y_pos - 8, f"Volume: 1/{volumes}")
+        quantidade_volumes = xml_data.get('quantidade_volumes', '1')
+        c.drawString(self.margin + 5, y_pos - 8, f"Volume: {volume_number}/{quantidade_volumes}")
         
         # Voltar cor para preto
         c.setFillColor(colors.black)

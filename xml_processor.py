@@ -126,6 +126,11 @@ def extract_xml_data(xml_content: str) -> dict:
                     numero = nro.text if nro is not None else ''
                     bairro = xBairro.text if xBairro is not None else ''
                     
+                    # Campos separados para uso na etiqueta
+                    nf_data['destinatario_logradouro'] = logradouro
+                    nf_data['destinatario_numero'] = numero
+                    nf_data['destinatario_bairro'] = bairro
+                    
                     endereco_parts = [p for p in [logradouro, numero, bairro] if p]
                     nf_data['destinatario_endereco'] = ', '.join(endereco_parts)
                     
