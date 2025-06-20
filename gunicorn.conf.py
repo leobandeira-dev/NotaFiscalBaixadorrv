@@ -97,7 +97,7 @@ elif os.environ.get('REPLIT_DEV_DOMAIN'):
     reload_engine = 'auto'
     
 # Database-specific settings for Neon PostgreSQL
-def on_starting(server):
+def on_starting_database(server):
     """Initialize database connections on startup"""
     import logging
     logger = logging.getLogger("gunicorn.error")
@@ -120,7 +120,7 @@ def on_starting(server):
         logger.error(f"Database initialization error: {e}")
         # Don't fail startup, let workers handle connection issues
 
-def post_worker_init(worker):
+def post_worker_init_database(worker):
     """Initialize worker-specific database connections"""
     import logging
     logger = logging.getLogger("gunicorn.error")
@@ -131,8 +131,10 @@ def post_worker_init(worker):
         
         with app.app_context():
             from models import db
-            # Test database connection in worker
-            db.engine.execute("SELECT 1")
+            # Test database connection in worker using modern syntax
+            with db.engine.connect() as conn:
+                from sqlalchemy import text
+                conn.execute(text("SELECT 1"))
             logger.info(f"Worker {worker.pid} database connection established")
             
     except Exception as e:

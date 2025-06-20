@@ -198,29 +198,28 @@ def handle_custom_domain():
         # Domain is correctly configured
         pass
 
-# Enhanced database configuration with Neon PostgreSQL support
-try:
-    database_url = DatabaseConfig.get_database_url()
-    engine_options = DatabaseConfig.get_engine_options()
-    
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = engine_options
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_RECORD_QUERIES"] = False
-    
-    logger.info("Enhanced database configuration applied successfully")
-except Exception as e:
-    logger.error(f"Database configuration error: {e}")
-    # Fallback configuration
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        'pool_pre_ping': True,
-        "pool_recycle": 300,
-        'pool_size': 5,
-        'max_overflow': 10,
-        'pool_timeout': 30
+# Simplified database configuration for deployment stability
+database_url = os.environ.get("DATABASE_URL")
+
+# Convert postgres:// to postgresql:// for SQLAlchemy compatibility
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    'pool_pre_ping': True,
+    'pool_recycle': 300,
+    'pool_size': 3,
+    'max_overflow': 5,
+    'pool_timeout': 20,
+    'connect_args': {
+        'connect_timeout': 10,
+        'application_name': 'cross_xml_downloader'
     }
+}
+
+logger.info("Simplified database configuration applied")
 
 # Email configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -2483,23 +2482,27 @@ try:
 except ImportError:
     logger.warning("Admin panel not available")
 
-# Database initialization and setup
-def initialize_application():
-    """Initialize application during startup"""
-    try:
-        with app.app_context():
-            # Create tables if they don't exist
-            db.create_all()
-            
-            # Initialize default data
-            init_default_data()
-            
-            logger.info("Application initialized successfully")
-    except Exception as e:
-        logger.error(f"Application initialization failed: {e}")
+# Database initialization - lazy loading approach
+_db_initialized = False
 
-# Initialize application immediately
-initialize_application()
+def ensure_database_initialized():
+    """Ensure database is initialized before use"""
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            db.create_all()
+            init_default_data()
+            _db_initialized = True
+            logger.info("Database initialized successfully")
+        except Exception as e:
+            logger.error(f"Database initialization failed: {e}")
+            # Database features will be limited but app continues
+
+# Add health check endpoint that doesn't require database
+@app.route('/health')
+def health_check():
+    """Health check endpoint for deployment verification"""
+    return {'status': 'healthy', 'timestamp': datetime.now().isoformat()}, 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
