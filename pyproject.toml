@@ -31,4 +31,5 @@ dependencies = [
     "pytz>=2025.2",
     "trafilatura>=2.0.0",
     "pypdf2>=3.0.1",
+    "cryptography>=45.0.4",
 ]

@@ -36,6 +36,7 @@ from transport_label_generator_v2 import CustomTransportLabelGenerator, generate
 from improved_transport_label import ImprovedTransportLabelGenerator
 from transul_exact_layout_generator import generate_transul_exact_label_from_xml
 from xml_processor import extract_xml_data
+from email_encryption import encrypt_email_password, decrypt_email_password
 
 def generate_improved_label_with_guaranteed_borders(xml_id, user, paper_config, layout_style='layout1'):
     """Função de integração que usa o novo sistema com bordas garantidas"""

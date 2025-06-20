@@ -1,4 +1,5 @@
 # Clean Email Import Routes - 3 Protocol Types (IMAP, POP3, SMTP)
+# This file contains standalone route definitions that should be imported into the main app
 
 @app.route('/save_imap_credentials', methods=['POST'])
 @login_required
@@ -12,7 +13,7 @@ def save_imap_credentials():
             return redirect(url_for('email_import'))
             
         current_user.imap_email = request.form.get('imap_email')
-        current_user.imap_password = generate_password_hash(password)
+        current_user.imap_password = encrypt_email_password(password)
         current_user.imap_server = request.form.get('imap_server')
         current_user.imap_port = int(request.form.get('imap_port', 993))
         current_user.imap_ssl = 'imap_ssl' in request.form
@@ -39,7 +40,7 @@ def save_pop3_credentials():
             return redirect(url_for('email_import'))
             
         current_user.pop3_email = request.form.get('pop3_email')
-        current_user.pop3_password = generate_password_hash(password)
+        current_user.pop3_password = encrypt_email_password(password)
         current_user.pop3_server = request.form.get('pop3_server')
         current_user.pop3_port = int(request.form.get('pop3_port', 995))
         current_user.pop3_ssl = 'pop3_ssl' in request.form
