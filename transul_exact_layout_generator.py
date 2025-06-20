@@ -81,6 +81,61 @@ class TransulExactLayoutGenerator:
         
         return label_id
     
+    def _draw_company_header_with_logo(self, canvas, x, y, width, height, company_name, logo_path):
+        """
+        Desenha cabeçalho da empresa com logo integrada
+        
+        Args:
+            canvas: Canvas do ReportLab
+            x, y: Posição do cabeçalho
+            width, height: Dimensões do cabeçalho
+            company_name: Nome da empresa
+            logo_path: Caminho da logo
+        """
+        try:
+            from reportlab.lib.utils import ImageReader
+            
+            # Fundo do cabeçalho
+            canvas.setFillColor(self.colors['black'])
+            canvas.rect(x, y, width, height, fill=1, stroke=0)
+            
+            # Dimensões da logo (30% da largura, centralizada verticalmente)
+            logo_width = width * 0.3
+            logo_height = height * 0.8
+            logo_x = x + (width * 0.05)  # 5% de margem esquerda
+            logo_y = y + (height - logo_height) / 2
+            
+            # Tentar desenhar a logo
+            if os.path.exists(logo_path):
+                canvas.drawImage(ImageReader(logo_path), logo_x, logo_y, 
+                               width=logo_width, height=logo_height, 
+                               preserveAspectRatio=True, mask='auto')
+                
+                # Nome da empresa ao lado da logo
+                text_x = logo_x + logo_width + (width * 0.05)
+                text_width = width - (text_x - x) - (width * 0.05)
+            else:
+                # Se não há logo, usar toda a largura para o texto
+                text_x = x + (width * 0.05)
+                text_width = width * 0.9
+            
+            # Desenhar nome da empresa
+            canvas.setFillColor(self.colors['white'])
+            canvas.setFont(self.fonts['header_large'][0], self.fonts['header_large'][1])
+            
+            # Centralizar texto verticalmente
+            text_y = y + (height / 2) - (self.fonts['header_large'][1] / 2)
+            canvas.drawString(text_x, text_y, company_name[:25])  # Limitar comprimento
+            
+        except Exception as e:
+            logger.error(f"Erro ao desenhar cabeçalho com logo: {e}")
+            # Fallback: desenhar apenas texto
+            self._draw_styled_text_section(
+                canvas, x, y, width, height,
+                company_name, self.fonts['header_large'], 
+                self.colors['white'], self.colors['black'], center_text=True
+            )
+    
     def _draw_rounded_rect(self, canvas, x, y, width, height, bg_color, border_color=None, radius=None):
         """
         Desenha retângulo com cantos arredondados e styling profissional
@@ -200,7 +255,9 @@ class TransulExactLayoutGenerator:
             
             # Desenhar layout exato baseado na imagem
             self._draw_transul_exact_layout(c, xml_data, pedido_number, area_code, 
-                                          company_logo_path, volume_info)
+                                          company_logo_path, volume_info, 
+                                          xml_data.get('nome_emitente', 'SUA EMPRESA'), 
+                                          'TRANSPORTE')
             
             # Finalizar PDF
             c.save()
@@ -214,7 +271,8 @@ class TransulExactLayoutGenerator:
             return None
     
     def _draw_transul_exact_layout(self, c, xml_data, pedido_number, area_code, 
-                                 company_logo_path, volume_info):
+                                 company_logo_path, volume_info, company_name="SUA EMPRESA", 
+                                 company_subtitle="TRANSPORTE"):
         """Desenha o layout exato conforme a imagem de referência com styling harmonioso"""
         
         # Posições baseadas na análise da imagem
@@ -224,20 +282,28 @@ class TransulExactLayoutGenerator:
         # Espaço de 4mm após a borda antes do primeiro container
         current_y -= 4 * mm
         
-        # 1. CABEÇALHO EMPRESA (LAF LOGISTICA / OPERADOR LOGISTICO) - Centralizado
+        # 1. CABEÇALHO EMPRESA COM LOGO - Centralizado
         header_height = 15 * mm
-        self._draw_styled_text_section(
-            c, self.margin, current_y - header_height, self.content_width, header_height,
-            "LAF LOGISTICA", self.fonts['header_large'], 
-            self.colors['white'], self.colors['black'], center_text=True
-        )
         
-        # Subtítulo OPERADOR LOGISTICO
+        # Se há logo, desenhar cabeçalho com logo
+        if company_logo_path and os.path.exists(company_logo_path):
+            self._draw_company_header_with_logo(c, self.margin, current_y - header_height, 
+                                              self.content_width, header_height, 
+                                              company_name, company_logo_path)
+        else:
+            # Cabeçalho apenas com texto
+            self._draw_styled_text_section(
+                c, self.margin, current_y - header_height, self.content_width, header_height,
+                company_name, self.fonts['header_large'], 
+                self.colors['white'], self.colors['black'], center_text=True
+            )
+        
+        # Subtítulo da empresa
         subtitle_height = 8 * mm
         current_y -= header_height
         self._draw_styled_text_section(
             c, self.margin, current_y - subtitle_height, self.content_width, subtitle_height,
-            "OPERADOR LOGISTICO", self.fonts['body_regular'], 
+            company_subtitle, self.fonts['body_regular'], 
             self.colors['white'], self.colors['dark_gray'], center_text=True
         )
         current_y -= subtitle_height + self.section_spacing
