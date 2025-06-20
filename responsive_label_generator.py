@@ -235,38 +235,40 @@ class ResponsiveTransportLabelGenerator:
         
         return section_y
     
-    def _draw_black_section(self, c, title, content, y_pos, section_height):
-        """Desenha seção com fundo preto e texto branco"""
+    def _draw_highlighted_section(self, c, title, content, y_pos, section_height):
+        """Desenha seção com fundo cinza claro e borda enquadrada"""
         section_y = y_pos - section_height
         
-        # Fundo preto
-        c.setFillColor(colors.black)
+        # Fundo cinza muito claro
+        c.setFillColor(colors.Color(0.95, 0.95, 0.95))
         c.rect(self.margin, section_y, self.content_width, section_height, fill=1)
         
-        # Texto branco
-        c.setFillColor(colors.white)
+        # Borda cinza média
+        c.setStrokeColor(colors.Color(0.6, 0.6, 0.6))
+        c.setLineWidth(1)
+        c.rect(self.margin, section_y, self.content_width, section_height, fill=0)
+        
+        # Texto preto
+        c.setFillColor(colors.black)
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
         text_y = section_y + section_height * 0.3
         c.drawString(self.margin + self.spacing['field'], text_y, f"{title}: {content}")
-        
-        # Restaurar cor
-        c.setFillColor(colors.black)
         
         return section_y
     
     def _draw_nf_section(self, c, xml_data, y_pos, section_height):
         """Desenha seção NF"""
         numero_nf = xml_data.get('numero_nf', '00000')
-        return self._draw_black_section(c, "NF", numero_nf, y_pos, section_height)
+        return self._draw_highlighted_section(c, "NF", numero_nf, y_pos, section_height)
     
     def _draw_pedido_section(self, c, pedido_number, y_pos, section_height):
         """Desenha seção Pedido"""
-        return self._draw_black_section(c, "Pedido", pedido_number, y_pos, section_height)
+        return self._draw_highlighted_section(c, "Pedido", pedido_number, y_pos, section_height)
     
     def _draw_remetente_section(self, c, xml_data, y_pos, section_height):
         """Desenha seção Remetente"""
         remetente = xml_data.get('remetente_razao', xml_data.get('remetente_nome', 'N/A'))[:50]  # Truncar se muito longo
-        return self._draw_black_section(c, "Remetente", remetente, y_pos, section_height)
+        return self._draw_highlighted_section(c, "Remetente", remetente, y_pos, section_height)
     
     def _draw_destinatario_section(self, c, xml_data, y_pos, section_height):
         """Desenha seção Destinatário expandida"""
@@ -323,20 +325,25 @@ class ResponsiveTransportLabelGenerator:
         cidade = xml_data.get('destinatario_cidade', 'N/A')
         uf = xml_data.get('destinatario_uf', 'N/A')
         cidade_uf = f"{cidade} {uf}"
-        return self._draw_black_section(c, "Cidade/UF", cidade_uf, y_pos, section_height)
+        return self._draw_highlighted_section(c, "Cidade/UF", cidade_uf, y_pos, section_height)
     
     def _draw_peso_volume_section(self, c, xml_data, y_pos, section_height):
-        """Desenha seção Peso e Volume"""
+        """Desenha seção Peso e Volume com layout enquadrado"""
         section_y = y_pos - section_height
         
         # Dividir seção em duas partes: peso e volume
         half_width = self.content_width / 2
         
         # Seção Peso (lado esquerdo)
-        c.setFillColor(colors.black)
+        c.setFillColor(colors.Color(0.95, 0.95, 0.95))  # Fundo cinza claro
         c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
         
-        c.setFillColor(colors.white)
+        # Borda cinza
+        c.setStrokeColor(colors.Color(0.6, 0.6, 0.6))
+        c.setLineWidth(1)
+        c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
+        
+        c.setFillColor(colors.black)
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
         
         # Usar peso específico do volume se disponível, senão peso bruto total
@@ -351,18 +358,20 @@ class ResponsiveTransportLabelGenerator:
         
         # Seção Volume (lado direito)
         volume_x = self.margin + half_width + self.spacing['field']/2
-        c.setFillColor(colors.black)
+        c.setFillColor(colors.Color(0.95, 0.95, 0.95))  # Fundo cinza claro
         c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
         
-        c.setFillColor(colors.white)
+        # Borda cinza
+        c.setStrokeColor(colors.Color(0.6, 0.6, 0.6))
+        c.setLineWidth(1)
+        c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
+        
+        c.setFillColor(colors.black)
         
         # Usar volume específico se disponível
         current_volume = xml_data.get('current_volume', 1)
         total_volumes = xml_data.get('total_volumes') or xml_data.get('quantidade_volumes', '1')
         c.drawString(volume_x + self.spacing['field'], text_y, f"Volume: {current_volume}/{total_volumes}")
-        
-        # Restaurar cor
-        c.setFillColor(colors.black)
         
         return section_y
     
