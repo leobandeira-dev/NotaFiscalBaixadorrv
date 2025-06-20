@@ -202,75 +202,445 @@
     </div>
 </div>
 
-<!-- Status Card -->
-{% if current_user.has_email_import_configured() %}
-<div class="status-card status-configured">
-    <div class="d-flex align-items-start">
-        <i class="fas fa-check-circle text-success me-3 mt-1 fs-5"></i>
-        <div class="flex-grow-1">
-            <h6 class="fw-bold text-success mb-2">Email configurado com sucesso</h6>
-            <div class="status-info">
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <strong>Email:</strong> {{ current_user.import_email }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Servidor:</strong> {{ current_user.import_email_server }}:{{ current_user.import_email_port }}{% if current_user.import_email_ssl %} (SSL){% endif %}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Última verificação:</strong> {{ current_user.import_email_last_check.strftime('%d/%m/%Y %H:%M') if current_user.import_email_last_check else 'Nunca' }}
-                    </div>
-                    <div class="col-md-6">
-                        <strong>Intervalo:</strong> 
-                        {% if current_user.import_email_check_interval == 15 %}15 minutos
-                        {% elif current_user.import_email_check_interval == 30 %}30 minutos
-                        {% elif current_user.import_email_check_interval == 60 %}1 hora
-                        {% elif current_user.import_email_check_interval == 120 %}2 horas
-                        {% elif current_user.import_email_check_interval == 240 %}4 horas
-                        {% elif current_user.import_email_check_interval == 480 %}8 horas
-                        {% elif current_user.import_email_check_interval == 1440 %}24 horas
-                        {% else %}{{ current_user.import_email_check_interval }} minutos{% endif %}
+<!-- Status Cards for Multiple Email Types -->
+<div class="row mb-4">
+    <!-- IMAP/Email Import Status -->
+    <div class="col-md-4">
+        {% if current_user.import_email_configured %}
+        <div class="status-card status-configured">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-inbox text-success me-3 mt-1 fs-5"></i>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold text-success mb-2">Importação IMAP</h6>
+                    <div class="status-info">
+                        <div><strong>Email:</strong> {{ current_user.import_email }}</div>
+                        <div><strong>Servidor:</strong> {{ current_user.import_email_server }}:{{ current_user.import_email_port }}</div>
+                        <div><strong>Última verificação:</strong> {{ current_user.import_email_last_check.strftime('%d/%m/%Y %H:%M') if current_user.import_email_last_check else 'Nunca' }}</div>
                     </div>
                 </div>
             </div>
+        </div>
+        {% else %}
+        <div class="status-card status-not-configured">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-inbox text-warning me-3 mt-1 fs-5"></i>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold text-warning mb-2">Importação IMAP</h6>
+                    <p class="text-muted mb-0">Não configurado</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- POP3 Status -->
+    <div class="col-md-4">
+        {% if current_user.pop3_configured %}
+        <div class="status-card status-configured">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-download text-success me-3 mt-1 fs-5"></i>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold text-success mb-2">Recebimento POP3</h6>
+                    <div class="status-info">
+                        <div><strong>Email:</strong> {{ current_user.pop3_email }}</div>
+                        <div><strong>Servidor:</strong> {{ current_user.pop3_server }}:{{ current_user.pop3_port }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="status-card status-not-configured">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-download text-warning me-3 mt-1 fs-5"></i>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold text-warning mb-2">Recebimento POP3</h6>
+                    <p class="text-muted mb-0">Não configurado</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- SMTP Status -->
+    <div class="col-md-4">
+        {% if current_user.smtp_configured %}
+        <div class="status-card status-configured">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-paper-plane text-success me-3 mt-1 fs-5"></i>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold text-success mb-2">Envio SMTP</h6>
+                    <div class="status-info">
+                        <div><strong>Email:</strong> {{ current_user.smtp_email }}</div>
+                        <div><strong>Servidor:</strong> {{ current_user.smtp_server }}:{{ current_user.smtp_port }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="status-card status-not-configured">
+            <div class="d-flex align-items-start">
+                <i class="fas fa-paper-plane text-warning me-3 mt-1 fs-5"></i>
+                <div class="flex-grow-1">
+                    <h6 class="fw-bold text-warning mb-2">Envio SMTP</h6>
+                    <p class="text-muted mb-0">Não configurado</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Configuration Tabs -->
+<div class="row">
+    <div class="col-12">
+        <div class="config-card">
+            <div class="config-header">
+                <h5 class="config-title">
+                    <i class="fas fa-cog me-2"></i>
+                    Configurações de Importação de Email
+                </h5>
+                <p class="config-subtitle">Configure os protocolos de email para importação automática de XMLs</p>
+            </div>
             
-            <div class="action-buttons mt-3">
-                <button type="button" class="btn btn-check-now" onclick="checkEmails()">
-                    <i class="fas fa-sync"></i> Verificar Emails Agora
-                </button>
-                <button type="button" class="btn btn-outline-secondary" onclick="showEditForm()">
-                    <i class="fas fa-edit"></i> Editar Configurações
-                </button>
-                <button type="button" class="btn btn-outline-danger" onclick="removeEmailConfig()">
-                    <i class="fas fa-trash"></i> Remover Configuração
-                </button>
+            <!-- Tab Navigation -->
+            <ul class="nav nav-tabs" id="emailTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="imap-tab" data-bs-toggle="tab" data-bs-target="#imap" type="button" role="tab">
+                        <i class="fas fa-inbox me-2"></i>IMAP
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pop3-tab" data-bs-toggle="tab" data-bs-target="#pop3" type="button" role="tab">
+                        <i class="fas fa-download me-2"></i>POP3
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="smtp-tab" data-bs-toggle="tab" data-bs-target="#smtp" type="button" role="tab">
+                        <i class="fas fa-paper-plane me-2"></i>SMTP
+                    </button>
+                </li>
+            </ul>
+            
+            <!-- Tab Content -->
+            <div class="tab-content" id="emailTabContent">
+                <!-- IMAP Configuration -->
+                <div class="tab-pane fade show active" id="imap" role="tabpanel">
+                    <div class="config-section">
+                        <h6 class="section-title">Configuração IMAP para Importação</h6>
+                        <p class="section-description">Configure para monitorar automaticamente sua caixa de entrada em busca de XMLs anexados</p>
+                        
+                        <form method="POST" action="{{ url_for('save_email_credentials') }}" id="imapForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" class="form-control" name="import_email" value="{{ current_user.import_email or '' }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Senha</label>
+                                    <input type="password" class="form-control" name="import_email_password" placeholder="Digite a senha do email" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Servidor IMAP</label>
+                                    <input type="text" class="form-control" name="import_email_server" value="{{ current_user.import_email_server or 'imap.gmail.com' }}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Porta</label>
+                                    <input type="number" class="form-control" name="import_email_port" value="{{ current_user.import_email_port or 993 }}" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Intervalo de Verificação</label>
+                                    <select class="form-select" name="import_email_check_interval">
+                                        <option value="15" {% if current_user.import_email_check_interval == 15 %}selected{% endif %}>15 minutos</option>
+                                        <option value="30" {% if current_user.import_email_check_interval == 30 %}selected{% endif %}>30 minutos</option>
+                                        <option value="60" {% if current_user.import_email_check_interval == 60 %}selected{% endif %}>1 hora</option>
+                                        <option value="120" {% if current_user.import_email_check_interval == 120 %}selected{% endif %}>2 horas</option>
+                                        <option value="240" {% if current_user.import_email_check_interval == 240 %}selected{% endif %}>4 horas</option>
+                                        <option value="480" {% if current_user.import_email_check_interval == 480 %}selected{% endif %}>8 horas</option>
+                                        <option value="1440" {% if current_user.import_email_check_interval == 1440 %}selected{% endif %}>24 horas</option>
+                                    </select>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="import_email_ssl" checked>
+                                        <label class="form-check-label">Usar SSL/TLS</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Salvar Configuração IMAP
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="testImapConnection()">
+                                    <i class="fas fa-plug me-2"></i>Testar Conexão
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- POP3 Configuration -->
+                <div class="tab-pane fade" id="pop3" role="tabpanel">
+                    <div class="config-section">
+                        <h6 class="section-title">Configuração POP3 para Recebimento</h6>
+                        <p class="section-description">Configure para baixar emails automaticamente via protocolo POP3</p>
+                        
+                        <form method="POST" action="{{ url_for('save_pop3_credentials') }}" id="pop3Form">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Email POP3</label>
+                                    <input type="email" class="form-control" name="pop3_email" value="{{ current_user.pop3_email or '' }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Senha</label>
+                                    <input type="password" class="form-control" name="pop3_password" placeholder="Digite a senha do email" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Servidor POP3</label>
+                                    <input type="text" class="form-control" name="pop3_server" value="{{ current_user.pop3_server or 'pop.titan.email' }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Porta</label>
+                                    <input type="number" class="form-control" name="pop3_port" value="{{ current_user.pop3_port or 995 }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="pop3_ssl" {% if current_user.pop3_ssl %}checked{% endif %}>
+                                        <label class="form-check-label">Usar SSL</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Salvar Configuração POP3
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="testPop3Connection()">
+                                    <i class="fas fa-plug me-2"></i>Testar Conexão
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- SMTP Configuration -->
+                <div class="tab-pane fade" id="smtp" role="tabpanel">
+                    <div class="config-section">
+                        <h6 class="section-title">Configuração SMTP para Envio</h6>
+                        <p class="section-description">Configure para enviar notificações e relatórios via email</p>
+                        
+                        <form method="POST" action="{{ url_for('save_smtp_credentials') }}" id="smtpForm">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Email SMTP</label>
+                                    <input type="email" class="form-control" name="smtp_email" value="{{ current_user.smtp_email or '' }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Senha</label>
+                                    <input type="password" class="form-control" name="smtp_password" placeholder="Digite a senha do email" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Servidor SMTP</label>
+                                    <input type="text" class="form-control" name="smtp_server" value="{{ current_user.smtp_server or 'smtp.gmail.com' }}" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Porta</label>
+                                    <input type="number" class="form-control" name="smtp_port" value="{{ current_user.smtp_port or 587 }}" required>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="smtp_ssl" {% if current_user.smtp_ssl %}checked{% endif %}>
+                                        <label class="form-check-label">Usar SSL/TLS</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Salvar Configuração SMTP
+                                </button>
+                                <button type="button" class="btn btn-outline-primary" onclick="testSmtpConnection()">
+                                    <i class="fas fa-plug me-2"></i>Testar Conexão
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% else %}
-<div class="status-card status-not-configured">
-    <div class="d-flex align-items-start">
-        <i class="fas fa-exclamation-circle text-warning me-3 mt-1 fs-5"></i>
-        <div>
-            <h6 class="fw-bold text-warning mb-2">Email não configurado</h6>
-            <p class="mb-0">Configure suas credenciais de email abaixo para começar a importar XMLs automaticamente.</p>
+
+<!-- Action Buttons Section -->
+{% if current_user.import_email_configured or current_user.pop3_configured %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="action-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="mb-1">Verificação Manual de Emails</h6>
+                    <p class="text-muted mb-0">Clique para verificar emails imediatamente</p>
+                </div>
+                <button type="button" class="btn btn-check-now" onclick="checkEmailsNow()">
+                    <i class="fas fa-sync me-2"></i>Verificar Emails Agora
+                </button>
+            </div>
         </div>
     </div>
 </div>
 {% endif %}
 
-<div class="row">
-    <div class="col-lg-8">
-        <div class="config-card">
-            <div class="config-card-header">
-                <h5 class="config-card-title">
-                    <i class="fas fa-cog"></i>
-                    Configurações de Email
-                </h5>
+<!-- Help Section -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="help-card">
+            <div class="help-header">
+                <h6><i class="fas fa-question-circle me-2"></i>Ajuda e Configurações Específicas</h6>
             </div>
-            <div class="config-card-body">
-                <form method="POST" action="{{ url_for('save_email_credentials') }}" id="emailForm" 
+            <div class="help-content">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6 class="text-primary">Gmail</h6>
+                        <ul class="help-list">
+                            <li><strong>IMAP:</strong> imap.gmail.com:993 (SSL)</li>
+                            <li><strong>POP3:</strong> pop.gmail.com:995 (SSL)</li>
+                            <li><strong>SMTP:</strong> smtp.gmail.com:587 (TLS)</li>
+                            <li>Use senha de app ou habilite "Acesso a apps menos seguros"</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-primary">Outlook/Hotmail</h6>
+                        <ul class="help-list">
+                            <li><strong>IMAP:</strong> outlook.office365.com:993 (SSL)</li>
+                            <li><strong>POP3:</strong> outlook.office365.com:995 (SSL)</li>
+                            <li><strong>SMTP:</strong> smtp.office365.com:587 (TLS)</li>
+                            <li>Habilite POP3/IMAP nas configurações do Outlook</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6 class="text-primary">Outros Provedores</h6>
+                        <ul class="help-list">
+                            <li>Consulte a documentação do seu provedor</li>
+                            <li>Geralmente usa porta 993 (IMAP) e 995 (POP3)</li>
+                            <li>SMTP costuma usar porta 587 ou 465</li>
+                            <li>Sempre prefira conexões SSL/TLS</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Função para testar conexão IMAP
+async function testImapConnection() {
+    const password = document.querySelector('#imap input[name="import_email_password"]').value;
+    if (!password) {
+        alert('Digite a senha do email para testar a conexão');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/test-imap-connection', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ password: password })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✓ Conexão IMAP funcionando!');
+        } else {
+            alert('✗ Erro na conexão IMAP: ' + result.message);
+        }
+    } catch (error) {
+        alert('✗ Erro ao testar conexão IMAP');
+    }
+}
+
+// Função para testar conexão POP3
+async function testPop3Connection() {
+    const password = document.querySelector('#pop3 input[name="pop3_password"]').value;
+    if (!password) {
+        alert('Digite a senha do email para testar a conexão');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/test-pop3-connection', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ password: password })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✓ Conexão POP3 funcionando!');
+        } else {
+            alert('✗ Erro na conexão POP3: ' + result.message);
+        }
+    } catch (error) {
+        alert('✗ Erro ao testar conexão POP3');
+    }
+}
+
+// Função para testar conexão SMTP
+async function testSmtpConnection() {
+    const password = document.querySelector('#smtp input[name="smtp_password"]').value;
+    if (!password) {
+        alert('Digite a senha do email para testar a conexão');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/test-smtp-connection', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ password: password })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✓ Conexão SMTP funcionando!');
+        } else {
+            alert('✗ Erro na conexão SMTP: ' + result.message);
+        }
+    } catch (error) {
+        alert('✗ Erro ao testar conexão SMTP');
+    }
+}
+
+// Função para verificar emails manualmente
+async function checkEmailsNow() {
+    const button = document.querySelector('.btn-check-now');
+    const originalText = button.innerHTML;
+    
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Verificando...';
+    button.disabled = true;
+    
+    try {
+        const response = await fetch('/check-emails-now', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✓ ' + result.message);
+        } else {
+            alert('✗ Erro: ' + result.message);
+        }
+    } catch (error) {
+        alert('✗ Erro na verificação de emails');
+    } finally {
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+}
+</script>
+{% endif %} 
                       {% if current_user.has_email_import_configured() %}style="display: none;"{% endif %}>
                     <div class="row">
                         <div class="col-md-6">
