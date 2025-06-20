@@ -63,6 +63,15 @@
                                 <br><small>Servidor: {{ current_user.import_email_server }}:{{ current_user.import_email_port }} 
                                 {% if current_user.import_email_ssl %}(SSL){% endif %}</small>
                                 <br><small>Última verificação: {{ current_user.import_email_last_check.strftime('%d/%m/%Y %H:%M') if current_user.import_email_last_check else 'Nunca' }}</small>
+                                <br><small>Intervalo de verificação: 
+                                {% if current_user.import_email_check_interval == 15 %}15 minutos
+                                {% elif current_user.import_email_check_interval == 30 %}30 minutos
+                                {% elif current_user.import_email_check_interval == 60 %}1 hora
+                                {% elif current_user.import_email_check_interval == 120 %}2 horas
+                                {% elif current_user.import_email_check_interval == 240 %}4 horas
+                                {% elif current_user.import_email_check_interval == 480 %}8 horas
+                                {% elif current_user.import_email_check_interval == 1440 %}24 horas
+                                {% else %}{{ current_user.import_email_check_interval }} minutos{% endif %}</small>
                             </div>
                             
                             <div class="d-flex gap-2 mb-3">
@@ -120,6 +129,20 @@
                                             Usar SSL/TLS (recomendado para segurança)
                                         </label>
                                     </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="check_interval" class="form-label">Intervalo de Verificação</label>
+                                    <select class="form-select" id="check_interval" name="check_interval" required>
+                                        <option value="15" {% if current_user.import_email_check_interval == 15 %}selected{% endif %}>15 minutos</option>
+                                        <option value="30" {% if current_user.import_email_check_interval == 30 %}selected{% endif %}>30 minutos</option>
+                                        <option value="60" {% if current_user.import_email_check_interval == 60 %}selected{% endif %}>1 hora (Padrão)</option>
+                                        <option value="120" {% if current_user.import_email_check_interval == 120 %}selected{% endif %}>2 horas</option>
+                                        <option value="240" {% if current_user.import_email_check_interval == 240 %}selected{% endif %}>4 horas</option>
+                                        <option value="480" {% if current_user.import_email_check_interval == 480 %}selected{% endif %}>8 horas</option>
+                                        <option value="1440" {% if current_user.import_email_check_interval == 1440 %}selected{% endif %}>24 horas</option>
+                                    </select>
+                                    <div class="form-text">Com que frequência o sistema deve verificar sua caixa de email automaticamente</div>
                                 </div>
                                 
                                 <div class="d-flex gap-2">

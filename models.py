@@ -49,6 +49,7 @@ class User(UserMixin, db.Model):
     import_email_ssl = db.Column(db.Boolean, default=True)
     import_email_configured = db.Column(db.Boolean, default=False)
     import_email_last_check = db.Column(db.DateTime, nullable=True)
+    import_email_check_interval = db.Column(db.Integer, default=60)  # Intervalo em minutos (padrão: 1 hora)
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

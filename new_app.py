@@ -2152,6 +2152,7 @@ def save_email_credentials():
         custom_server = request.form.get('custom_server')
         port = int(request.form.get('port', 993))
         ssl = 'ssl' in request.form
+        check_interval = int(request.form.get('check_interval', 60))
         
         # Use custom server if specified
         if server == 'custom' and custom_server:
