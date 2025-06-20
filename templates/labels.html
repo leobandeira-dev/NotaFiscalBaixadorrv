@@ -212,6 +212,18 @@
                                placeholder="Ex: 01, 02, A1">
                     </div>
                     
+                    <!-- Estilo de Layout -->
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="fas fa-paint-brush me-1"></i>Estilo de Layout
+                        </label>
+                        <select class="form-select" id="layout_style">
+                            <option value="layout1" selected>Layout 1 - Moderno (Fundos cinza, visual suave)</option>
+                            <option value="layout2">Layout 2 - Alto Contraste (Faixas pretas, visual profissional)</option>
+                        </select>
+                        <div class="form-text">Escolha o estilo visual das suas etiquetas</div>
+                    </div>
+                    
                     <!-- Upload de Logo -->
                     <div class="mb-3">
                         <label class="form-label">Logo da Empresa</label>
@@ -636,6 +648,7 @@
             formData.append('company_name', document.getElementById('company_name').value);
             formData.append('company_subtitle', document.getElementById('company_subtitle').value);
             formData.append('area_code', document.getElementById('area_code').value);
+            formData.append('layout_style', document.getElementById('layout_style').value);
             formData.append('paper_size', document.getElementById('paper_size').value);
             formData.append('paper_width_mm', document.getElementById('paper_width_mm').value);
             formData.append('paper_height_mm', document.getElementById('paper_height_mm').value);

@@ -2135,6 +2135,7 @@ def generate_custom_labels(xml_id):
         company_name = request.form.get('company_name', current_user.company_name or 'SUA EMPRESA')
         company_subtitle = request.form.get('company_subtitle', current_user.company_subtitle or 'TRANSPORTE')
         area_code = request.form.get('area_code', current_user.default_area_code or '01')
+        layout_style = request.form.get('layout_style', 'layout1')
         paper_size = request.form.get('paper_size', '10x15')
         paper_width_mm = int(request.form.get('paper_width_mm', 100))
         paper_height_mm = int(request.form.get('paper_height_mm', 150))
@@ -2183,12 +2184,12 @@ def generate_custom_labels(xml_id):
             flash('XML não encontrado.', 'error')
             return redirect(url_for('label_generator', xml_id=xml_id))
         
-        # Configurações da empresa (usando configurações salvas do usuário)
-        company_name = current_user.company_name or "SUA EMPRESA"
-        company_subtitle = current_user.company_subtitle or "TRANSPORTE"
-        company_logo_path = current_user.company_logo_path
-        area_code = current_user.default_area_code or "01"
-        layout_style = current_user.preferred_layout or "layout1"
+        # Configurações da empresa (usando configurações do formulário)
+        company_name = request.form.get('company_name', current_user.company_name or "SUA EMPRESA")
+        company_subtitle = request.form.get('company_subtitle', current_user.company_subtitle or "TRANSPORTE")
+        company_logo_path = logo_path  # Já processado acima
+        area_code = request.form.get('area_code', current_user.default_area_code or "01")
+        layout_style = request.form.get('layout_style', 'layout1')
         
         # Gerar etiquetas com sistema de batch processing (elimina erros de memória)
         labels = generate_multiple_responsive_labels_from_volumes(
