@@ -260,12 +260,12 @@ def get_user_xml_credits(user_id: int) -> int:
         Quantidade de créditos XML disponíveis
     """
     try:
-        from models import db
-        from package_models import StripeTransaction, FeatureUsage
+        from models import db, StripeTransaction
+        from package_models import FeatureUsage
         from sqlalchemy import func
         
         # Somar todas as compras de créditos XML
-        total_purchased = db.session.query(func.sum(StripeTransaction.credits_added))\
+        total_purchased = db.session.query(func.sum(StripeTransaction.credits_purchased))\
             .filter(
                 StripeTransaction.user_id == user_id,
                 StripeTransaction.status == 'paid',
@@ -322,8 +322,8 @@ def get_xml_usage_stats(user_id: int) -> dict:
         Dicionário com estatísticas de uso
     """
     try:
-        from models import db
-        from package_models import StripeTransaction, FeatureUsage
+        from models import db, StripeTransaction
+        from package_models import FeatureUsage
         from sqlalchemy import func
         from datetime import datetime, timedelta
         
