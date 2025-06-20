@@ -75,15 +75,10 @@ def index():
 @app.route('/login')
 @app.route('/register')
 def load_full_app():
-    """Lazy load complete application functionality"""
+    """Redirect to full application functionality"""
     try:
-        # Import and initialize complete application
-        from new_app import app as full_app
-        
-        # Transfer request to full application
-        with full_app.app_context():
-            return full_app.full_dispatch_request()
-            
+        # For now, redirect to login page template or show coming soon
+        return redirect('/#login-section')
     except Exception as e:
         logger.error(f"Failed to load full application: {e}")
         return jsonify({
