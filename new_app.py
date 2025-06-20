@@ -2277,52 +2277,7 @@ def check_pop3_messages():
         logger.error(f"Erro ao conectar POP3: {e}")
         return jsonify({'success': False, 'message': f'Erro de conexão: {str(e)}'})
 
-# Cleaned up duplicate routes
-        if current_user.pop3_ssl:
-            pop3 = poplib.POP3_SSL(current_user.pop3_server, current_user.pop3_port)
-        else:
-            pop3 = poplib.POP3(current_user.pop3_server, current_user.pop3_port)
-        
-        # Obter informações do servidor
-        welcome_msg = pop3.getwelcome()
-        
-        # Tentar obter estatísticas básicas (sem login completo)
-        try:
-            pop3.user(current_user.pop3_email)
-            # Note: Não fazemos pop3.pass_() aqui para evitar problemas com senha hasheada
-            
-            pop3.quit()
-            
-            return jsonify({
-                'success': True,
-                'message': 'Conexão POP3 estabelecida com sucesso',
-                'server_info': {
-                    'server': current_user.pop3_server,
-                    'port': current_user.pop3_port,
-                    'ssl': current_user.pop3_ssl,
-                    'email': current_user.pop3_email,
-                    'welcome': welcome_msg.decode('utf-8') if isinstance(welcome_msg, bytes) else str(welcome_msg)
-                }
-            })
-            
-        except Exception as e:
-            pop3.quit()
-            return jsonify({
-                'success': True,
-                'message': 'Conexão estabelecida, mas erro na autenticação',
-                'server_info': {
-                    'server': current_user.pop3_server,
-                    'port': current_user.pop3_port,
-                    'ssl': current_user.pop3_ssl,
-                    'email': current_user.pop3_email,
-                    'welcome': welcome_msg.decode('utf-8') if isinstance(welcome_msg, bytes) else str(welcome_msg),
-                    'auth_error': str(e)
-                }
-            })
-            
-    except Exception as e:
-        logger.error(f"Erro ao testar conexão POP3: {e}")
-        return jsonify({'success': False, 'message': f'Erro de conexão: {str(e)}'})
+# Clean email import system restored
 
 @app.route('/update-pop3-config', methods=['POST'])
 @login_required
@@ -2550,83 +2505,7 @@ def check_emails_now():
         logger.error(f"Erro ao verificar emails: {e}")
         return jsonify({'success': False, 'message': 'Erro interno do servidor'})
 
-@app.route('/test-imap-connection', methods=['POST'])
-@login_required
-@rate_limit_check(max_requests=5, window_minutes=10)
-def test_imap_connection():
-    """Testa conexão IMAP"""
-    try:
-        import imaplib
-        
-        server = current_user.import_email_server
-        port = current_user.import_email_port or 993
-        email = current_user.import_email
-        password = request.json.get('password')
-        
-        if current_user.import_email_ssl:
-            imap = imaplib.IMAP4_SSL(server, port)
-        else:
-            imap = imaplib.IMAP4(server, port)
-            
-        imap.login(email, password)
-        imap.select('INBOX')
-        imap.close()
-        imap.logout()
-        
-        return jsonify({'success': True, 'message': 'Conexão IMAP funcionando!'})
-        
-    except Exception as e:
-        logger.error(f"Erro ao testar conexão IMAP: {e}")
-        return jsonify({'success': False, 'message': f'Erro de conexão IMAP: {str(e)}'})
-
-@app.route('/test-smtp-connection', methods=['POST'])
-@login_required
-@rate_limit_check(max_requests=5, window_minutes=10)
-def test_smtp_connection():
-    """Testa conexão SMTP"""
-    try:
-        import smtplib
-        
-        server = current_user.smtp_server
-        port = current_user.smtp_port or 587
-        email = current_user.smtp_email
-        password = request.json.get('password')
-        
-        if current_user.smtp_ssl:
-            smtp = smtplib.SMTP_SSL(server, port)
-        else:
-            smtp = smtplib.SMTP(server, port)
-            smtp.starttls()
-            
-        smtp.login(email, password)
-        smtp.quit()
-        
-        return jsonify({'success': True, 'message': 'Conexão SMTP funcionando!'})
-        
-    except Exception as e:
-        logger.error(f"Erro ao testar conexão SMTP: {e}")
-        return jsonify({'success': False, 'message': f'Erro de conexão SMTP: {str(e)}'})
-
-@app.route('/check-emails-now', methods=['POST'])
-@login_required
-@rate_limit_check(max_requests=3, window_minutes=10)
-def check_emails_now():
-    """Verificação manual de emails"""
-    try:
-        # Usar email_xml_processor para verificar emails
-        from email_xml_processor import EmailXMLProcessor
-        
-        processor = EmailXMLProcessor()
-        result = processor.process_user_emails(current_user.id)
-        
-        return jsonify({
-            'success': True, 
-            'message': f'Verificação concluída. {result.get("processed", 0)} emails processados.'
-        })
-        
-    except Exception as e:
-        logger.error(f"Erro na verificação manual de emails: {e}")
-        return jsonify({'success': False, 'message': f'Erro: {str(e)}'})
+# Clean email import system - all corrupted route fragments removed
 
 
 @app.route('/process-email-xmls', methods=['POST'])
