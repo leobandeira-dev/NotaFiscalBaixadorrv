@@ -77,46 +77,56 @@ class CustomTransportLabelGenerator:
             raise
     
     def _draw_transport_label(self, c, xml_data, pedido_number, area_code, company_logo_path):
-        """Desenha a etiqueta completa personalizada"""
+        """Desenha a etiqueta completa personalizada com layout responsivo"""
+        
+        # Calcular distribuição responsiva do espaço
+        available_height = self.page_height - (20 * mm)  # Margem total
+        num_sections = 9  # Número de seções principais
+        
+        # Distribuir espaço uniformemente para layout harmonioso
+        section_spacing = available_height / num_sections
         
         # Posição inicial Y (começa do topo)
-        y_pos = self.page_height - 40 * mm
+        y_pos = self.page_height - 10 * mm
         
-        # 1. Header da empresa
-        self._draw_company_header(c, y_pos, company_logo_path)
-        y_pos -= 30 * mm
+        # 1. Header da empresa (compacto)
+        y_pos = self._draw_company_header(c, y_pos, company_logo_path)
+        y_pos -= section_spacing * 0.8
         
-        # 2. ID e QR Code
+        # 2. ID e QR Code (lado a lado otimizado)
         y_pos = self._draw_id_section(c, xml_data, y_pos)
-        y_pos -= 15 * mm
+        y_pos -= section_spacing * 1.2
         
-        # 3. NF Section (fundo preto)
+        # 3. NF Section
         y_pos = self._draw_nf_section(c, xml_data, y_pos)
-        y_pos -= 15 * mm
+        y_pos -= section_spacing * 0.6
         
-        # 4. Pedido Section (fundo preto)
+        # 4. Pedido Section
         y_pos = self._draw_pedido_section(c, pedido_number or xml_data.get('numero_nf', '00000'), y_pos)
-        y_pos -= 15 * mm
+        y_pos -= section_spacing * 0.6
         
-        # 5. Remetente Section (fundo preto)
+        # 5. Remetente (compacto)
         y_pos = self._draw_remetente_section(c, xml_data, y_pos)
-        y_pos -= 25 * mm
+        y_pos -= section_spacing * 0.8
         
-        # 6. Destinatário e Endereço
+        # 6. Destinatário (expandido)
         y_pos = self._draw_destinatario_section(c, xml_data, y_pos)
-        y_pos -= 25 * mm
+        y_pos -= section_spacing * 1.2
         
-        # 7. Cidade/UF Section (fundo preto)
+        # 7. Cidade/UF
         y_pos = self._draw_cidade_section(c, xml_data, y_pos)
-        y_pos -= 15 * mm
+        y_pos -= section_spacing * 0.6
         
-        # 8. Peso Section (fundo preto)
+        # 8. Peso Section
         y_pos = self._draw_peso_section(c, xml_data, y_pos)
-        y_pos -= 15 * mm
+        y_pos -= section_spacing * 0.6
         
-        # 9. Volume Section (fundo preto)
+        # 9. Volume Section
         y_pos = self._draw_volume_section(c, xml_data, y_pos)
-        y_pos -= 50 * mm
+        
+        # 8. Área e Rodapé
+        self._draw_area_section(c, area_code)
+        self._draw_footer(c)
         
         # 10. Área (canto inferior direito)
         self._draw_area_section(c, area_code)
