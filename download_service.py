@@ -83,70 +83,70 @@ class DownloadService:
                 xml_file.user_id = user_id
                 xml_file.filename = f"{invoice_key}.xml"
                 xml_file.invoice_key = invoice_key
-            xml_file.file_path = file_path
-            xml_file.xml_content = xml_content
-            xml_file.import_type = 'SISTEMA'
-            xml_file.job_id = job_id
-            xml_file.imported_at = datetime.utcnow()
-            
-            # Dados extraídos do XML com limitação de caracteres
-            xml_file.numero_nf = (xml_data.get('numero_nf', 'N/A') or 'N/A')[:50]
-            xml_file.serie_nf = (xml_data.get('serie_nf', 'N/A') or 'N/A')[:10]
-            xml_file.data_emissao = xml_data.get('data_emissao')
-            xml_file.valor_total = xml_data.get('valor_total', 0.0)
-            xml_file.peso_bruto = xml_data.get('peso_bruto', 0.0)
-            xml_file.quantidade_volumes = xml_data.get('volumes', 0)
-            xml_file.cnpj_emitente = (xml_data.get('cnpj_emitente', 'N/A') or 'N/A')[:14]
-            xml_file.nome_emitente = (xml_data.get('nome_emitente', 'N/A') or 'N/A')[:255]
-            xml_file.remetente_razao = (xml_data.get('remetente_razao', xml_data.get('nome_emitente', '')) or '')[:255]
-            xml_file.remetente_cidade = (xml_data.get('remetente_cidade', xml_data.get('cidade_emitente', '')) or '')[:100]
-            xml_file.remetente_uf = (xml_data.get('remetente_uf', xml_data.get('uf_emitente', '')) or '')[:2]
-            xml_file.remetente_endereco = (xml_data.get('remetente_endereco', xml_data.get('endereco_emitente', '')) or '')[:500]
-            xml_file.remetente_cep = (xml_data.get('remetente_cep', xml_data.get('cep_emitente', '')) or '')[:8]
-            xml_file.destinatario_cnpj_cpf = (xml_data.get('destinatario_cnpj_cpf', xml_data.get('cnpj_destinatario', '')) or '')[:14]
-            xml_file.destinatario_razao = (xml_data.get('destinatario_razao', xml_data.get('nome_destinatario', '')) or '')[:255]
-            xml_file.destinatario_cidade = (xml_data.get('destinatario_cidade', xml_data.get('cidade_destinatario', '')) or '')[:100]
-            xml_file.destinatario_uf = (xml_data.get('destinatario_uf', xml_data.get('uf_destinatario', '')) or '')[:2]
-            xml_file.destinatario_endereco = (xml_data.get('destinatario_endereco', xml_data.get('endereco_destinatario', '')) or '')[:500]
-            xml_file.destinatario_cep = (xml_data.get('destinatario_cep', xml_data.get('cep_destinatario', '')) or '')[:8]
-            
-            db.session.add(xml_file)
-            
-            # Buscar módulo de serviço XML
-            xml_module = ServiceModule.query.filter_by(name='xml_download').first()
-            if not xml_module:
-                logger.error("Módulo xml_download não encontrado")
+                xml_file.file_path = file_path
+                xml_file.xml_content = xml_content
+                xml_file.import_type = 'SISTEMA'
+                xml_file.job_id = job_id
+                xml_file.imported_at = datetime.utcnow()
+                
+                # Dados extraídos do XML com limitação de caracteres
+                xml_file.numero_nf = (xml_data.get('numero_nf', 'N/A') or 'N/A')[:50]
+                xml_file.serie_nf = (xml_data.get('serie_nf', 'N/A') or 'N/A')[:10]
+                xml_file.data_emissao = xml_data.get('data_emissao')
+                xml_file.valor_total = xml_data.get('valor_total', 0.0)
+                xml_file.peso_bruto = xml_data.get('peso_bruto', 0.0)
+                xml_file.quantidade_volumes = xml_data.get('volumes', 0)
+                xml_file.cnpj_emitente = (xml_data.get('cnpj_emitente', 'N/A') or 'N/A')[:14]
+                xml_file.nome_emitente = (xml_data.get('nome_emitente', 'N/A') or 'N/A')[:255]
+                xml_file.remetente_razao = (xml_data.get('remetente_razao', xml_data.get('nome_emitente', '')) or '')[:255]
+                xml_file.remetente_cidade = (xml_data.get('remetente_cidade', xml_data.get('cidade_emitente', '')) or '')[:100]
+                xml_file.remetente_uf = (xml_data.get('remetente_uf', xml_data.get('uf_emitente', '')) or '')[:2]
+                xml_file.remetente_endereco = (xml_data.get('remetente_endereco', xml_data.get('endereco_emitente', '')) or '')[:500]
+                xml_file.remetente_cep = (xml_data.get('remetente_cep', xml_data.get('cep_emitente', '')) or '')[:8]
+                xml_file.destinatario_cnpj_cpf = (xml_data.get('destinatario_cnpj_cpf', xml_data.get('cnpj_destinatario', '')) or '')[:14]
+                xml_file.destinatario_razao = (xml_data.get('destinatario_razao', xml_data.get('nome_destinatario', '')) or '')[:255]
+                xml_file.destinatario_cidade = (xml_data.get('destinatario_cidade', xml_data.get('cidade_destinatario', '')) or '')[:100]
+                xml_file.destinatario_uf = (xml_data.get('destinatario_uf', xml_data.get('uf_destinatario', '')) or '')[:2]
+                xml_file.destinatario_endereco = (xml_data.get('destinatario_endereco', xml_data.get('endereco_destinatario', '')) or '')[:500]
+                xml_file.destinatario_cep = (xml_data.get('destinatario_cep', xml_data.get('cep_destinatario', '')) or '')[:8]
+                
+                db.session.add(xml_file)
+                
+                # Buscar módulo de serviço XML
+                xml_module = ServiceModule.query.filter_by(name='xml_download').first()
+                if not xml_module:
+                    logger.error("Módulo xml_download não encontrado")
+                    return False
+                
+                # Criar registro de uso
+                usage_record = UsageRecord()
+                usage_record.user_id = user_id
+                usage_record.module_id = xml_module.id
+                usage_record.quantity = 1
+                usage_record.cost = 0.0  # Cost tracking moved to credit system
+                usage_record.description = f"Download XML: {invoice_key[:10]}..."
+                usage_record.job_id = job_id
+                
+                db.session.add(usage_record)
+                
+                # Log crédito debitado
+                if not is_trial_active:
+                    logger.info(f"1 crédito XML debitado do usuário {user_id}")
+                else:
+                    logger.info(f"Download gratuito para usuário {user_id} (período de teste)")
+                
+                user.updated_at = datetime.utcnow()
+                
+                # Commit todas as mudanças
+                db.session.commit()
+                
+                logger.info(f"Download processado com sucesso: usuário {user_id}, XML {invoice_key}, XML salvo no banco")
+                return True
+                
+            except Exception as e:
+                logger.error(f"Erro ao processar download: {e}")
+                db.session.rollback()
                 return False
-            
-            # Criar registro de uso
-            usage_record = UsageRecord()
-            usage_record.user_id = user_id
-            usage_record.module_id = xml_module.id
-            usage_record.quantity = 1
-            usage_record.cost = 0.0  # Cost tracking moved to credit system
-            usage_record.description = f"Download XML: {invoice_key[:10]}..."
-            usage_record.job_id = job_id
-            
-            db.session.add(usage_record)
-            
-            # Log crédito debitado
-            if not is_trial_active:
-                logger.info(f"1 crédito XML debitado do usuário {user_id}")
-            else:
-                logger.info(f"Download gratuito para usuário {user_id} (período de teste)")
-            
-            user.updated_at = datetime.utcnow()
-            
-            # Commit todas as mudanças
-            db.session.commit()
-            
-            logger.info(f"Download processado com sucesso: usuário {user_id}, XML {invoice_key}, XML salvo no banco")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Erro ao processar download: {e}")
-            db.session.rollback()
-            return False
     
     @staticmethod
     def get_user_xmls(user_id: int, limit: int = 50) -> list:
