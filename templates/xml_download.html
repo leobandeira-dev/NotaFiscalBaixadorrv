@@ -424,7 +424,7 @@
                     <div class="card-header">
                         <h5 class="card-title">
                             <i class="fas fa-tag me-2"></i>
-                            Preços dos Serviços
+                            Sistema de Créditos
                         </h5>
                     </div>
                     <ul class="pricing-list">
@@ -433,7 +433,7 @@
                                 <i class="fas fa-file-alt" style="color: var(--primary-purple);"></i>
                                 Download XML
                             </span>
-                            <span class="service-price">R$ 0,10</span>
+                            <span class="service-price">1 crédito</span>
                         </li>
                         <li>
                             <span class="service-name">
@@ -447,14 +447,14 @@
                                 <i class="fas fa-code" style="color: #3b82f6;"></i>
                                 Uso via API
                             </span>
-                            <span class="service-price">R$ 0,10</span>
+                            <span class="service-price">1 crédito</span>
                         </li>
                         <li>
                             <span class="service-name">
                                 <i class="fas fa-tags" style="color: var(--warning-color);"></i>
                                 Módulo Etiquetas
                             </span>
-                            <span class="service-price">R$ 49,90</span>
+                            <span class="service-price">R$ 49,90/mês</span>
                         </li>
                     </ul>
                 </div>
@@ -485,11 +485,11 @@
                     </div>
                     {% endif %}
                     
-                    {% if current_user.current_balance < 0.10 and not current_user.is_trial_active() %}
+                    {% if (xml_balance or 0) <= 0 and not current_user.is_trial_active() %}
                     <div class="mt-3">
-                        <a href="{{ url_for('add_balance') }}" class="btn-outline-secondary">
+                        <a href="{{ url_for('comprar_creditos_simple') }}" class="btn-outline-secondary">
                             <i class="fas fa-plus me-2"></i>
-                            Adicionar Saldo
+                            Comprar Créditos XML
                         </a>
                     </div>
                     {% endif %}
@@ -546,8 +546,8 @@
                                     <span class="cost-value" id="validKeysCount">0</span>
                                 </div>
                                 <div class="cost-row">
-                                    <span class="cost-label">Download XML (R$ 0,10 cada):</span>
-                                    <span class="cost-value" id="xmlCost">R$ 0,00</span>
+                                    <span class="cost-label">Créditos XML necessários:</span>
+                                    <span class="cost-value" id="xmlCost">0 créditos</span>
                                 </div>
                                 <div class="cost-row">
                                     <span class="cost-label">Geração DANFE:</span>
@@ -555,7 +555,7 @@
                                 </div>
                                 <div class="cost-row">
                                     <span class="cost-label">Total:</span>
-                                    <span class="cost-value" id="totalCost">R$ 0,00</span>
+                                    <span class="cost-value" id="totalCost">0 créditos XML</span>
                                 </div>
                             </div>
                             
@@ -580,7 +580,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        const currentBalance = {{ current_user.current_balance }};
+        const xmlCredits = {{ xml_balance or 0 }};
         const isTrialActive = {{ 'true' if current_user.is_trial_active() else 'false' }};
         
         function validateInvoiceKey(key) {
@@ -609,24 +609,23 @@
                 return;
             }
             
-            // Update calculator
-            const xmlCost = validKeys.length * 0.10;
-            const totalCost = xmlCost;
+            // Update calculator - show credit consumption instead of monetary cost
+            const creditsNeeded = validKeys.length;
             
             document.getElementById('validKeysCount').textContent = validKeys.length;
-            document.getElementById('xmlCost').textContent = `R$ ${xmlCost.toFixed(2)}`;
-            document.getElementById('totalCost').textContent = `R$ ${totalCost.toFixed(2)}`;
+            document.getElementById('xmlCost').textContent = `${creditsNeeded} crédito${creditsNeeded > 1 ? 's' : ''}`;
+            document.getElementById('totalCost').textContent = `${creditsNeeded} crédito${creditsNeeded > 1 ? 's' : ''} XML`;
             
             // Show calculator
             document.getElementById('costCalculator').style.display = 'block';
             
-            // Check if user can afford or has trial
-            const canAfford = isTrialActive || currentBalance >= totalCost;
+            // Check if user has enough credits or trial active
+            const hasEnoughCredits = isTrialActive || xmlCredits >= creditsNeeded;
             const submitBtn = document.getElementById('submitBtn');
             
-            if (!canAfford) {
+            if (!hasEnoughCredits) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Saldo insuficiente';
+                submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Créditos XML insuficientes';
             } else if (validKeys.length > 50) {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Máximo 50 chaves por vez';
