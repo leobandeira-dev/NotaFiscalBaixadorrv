@@ -1837,17 +1837,26 @@ def generate_custom_labels(xml_id):
         
         logger.info(f"Total de volumes configurados: {len(volumes_config)}")
         
-        # Gerar etiquetas múltiplas responsivas
-        from responsive_label_generator import generate_multiple_responsive_labels_from_volumes
+        # Gerar etiquetas com layout escolhido pelo usuário
+        from multi_layout_label_generator import generate_custom_label_with_layout
         
-        labels = generate_multiple_responsive_labels_from_volumes(
-            xml_record=xml_data,
-            volumes_config=volumes_config,
-            company_name=company_name,
-            company_logo_path=logo_path,
-            paper_width_mm=paper_width_mm,
-            paper_height_mm=paper_height_mm,
-            area_code=area_code
+        # Configuração do papel
+        paper_config = {
+            'size': 'custom',
+            'custom_width': paper_width_mm / 10,  # Converter mm para cm
+            'custom_height': paper_height_mm / 10,
+            'total_volumes': total_volumes,
+            'volume_weights': [config['peso'] for config in volumes_config]
+        }
+        
+        # Usar layout preferido do usuário (layout1 ou layout2)
+        layout_style = current_user.preferred_layout or 'layout1'
+        
+        labels = generate_custom_label_with_layout(
+            xml_id=xml_id,
+            user=current_user,
+            paper_config=paper_config,
+            layout_style=layout_style
         )
         
         if not labels:

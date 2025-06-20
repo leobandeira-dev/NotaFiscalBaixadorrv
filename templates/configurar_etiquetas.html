@@ -89,50 +89,106 @@
             <div class="card shadow-sm mt-4">
                 <div class="card-header bg-info text-white">
                     <h6 class="mb-0">
-                        <i class="fas fa-eye"></i> Preview da Etiqueta
+                        <i class="fas fa-eye"></i> Preview dos Layouts
                     </h6>
                 </div>
                 <div class="card-body">
-                    <div class="border rounded p-3" style="background-color: #f8f9fa;">
-                        <div class="text-center mb-3">
-                            {% if current_user.company_logo_path %}
-                                <img src="{{ url_for('serve_logo', filename=current_user.company_logo_path.split('/')[-1]) }}" 
-                                     alt="Logo" style="max-height: 40px;">
-                            {% else %}
-                                <h5 class="mb-0">{{ current_user.company_name }}</h5>
-                                {% if current_user.company_subtitle %}
-                                <small class="text-muted">{{ current_user.company_subtitle }}</small>
-                                {% endif %}
-                            {% endif %}
-                        </div>
-                        
-                        <div class="bg-dark text-white p-2 mb-2 rounded">
-                            <strong>NF: 12345</strong>
-                        </div>
-                        
-                        <div class="bg-dark text-white p-2 mb-2 rounded">
-                            <strong>Pedido: 67890</strong>
-                        </div>
-                        
-                        <div class="bg-dark text-white p-2 mb-2 rounded">
-                            <strong>Remetente: {{ current_user.company_name }}</strong>
-                        </div>
-                        
-                        <p class="mb-2"><strong>Destinatário:</strong> Cliente Exemplo</p>
-                        <p class="mb-2"><strong>Endereço:</strong> Rua Exemplo, 123 - Cidade/UF</p>
-                        
-                        <div class="d-flex justify-content-between align-items-end">
-                            <div>
-                                <div class="bg-dark text-white p-2 rounded d-inline-block me-2">
-                                    <strong>Peso: 10.5</strong>
+                    <div class="row">
+                        <!-- Layout 1 - Moderno -->
+                        <div class="col-md-6">
+                            <h6 class="text-center mb-3">Layout 1 - Moderno</h6>
+                            <div class="border rounded p-3" style="background-color: #f8f9fa;">
+                                <div class="text-center mb-3">
+                                    {% if current_user.company_logo_path %}
+                                        <img src="{{ url_for('serve_logo', filename=current_user.company_logo_path.split('/')[-1]) }}" 
+                                             alt="Logo" style="max-height: 30px;">
+                                    {% else %}
+                                        <h6 class="mb-0">{{ current_user.company_name }}</h6>
+                                        {% if current_user.company_subtitle %}
+                                        <small class="text-muted">{{ current_user.company_subtitle }}</small>
+                                        {% endif %}
+                                    {% endif %}
                                 </div>
-                                <div class="bg-dark text-white p-2 rounded d-inline-block">
-                                    <strong>Volume: 1/2</strong>
+                                
+                                <div class="bg-light border p-2 mb-2 rounded">
+                                    <strong>NF: 12345</strong>
+                                </div>
+                                
+                                <div class="bg-light border p-2 mb-2 rounded">
+                                    <strong>Pedido: 67890</strong>
+                                </div>
+                                
+                                <div class="bg-light border p-2 mb-2 rounded">
+                                    <strong>Remetente: {{ current_user.company_name }}</strong>
+                                </div>
+                                
+                                <p class="mb-1"><strong>Destinatário:</strong> Cliente Exemplo</p>
+                                <p class="mb-2 small">Rua Exemplo, 123 - Cidade/UF</p>
+                                
+                                <div class="d-flex justify-content-between align-items-end">
+                                    <div>
+                                        <div class="bg-light border p-1 rounded d-inline-block me-1">
+                                            <small><strong>Peso: 10.5</strong></small>
+                                        </div>
+                                        <div class="bg-light border p-1 rounded d-inline-block">
+                                            <small><strong>Volume: 1/2</strong></small>
+                                        </div>
+                                    </div>
+                                    <div class="bg-light border p-1 rounded text-center" style="min-width: 50px;">
+                                        <div><small><strong>ÁREA</strong></small></div>
+                                        <div class="h6 mb-0">{{ current_user.default_area_code or '01' }}</div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="bg-dark text-white p-2 rounded text-center" style="min-width: 60px;">
-                                <div><strong>ÁREA</strong></div>
-                                <div class="h4 mb-0">{{ current_user.default_area_code or '01' }}</div>
+                        </div>
+                        
+                        <!-- Layout 2 - Transul Style -->
+                        <div class="col-md-6">
+                            <h6 class="text-center mb-3">Layout 2 - Transul</h6>
+                            <div class="border rounded p-0" style="background-color: #ffffff;">
+                                <div class="bg-dark text-white p-2 text-center">
+                                    {% if current_user.company_logo_path %}
+                                        <img src="{{ url_for('serve_logo', filename=current_user.company_logo_path.split('/')[-1]) }}" 
+                                             alt="Logo" style="max-height: 30px;">
+                                    {% else %}
+                                        <h6 class="mb-0">{{ current_user.company_name }}</h6>
+                                        {% if current_user.company_subtitle %}
+                                        <small>{{ current_user.company_subtitle }}</small>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="p-2">
+                                    <div class="bg-dark text-white p-2 mb-2">
+                                        <strong>NF: 12345</strong>
+                                    </div>
+                                    
+                                    <div class="bg-dark text-white p-2 mb-2">
+                                        <strong>Pedido: 67890</strong>
+                                    </div>
+                                    
+                                    <div class="bg-dark text-white p-2 mb-2">
+                                        <strong>Remetente: {{ current_user.company_name }}</strong>
+                                    </div>
+                                    
+                                    <p class="mb-1"><strong>Destinatário:</strong> Cliente Exemplo</p>
+                                    <p class="mb-2 small">Rua Exemplo, 123 - Cidade/UF</p>
+                                    
+                                    <div class="d-flex justify-content-between align-items-end">
+                                        <div>
+                                            <div class="bg-dark text-white p-1 d-inline-block me-1">
+                                                <small><strong>Peso: 10.5</strong></small>
+                                            </div>
+                                            <div class="bg-dark text-white p-1 d-inline-block">
+                                                <small><strong>Volume: 1/2</strong></small>
+                                            </div>
+                                        </div>
+                                        <div class="bg-dark text-white p-1 text-center" style="min-width: 50px;">
+                                            <div><small><strong>ÁREA</strong></small></div>
+                                            <div class="h6 mb-0">{{ current_user.default_area_code or '01' }}</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
