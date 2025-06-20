@@ -1,164 +1,167 @@
 #!/usr/bin/env python3
 """
-Teste completo do sistema de layouts para etiquetas de transporte
-Valida correções de sobreposição de texto e visibilidade
+Teste completo do sistema de layout com diagnóstico visual
 """
 
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from responsive_label_generator import ResponsiveTransportLabelGenerator
-from xml_processor import extract_xml_data
+from io import BytesIO
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.units import mm
 
-def test_layout_system():
-    """Testa ambos os layouts com dados reais"""
+def test_basic_framing():
+    """Testa enquadramento básico do ReportLab"""
     
-    # XML de teste com dados completos
+    print("=== TESTE BÁSICO DE ENQUADRAMENTO REPORTLAB ===")
+    
+    # Criar PDF de teste
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(100*mm, 150*mm))
+    
+    # Teste Layout 1 - Fundo cinza com borda
+    print("\n--- Testando Layout 1 (Cinza + Borda) ---")
+    
+    # Retângulo com fundo cinza claro
+    c.setFillColor(colors.lightgrey)
+    c.rect(10, 100, 80, 20, fill=1, stroke=0)
+    
+    # Borda cinza escura
+    c.setStrokeColor(colors.grey)
+    c.setLineWidth(1.5)
+    c.rect(10, 100, 80, 20, fill=0, stroke=1)
+    
+    # Texto preto
+    c.setFillColor(colors.black)
+    c.setFont("Helvetica-Bold", 10)
+    c.drawString(15, 107, "TESTE LAYOUT 1 - CINZA + BORDA")
+    
+    # Teste Layout 2 - Fundo preto
+    print("--- Testando Layout 2 (Preto + Texto Branco) ---")
+    
+    # Retângulo preto
+    c.setFillColor(colors.black)
+    c.rect(10, 70, 80, 20, fill=1, stroke=0)
+    
+    # Texto branco
+    c.setFillColor(colors.white)
+    c.drawString(15, 77, "TESTE LAYOUT 2 - PRETO + BRANCO")
+    
+    # Teste simples de borda
+    print("--- Testando Borda Simples ---")
+    c.setStrokeColor(colors.red)
+    c.setLineWidth(2)
+    c.rect(10, 40, 80, 20, fill=0, stroke=1)
+    c.setFillColor(colors.black)
+    c.drawString(15, 47, "TESTE BORDA VERMELHA")
+    
+    c.save()
+    
+    # Salvar arquivo
+    with open("teste_basico_enquadramento.pdf", "wb") as f:
+        f.write(buffer.getvalue())
+    
+    size = len(buffer.getvalue())
+    print(f"✅ PDF básico gerado: teste_basico_enquadramento.pdf ({size:,} bytes)")
+    print("   - Deve mostrar 3 retângulos com estilos diferentes")
+    print("   - Layout 1: Fundo cinza claro + borda cinza")
+    print("   - Layout 2: Fundo preto + texto branco")
+    print("   - Teste: Borda vermelha simples")
+    
+    return True
+
+def test_responsive_generator_fixed():
+    """Testa gerador responsivo com correções"""
+    from responsive_label_generator import ResponsiveTransportLabelGenerator
+    
+    print("\n=== TESTE GERADOR RESPONSIVO CORRIGIDO ===")
+    
     xml_content = """<?xml version="1.0" encoding="UTF-8"?>
     <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
         <NFe>
             <infNFe>
                 <ide>
-                    <nNF>417536</nNF>
+                    <nNF>417549</nNF>
                     <serie>2</serie>
-                    <dhEmi>2025-06-19T10:30:00-03:00</dhEmi>
                 </ide>
                 <emit>
-                    <xNome>CORSUL COMERCIO DE FERRO E ACO LTDA</xNome>
-                    <enderEmit>
-                        <xLgr>RUA GUARUJA</xLgr>
-                        <nro>434</nro>
-                        <xBairro>ITAUM</xBairro>
-                        <xMun>JOINVILLE</xMun>
-                        <UF>SC</UF>
-                        <CEP>89210001</CEP>
-                    </enderEmit>
+                    <xNome>TESTE EMPRESA LTDA</xNome>
                 </emit>
                 <dest>
-                    <xNome>CONSORCIO ALUMAR</xNome>
+                    <xNome>CLIENTE DESTINATARIO TESTE</xNome>
                     <enderDest>
-                        <xLgr>ESTRADA DA ALUMAR</xLgr>
-                        <nro>S/N</nro>
-                        <xBairro>ITAQUI BACANGA</xBairro>
-                        <xMun>SAO LUIS</xMun>
-                        <UF>MA</UF>
-                        <CEP>65110000</CEP>
+                        <xMun>SAO PAULO</xMun>
+                        <UF>SP</UF>
                     </enderDest>
                 </dest>
                 <total>
                     <ICMSTot>
-                        <vNF>9150.00</vNF>
+                        <vNF>2500.00</vNF>
                     </ICMSTot>
                 </total>
                 <transp>
-                    <transporta>
-                        <xNome>SCHREIBER LOGISTICA LTDA</xNome>
-                    </transporta>
                     <vol>
-                        <qVol>2</qVol>
-                        <pesoB>16200</pesoB>
+                        <qVol>3</qVol>
+                        <pesoB>12000</pesoB>
                     </vol>
                 </transp>
             </infNFe>
         </NFe>
     </nfeProc>"""
     
-    # Extrair dados do XML
-    xml_data = extract_xml_data(xml_content)
-    print("=== DADOS EXTRAÍDOS DO XML ===")
-    for key, value in xml_data.items():
-        print(f"{key}: {value}")
-    
-    # Mock XMLFile object
-    class MockXMLFile:
-        def __init__(self):
-            self.numero_nf = "417536"
-            self.serie_nf = "2"
-            self.remetente_nome = "CORSUL COMERCIO DE FERRO E ACO LTDA"
-            self.remetente_cidade = "JOINVILLE"
-            self.remetente_uf = "SC"
-            self.destinatario_nome = "CONSORCIO ALUMAR"
-            self.destinatario_cidade = "SAO LUIS"
-            self.destinatario_uf = "MA"
-            self.valor_total = 9150.00
-            self.peso_bruto = 16.2
-            self.quantidade_volumes = 2
-            self.transportadora_nome = "SCHREIBER LOGISTICA LTDA"
-    
-    xml_record = MockXMLFile()
-    
-    # Configurações de teste
-    company_name = "CROSS TRANSPORTE"
-    company_subtitle = "LOGÍSTICA INTEGRADA"
-    area_code = "01"
-    paper_width_mm = 100
-    paper_height_mm = 150
-    
-    print("\n=== TESTANDO LAYOUT 1 (MODERNO) ===")
-    
-    # Teste Layout 1 - Moderno
-    generator_layout1 = ResponsiveTransportLabelGenerator(
-        paper_width_mm=paper_width_mm,
-        paper_height_mm=paper_height_mm,
+    # Layout 1 corrigido
+    print("\n--- Layout 1 Corrigido ---")
+    generator1 = ResponsiveTransportLabelGenerator(
+        company_name="TESTE EMPRESA LTDA",
+        company_subtitle="TRANSPORTE E LOGÍSTICA",
+        paper_width_mm=100,
+        paper_height_mm=150,
         layout_style="layout1"
     )
     
-    pdf_buffer_layout1 = generator_layout1.generate_transport_label(
+    pdf1 = generator1.generate_transport_label(
         xml_content=xml_content,
-        pedido_number="PED001",
-        area_code=area_code
+        pedido_number="PED1750427456789",
+        area_code="01"
     )
     
-    if pdf_buffer_layout1:
-        filename_layout1 = "teste_layout1_sistema_completo.pdf"
-        with open(filename_layout1, "wb") as f:
-            f.write(pdf_buffer_layout1.getvalue())
-        
-        file_size = len(pdf_buffer_layout1.getvalue())
-        print(f"✅ Layout 1 gerado com sucesso: {filename_layout1}")
-        print(f"   Tamanho: {file_size:,} bytes")
-        print(f"   Estilo: Moderno (fundos cinza claro com bordas)")
-        print(f"   Correções aplicadas: Espaçamento DESTINATÁRIO 30%, line spacing 15%")
+    if pdf1:
+        with open("teste_layout1_corrigido.pdf", "wb") as f:
+            f.write(pdf1.getvalue())
+        size1 = len(pdf1.getvalue())
+        print(f"✅ Layout 1 corrigido: teste_layout1_corrigido.pdf ({size1:,} bytes)")
     else:
-        print("❌ Falha ao gerar Layout 1")
+        print("❌ Falha Layout 1")
     
-    print("\n=== TESTANDO LAYOUT 2 (ALTO CONTRASTE) ===")
-    
-    # Teste Layout 2 - Alto Contraste
-    generator_layout2 = ResponsiveTransportLabelGenerator(
-        paper_width_mm=paper_width_mm,
-        paper_height_mm=paper_height_mm,
+    # Layout 2 corrigido
+    print("--- Layout 2 Corrigido ---")
+    generator2 = ResponsiveTransportLabelGenerator(
+        company_name="TESTE EMPRESA LTDA",
+        company_subtitle="TRANSPORTE E LOGÍSTICA",
+        paper_width_mm=100,
+        paper_height_mm=150,
         layout_style="layout2"
     )
     
-    pdf_buffer_layout2 = generator_layout2.generate_transport_label(
+    pdf2 = generator2.generate_transport_label(
         xml_content=xml_content,
-        pedido_number="PED002",
-        area_code=area_code
+        pedido_number="PED1750427456789",
+        area_code="01"
     )
     
-    if pdf_buffer_layout2:
-        filename_layout2 = "teste_layout2_sistema_completo.pdf"
-        with open(filename_layout2, "wb") as f:
-            f.write(pdf_buffer_layout2.getvalue())
-        
-        file_size = len(pdf_buffer_layout2.getvalue())
-        print(f"✅ Layout 2 gerado com sucesso: {filename_layout2}")
-        print(f"   Tamanho: {file_size:,} bytes")
-        print(f"   Estilo: Alto contraste (faixas pretas estilo Transul)")
-        print(f"   Correções aplicadas: Texto branco para ÁREA, visibilidade melhorada")
+    if pdf2:
+        with open("teste_layout2_corrigido.pdf", "wb") as f:
+            f.write(pdf2.getvalue())
+        size2 = len(pdf2.getvalue())
+        print(f"✅ Layout 2 corrigido: teste_layout2_corrigido.pdf ({size2:,} bytes)")
     else:
-        print("❌ Falha ao gerar Layout 2")
-    
-    print("\n=== RESUMO DOS TESTES ===")
-    print("✅ Sistema de layouts completamente funcional")
-    print("✅ Correções de sobreposição de texto aplicadas")
-    print("✅ Visibilidade da seção ÁREA corrigida")
-    print("✅ Ambos os layouts gerando PDFs válidos")
-    print("✅ Interface frontend integrada com backend")
+        print("❌ Falha Layout 2")
     
     return True
 
 if __name__ == "__main__":
-    test_layout_system()
+    test_basic_framing()
+    test_responsive_generator_fixed()

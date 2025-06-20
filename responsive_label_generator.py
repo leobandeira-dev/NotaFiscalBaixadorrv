@@ -314,20 +314,8 @@ class ResponsiveTransportLabelGenerator:
         """Desenha seção da empresa com altura responsiva e enquadramento baseado no layout"""
         section_y = y_pos - section_height
         
-        # Aplicar enquadramento baseado no estilo de layout
-        if self.layout_style == "layout2":
-            # Layout 2 (Transul) - Fundo preto com texto branco
-            c.setFillColor(colors.black)
-            c.rect(self.margin, section_y, self.content_width, section_height, fill=1)
-            c.setFillColor(colors.white)  # Texto branco
-        else:
-            # Layout 1 (Moderno) - Fundo cinza claro com borda
-            c.setFillColor(colors.Color(0.95, 0.95, 0.95))  # Cinza claro
-            c.rect(self.margin, section_y, self.content_width, section_height, fill=1)
-            c.setStrokeColor(colors.Color(0.7, 0.7, 0.7))  # Borda cinza
-            c.setLineWidth(1)
-            c.rect(self.margin, section_y, self.content_width, section_height, fill=0)
-            c.setFillColor(colors.black)  # Texto preto
+        # Aplicar enquadramento usando função unificada
+        self._apply_section_frame(c, self.margin, section_y, self.content_width, section_height)
         
         # Nome da empresa
         c.setFont("Helvetica-Bold", self.fonts['company_name'])
@@ -365,18 +353,23 @@ class ResponsiveTransportLabelGenerator:
     def _apply_section_frame(self, c, x, y, width, height):
         """Aplica enquadramento baseado no estilo de layout"""
         if self.layout_style == "layout2":
-            # Layout 2 (Transul) - Fundo preto com texto branco
+            # Layout 2 (Alto Contraste) - Fundo preto com texto branco
             c.setFillColor(colors.black)
-            c.rect(x, y, width, height, fill=1)
-            c.setFillColor(colors.white)  # Texto branco
+            c.rect(x, y, width, height, fill=1, stroke=0)
+            c.setFillColor(colors.white)  # Preparar texto branco
         else:
-            # Layout 1 (Moderno) - Fundo cinza claro com borda
-            c.setFillColor(colors.Color(0.95, 0.95, 0.95))  # Cinza claro
-            c.rect(x, y, width, height, fill=1)
-            c.setStrokeColor(colors.Color(0.7, 0.7, 0.7))  # Borda cinza
-            c.setLineWidth(1)
-            c.rect(x, y, width, height, fill=0)
-            c.setFillColor(colors.black)  # Texto preto
+            # Layout 1 (Moderno) - Fundo cinza claro com borda cinza
+            # Primeiro desenhar fundo cinza claro
+            c.setFillColor(colors.lightgrey)
+            c.rect(x, y, width, height, fill=1, stroke=0)
+            
+            # Depois desenhar borda cinza mais escura
+            c.setStrokeColor(colors.grey)
+            c.setLineWidth(1.5)
+            c.rect(x, y, width, height, fill=0, stroke=1)
+            
+            # Preparar texto preto
+            c.setFillColor(colors.black)
     
     def _draw_id_qr_section(self, c, xml_data, y_pos, section_height):
         """Desenha seção ID e QR Code"""
