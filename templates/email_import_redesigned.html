@@ -745,41 +745,50 @@ function testPop3Connection() {
         // Check if password is configured (has placeholder text indicating saved password)
         const hasConfiguredPassword = passwordElement.placeholder.includes('••••••••');
         
-        if (!email || (!password && !hasConfiguredPassword) || !server) {
-            alert('Por favor, preencha todos os campos obrigatórios (email, senha e servidor)');
+        if (!email || !server) {
+            alert('Por favor, preencha todos os campos obrigatórios (email e servidor)');
             return;
         }
         
-        // If password is empty but one is configured, prompt user to enter it for testing
+        // If password is empty but one is configured, use stored credentials
         if (!password && hasConfiguredPassword) {
-            const testPassword = prompt('Digite sua senha para testar a conexão:');
-            if (!testPassword) {
-                alert('Senha é necessária para testar a conexão');
-                return;
-            }
-            // Use the entered password for testing
-            password = testPassword;
+            // Use stored encrypted credentials - no need to prompt for password
+            password = null; // Backend will use stored encrypted password
         }
         
         // Update button state
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testando...';
         btn.disabled = true;
         
-        // Make API call
-        fetch('/test-pop3-connection', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                email: email,
-                password: password,
-                server: server,
-                port: parseInt(port),
-                ssl: ssl
-            })
-        })
-        .then(response => response.json())
+        // Make API call - if password is configured, use stored credentials endpoint
+        let fetchPromise;
+        if (hasConfiguredPassword && !password) {
+            // Use stored credentials endpoint (no data needed)
+            fetchPromise = fetch('/test-pop3-connection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            });
+        } else {
+            // Use form data for new credentials
+            fetchPromise = fetch('/test-pop3-connection', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password,
+                    server: server,
+                    port: parseInt(port),
+                    ssl: ssl
+                })
+            });
+        }
+        
+        fetchPromise.then(response => response.json())
         .then(data => {
             btn.innerHTML = originalText;
             btn.disabled = false;
