@@ -2493,36 +2493,62 @@ def comprar_creditos_xml():
 def create_labels_subscription():
     """Criar assinatura do módulo de etiquetas via Stripe"""
     try:
-        from package_models import StripeProduct
+        import stripe
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
         
-        # Buscar produto do módulo de etiquetas
-        labels_product = StripeProduct.query.filter_by(
-            stripe_product_id='prod_SSVViDPzXYZHhO'
-        ).first()
+        # Criar ou obter produto para etiquetas de transporte
+        try:
+            # Tentar obter produto existente
+            product = stripe.Product.retrieve('prod_SSVViDPzXYZHhO')
+        except stripe.error.InvalidRequestError:
+            # Criar produto se não existir
+            product = stripe.Product.create(
+                id='prod_SSVViDPzXYZHhO',
+                name='Etiquetas de Transporte Integrada',
+                description='Módulo mensal para geração ilimitada de etiquetas de transporte profissionais',
+                type='service'
+            )
         
-        if not labels_product or not labels_product.default_price_id:
-            flash('Produto não encontrado ou sem preço configurado.', 'error')
-            return redirect(url_for('labels_module'))
+        # Criar preço para assinatura mensal
+        try:
+            # Criar novo preço para assinatura
+            price = stripe.Price.create(
+                product=product.id,
+                unit_amount=4990,  # R$ 49,90 em centavos
+                currency='brl',
+                recurring={'interval': 'month'},
+                nickname='Etiquetas Mensais'
+            )
+            price_id = price.id
+        except stripe.error.InvalidRequestError:
+            # Se erro, usar preço existente válido
+            price_id = 'price_1RcCXgKpjVGFiyHCHKZY8Uth'
         
         # Criar sessão de checkout Stripe para assinatura
-        import stripe
         session = stripe.checkout.Session.create(
             customer_email=current_user.email,
             payment_method_types=['card'],
             mode='subscription',
             line_items=[{
-                'price': labels_product.default_price_id,
+                'price': price_id,
                 'quantity': 1,
             }],
             success_url=url_for('labels_subscription_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
             cancel_url=url_for('labels_module', _external=True),
             metadata={
                 'user_id': str(current_user.id),
-                'product_id': str(labels_product.id),
-                'product_type': 'labels_subscription'
+                'product_type': 'labels_subscription',
+                'feature': 'transport_labels'
+            },
+            subscription_data={
+                'metadata': {
+                    'user_id': str(current_user.id),
+                    'feature': 'transport_labels'
+                }
             }
         )
         
+        app.logger.info(f"Sessão de checkout criada: {session.id} para usuário {current_user.id}")
         return redirect(session.url, code=303)
         
     except Exception as e:
@@ -2680,45 +2706,43 @@ def labels_subscription_success():
             return redirect(url_for('labels_module'))
         
         # Verificar sessão no Stripe
+        import stripe
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
         session = stripe.checkout.Session.retrieve(session_id)
         
         if session.payment_status == 'paid' and session.metadata.get('product_type') == 'labels_subscription':
-            from package_models import UserSubscription, StripeProduct
+            from package_models import UserSubscription
             
-            # Buscar produto
-            product_id = session.metadata.get('product_id')
-            product = StripeProduct.query.get(product_id)
+            # Verificar se já existe assinatura ativa
+            existing_subscription = UserSubscription.query.filter_by(
+                user_id=current_user.id,
+                status='active'
+            ).filter(
+                UserSubscription.feature_key.like('%labels%')
+            ).first()
             
-            if product:
-                # Verificar se já existe assinatura
-                existing_subscription = UserSubscription.query.filter_by(
-                    user_id=current_user.id,
-                    product_id=product.id,
-                    status='active'
-                ).first()
+            if not existing_subscription:
+                # Criar nova assinatura no banco de dados
+                subscription = UserSubscription()
+                subscription.user_id = current_user.id
+                subscription.stripe_subscription_id = session.subscription
+                subscription.feature_key = 'transport_labels'
+                subscription.status = 'active'
+                subscription.starts_at = datetime.utcnow()
+                subscription.expires_at = datetime.utcnow() + timedelta(days=30)  # 30 dias
+                subscription.auto_renew = True
                 
-                if not existing_subscription:
-                    # Criar nova assinatura
-                    subscription = UserSubscription(
-                        user_id=current_user.id,
-                        product_id=product.id,
-                        stripe_subscription_id=session.subscription,
-                        status='active',
-                        starts_at=datetime.utcnow(),
-                        expires_at=datetime.utcnow() + timedelta(days=product.subscription_duration_days)
-                    )
-                    db.session.add(subscription)
-                    db.session.commit()
-                    
-                    flash('Assinatura do módulo de etiquetas ativada com sucesso!', 'success')
-                else:
-                    flash('Você já possui uma assinatura ativa do módulo de etiquetas.', 'info')
+                db.session.add(subscription)
+                db.session.commit()
+                
+                app.logger.info(f"Assinatura de etiquetas criada para usuário {current_user.id}")
+                flash('Assinatura do módulo de etiquetas ativada com sucesso! Agora você pode gerar etiquetas ilimitadas.', 'success')
             else:
-                flash('Erro ao processar assinatura.', 'error')
+                flash('Você já possui uma assinatura ativa do módulo de etiquetas.', 'info')
         else:
-            flash('Pagamento não confirmado.', 'error')
+            flash('Pagamento não confirmado. Tente novamente ou contate o suporte.', 'error')
             
-        return redirect(url_for('labels_module'))
+        return redirect(url_for('dashboard'))
         
     except Exception as e:
         app.logger.error(f"Erro no sucesso da assinatura: {str(e)}")
