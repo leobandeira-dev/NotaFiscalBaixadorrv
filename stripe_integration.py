@@ -8,7 +8,7 @@ import stripe
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional, List
 from flask import current_app
-from new_app import db
+from models import db
 from models import User, UsageRecord, Charge
 
 # Configurar chave da API Stripe
