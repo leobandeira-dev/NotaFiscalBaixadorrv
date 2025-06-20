@@ -351,25 +351,33 @@ class ResponsiveTransportLabelGenerator:
         return section_y
     
     def _apply_section_frame(self, c, x, y, width, height):
-        """Aplica enquadramento baseado no estilo de layout"""
+        """Aplica enquadramento visual consistente com bordas bem definidas"""
+        # Margem interna para espaçamento do texto
+        margin = 3
+        
         if self.layout_style == "layout2":
-            # Layout 2 (Alto Contraste) - Fundo preto com texto branco
+            # Layout 2 (Alto Contraste) - Fundo preto com borda branca
             c.setFillColor(colors.black)
             c.rect(x, y, width, height, fill=1, stroke=0)
+            
+            # Borda branca bem definida
+            c.setStrokeColor(colors.white)
+            c.setLineWidth(2)
+            c.rect(x + margin, y + margin, width - 2*margin, height - 2*margin, fill=0, stroke=1)
+            
             c.setFillColor(colors.white)  # Preparar texto branco
         else:
-            # Layout 1 (Moderno) - Fundo cinza claro com borda cinza
-            # Primeiro desenhar fundo cinza claro
-            c.setFillColor(colors.lightgrey)
+            # Layout 1 (Moderno) - Fundo cinza claro com borda cinza escura
+            # Fundo cinza claro
+            c.setFillColor(colors.Color(0.92, 0.92, 0.92))
             c.rect(x, y, width, height, fill=1, stroke=0)
             
-            # Depois desenhar borda cinza mais escura
-            c.setStrokeColor(colors.grey)
-            c.setLineWidth(1.5)
-            c.rect(x, y, width, height, fill=0, stroke=1)
+            # Borda cinza escura bem definida
+            c.setStrokeColor(colors.Color(0.5, 0.5, 0.5))
+            c.setLineWidth(2)
+            c.rect(x + margin, y + margin, width - 2*margin, height - 2*margin, fill=0, stroke=1)
             
-            # Preparar texto preto
-            c.setFillColor(colors.black)
+            c.setFillColor(colors.black)  # Preparar texto preto
     
     def _draw_id_qr_section(self, c, xml_data, y_pos, section_height):
         """Desenha seção ID e QR Code"""
