@@ -64,7 +64,11 @@ class DownloadService:
                 logger.error(f"Saldo insuficiente para usuário {user_id}")
                 return False
             
-            # Salvar XML no banco
+            # Extrair dados do XML antes de salvar
+            from xml_processor import extract_xml_data
+            xml_data = extract_xml_data(xml_content)
+            
+            # Salvar XML no banco com dados extraídos
             xml_file = XMLFile(
                 user_id=user_id,
                 filename=f"{invoice_key}.xml",
@@ -73,7 +77,27 @@ class DownloadService:
                 xml_content=xml_content,
                 import_type='SISTEMA',
                 job_id=job_id,
-                imported_at=datetime.utcnow()
+                imported_at=datetime.utcnow(),
+                # Dados extraídos do XML
+                numero_nf=xml_data.get('numero_nf', 'N/A'),
+                serie_nf=xml_data.get('serie_nf', 'N/A'),
+                data_emissao=xml_data.get('data_emissao'),
+                valor_total=xml_data.get('valor_total', 0.0),
+                peso_bruto=xml_data.get('peso_bruto', 0.0),
+                quantidade_volumes=xml_data.get('volumes', 0),
+                cnpj_emitente=xml_data.get('cnpj_emitente', 'N/A'),
+                nome_emitente=xml_data.get('nome_emitente', 'N/A'),
+                remetente_razao=xml_data.get('nome_emitente', 'N/A'),
+                remetente_cidade=xml_data.get('cidade_emitente', 'N/A'),
+                remetente_uf=xml_data.get('uf_emitente', 'N/A'),
+                remetente_endereco=xml_data.get('endereco_emitente', 'N/A'),
+                remetente_cep=xml_data.get('cep_emitente', 'N/A'),
+                destinatario_cnpj_cpf=xml_data.get('cnpj_destinatario', 'N/A'),
+                destinatario_razao=xml_data.get('nome_destinatario', 'N/A'),
+                destinatario_cidade=xml_data.get('cidade_destinatario', 'N/A'),
+                destinatario_uf=xml_data.get('uf_destinatario', 'N/A'),
+                destinatario_endereco=xml_data.get('endereco_destinatario', 'N/A'),
+                destinatario_cep=xml_data.get('cep_destinatario', 'N/A')
             )
             
             db.session.add(xml_file)
