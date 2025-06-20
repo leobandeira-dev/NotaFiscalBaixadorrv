@@ -19,13 +19,21 @@ logger = logging.getLogger(__name__)
 class CustomTransportLabelGenerator:
     """Gerador de etiquetas de transporte personalizáveis"""
     
-    def __init__(self, company_name="SUA EMPRESA", company_subtitle="TRANSPORTE"):
-        self.page_width = 210 * mm  # A4 width
-        self.page_height = 297 * mm  # A4 height
-        self.margin = 20 * mm
+    def __init__(self, company_name="SUA EMPRESA", company_subtitle="TRANSPORTE", 
+                 paper_width_mm=100, paper_height_mm=150):
+        # Configurações da página (dimensões personalizáveis)
+        self.page_width = paper_width_mm * mm
+        self.page_height = paper_height_mm * mm
+        self.margin = min(10 * mm, self.page_width * 0.1)  # Margem adaptável
         self.content_width = self.page_width - (2 * self.margin)
         self.company_name = company_name
         self.company_subtitle = company_subtitle
+        
+        # Configurações de escala baseadas no tamanho do papel
+        self.scale_factor = min(paper_width_mm / 100, paper_height_mm / 150)
+        self.base_font_size = max(8, int(10 * self.scale_factor))
+        self.header_font_size = max(10, int(12 * self.scale_factor))
+        self.large_font_size = max(16, int(20 * self.scale_factor))
     
     def generate_transport_label(self, xml_content: str, pedido_number: str = None, 
                                area_code: str = "01", company_logo_path: str = None) -> BytesIO:
@@ -349,7 +357,8 @@ class CustomTransportLabelGenerator:
 
 def generate_custom_label_from_database_xml(xml_record, pedido_number: str = None, 
                                            area_code: str = "01", company_name: str = "SUA EMPRESA",
-                                           company_logo_path: str = None) -> BytesIO:
+                                           company_logo_path: str = None, paper_width_mm: int = 100,
+                                           paper_height_mm: int = 150, volume_weight: float = None) -> BytesIO:
     """
     Função utilitária para gerar etiqueta personalizada a partir de um registro XML do banco
     
@@ -364,7 +373,13 @@ def generate_custom_label_from_database_xml(xml_record, pedido_number: str = Non
         BytesIO contendo o PDF da etiqueta
     """
     try:
-        generator = CustomTransportLabelGenerator(company_name=company_name)
+        # Criar gerador com dimensões personalizadas
+        generator = CustomTransportLabelGenerator(
+            company_name=company_name,
+            company_subtitle="TRANSPORTE",
+            paper_width_mm=paper_width_mm,
+            paper_height_mm=paper_height_mm
+        )
         
         xml_content = xml_record.xml_content
         if not xml_content:
@@ -374,8 +389,74 @@ def generate_custom_label_from_database_xml(xml_record, pedido_number: str = Non
         if not pedido_number:
             pedido_number = getattr(xml_record, 'numero_nf', None) or xml_record.invoice_key[:5]
         
-        return generator.generate_transport_label(xml_content, pedido_number, area_code, company_logo_path)
+        label_buffer = generator.generate_transport_label(
+            xml_content=xml_content,
+            pedido_number=pedido_number,
+            area_code=area_code,
+            company_logo_path=company_logo_path
+        )
+        
+        logger.info(f"Etiqueta personalizada gerada: {paper_width_mm}x{paper_height_mm}mm")
+        return label_buffer
         
     except Exception as e:
         logger.error(f"Erro ao gerar etiqueta personalizada: {str(e)}")
         raise
+
+
+def generate_multiple_labels_from_volumes(xml_record, volumes_config: list, 
+                                        company_name: str = "SUA EMPRESA", 
+                                        company_logo_path: str = None,
+                                        paper_width_mm: int = 100,
+                                        paper_height_mm: int = 150,
+                                        area_code: str = "01") -> list:
+    """
+    Gera múltiplas etiquetas separadas baseadas na configuração de volumes
+    
+    Args:
+        xml_record: Registro XML do banco
+        volumes_config: Lista de dicionários com configurações de cada volume
+                       [{"peso": 5.5, "pedido": "PED123-1"}, ...]
+        company_name: Nome da empresa
+        company_logo_path: Caminho para logo da empresa
+        paper_width_mm: Largura do papel em milímetros
+        paper_height_mm: Altura do papel em milímetros
+        area_code: Código da área
+        
+    Returns:
+        Lista de dicionários com os PDFs das etiquetas
+    """
+    labels = []
+    
+    try:
+        for i, volume_config in enumerate(volumes_config):
+            peso = volume_config.get('peso', 0)
+            pedido = volume_config.get('pedido', f'PED{getattr(xml_record, "numero_nf", "00000")}-{i+1}')
+            
+            # Gerar etiqueta para este volume específico
+            label_buffer = generate_custom_label_from_database_xml(
+                xml_record=xml_record,
+                pedido_number=pedido,
+                area_code=area_code,
+                company_name=company_name,
+                company_logo_path=company_logo_path,
+                paper_width_mm=paper_width_mm,
+                paper_height_mm=paper_height_mm,
+                volume_weight=peso
+            )
+            
+            if label_buffer:
+                labels.append({
+                    'buffer': label_buffer,
+                    'filename': f'etiqueta_volume_{i+1}_{pedido}.pdf',
+                    'volume': i+1,
+                    'peso': peso,
+                    'pedido': pedido
+                })
+        
+        logger.info(f"Geradas {len(labels)} etiquetas separadas")
+        return labels
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar múltiplas etiquetas: {e}")
+        return []

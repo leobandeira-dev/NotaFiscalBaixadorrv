@@ -1,0 +1,519 @@
+{% extends "base.html" %}
+
+{% block title %}Gerador de Etiquetas - XMLDownloader{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tab-container {
+        margin: 2rem 0;
+    }
+    
+    .nav-tabs {
+        border-bottom: 2px solid #8A05BE;
+    }
+    
+    .nav-tabs .nav-link {
+        color: #666;
+        border: none;
+        padding: 1rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        color: #8A05BE;
+        background: rgba(138, 5, 190, 0.1);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #8A05BE;
+        background: white;
+        border-bottom: 3px solid #8A05BE;
+        font-weight: 600;
+    }
+    
+    .tab-content {
+        background: white;
+        border-radius: 0 0 15px 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .xml-info-card {
+        background: linear-gradient(135deg, #f8f9ff, #e0e7ff);
+        border: 2px solid #8A05BE;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .xml-info-card h5 {
+        color: #8A05BE;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+    }
+    
+    .info-item {
+        background: white;
+        padding: 0.75rem;
+        border-radius: 8px;
+        border-left: 4px solid #8A05BE;
+    }
+    
+    .info-item strong {
+        color: #8A05BE;
+        font-size: 0.9rem;
+    }
+    
+    .volume-editor {
+        background: white;
+        border: 2px solid #8A05BE;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .volume-item {
+        background: #f8f9ff;
+        border: 1px solid #e0e7ff;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .volume-item input {
+        width: 100px;
+        text-align: center;
+    }
+    
+    .btn-add-volume {
+        background: linear-gradient(135deg, #10b981, #059669);
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .btn-remove-volume {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border: none;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+    }
+    
+    .paper-size-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .paper-size-card {
+        background: white;
+        border: 2px solid #e0e7ff;
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .paper-size-card:hover {
+        border-color: #8A05BE;
+        transform: translateY(-2px);
+    }
+    
+    .paper-size-card.selected {
+        border-color: #8A05BE;
+        background: linear-gradient(135deg, rgba(138, 5, 190, 0.1), rgba(168, 85, 247, 0.1));
+    }
+    
+    .paper-size-card h6 {
+        color: #8A05BE;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .paper-size-card .dimensions {
+        color: #666;
+        font-size: 0.9rem;
+    }
+    
+    .custom-paper-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .layout-preview {
+        border: 2px dashed #8A05BE;
+        border-radius: 10px;
+        padding: 2rem;
+        text-align: center;
+        background: rgba(138, 5, 190, 0.05);
+        margin-bottom: 2rem;
+    }
+    
+    .layout-controls {
+        background: white;
+        border: 2px solid #8A05BE;
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+    
+    .btn-generate {
+        background: linear-gradient(135deg, #8A05BE, #a855f7);
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        width: 100%;
+        margin-top: 2rem;
+    }
+    
+    .btn-generate:hover {
+        background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+        transform: translateY(-1px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        {% include 'sidebar.html' %}
+        
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2" style="color: #8A05BE;">
+                    <i class="fas fa-tags me-2"></i>
+                    Gerador de Etiquetas
+                </h1>
+            </div>
+
+            {% if xml_data %}
+            <!-- Informações do XML -->
+            <div class="xml-info-card">
+                <h5><i class="fas fa-file-alt me-2"></i>Informações da Nota Fiscal</h5>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>NF:</strong><br>{{ xml_data.numero_nf }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Série:</strong><br>{{ xml_data.serie }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Remetente:</strong><br>{{ xml_data.remetente_nome }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Destinatário:</strong><br>{{ xml_data.destinatario_nome }}
+                    </div>
+                    <div class="info-item">
+                        <strong>Peso Original:</strong><br>{{ xml_data.peso_bruto or '0.0' }} kg
+                    </div>
+                    <div class="info-item">
+                        <strong>Volumes Originais:</strong><br>{{ xml_data.volumes_quantidade or '1' }}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs de Configuração -->
+            <div class="tab-container">
+                <ul class="nav nav-tabs" id="labelTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="volumes-tab" data-bs-toggle="tab" data-bs-target="#volumes" type="button" role="tab">
+                            <i class="fas fa-boxes me-2"></i>Volumes e Peso
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="layout-tab" data-bs-toggle="tab" data-bs-target="#layout" type="button" role="tab">
+                            <i class="fas fa-paint-brush me-2"></i>Layout da Etiqueta
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="dimensions-tab" data-bs-toggle="tab" data-bs-target="#dimensions" type="button" role="tab">
+                            <i class="fas fa-ruler me-2"></i>Dimensões do Papel
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="labelTabsContent">
+                    <!-- Tab Volumes e Peso -->
+                    <div class="tab-pane fade show active" id="volumes" role="tabpanel">
+                        <form id="labelForm" action="{{ url_for('generate_custom_labels', xml_id=xml_data.id) }}" method="POST">
+                            <div class="volume-editor">
+                                <h5><i class="fas fa-edit me-2"></i>Configurar Volumes</h5>
+                                <p class="text-muted">Edite as quantidades de volumes e peso para cada etiqueta</p>
+                                
+                                <div id="volumesList">
+                                    {% for i in range(xml_data.volumes_quantidade or 1) %}
+                                    <div class="volume-item" data-volume="{{ i + 1 }}">
+                                        <strong>Volume {{ i + 1 }}:</strong>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <label class="form-label mb-0">Peso (kg):</label>
+                                            <input type="number" class="form-control" name="peso_volume_{{ i + 1 }}" 
+                                                   value="{{ '%.2f'|format((xml_data.peso_bruto or 0) / (xml_data.volumes_quantidade or 1)) }}" 
+                                                   step="0.01" min="0" required>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <label class="form-label mb-0">Pedido:</label>
+                                            <input type="text" class="form-control" name="pedido_volume_{{ i + 1 }}" 
+                                                   value="PED{{ xml_data.numero_nf }}-{{ i + 1 }}" style="width: 150px;">
+                                        </div>
+                                        {% if loop.index > 1 %}
+                                        <button type="button" class="btn-remove-volume" onclick="removeVolume(this)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <button type="button" class="btn-add-volume" onclick="addVolume()">
+                                    <i class="fas fa-plus me-2"></i>Adicionar Volume
+                                </button>
+                                
+                                <input type="hidden" name="total_volumes" id="totalVolumes" value="{{ xml_data.volumes_quantidade or 1 }}">
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- Tab Layout -->
+                    <div class="tab-pane fade" id="layout" role="tabpanel">
+                        <div class="layout-controls">
+                            <h5><i class="fas fa-palette me-2"></i>Personalização do Layout</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Nome da Empresa</label>
+                                        <input type="text" class="form-control" name="company_name" 
+                                               value="{{ current_user.company_name or 'SUA EMPRESA' }}" form="labelForm">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Subtítulo</label>
+                                        <input type="text" class="form-control" name="company_subtitle" 
+                                               value="{{ current_user.company_subtitle or 'TRANSPORTE' }}" form="labelForm">
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">Código da Área</label>
+                                        <input type="text" class="form-control" name="area_code" 
+                                               value="{{ current_user.default_area_code or '01' }}" form="labelForm">
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Logo da Empresa</label>
+                                        {% if current_user.company_logo_path %}
+                                        <div class="mb-2">
+                                            <img src="{{ url_for('serve_logo', filename=current_user.company_logo_path.split('/')[-1]) }}" 
+                                                 alt="Logo atual" style="max-height: 60px;" class="border rounded">
+                                        </div>
+                                        {% endif %}
+                                        <input type="file" class="form-control" name="company_logo" accept="image/*" form="labelForm">
+                                        <small class="text-muted">Formatos suportados: PNG, JPG, JPEG (máx. 2MB)</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="layout-preview">
+                            <h6><i class="fas fa-eye me-2"></i>Preview do Layout</h6>
+                            <p class="text-muted">Aqui será exibida uma prévia da etiqueta com as configurações atuais</p>
+                            <div class="preview-placeholder">
+                                <i class="fas fa-image fa-3x text-muted"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tab Dimensões -->
+                    <div class="tab-pane fade" id="dimensions" role="tabpanel">
+                        <h5><i class="fas fa-ruler-combined me-2"></i>Selecionar Tamanho do Papel</h5>
+                        
+                        <div class="paper-size-grid">
+                            <div class="paper-size-card" data-size="A4" onclick="selectPaperSize(this, 210, 297)">
+                                <h6>A4</h6>
+                                <div class="dimensions">210 x 297 mm</div>
+                                <small class="text-muted">Padrão escritório</small>
+                            </div>
+                            
+                            <div class="paper-size-card" data-size="A5" onclick="selectPaperSize(this, 148, 210)">
+                                <h6>A5</h6>
+                                <div class="dimensions">148 x 210 mm</div>
+                                <small class="text-muted">Meio A4</small>
+                            </div>
+                            
+                            <div class="paper-size-card" data-size="10x15" onclick="selectPaperSize(this, 100, 150)">
+                                <h6>10x15 cm</h6>
+                                <div class="dimensions">100 x 150 mm</div>
+                                <small class="text-muted">Etiqueta grande</small>
+                            </div>
+                            
+                            <div class="paper-size-card" data-size="7x10" onclick="selectPaperSize(this, 70, 100)">
+                                <h6>7x10 cm</h6>
+                                <div class="dimensions">70 x 100 mm</div>
+                                <small class="text-muted">Etiqueta média</small>
+                            </div>
+                            
+                            <div class="paper-size-card" data-size="5x8" onclick="selectPaperSize(this, 50, 80)">
+                                <h6>5x8 cm</h6>
+                                <div class="dimensions">50 x 80 mm</div>
+                                <small class="text-muted">Etiqueta pequena</small>
+                            </div>
+                            
+                            <div class="paper-size-card" data-size="custom" onclick="selectPaperSize(this, 0, 0)">
+                                <h6>Personalizado</h6>
+                                <div class="dimensions">Definir tamanho</div>
+                                <small class="text-muted">Customizar</small>
+                            </div>
+                        </div>
+                        
+                        <div class="custom-paper-inputs" id="customDimensions" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Largura (mm)</label>
+                                <input type="number" class="form-control" name="paper_width" min="50" max="500" form="labelForm">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Altura (mm)</label>
+                                <input type="number" class="form-control" name="paper_height" min="50" max="500" form="labelForm">
+                            </div>
+                        </div>
+                        
+                        <input type="hidden" name="paper_size" id="paperSize" value="10x15" form="labelForm">
+                        <input type="hidden" name="paper_width_mm" id="paperWidthMm" value="100" form="labelForm">
+                        <input type="hidden" name="paper_height_mm" id="paperHeightMm" value="150" form="labelForm">
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-generate" form="labelForm">
+                <i class="fas fa-print me-2"></i>Gerar Etiquetas Separadas
+            </button>
+            
+            {% else %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Nenhum XML selecionado. <a href="{{ url_for('my_xmls') }}">Selecione um XML</a> para gerar etiquetas.
+            </div>
+            {% endif %}
+        </main>
+    </div>
+</div>
+
+<script>
+let volumeCount = {{ xml_data.volumes_quantidade or 1 if xml_data else 1 }};
+
+function addVolume() {
+    volumeCount++;
+    const volumesList = document.getElementById('volumesList');
+    const defaultWeight = {{ '%.2f'|format((xml_data.peso_bruto or 0) / (xml_data.volumes_quantidade or 1)) if xml_data else 0 }};
+    
+    const volumeItem = document.createElement('div');
+    volumeItem.className = 'volume-item';
+    volumeItem.setAttribute('data-volume', volumeCount);
+    volumeItem.innerHTML = `
+        <strong>Volume ${volumeCount}:</strong>
+        <div class="d-flex align-items-center gap-2">
+            <label class="form-label mb-0">Peso (kg):</label>
+            <input type="number" class="form-control" name="peso_volume_${volumeCount}" 
+                   value="${defaultWeight}" step="0.01" min="0" required>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <label class="form-label mb-0">Pedido:</label>
+            <input type="text" class="form-control" name="pedido_volume_${volumeCount}" 
+                   value="PED{{ xml_data.numero_nf if xml_data else '00000' }}-${volumeCount}" style="width: 150px;">
+        </div>
+        <button type="button" class="btn-remove-volume" onclick="removeVolume(this)">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+    
+    volumesList.appendChild(volumeItem);
+    document.getElementById('totalVolumes').value = volumeCount;
+}
+
+function removeVolume(button) {
+    const volumeItem = button.parentElement;
+    volumeItem.remove();
+    
+    // Renumerar volumes
+    const volumeItems = document.querySelectorAll('.volume-item');
+    volumeCount = volumeItems.length;
+    document.getElementById('totalVolumes').value = volumeCount;
+    
+    volumeItems.forEach((item, index) => {
+        const volumeNumber = index + 1;
+        item.setAttribute('data-volume', volumeNumber);
+        item.querySelector('strong').textContent = `Volume ${volumeNumber}:`;
+        
+        const inputs = item.querySelectorAll('input');
+        inputs[0].name = `peso_volume_${volumeNumber}`;
+        inputs[1].name = `pedido_volume_${volumeNumber}`;
+        inputs[1].value = inputs[1].value.replace(/-\d+$/, `-${volumeNumber}`);
+    });
+}
+
+function selectPaperSize(card, width, height) {
+    // Remove seleção anterior
+    document.querySelectorAll('.paper-size-card').forEach(c => c.classList.remove('selected'));
+    
+    // Adicionar seleção atual
+    card.classList.add('selected');
+    
+    // Atualizar campos ocultos
+    document.getElementById('paperSize').value = card.dataset.size;
+    document.getElementById('paperWidthMm').value = width;
+    document.getElementById('paperHeightMm').value = height;
+    
+    // Mostrar/ocultar campos customizados
+    const customInputs = document.getElementById('customDimensions');
+    if (card.dataset.size === 'custom') {
+        customInputs.style.display = 'grid';
+    } else {
+        customInputs.style.display = 'none';
+    }
+}
+
+// Inicializar com tamanho padrão selecionado
+document.addEventListener('DOMContentLoaded', function() {
+    const defaultCard = document.querySelector('[data-size="10x15"]');
+    if (defaultCard) {
+        defaultCard.classList.add('selected');
+    }
+});
+
+// Atualizar dimensões customizadas em tempo real
+document.addEventListener('DOMContentLoaded', function() {
+    const customWidth = document.querySelector('input[name="paper_width"]');
+    const customHeight = document.querySelector('input[name="paper_height"]');
+    
+    if (customWidth && customHeight) {
+        customWidth.addEventListener('input', function() {
+            document.getElementById('paperWidthMm').value = this.value;
+        });
+        
+        customHeight.addEventListener('input', function() {
+            document.getElementById('paperHeightMm').value = this.value;
+        });
+    }
+});
+</script>
+{% endblock %}
