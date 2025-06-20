@@ -514,11 +514,10 @@ class InvoiceDownloader:
             }
     
     def charge_for_download(self, user_id: int, invoice_key: str):
-        """Charge user credits for XML download with proper Flask context"""
+        """Charge user credits for XML download using simplified credit system"""
         try:
             from new_app import app, db
-            from models import User, UsageRecord, ServiceModule
-            from stripe_integration import PricingManager
+            from models import User
             from datetime import datetime
             
             with app.app_context():
@@ -531,56 +530,38 @@ class InvoiceDownloader:
                 # Check if user is in trial period
                 is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
                 
-                # Get service module and price
-                xml_module = ServiceModule.query.filter_by(name='xml_download').first()
-                if not xml_module:
-                    logger.error("XML download module not found")
-                    return
-                
-                price = xml_module.cost_per_use
-                
                 # Only charge if not in trial
                 if not is_trial_active:
-                    if user.current_balance >= price:
-                        user.current_balance -= price
-                        user.updated_at = datetime.utcnow()
-                        
-                        # Create usage record
-                        usage_record = UsageRecord(
-                            user_id=user_id,
-                            module_id=xml_module.id,
-                            quantity=1,
-                            cost=price,
-                            description=f"Download XML: {invoice_key[:10]}...",
-                            created_at=datetime.utcnow()
-                        )
-                        
-                        db.session.add(usage_record)
-                        db.session.commit()
-                        
-                        logger.info(f"Successfully charged R$ {price:.2f} for XML download - User {user_id}")
-                    else:
-                        logger.warning(f"Insufficient balance for user {user_id} - Required: R$ {price:.2f}, Available: R$ {user.current_balance:.2f}")
-                else:
-                    # Create free usage record for trial
-                    usage_record = UsageRecord(
+                    # Use simplified credit system for consistent charging
+                    from simple_credit_system import consume_xml_credit, get_user_xml_balance
+                    
+                    # Check if user has credits
+                    available_credits = get_user_xml_balance(user_id)
+                    if available_credits < 1:
+                        logger.warning(f"Insufficient XML credits for user {user_id} - Available: {available_credits}")
+                        return False
+                    
+                    # Consume XML credit
+                    success = consume_xml_credit(
                         user_id=user_id,
-                        module_id=xml_module.id,
-                        quantity=1,
-                        cost=0.0,
-                        description=f"Download XML (Trial): {invoice_key[:10]}...",
-                        created_at=datetime.utcnow()
+                        description=f"Download XML via API: {invoice_key[:10]}..."
                     )
                     
-                    db.session.add(usage_record)
-                    db.session.commit()
-                    
+                    if success:
+                        logger.info(f"Successfully charged 1 XML credit for API download - User {user_id}")
+                        return True
+                    else:
+                        logger.error(f"Failed to charge XML credit for user {user_id}")
+                        return False
+                else:
                     logger.info(f"Free XML download for trial user {user_id}")
+                    return True
                 
         except Exception as e:
             logger.error(f"Error charging for download: {e}")
             import traceback
             logger.error(f"Traceback: {traceback.format_exc()}")
+            return False
     
     def test_connection(self) -> Dict[str, Any]:
         """Test if the automation system can connect to the invoice system"""
