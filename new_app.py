@@ -20,6 +20,7 @@ from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings,
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
 from transport_label_generator import TransportLabelGenerator, generate_label_from_database_xml
+from transul_label_generator import TransulLabelGenerator, generate_label_from_database_xml as generate_transul_label
 from xml_processor import extract_xml_data
 from download_service import DownloadService
 
@@ -1361,9 +1362,9 @@ def generate_label_route(xml_id):
             flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
             return redirect(url_for('comprar_creditos'))
         
-        # Gerar etiqueta usando o novo gerador
-        generator = TransportLabelGenerator()
-        pedido_number = request.args.get('pedido', invoice_key)
+        # Gerar etiqueta usando o novo gerador Transul
+        generator = TransulLabelGenerator()
+        pedido_number = request.args.get('pedido', invoice_key[:5])
         area_code = request.args.get('area', '01')
         
         label_buffer = generator.generate_transport_label(

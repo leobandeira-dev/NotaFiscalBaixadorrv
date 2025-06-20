@@ -230,12 +230,11 @@
                                                 {{ 'Download DANFE' if xml.danfe_generated else 'Gerar DANFE' }}
                                             </a>
                                             
-                                            {% if not xml.label_generated %}
-                                            <button class="btn btn-warning btn-custom" disabled>
-                                                <i class="fas fa-tags"></i> Gerar Etiquetas
-                                                <small class="d-block">(Em breve)</small>
-                                            </button>
-                                            {% endif %}
+                                            <a href="{{ url_for('generate_label_route', xml_id=xml.id) }}" 
+                                               class="btn btn-warning btn-custom">
+                                                <i class="fas fa-tags"></i> 
+                                                {{ 'Download Etiqueta' if xml.label_generated else 'Gerar Etiqueta Transul' }}
+                                            </a>
                                         </div>
                                         
                                         <small class="text-muted d-block mt-2">
