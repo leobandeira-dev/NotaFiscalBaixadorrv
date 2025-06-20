@@ -31,6 +31,12 @@ class User(UserMixin, db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     is_super_admin = db.Column(db.Boolean, default=False)
     
+    # Assinatura do módulo de etiquetas
+    labels_subscription_active = db.Column(db.Boolean, default=False)
+    labels_subscription_expires_at = db.Column(db.DateTime, nullable=True)
+    labels_stripe_subscription_id = db.Column(db.String(100), nullable=True)
+    labels_trial_expires_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(days=7))
+    
     # Chaves API
     api_key = db.Column(db.String(64), unique=True)
     api_secret = db.Column(db.String(64), unique=True)

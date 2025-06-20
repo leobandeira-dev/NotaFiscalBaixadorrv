@@ -277,9 +277,18 @@ class PricingManager:
         'labels_module': 'prod_SSVViDPzXYZHhO',  # Etiquetas de Transporte
     }
     
+    # Preços escalonados por volume para XML
+    XML_VOLUME_PRICING = {
+        # Faixas de volume: (quantidade_min, quantidade_max, preço_unitário)
+        (1, 500): 0.10,      # 1-500 XMLs: R$ 0,10 cada
+        (501, 1000): 0.08,   # 501-1.000: R$ 0,08 cada
+        (1001, 2000): 0.07,  # 1.001-2.000: R$ 0,07 cada
+        (2001, float('inf')): 0.06  # 2.001+: R$ 0,06 cada
+    }
+    
     # Preços em reais
     PRICES = {
-        'xml_download': 0.10,  # R$ 0,10 por XML - Produto Stripe: prod_SWv7Mmc4YDzCal
+        'xml_download': 0.10,  # Preço base - calculado dinamicamente por volume
         'labels_module': 49.90,  # R$ 49,90 mensal para módulo de etiquetas - Produto Stripe: prod_SSVViDPzXYZHhO
         'danfe_generation': 0.00,  # Gratuito - sempre incluído
     }
@@ -307,8 +316,60 @@ class PricingManager:
     }
     
     @classmethod
-    def get_service_price(cls, service_type: str) -> float:
+    def get_xml_price_by_volume(cls, quantity: int) -> float:
+        """Retorna o preço por XML baseado na quantidade"""
+        for (min_qty, max_qty), price in cls.XML_VOLUME_PRICING.items():
+            if min_qty <= quantity <= max_qty:
+                return price
+        return cls.PRICES['xml_download']  # Preço padrão se não encontrar faixa
+    
+    @classmethod
+    def calculate_total_xml_cost(cls, quantity: int) -> Dict[str, Any]:
+        """Calcula o custo total para uma quantidade de XMLs com preços escalonados"""
+        total_cost = 0.0
+        breakdown = []
+        remaining = quantity
+        
+        # Ordenar faixas por quantidade mínima
+        sorted_ranges = sorted(cls.XML_VOLUME_PRICING.items(), key=lambda x: x[0][0])
+        
+        for (min_qty, max_qty), price in sorted_ranges:
+            if remaining <= 0:
+                break
+                
+            # Calcular quantos XMLs se enquadram nesta faixa
+            range_start = max(1, min_qty - (quantity - remaining))
+            range_end = min(max_qty, min_qty + remaining - 1)
+            
+            if range_start <= range_end:
+                qty_in_range = range_end - range_start + 1
+                if qty_in_range > remaining:
+                    qty_in_range = remaining
+                    
+                cost_in_range = qty_in_range * price
+                total_cost += cost_in_range
+                
+                breakdown.append({
+                    'quantity': qty_in_range,
+                    'price_per_unit': price,
+                    'subtotal': cost_in_range,
+                    'range': f"{min_qty}-{max_qty if max_qty != float('inf') else '∞'}"
+                })
+                
+                remaining -= qty_in_range
+        
+        return {
+            'total_cost': total_cost,
+            'average_price': total_cost / quantity if quantity > 0 else 0,
+            'breakdown': breakdown,
+            'total_quantity': quantity
+        }
+    
+    @classmethod
+    def get_service_price(cls, service_type: str, quantity: int = 1) -> float:
         """Retorna o preço de um serviço"""
+        if service_type == 'xml_download':
+            return cls.get_xml_price_by_volume(quantity)
         return cls.PRICES.get(service_type, 0.0)
     
     @classmethod
