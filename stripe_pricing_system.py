@@ -268,8 +268,7 @@ def get_user_xml_credits(user_id: int) -> int:
         total_purchased = db.session.query(func.sum(StripeTransaction.credits_purchased))\
             .filter(
                 StripeTransaction.user_id == user_id,
-                StripeTransaction.status == 'paid',
-                StripeTransaction.product_type == 'xml_credits'
+                StripeTransaction.status == 'completed'
             ).scalar() or 0
         
         # Somar todos os créditos consumidos
@@ -328,11 +327,10 @@ def get_xml_usage_stats(user_id: int) -> dict:
         from datetime import datetime, timedelta
         
         # Total comprado
-        total_purchased = db.session.query(func.sum(StripeTransaction.credits_added))\
+        total_purchased = db.session.query(func.sum(StripeTransaction.credits_purchased))\
             .filter(
                 StripeTransaction.user_id == user_id,
-                StripeTransaction.status == 'paid',
-                StripeTransaction.product_type == 'xml_credits'
+                StripeTransaction.status == 'completed'
             ).scalar() or 0
         
         # Total consumido
