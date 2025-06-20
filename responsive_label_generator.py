@@ -19,7 +19,7 @@ class ResponsiveTransportLabelGenerator:
     """Gerador de etiquetas de transporte com layout verdadeiramente responsivo"""
     
     def __init__(self, company_name="SUA EMPRESA", company_subtitle="TRANSPORTE", 
-                 paper_width_mm=100, paper_height_mm=150, layout_style="layout1"):
+                 paper_width_mm=100, paper_height_mm=150, layout_style="transul"):
         """
         Inicializa o gerador com configurações responsivas
         
