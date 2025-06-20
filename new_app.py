@@ -15,6 +15,7 @@ from io import BytesIO
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
 from authlib.integrations.flask_client import OAuth
 from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, init_default_data
@@ -2211,6 +2212,8 @@ def save_smtp_credentials():
         port = int(request.form.get('smtp_port', 587))
         ssl = 'smtp_ssl' in request.form
         
+        logger.info(f"Salvando credenciais SMTP para usuário {current_user.id}: {email}, {server}:{port}, SSL: {ssl}")
+        
         # Use custom server if specified
         if server == 'custom' and custom_server:
             server = custom_server
@@ -2225,6 +2228,7 @@ def save_smtp_credentials():
         from email.mime.text import MIMEText
         
         try:
+            logger.info(f"Testando conexão SMTP com {server}:{port}")
             if ssl:
                 smtp = smtplib.SMTP_SSL(server, port)
             else:
@@ -2233,13 +2237,25 @@ def save_smtp_credentials():
             
             smtp.login(email, password)
             smtp.quit()
+            logger.info("Conexão SMTP testada com sucesso")
             
         except Exception as e:
+            logger.error(f"Erro ao testar conexão SMTP: {e}")
             flash(f'Erro ao conectar com o servidor SMTP: {str(e)}', 'error')
             return redirect(url_for('email_import'))
         
-        # Save SMTP credentials
-        current_user.set_smtp_credentials(email, password, server, port, ssl)
+        # Save SMTP credentials directly
+        logger.info("Salvando credenciais SMTP no banco de dados")
+        current_user.smtp_email = email
+        current_user.smtp_password = generate_password_hash(password)
+        current_user.smtp_server = server
+        current_user.smtp_port = port
+        current_user.smtp_ssl = ssl
+        current_user.smtp_configured = True
+        
+        db.session.commit()
+        logger.info("Credenciais SMTP salvas com sucesso no banco")
+        
         flash('Credenciais SMTP salvas com sucesso!', 'success')
         
     except Exception as e:
@@ -2247,6 +2263,18 @@ def save_smtp_credentials():
         flash('Erro interno do servidor.', 'error')
     
     return redirect(url_for('email_import'))
+
+@app.route('/view-smtp-credentials')
+@login_required
+def view_smtp_credentials():
+    """Visualiza as credenciais SMTP cadastradas"""
+    # Se for admin, mostra todos os usuários, senão apenas o próprio
+    if current_user.is_admin or current_user.is_super_admin:
+        users_with_smtp = User.query.filter(User.smtp_configured == True).all()
+    else:
+        users_with_smtp = [current_user] if current_user.smtp_configured else []
+    
+    return render_template('smtp_credentials_view.html', users=users_with_smtp)
 
 @app.route('/remove-smtp-config', methods=['POST'])
 @login_required
