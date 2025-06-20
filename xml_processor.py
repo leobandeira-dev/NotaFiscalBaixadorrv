@@ -326,15 +326,8 @@ def save_xml_to_database(user_id: int, invoice_key: str, xml_content: str,
         from models import XMLFile
         from new_app import db
         
-        # Verificar se XML já existe
-        existing_xml = XMLFile.query.filter_by(
-            user_id=user_id,
-            invoice_key=invoice_key
-        ).first()
-        
-        if existing_xml:
-            logger.info(f"XML já existe para chave {invoice_key}")
-            return existing_xml.id
+        # Permitir downloads múltiplos - cada download gera registro único
+        logger.info(f"Processando novo download para chave {invoice_key}")
         
         # Extrair dados do XML
         xml_data = extract_xml_data(xml_content)

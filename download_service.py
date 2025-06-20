@@ -44,15 +44,8 @@ class DownloadService:
                                   file_path: str, job_id: str) -> bool:
         """Processa download bem-sucedido com cobrança e salvamento no banco"""
         try:
-            # Verificar se XML já existe para este usuário
-            existing_xml = XMLFile.query.filter_by(
-                user_id=user_id,
-                invoice_key=invoice_key
-            ).first()
-            
-            if existing_xml:
-                logger.info(f"XML {invoice_key} já existe para usuário {user_id}")
-                return True
+            # Permitir downloads múltiplos - cada download gera registro único
+            logger.info(f"Processando novo download de XML {invoice_key} para usuário {user_id}")
             
             # Obter preço do serviço
             xml_price = PricingManager.get_service_price('xml_download')
