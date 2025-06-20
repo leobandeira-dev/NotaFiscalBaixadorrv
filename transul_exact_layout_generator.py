@@ -464,7 +464,7 @@ class TransulExactLayoutGenerator:
         area_x = self.margin + destinatario_width + (self.content_width * 0.05)
         self._draw_styled_text_section(
             c, area_x, current_y - destinatario_height, area_width, destinatario_height,
-            f"ÁREA\n{area_code}", self.fonts['body_bold'], 
+            f"AREA\n{area_code}", self.fonts['body_bold'], 
             self.colors['black'], self.colors['white'], center_text=True
         )
         current_y -= destinatario_height + self.section_spacing
