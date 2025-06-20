@@ -1,407 +1,293 @@
 """
-XML Processor for database operations
-Handles XML storage and processing for the system
+Processador de XMLs para extração de dados de NFe
+Compatível com XMLs importados via email, upload ou sistema automático
 """
-import logging
+
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from models import db, XMLFile
 import re
+import logging
+from models import db, XMLFile
 
 logger = logging.getLogger(__name__)
 
-def find_element_flexible(parent, tag_name, ns=None):
+def extract_xml_data(xml_content, filename=None):
     """
-    Busca um elemento de forma flexível, com e sem namespace
-    """
-    if ns:
-        elem = parent.find(f'nfe:{tag_name}', ns)
-        if elem is not None:
-            return elem
+    Extrai dados completos do XML da NFe
     
-    # Busca sem namespace
-    elem = parent.find(tag_name)
-    if elem is not None:
-        return elem
+    Args:
+        xml_content (str): Conteúdo do XML
+        filename (str): Nome do arquivo (opcional)
     
-    # Busca flexível por tag que contenha o nome
-    for elem in parent.iter():
-        if tag_name in elem.tag:
-            return elem
-    
-    return None
-
-def extract_xml_data(xml_content: str) -> dict:
-    """
-    Extrai dados estruturados do XML NFe para armazenamento completo no banco
+    Returns:
+        dict: Dados extraídos do XML
     """
     try:
         # Parse do XML
         root = ET.fromstring(xml_content)
         
         # Namespaces comuns da NFe
-        ns = {'nfe': 'http://www.portalfiscal.inf.br/nfe'}
-        
-        # Dados da nota fiscal
-        nf_data = {}
-        
-        # Encontrar o elemento infNFe com múltiplas estratégias
-        infNFe = None
-        
-        # Estratégia 1: Busca com namespace completo
-        infNFe = root.find('.//nfe:NFe/nfe:infNFe', ns)
-        
-        # Estratégia 2: Busca direta com namespace
-        if infNFe is None:
-            infNFe = root.find('.//nfe:infNFe', ns)
-        
-        # Estratégia 3: Busca sem namespace
-        if infNFe is None:
-            infNFe = root.find('.//infNFe')
-            
-        # Estratégia 4: Busca por tag que contenha 'infNFe'
-        if infNFe is None:
-            for elem in root.iter():
-                if 'infNFe' in elem.tag:
-                    infNFe = elem
-                    break
-                    
-        # Log para debug
-        if infNFe is None:
-            logger.warning("Elemento infNFe não encontrado no XML")
-            # Listar elementos encontrados para debug
-            for elem in root.iter():
-                logger.debug(f"Elemento encontrado: {elem.tag}")
-        else:
-            logger.info(f"infNFe encontrado: {infNFe.tag}")
-        
-        if infNFe is not None:
-            # Identificação da NFe
-            ide = infNFe.find('nfe:ide', ns)
-            if ide is None:
-                ide = infNFe.find('ide')  # Busca sem namespace
-            if ide is None:
-                # Busca flexível
-                for elem in infNFe.iter():
-                    if 'ide' in elem.tag:
-                        ide = elem
-                        break
-                        
-            if ide is not None:
-                # Número da nota fiscal
-                nNF = find_element_flexible(ide, 'nNF', ns)
-                nf_data['numero_nf'] = nNF.text if nNF is not None else ''
-                
-                # Série da nota fiscal
-                serie = find_element_flexible(ide, 'serie', ns)
-                nf_data['serie_nf'] = serie.text if serie is not None else ''
-                
-                # Data de emissão
-                dhEmi = find_element_flexible(ide, 'dhEmi', ns)
-                if dhEmi is not None and dhEmi.text:
-                    try:
-                        # Formato: 2025-04-17T17:30:00-03:00
-                        date_str = dhEmi.text.split('T')[0]  # Pega apenas a data
-                        nf_data['data_emissao'] = datetime.strptime(date_str, '%Y-%m-%d').date()
-                        logger.info(f"Data de emissão extraída: {nf_data['data_emissao']}")
-                    except Exception as date_error:
-                        logger.warning(f"Error parsing date: {date_error}")
-                        nf_data['data_emissao'] = None
-                else:
-                    nf_data['data_emissao'] = None
-                    logger.warning("Data de emissão não encontrada")
-            
-            # Emitente (Remetente) - busca flexível
-            emit = find_element_flexible(infNFe, 'emit', ns)
-            if emit is not None:
-                logger.info("Emitente encontrado")
-                
-                # CNPJ do emitente
-                cnpj = find_element_flexible(emit, 'CNPJ', ns)
-                nf_data['cnpj_emitente'] = cnpj.text if cnpj is not None else ''
-                if cnpj is not None:
-                    logger.info(f"CNPJ extraído: {cnpj.text}")
-                
-                # Nome do emitente
-                xNome = find_element_flexible(emit, 'xNome', ns)
-                nome_emitente = xNome.text if xNome is not None else ''
-                nf_data['nome_emitente'] = nome_emitente
-                if xNome is not None:
-                    logger.info(f"Nome emitente extraído: {nome_emitente}")
-                
-                # Endereço do emitente/remetente
-                enderEmit = find_element_flexible(emit, 'enderEmit', ns)
-                if enderEmit is not None:
-                    # UF
-                    uf = find_element_flexible(enderEmit, 'UF', ns)
-                    nf_data['remetente_uf'] = uf.text if uf is not None else ''
-                    nf_data['uf_emitente'] = uf.text if uf is not None else ''
-                    
-                    # Município
-                    xMun = find_element_flexible(enderEmit, 'xMun', ns)
-                    nf_data['remetente_cidade'] = xMun.text if xMun is not None else ''
-                    nf_data['cidade_emitente'] = xMun.text if xMun is not None else ''
-                    
-                    # Endereço completo
-                    xLgr = find_element_flexible(enderEmit, 'xLgr', ns)
-                    nro = find_element_flexible(enderEmit, 'nro', ns)
-                    xBairro = find_element_flexible(enderEmit, 'xBairro', ns)
-                    
-                    logradouro = xLgr.text if xLgr is not None else ''
-                    numero = nro.text if nro is not None else ''
-                    bairro = xBairro.text if xBairro is not None else ''
-                    
-                    endereco_parts = [p for p in [logradouro, numero, bairro] if p]
-                    endereco_completo = ', '.join(endereco_parts)
-                    nf_data['remetente_endereco'] = endereco_completo
-                    nf_data['endereco_emitente'] = endereco_completo
-                    
-                    # CEP
-                    cep = find_element_flexible(enderEmit, 'CEP', ns)
-                    nf_data['remetente_cep'] = cep.text if cep is not None else ''
-                    nf_data['cep_emitente'] = cep.text if cep is not None else ''
-            else:
-                logger.warning("Emitente não encontrado no XML")
-            
-            # Destinatário
-            dest = infNFe.find('nfe:dest', ns)
-            if dest is not None:
-                # CNPJ ou CPF do destinatário
-                cnpj = dest.find('nfe:CNPJ', ns)
-                cpf = dest.find('nfe:CPF', ns)
-                nf_data['destinatario_cnpj_cpf'] = cnpj.text if cnpj is not None else (cpf.text if cpf is not None else '')
-                
-                # Nome do destinatário
-                xNome = dest.find('nfe:xNome', ns)
-                nf_data['destinatario_razao'] = xNome.text if xNome is not None else ''
-                
-                # Endereço do destinatário
-                enderDest = dest.find('nfe:enderDest', ns)
-                if enderDest is not None:
-                    # UF
-                    uf = enderDest.find('nfe:UF', ns)
-                    nf_data['destinatario_uf'] = uf.text if uf is not None else ''
-                    
-                    # Município
-                    xMun = enderDest.find('nfe:xMun', ns)
-                    nf_data['destinatario_cidade'] = xMun.text if xMun is not None else ''
-                    
-                    # Endereço completo
-                    xLgr = enderDest.find('nfe:xLgr', ns)
-                    nro = enderDest.find('nfe:nro', ns)
-                    xBairro = enderDest.find('nfe:xBairro', ns)
-                    
-                    logradouro = xLgr.text if xLgr is not None else ''
-                    numero = nro.text if nro is not None else ''
-                    bairro = xBairro.text if xBairro is not None else ''
-                    
-                    # Campos separados para uso na etiqueta
-                    nf_data['destinatario_logradouro'] = logradouro
-                    nf_data['destinatario_numero'] = numero
-                    nf_data['destinatario_bairro'] = bairro
-                    
-                    endereco_parts = [p for p in [logradouro, numero, bairro] if p]
-                    nf_data['destinatario_endereco'] = ', '.join(endereco_parts)
-                    
-                    # CEP
-                    cep = enderDest.find('nfe:CEP', ns)
-                    nf_data['destinatario_cep'] = cep.text if cep is not None else ''
-            
-            # Totais da NFe - busca flexível
-            total = find_element_flexible(infNFe, 'total', ns)
-            if total is not None:
-                icms_tot = find_element_flexible(total, 'ICMSTot', ns)
-                if icms_tot is not None:
-                    vNF = find_element_flexible(icms_tot, 'vNF', ns)
-                    if vNF is not None and vNF.text:
-                        try:
-                            nf_data['valor_total'] = float(vNF.text)
-                            logger.info(f"Valor total extraído: R$ {vNF.text}")
-                        except:
-                            nf_data['valor_total'] = 0.0
-                    else:
-                        nf_data['valor_total'] = 0.0
-                        logger.warning("vNF não encontrado")
-                else:
-                    nf_data['valor_total'] = 0.0
-                    logger.warning("ICMSTot não encontrado")
-            else:
-                nf_data['valor_total'] = 0.0
-                logger.warning("Total não encontrado")
-            
-            # Informações de transporte
-            transp = infNFe.find('nfe:transp', ns)
-            if transp is not None:
-                # Buscar todos os volumes
-                volumes = transp.findall('nfe:vol', ns)
-                total_volumes = len(volumes)
-                total_peso = 0.0
-                
-                for vol in volumes:
-                    # Peso bruto
-                    pesoB = vol.find('nfe:pesoB', ns)
-                    if pesoB is not None and pesoB.text:
-                        try:
-                            total_peso += float(pesoB.text)
-                        except:
-                            pass
-                    
-                    # Quantidade de volumes (individual)
-                    qVol = vol.find('nfe:qVol', ns)
-                    if qVol is not None and qVol.text:
-                        try:
-                            vol_qty = int(float(qVol.text))
-                            total_volumes = max(total_volumes, vol_qty)
-                        except:
-                            pass
-                
-                nf_data['peso_bruto'] = total_peso
-                nf_data['volumes'] = total_volumes if total_volumes > 0 else 1
-                nf_data['quantidade_volumes'] = total_volumes if total_volumes > 0 else 1
-                
-                # Transportadora
-                transporta = transp.find('nfe:transporta', ns)
-                if transporta is not None:
-                    transp_nome = transporta.find('nfe:xNome', ns)
-                    if transp_nome is not None and transp_nome.text:
-                        nf_data['transportadora'] = transp_nome.text
-                    
-                    transp_cnpj = transporta.find('nfe:CNPJ', ns)
-                    if transp_cnpj is not None and transp_cnpj.text:
-                        nf_data['transportadora_cnpj'] = transp_cnpj.text
-            else:
-                nf_data['peso_bruto'] = 0.0
-                nf_data['volumes'] = 0
-                nf_data['quantidade_volumes'] = 0
-        
-        # Copiar dados do emitente para remetente se não estiverem preenchidos
-        if not nf_data.get('remetente_razao'):
-            nf_data['remetente_razao'] = nf_data.get('nome_emitente', '')
-        if not nf_data.get('remetente_cidade'):
-            nf_data['remetente_cidade'] = nf_data.get('cidade_emitente', '')
-        if not nf_data.get('remetente_uf'):
-            nf_data['remetente_uf'] = nf_data.get('uf_emitente', '')
-        if not nf_data.get('remetente_endereco'):
-            nf_data['remetente_endereco'] = nf_data.get('endereco_emitente', '')
-        if not nf_data.get('remetente_cep'):
-            nf_data['remetente_cep'] = nf_data.get('cep_emitente', '')
-        
-        # Preencher campos padrão se não encontrados
-        default_fields = {
-            'numero_nf': '',
-            'serie_nf': '',
-            'data_emissao': None,
-            'cnpj_emitente': '',
-            'nome_emitente': '',
-            'remetente_razao': '',
-            'remetente_cidade': '',
-            'remetente_uf': '',
-            'remetente_endereco': '',
-            'remetente_cep': '',
-            'destinatario_cnpj_cpf': '',
-            'destinatario_razao': '',
-            'destinatario_cidade': '',
-            'destinatario_uf': '',
-            'destinatario_endereco': '',
-            'destinatario_cep': '',
-            'valor_total': 0.0,
-            'peso_bruto': 0.0,
-            'quantidade_volumes': 0
+        namespaces = {
+            'nfe': 'http://www.portalfiscal.inf.br/nfe'
         }
         
-        for field, default_value in default_fields.items():
-            if field not in nf_data:
-                nf_data[field] = default_value
+        # Tentar encontrar o namespace automaticamente
+        if root.tag.startswith('{'):
+            namespace = root.tag.split('}')[0][1:]
+            namespaces['nfe'] = namespace
         
-        # Extrair dados de volume se disponível
-        vol = transp.find('.//nfe:vol', ns) if transp is not None else None
-        if vol is not None:
-            qvol_elem = vol.find('nfe:qVol', ns)
-            pesob_elem = vol.find('nfe:pesoB', ns)
-            pesol_elem = vol.find('nfe:pesoL', ns)
+        # Função auxiliar para buscar elementos com namespace
+        def find_element(parent, path):
+            # Tentar com namespace
+            for ns_prefix, ns_uri in namespaces.items():
+                full_path = path.replace('nfe:', f'{{{ns_uri}}}')
+                element = parent.find(full_path)
+                if element is not None:
+                    return element
             
-            nf_data['quantidade_volumes'] = int(qvol_elem.text) if qvol_elem is not None and qvol_elem.text else 1
-            nf_data['peso_bruto'] = float(pesob_elem.text) if pesob_elem is not None and pesob_elem.text else 0.0
-            nf_data['peso_liquido'] = float(pesol_elem.text) if pesol_elem is not None and pesol_elem.text else 0.0
+            # Tentar sem namespace
+            simple_path = path.replace('nfe:', '')
+            return parent.find(simple_path)
         
-        # Chave de acesso
-        chave_element = root.find('.//nfe:infNFe', ns)
-        if chave_element is not None:
-            nf_data['chave_acesso'] = chave_element.get('Id', '').replace('NFe', '') if chave_element.get('Id') else ''
+        # Função auxiliar para buscar texto de elemento
+        def get_element_text(parent, path, default=''):
+            element = find_element(parent, path)
+            return element.text if element is not None and element.text else default
         
-        return nf_data
+        # Extrair chave da NFe
+        chave_nfe = ''
+        infnfe = find_element(root, './/nfe:infNFe')
+        if infnfe is not None and 'Id' in infnfe.attrib:
+            chave_nfe = infnfe.attrib['Id'].replace('NFe', '')
+        
+        # Se não encontrou a chave, tentar extrair do nome do arquivo
+        if not chave_nfe and filename:
+            # Tentar extrair chave de 44 dígitos do nome do arquivo
+            match = re.search(r'\d{44}', filename)
+            if match:
+                chave_nfe = match.group()
+        
+        # Dados do emitente
+        emit = find_element(root, './/nfe:emit')
+        cnpj_emitente = get_element_text(emit, 'nfe:CNPJ') if emit else ''
+        nome_emitente = get_element_text(emit, 'nfe:xNome') if emit else ''
+        
+        # Endereço do emitente
+        endereco_emit = find_element(emit, 'nfe:enderEmit') if emit else None
+        emit_endereco = ''
+        emit_cidade = ''
+        emit_uf = ''
+        emit_cep = ''
+        
+        if endereco_emit is not None:
+            logradouro = get_element_text(endereco_emit, 'nfe:xLgr')
+            numero = get_element_text(endereco_emit, 'nfe:nro')
+            bairro = get_element_text(endereco_emit, 'nfe:xBairro')
+            emit_cidade = get_element_text(endereco_emit, 'nfe:xMun')
+            emit_uf = get_element_text(endereco_emit, 'nfe:UF')
+            emit_cep = get_element_text(endereco_emit, 'nfe:CEP')
+            
+            # Montar endereço completo
+            endereco_parts = [logradouro, numero, bairro]
+            emit_endereco = ', '.join([part for part in endereco_parts if part])
+        
+        # Dados da NFe
+        ide = find_element(root, './/nfe:ide')
+        numero_nf = get_element_text(ide, 'nfe:nNF') if ide else ''
+        serie_nf = get_element_text(ide, 'nfe:serie') if ide else ''
+        
+        # Data de emissão
+        data_emissao = None
+        if ide is not None:
+            dhemi = get_element_text(ide, 'nfe:dhEmi')
+            if dhemi:
+                try:
+                    # Formato: 2025-06-19T15:34:21-03:00
+                    data_emissao = datetime.fromisoformat(dhemi.replace('Z', '+00:00').split('T')[0])
+                except:
+                    try:
+                        # Formato alternativo: 2025-06-19
+                        data_emissao = datetime.strptime(dhemi[:10], '%Y-%m-%d')
+                    except:
+                        logger.warning(f"Erro ao parsear data de emissão: {dhemi}")
+        
+        # Valor total
+        total = find_element(root, './/nfe:total/nfe:ICMSTot')
+        valor_total = 0.0
+        if total is not None:
+            vnf = get_element_text(total, 'nfe:vNF')
+            try:
+                valor_total = float(vnf) if vnf else 0.0
+            except:
+                valor_total = 0.0
+        
+        # Dados de transporte
+        transp = find_element(root, './/nfe:transp')
+        peso_bruto = 0.0
+        quantidade_volumes = 0
+        
+        if transp is not None:
+            # Peso bruto
+            peso_liquido = get_element_text(transp, './/nfe:pesoL')
+            peso_bruto_xml = get_element_text(transp, './/nfe:pesoB')
+            
+            if peso_bruto_xml:
+                try:
+                    peso_bruto = float(peso_bruto_xml)
+                except:
+                    pass
+            elif peso_liquido:
+                try:
+                    peso_bruto = float(peso_liquido)
+                except:
+                    pass
+            
+            # Quantidade de volumes
+            volumes = find_element(transp, './/nfe:vol')
+            if volumes is not None:
+                qvol = get_element_text(volumes, 'nfe:qVol')
+                try:
+                    quantidade_volumes = int(float(qvol)) if qvol else 1
+                except:
+                    quantidade_volumes = 1
+            else:
+                # Se não especificado, assume 1 volume
+                quantidade_volumes = 1
+        
+        # Dados do destinatário
+        dest = find_element(root, './/nfe:dest')
+        destinatario_cnpj_cpf = ''
+        destinatario_razao = ''
+        destinatario_cidade = ''
+        destinatario_uf = ''
+        destinatario_endereco = ''
+        destinatario_cep = ''
+        
+        if dest is not None:
+            # CNPJ ou CPF
+            cnpj_dest = get_element_text(dest, 'nfe:CNPJ')
+            cpf_dest = get_element_text(dest, 'nfe:CPF')
+            destinatario_cnpj_cpf = cnpj_dest or cpf_dest
+            
+            # Nome/Razão social
+            destinatario_razao = get_element_text(dest, 'nfe:xNome')
+            
+            # Endereço do destinatário
+            endereco_dest = find_element(dest, 'nfe:enderDest')
+            if endereco_dest is not None:
+                logradouro = get_element_text(endereco_dest, 'nfe:xLgr')
+                numero = get_element_text(endereco_dest, 'nfe:nro')
+                bairro = get_element_text(endereco_dest, 'nfe:xBairro')
+                destinatario_cidade = get_element_text(endereco_dest, 'nfe:xMun')
+                destinatario_uf = get_element_text(endereco_dest, 'nfe:UF')
+                destinatario_cep = get_element_text(endereco_dest, 'nfe:CEP')
+                
+                # Montar endereço completo
+                endereco_parts = [logradouro, numero, bairro]
+                destinatario_endereco = ', '.join([part for part in endereco_parts if part])
+        
+        return {
+            'invoice_key': chave_nfe,
+            'cnpj_emitente': cnpj_emitente,
+            'nome_emitente': nome_emitente,
+            'numero_nf': numero_nf,
+            'serie_nf': serie_nf,
+            'data_emissao': data_emissao,
+            'valor_total': valor_total,
+            'peso_bruto': peso_bruto,
+            'quantidade_volumes': quantidade_volumes,
+            'remetente_razao': nome_emitente,  # Usar emitente como remetente
+            'remetente_cidade': emit_cidade,
+            'remetente_uf': emit_uf,
+            'remetente_endereco': emit_endereco,
+            'remetente_cep': emit_cep,
+            'destinatario_cnpj_cpf': destinatario_cnpj_cpf,
+            'destinatario_razao': destinatario_razao,
+            'destinatario_cidade': destinatario_cidade,
+            'destinatario_uf': destinatario_uf,
+            'destinatario_endereco': destinatario_endereco,
+            'destinatario_cep': destinatario_cep
+        }
         
     except Exception as e:
-        logger.error(f"Erro ao extrair dados do XML: {e}")
-        return {}
+        logger.error(f"Erro ao processar XML: {e}")
+        raise
 
-def save_xml_to_database(user_id: int, invoice_key: str, xml_content: str, 
-                        file_path: str, import_type: str = 'SISTEMA', job_id: str = None) -> int:
+
+def save_xml_to_database(user_id, xml_content, filename, import_type='UPLOAD'):
     """
-    Save XML data to database with extracted information
+    Salva XML no banco de dados após extrair os dados
     
     Args:
-        user_id: ID do usuário
-        invoice_key: Chave da nota fiscal
-        xml_content: Conteúdo XML
-        file_path: Caminho do arquivo
-        import_type: Tipo de importação
-        job_id: ID do job de download
-        
+        user_id (int): ID do usuário
+        xml_content (str): Conteúdo do XML
+        filename (str): Nome do arquivo
+        import_type (str): Tipo de importação (UPLOAD, EMAIL, SISTEMA)
+    
     Returns:
-        ID do XML salvo no banco
+        XMLFile: Objeto XMLFile criado
     """
     try:
-        from models import XMLFile
-        from new_app import db
-        
-        # Permitir downloads múltiplos - cada download gera registro único
-        logger.info(f"Processando novo download para chave {invoice_key}")
-        
         # Extrair dados do XML
-        xml_data = extract_xml_data(xml_content)
-        logger.info(f"Dados extraídos do XML: NF {xml_data.get('numero_nf')}, Valor R$ {xml_data.get('valor_total', 0):.2f}")
+        xml_data = extract_xml_data(xml_content, filename)
         
-        # Criar novo registro com todos os dados extraídos
+        # Verificar se já existe um XML com a mesma chave para este usuário
+        existing_xml = XMLFile.query.filter_by(
+            user_id=user_id,
+            invoice_key=xml_data['invoice_key']
+        ).first()
+        
+        if existing_xml:
+            logger.warning(f"XML já existe no banco: {xml_data['invoice_key']}")
+            return existing_xml
+        
+        # Definir caminho do arquivo
+        upload_dir = f"uploads/xmls/{user_id}"
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Gerar nome único para o arquivo
+        safe_filename = re.sub(r'[^\w\-_\.]', '_', filename)
+        file_path = os.path.join(upload_dir, safe_filename)
+        
+        # Salvar arquivo fisicamente
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(xml_content)
+        
+        # Criar registro no banco
         xml_file = XMLFile(
             user_id=user_id,
-            filename=f"{invoice_key}.xml",
-            invoice_key=invoice_key,
+            filename=safe_filename,
+            invoice_key=xml_data['invoice_key'],
             file_path=file_path,
             xml_content=xml_content,
             import_type=import_type,
-            job_id=job_id,
-            # Dados extraídos do XML
-            cnpj_emitente=xml_data.get('cnpj_emitente', ''),
-            nome_emitente=xml_data.get('nome_emitente', ''),
-            numero_nf=xml_data.get('numero_nf', ''),
-            serie_nf=xml_data.get('serie_nf', ''),
-            data_emissao=xml_data.get('data_emissao'),
-            valor_total=xml_data.get('valor_total', 0.0),
-            peso_bruto=xml_data.get('peso_bruto', 0.0),
-            quantidade_volumes=xml_data.get('quantidade_volumes', 1),
-            remetente_razao=xml_data.get('remetente_razao', ''),
-            remetente_cidade=xml_data.get('remetente_cidade', ''),
-            remetente_uf=xml_data.get('remetente_uf', ''),
-            remetente_endereco=xml_data.get('remetente_endereco', ''),
-            remetente_cep=xml_data.get('remetente_cep', ''),
-            destinatario_cnpj_cpf=xml_data.get('destinatario_cnpj_cpf', ''),
-            destinatario_razao=xml_data.get('destinatario_razao', ''),
-            destinatario_cidade=xml_data.get('destinatario_cidade', ''),
-            destinatario_uf=xml_data.get('destinatario_uf', ''),
-            destinatario_endereco=xml_data.get('destinatario_endereco', ''),
-            destinatario_cep=xml_data.get('destinatario_cep', ''),
-            danfe_generated=False,
-            label_generated=False
+            cnpj_emitente=xml_data['cnpj_emitente'][:14] if xml_data['cnpj_emitente'] else None,
+            nome_emitente=xml_data['nome_emitente'][:255] if xml_data['nome_emitente'] else None,
+            numero_nf=xml_data['numero_nf'][:50] if xml_data['numero_nf'] else None,
+            serie_nf=xml_data['serie_nf'][:10] if xml_data['serie_nf'] else None,
+            data_emissao=xml_data['data_emissao'],
+            valor_total=xml_data['valor_total'],
+            peso_bruto=xml_data['peso_bruto'],
+            quantidade_volumes=xml_data['quantidade_volumes'],
+            remetente_razao=xml_data['remetente_razao'][:255] if xml_data['remetente_razao'] else None,
+            remetente_cidade=xml_data['remetente_cidade'][:100] if xml_data['remetente_cidade'] else None,
+            remetente_uf=xml_data['remetente_uf'][:2] if xml_data['remetente_uf'] else None,
+            remetente_endereco=xml_data['remetente_endereco'][:500] if xml_data['remetente_endereco'] else None,
+            remetente_cep=xml_data['remetente_cep'][:8] if xml_data['remetente_cep'] else None,
+            destinatario_cnpj_cpf=xml_data['destinatario_cnpj_cpf'][:14] if xml_data['destinatario_cnpj_cpf'] else None,
+            destinatario_razao=xml_data['destinatario_razao'][:255] if xml_data['destinatario_razao'] else None,
+            destinatario_cidade=xml_data['destinatario_cidade'][:100] if xml_data['destinatario_cidade'] else None,
+            destinatario_uf=xml_data['destinatario_uf'][:2] if xml_data['destinatario_uf'] else None,
+            destinatario_endereco=xml_data['destinatario_endereco'][:500] if xml_data['destinatario_endereco'] else None,
+            destinatario_cep=xml_data['destinatario_cep'][:8] if xml_data['destinatario_cep'] else None
         )
         
         db.session.add(xml_file)
         db.session.commit()
         
-        logger.info(f"XML salvo com ID {xml_file.id} para usuário {user_id}")
-        logger.info(f"Dados extraídos: NF {xml_data.get('numero_nf', 'N/A')}, Emitente: {xml_data.get('nome_emitente', 'N/A')}")
-        
-        return xml_file.id
+        logger.info(f"XML salvo com sucesso: {xml_data['invoice_key']} via {import_type}")
+        return xml_file
         
     except Exception as e:
         logger.error(f"Erro ao salvar XML no banco: {e}")

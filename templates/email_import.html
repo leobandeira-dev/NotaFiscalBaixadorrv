@@ -1,0 +1,302 @@
+{% extends "base.html" %}
+
+{% block title %}Importação via Email{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        {% include 'sidebar.html' %}
+        
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="margin-left: 280px;">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2"><i class="fas fa-envelope me-2"></i>Importação via Email</h1>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Email Import Card -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0"><i class="fas fa-mail-bulk me-2"></i>Seu Email Personalizado</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">
+                                Envie seus arquivos XML diretamente para o email abaixo. Os XMLs serão processados automaticamente e aparecerão em "Meus XMLs". Esta importação é <strong>gratuita</strong> e não consome créditos.
+                            </p>
+
+                            <div class="email-box mb-4">
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-primary text-white">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                    <input type="text" class="form-control" id="userEmail" 
+                                           value="{{ user_email }}" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="copyEmail()">
+                                        <i class="fas fa-copy me-2"></i>Copiar
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle me-2"></i>Como usar:</h6>
+                                <ol class="mb-0">
+                                    <li>Copie o email acima</li>
+                                    <li>Anexe seus arquivos XML em um email</li>
+                                    <li>Envie para o endereço copiado</li>
+                                    <li>Os XMLs aparecerão automaticamente em "Meus XMLs"</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Email Imports -->
+                    <div class="card shadow-sm mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-history me-2"></i>Importações Recentes via Email</h6>
+                        </div>
+                        <div class="card-body">
+                            <div id="emailImports">
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-3x mb-3"></i>
+                                    <p>Nenhuma importação via email ainda</p>
+                                    <p class="small">Envie seus primeiros XMLs para o email acima</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Vantagens Card -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h6 class="mb-0"><i class="fas fa-star me-2"></i>Vantagens da Importação via Email</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-3">
+                                    <i class="fas fa-dollar-sign text-success me-2"></i>
+                                    <strong>Totalmente Gratuito</strong><br>
+                                    <small class="text-muted">Não consome créditos do sistema</small>
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-robot text-primary me-2"></i>
+                                    <strong>Processamento Automático</strong><br>
+                                    <small class="text-muted">XMLs processados em segundos</small>
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-shield-alt text-info me-2"></i>
+                                    <strong>Seguro e Privado</strong><br>
+                                    <small class="text-muted">Email exclusivo para sua conta</small>
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-mobile-alt text-warning me-2"></i>
+                                    <strong>Funciona pelo Celular</strong><br>
+                                    <small class="text-muted">Envie direto do smartphone</small>
+                                </li>
+                                <li class="mb-0">
+                                    <i class="fas fa-paper-plane text-secondary me-2"></i>
+                                    <strong>Múltiplos Arquivos</strong><br>
+                                    <small class="text-muted">Anexe vários XMLs por email</small>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Instructions Card -->
+                    <div class="card shadow-sm mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Dicas Importantes</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning py-2 px-3 mb-3">
+                                <small><i class="fas fa-exclamation-triangle me-1"></i>
+                                Apenas arquivos .xml serão processados</small>
+                            </div>
+                            <div class="alert alert-info py-2 px-3 mb-3">
+                                <small><i class="fas fa-clock me-1"></i>
+                                Processamento leva até 2 minutos</small>
+                            </div>
+                            <div class="alert alert-success py-2 px-3 mb-0">
+                                <small><i class="fas fa-check me-1"></i>
+                                Arquivos duplicados são ignorados</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card shadow-sm mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-bolt me-2"></i>Ações Rápidas</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('meus_xmls') }}" class="btn btn-primary">
+                                    <i class="fas fa-list me-2"></i>Ver Meus XMLs
+                                </a>
+                                <a href="{{ url_for('upload_xml') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-upload me-2"></i>Upload Manual
+                                </a>
+                                <a href="{{ url_for('xml_download') }}" class="btn btn-outline-info">
+                                    <i class="fas fa-download me-2"></i>Download Automático
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+.email-box {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px dashed #28a745;
+}
+
+.email-box .input-group {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.email-box .form-control {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    background-color: white;
+    border: 2px solid #28a745;
+}
+
+.email-box .form-control:focus {
+    border-color: #28a745;
+    box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+}
+
+.copy-success {
+    animation: pulse 0.6s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.import-item {
+    border-left: 4px solid #28a745;
+    background: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+}
+
+.import-item .file-name {
+    font-weight: 600;
+    color: #495057;
+}
+
+.import-item .import-time {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+</style>
+
+<script>
+function copyEmail() {
+    const emailInput = document.getElementById('userEmail');
+    emailInput.select();
+    emailInput.setSelectionRange(0, 99999); // For mobile devices
+    
+    navigator.clipboard.writeText(emailInput.value).then(function() {
+        // Success feedback
+        const copyBtn = event.target.closest('button');
+        const originalText = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fas fa-check me-2"></i>Copiado!';
+        copyBtn.classList.add('btn-success', 'copy-success');
+        copyBtn.classList.remove('btn-outline-secondary');
+        
+        setTimeout(() => {
+            copyBtn.innerHTML = originalText;
+            copyBtn.classList.remove('btn-success', 'copy-success');
+            copyBtn.classList.add('btn-outline-secondary');
+        }, 2000);
+        
+        // Show toast notification
+        showToast('Email copiado com sucesso!', 'success');
+    }).catch(function(err) {
+        console.error('Erro ao copiar: ', err);
+        showToast('Erro ao copiar email', 'error');
+    });
+}
+
+function showToast(message, type) {
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
+    toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    toast.innerHTML = `
+        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" onclick="this.parentElement.remove()"></button>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+// Check for new email imports periodically
+function checkEmailImports() {
+    // This would typically fetch from an API endpoint
+    // For now, we'll just show placeholder
+    const importsContainer = document.getElementById('emailImports');
+    
+    // You would implement an API call here to fetch recent email imports
+    // fetch('/api/recent-email-imports')
+    //     .then(response => response.json())
+    //     .then(data => updateImportsList(data));
+}
+
+function updateImportsList(imports) {
+    const container = document.getElementById('emailImports');
+    
+    if (imports.length === 0) {
+        container.innerHTML = `
+            <div class="text-center text-muted py-4">
+                <i class="fas fa-inbox fa-3x mb-3"></i>
+                <p>Nenhuma importação via email ainda</p>
+                <p class="small">Envie seus primeiros XMLs para o email acima</p>
+            </div>
+        `;
+        return;
+    }
+    
+    container.innerHTML = imports.map(imp => `
+        <div class="import-item">
+            <div class="file-name">
+                <i class="fas fa-file-code me-2"></i>${imp.filename}
+            </div>
+            <div class="import-time">
+                <i class="fas fa-clock me-1"></i>Importado em ${imp.imported_at}
+            </div>
+        </div>
+    `).join('');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    checkEmailImports();
+    
+    // Check for new imports every 30 seconds
+    setInterval(checkEmailImports, 30000);
+});
+</script>
+{% endblock %}

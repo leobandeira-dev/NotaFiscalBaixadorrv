@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Upload de XMLs{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        {% include 'sidebar.html' %}
+        
+        <!-- Main content -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4" style="margin-left: 280px;">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2"><i class="fas fa-upload me-2"></i>Upload de XMLs</h1>
+            </div>
+
+            <!-- Flash messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Upload Form Card -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0"><i class="fas fa-file-upload me-2"></i>Importar Arquivos XML</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-4">
+                                Faça upload dos seus arquivos XML diretamente. Esta importação é <strong>gratuita</strong> e não consome créditos.
+                            </p>
+
+                            <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                                <div class="mb-4">
+                                    <label for="xml_files" class="form-label">Selecionar Arquivos XML</label>
+                                    <div class="upload-area" id="uploadArea">
+                                        <div class="upload-content">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                            <h5>Arraste os arquivos aqui ou clique para selecionar</h5>
+                                            <p class="text-muted">Apenas arquivos .xml são aceitos</p>
+                                            <input type="file" class="form-control" id="xml_files" name="xml_files" 
+                                                   multiple accept=".xml" style="display: none;">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Selected files preview -->
+                                <div id="selectedFiles" style="display: none;">
+                                    <h6>Arquivos Selecionados:</h6>
+                                    <div id="filesList" class="mb-3"></div>
+                                </div>
+
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary btn-lg" id="uploadBtn" disabled>
+                                        <i class="fas fa-upload me-2"></i>Fazer Upload
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <!-- Info Card -->
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0"><i class="fas fa-info-circle me-2"></i>Informações</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Upload gratuito (não consome créditos)
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Múltiplos arquivos suportados
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Validação automática de XMLs
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Extração automática de dados
+                                </li>
+                                <li class="mb-0">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    Disponível em "Meus XMLs"
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card shadow-sm mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="fas fa-bolt me-2"></i>Ações Rápidas</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('meus_xmls') }}" class="btn btn-outline-primary">
+                                    <i class="fas fa-list me-2"></i>Ver Meus XMLs
+                                </a>
+                                <a href="{{ url_for('email_import') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-envelope me-2"></i>Importar via Email
+                                </a>
+                                <a href="{{ url_for('xml_download') }}" class="btn btn-outline-info">
+                                    <i class="fas fa-download me-2"></i>Download Automático
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+.upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+.upload-area:hover {
+    border-color: #0d6efd;
+    background-color: #e3f2fd;
+}
+
+.upload-area.dragover {
+    border-color: #0d6efd;
+    background-color: #e3f2fd;
+    transform: scale(1.02);
+}
+
+.file-item {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.file-item .file-name {
+    font-weight: 500;
+    color: #495057;
+}
+
+.file-item .file-size {
+    color: #6c757d;
+    font-size: 0.9em;
+}
+
+.remove-file {
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 1.2em;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('xml_files');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const selectedFiles = document.getElementById('selectedFiles');
+    const filesList = document.getElementById('filesList');
+    let selectedFilesArray = [];
+
+    // Click to select files
+    uploadArea.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // Drag and drop events
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        
+        const files = Array.from(e.dataTransfer.files).filter(file => 
+            file.name.toLowerCase().endsWith('.xml')
+        );
+        
+        if (files.length > 0) {
+            addFiles(files);
+        }
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files);
+        addFiles(files);
+    });
+
+    function addFiles(files) {
+        selectedFilesArray = [...selectedFilesArray, ...files];
+        updateFilesList();
+        updateUploadButton();
+    }
+
+    function updateFilesList() {
+        if (selectedFilesArray.length === 0) {
+            selectedFiles.style.display = 'none';
+            return;
+        }
+
+        selectedFiles.style.display = 'block';
+        filesList.innerHTML = '';
+
+        selectedFilesArray.forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.innerHTML = `
+                <div>
+                    <div class="file-name"><i class="fas fa-file-code me-2"></i>${file.name}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                </div>
+                <span class="remove-file" onclick="removeFile(${index})">
+                    <i class="fas fa-times"></i>
+                </span>
+            `;
+            filesList.appendChild(fileItem);
+        });
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function updateUploadButton() {
+        uploadBtn.disabled = selectedFilesArray.length === 0;
+        
+        if (selectedFilesArray.length > 0) {
+            uploadBtn.innerHTML = `<i class="fas fa-upload me-2"></i>Fazer Upload (${selectedFilesArray.length} arquivo${selectedFilesArray.length > 1 ? 's' : ''})`;
+        } else {
+            uploadBtn.innerHTML = '<i class="fas fa-upload me-2"></i>Fazer Upload';
+        }
+    }
+
+    // Make removeFile global
+    window.removeFile = function(index) {
+        selectedFilesArray.splice(index, 1);
+        updateFilesList();
+        updateUploadButton();
+        
+        // Update file input
+        const dt = new DataTransfer();
+        selectedFilesArray.forEach(file => dt.items.add(file));
+        fileInput.files = dt.files;
+    };
+
+    // Form submission
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+        if (selectedFilesArray.length === 0) {
+            e.preventDefault();
+            alert('Selecione pelo menos um arquivo XML.');
+            return;
+        }
+
+        // Update file input with selected files
+        const dt = new DataTransfer();
+        selectedFilesArray.forEach(file => dt.items.add(file));
+        fileInput.files = dt.files;
+
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Fazendo Upload...';
+    });
+});
+</script>
+{% endblock %}

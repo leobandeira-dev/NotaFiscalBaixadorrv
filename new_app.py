@@ -2065,6 +2065,155 @@ def revoke_api_credentials():
         logger.error(f"Erro ao revogar credenciais API: {e}")
         return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
 
+@app.route('/upload-xml', methods=['GET', 'POST'])
+@login_required
+@rate_limit_check(max_requests=20, window_minutes=10)
+def upload_xml():
+    """Upload manual de arquivos XML"""
+    if request.method == 'GET':
+        return render_template('upload_xml.html')
+    
+    try:
+        from xml_processor import save_xml_to_database
+        
+        # Verificar se arquivos foram enviados
+        if 'xml_files' not in request.files:
+            flash('Nenhum arquivo foi selecionado.', 'error')
+            return redirect(url_for('upload_xml'))
+        
+        files = request.files.getlist('xml_files')
+        if not files or files[0].filename == '':
+            flash('Nenhum arquivo foi selecionado.', 'error')
+            return redirect(url_for('upload_xml'))
+        
+        uploaded_count = 0
+        error_count = 0
+        errors = []
+        
+        for file in files:
+            if file and file.filename:
+                # Verificar se é arquivo XML
+                if not file.filename.lower().endswith('.xml'):
+                    errors.append(f"{file.filename}: Não é um arquivo XML")
+                    error_count += 1
+                    continue
+                
+                try:
+                    # Ler conteúdo do arquivo
+                    xml_content = file.read().decode('utf-8')
+                    
+                    # Salvar no banco de dados
+                    xml_file = save_xml_to_database(
+                        user_id=current_user.id,
+                        xml_content=xml_content,
+                        filename=file.filename,
+                        import_type='UPLOAD'
+                    )
+                    
+                    uploaded_count += 1
+                    logger.info(f"XML uploadado com sucesso: {file.filename} - Chave: {xml_file.invoice_key}")
+                    
+                except Exception as e:
+                    logger.error(f"Erro ao processar {file.filename}: {e}")
+                    errors.append(f"{file.filename}: {str(e)}")
+                    error_count += 1
+        
+        # Mostrar resultados
+        if uploaded_count > 0:
+            flash(f'{uploaded_count} XML(s) importado(s) com sucesso!', 'success')
+        
+        if error_count > 0:
+            flash(f'{error_count} arquivo(s) com erro. Detalhes: {"; ".join(errors[:3])}', 'warning')
+        
+        return redirect(url_for('meus_xmls'))
+        
+    except Exception as e:
+        logger.error(f"Erro no upload de XMLs: {e}")
+        flash('Erro interno do servidor.', 'error')
+        return redirect(url_for('upload_xml'))
+
+@app.route('/email-import')
+@login_required  
+@rate_limit_check(max_requests=10, window_minutes=10)
+def email_import():
+    """Página de importação via email"""
+    # Gerar email único para o usuário
+    user_email = f"xml-import-{current_user.id}@crossxml.com"
+    
+    return render_template('email_import.html', 
+                         user_email=user_email,
+                         user_id=current_user.id)
+
+@app.route('/process-email-xml', methods=['POST'])
+@rate_limit_check(max_requests=100, window_minutes=60)
+def process_email_xml():
+    """Processa XMLs recebidos via email (webhook)"""
+    try:
+        from xml_processor import save_xml_to_database
+        
+        # Verificar autenticação básica do webhook
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or auth_header != f"Bearer {os.environ.get('EMAIL_WEBHOOK_SECRET', 'default_secret')}":
+            return jsonify({'error': 'Unauthorized'}), 401
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Extrair dados do email
+        user_id = data.get('user_id')
+        sender_email = data.get('sender')
+        attachments = data.get('attachments', [])
+        
+        if not user_id:
+            return jsonify({'error': 'user_id required'}), 400
+        
+        # Verificar se usuário existe
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        processed_count = 0
+        error_count = 0
+        
+        for attachment in attachments:
+            filename = attachment.get('filename', '')
+            content = attachment.get('content', '')
+            
+            # Verificar se é arquivo XML
+            if not filename.lower().endswith('.xml'):
+                continue
+            
+            try:
+                # Decodificar conteúdo base64
+                import base64
+                xml_content = base64.b64decode(content).decode('utf-8')
+                
+                # Salvar no banco
+                xml_file = save_xml_to_database(
+                    user_id=user_id,
+                    xml_content=xml_content,
+                    filename=filename,
+                    import_type='EMAIL'
+                )
+                
+                processed_count += 1
+                logger.info(f"XML recebido via email: {filename} - Usuário: {user_id}")
+                
+            except Exception as e:
+                logger.error(f"Erro ao processar XML via email {filename}: {e}")
+                error_count += 1
+        
+        return jsonify({
+            'status': 'success',
+            'processed': processed_count,
+            'errors': error_count
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro no webhook de email: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
 @app.route('/pricing')
 @rate_limit_check(max_requests=30, window_minutes=10)
 def pricing():
