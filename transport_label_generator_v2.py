@@ -79,59 +79,57 @@ class CustomTransportLabelGenerator:
     def _draw_transport_label(self, c, xml_data, pedido_number, area_code, company_logo_path):
         """Desenha a etiqueta completa personalizada com layout responsivo"""
         
-        # Calcular distribuição responsiva do espaço
-        available_height = self.page_height - (20 * mm)  # Margem total
-        num_sections = 9  # Número de seções principais
-        
-        # Distribuir espaço uniformemente para layout harmonioso
-        section_spacing = available_height / num_sections
+        # Calcular distribuição responsiva do espaço disponível
+        usable_height = self.page_height - (40 * mm)  # Reservar espaço para margem superior/inferior e área
         
         # Posição inicial Y (começa do topo)
-        y_pos = self.page_height - 10 * mm
+        y_pos = self.page_height - 15 * mm
         
-        # 1. Header da empresa (compacto)
+        # 1. Header da empresa (10% do espaço)
+        header_height = usable_height * 0.10
         y_pos = self._draw_company_header(c, y_pos, company_logo_path)
-        y_pos -= section_spacing * 0.8
+        y_pos -= header_height
         
-        # 2. ID e QR Code (lado a lado otimizado)
+        # 2. ID e QR Code (15% do espaço)
+        id_height = usable_height * 0.15
         y_pos = self._draw_id_section(c, xml_data, y_pos)
-        y_pos -= section_spacing * 1.2
+        y_pos -= id_height
         
-        # 3. NF Section
+        # 3. NF Section (8% do espaço)
+        nf_height = usable_height * 0.08
         y_pos = self._draw_nf_section(c, xml_data, y_pos)
-        y_pos -= section_spacing * 0.6
+        y_pos -= nf_height
         
-        # 4. Pedido Section
+        # 4. Pedido Section (8% do espaço)
+        pedido_height = usable_height * 0.08
         y_pos = self._draw_pedido_section(c, pedido_number or xml_data.get('numero_nf', '00000'), y_pos)
-        y_pos -= section_spacing * 0.6
+        y_pos -= pedido_height
         
-        # 5. Remetente (compacto)
+        # 5. Remetente (8% do espaço)
+        remetente_height = usable_height * 0.08
         y_pos = self._draw_remetente_section(c, xml_data, y_pos)
-        y_pos -= section_spacing * 0.8
+        y_pos -= remetente_height
         
-        # 6. Destinatário (expandido)
+        # 6. Destinatário (15% do espaço)
+        dest_height = usable_height * 0.15
         y_pos = self._draw_destinatario_section(c, xml_data, y_pos)
-        y_pos -= section_spacing * 1.2
+        y_pos -= dest_height
         
-        # 7. Cidade/UF
+        # 7. Cidade/UF (8% do espaço)
+        cidade_height = usable_height * 0.08
         y_pos = self._draw_cidade_section(c, xml_data, y_pos)
-        y_pos -= section_spacing * 0.6
+        y_pos -= cidade_height
         
-        # 8. Peso Section
+        # 8. Peso Section (8% do espaço)
+        peso_height = usable_height * 0.08
         y_pos = self._draw_peso_section(c, xml_data, y_pos)
-        y_pos -= section_spacing * 0.6
+        y_pos -= peso_height
         
-        # 9. Volume Section
+        # 9. Volume Section (8% do espaço)
         y_pos = self._draw_volume_section(c, xml_data, y_pos)
         
-        # 8. Área e Rodapé
+        # 10. Área e Rodapé (posicionamento fixo no canto inferior)
         self._draw_area_section(c, area_code)
-        self._draw_footer(c)
-        
-        # 10. Área (canto inferior direito)
-        self._draw_area_section(c, area_code)
-        
-        # 11. Footer
         self._draw_footer(c)
     
     def _draw_company_header(self, c, y_pos, company_logo_path):
@@ -170,13 +168,16 @@ class CustomTransportLabelGenerator:
         c.setFont("Helvetica", 12)
         invoice_key = xml_data.get('chave_acesso', '00000000000000000000000000000000000000000000')
         formatted_id = f"ID: {invoice_key[:5]}-{invoice_key[5:8]}-{invoice_key[8:11]}-{invoice_key[11:14]}"
-        c.drawString(self.margin, y_pos, formatted_id)
+        c.drawString(self.margin, y_pos - 5, formatted_id)
         
-        # QR Code
+        # QR Code menor e melhor posicionado
         qr_data = xml_data.get('chave_acesso', invoice_key)
-        self._draw_qr_code(c, qr_data, self.page_width - 60 * mm, y_pos - 20, 40 * mm)
+        qr_size = 15 * mm  # Reduzido de 40mm para 15mm
+        qr_x = self.page_width - self.margin - qr_size
+        qr_y = y_pos - 20
+        self._draw_qr_code(c, qr_data, qr_x, qr_y, qr_size)
         
-        return y_pos - 25*mm
+        return y_pos - 20*mm
     
     def _draw_nf_section(self, c, xml_data, y_pos):
         """Desenha seção NF com fundo preto"""
@@ -308,11 +309,11 @@ class CustomTransportLabelGenerator:
     
     def _draw_area_section(self, c, area_code):
         """Desenha seção ÁREA no canto inferior direito"""
-        # Posição no canto inferior direito
-        area_x = self.page_width - 60 * mm
-        area_y = 60 * mm
-        area_width = 40 * mm
-        area_height = 30 * mm
+        # Posição no canto inferior direito com margem adequada
+        area_width = 30 * mm
+        area_height = 20 * mm
+        area_x = self.page_width - self.margin - area_width
+        area_y = 15 * mm
         
         # Fundo preto
         c.setFillColor(colors.black)
@@ -320,11 +321,11 @@ class CustomTransportLabelGenerator:
         
         # Texto branco
         c.setFillColor(colors.white)
-        c.setFont("Helvetica-Bold", 12)
-        c.drawCentredString(area_x + area_width/2, area_y + area_height - 10, "ÁREA")
+        c.setFont("Helvetica-Bold", 10)
+        c.drawCentredString(area_x + area_width/2, area_y + area_height - 6, "ÁREA")
         
-        c.setFont("Helvetica-Bold", 24)
-        c.drawCentredString(area_x + area_width/2, area_y + 8, area_code)
+        c.setFont("Helvetica-Bold", 18)
+        c.drawCentredString(area_x + area_width/2, area_y + 4, area_code)
         
         # Voltar cor para preto
         c.setFillColor(colors.black)
@@ -333,7 +334,7 @@ class CustomTransportLabelGenerator:
         """Desenha rodapé com sistema"""
         c.setFont("Helvetica", 8)
         c.setFillColor(colors.grey)
-        c.drawString(self.margin, 30 * mm, "Sistema de Etiquetas")
+        c.drawString(self.margin, 5 * mm, "Sistema de Etiquetas")
     
     def _draw_qr_code(self, c, data, x, y, size):
         """Desenha QR code na posição especificada"""
