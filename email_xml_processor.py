@@ -245,7 +245,7 @@ class EmailXMLProcessor:
             
         return xml_attachments
     
-    def save_xml_to_database(self, xml_attachment, email_info):
+    def save_xml_to_database(self, xml_attachment):
         """Salva XML no banco de dados com import_type = 'email'"""
         try:
             # Criar arquivo temporário para processar o XML
@@ -259,35 +259,31 @@ class EmailXMLProcessor:
                 
                 if xml_data:
                     # Criar registro na tabela xml_files
-                    xml_file = XMLFile(
-                        user_id=self.user.id,
-                        filename=xml_attachment['filename'],
-                        file_size=xml_attachment['size'],
-                        import_type='email',  # Marcar como importado via email
-                        chave_nf=xml_data.get('chave_nf', 'N/A'),
-                        numero_nf=xml_data.get('numero_nf', 'N/A'),
-                        serie_nf=xml_data.get('serie_nf', 'N/A'),
-                        data_emissao=xml_data.get('data_emissao'),
-                        valor_total=xml_data.get('valor_total', 0.0),
-                        peso_bruto=xml_data.get('peso_bruto', 0.0),
-                        volumes=xml_data.get('volumes', 0),
-                        nome_emitente=xml_data.get('nome_emitente', 'N/A'),
-                        cidade_emitente=xml_data.get('cidade_emitente', 'N/A'),
-                        uf_emitente=xml_data.get('uf_emitente', 'N/A'),
-                        endereco_emitente=xml_data.get('endereco_emitente', 'N/A'),
-                        cep_emitente=xml_data.get('cep_emitente', 'N/A'),
-                        nome_destinatario=xml_data.get('nome_destinatario', 'N/A'),
-                        cidade_destinatario=xml_data.get('cidade_destinatario', 'N/A'),
-                        uf_destinatario=xml_data.get('uf_destinatario', 'N/A'),
-                        endereco_destinatario=xml_data.get('endereco_destinatario', 'N/A'),
-                        cep_destinatario=xml_data.get('cep_destinatario', 'N/A'),
-                        nome_transportadora=xml_data.get('nome_transportadora', 'N/A'),
-                        remetente_nome=xml_data.get('nome_emitente', 'N/A'),
-                        remetente_cidade=xml_data.get('cidade_emitente', 'N/A'),
-                        remetente_uf=xml_data.get('uf_emitente', 'N/A'),
-                        remetente_endereco=xml_data.get('endereco_emitente', 'N/A'),
-                        remetente_cep=xml_data.get('cep_emitente', 'N/A')
-                    )
+                    xml_file = XMLFile()
+                    xml_file.user_id = self.user.id
+                    xml_file.filename = xml_attachment['filename']
+                    xml_file.invoice_key = xml_data.get('chave_nf', 'N/A')
+                    xml_file.import_type = 'email'  # Marcar como importado via email
+                    xml_file.numero_nf = xml_data.get('numero_nf', 'N/A')
+                    xml_file.serie_nf = xml_data.get('serie_nf', 'N/A')
+                    xml_file.data_emissao = xml_data.get('data_emissao')
+                    xml_file.valor_total = xml_data.get('valor_total', 0.0)
+                    xml_file.peso_bruto = xml_data.get('peso_bruto', 0.0)
+                    xml_file.quantidade_volumes = xml_data.get('volumes', 0)
+                    xml_file.nome_emitente = xml_data.get('nome_emitente', 'N/A')
+                    # Dados do remetente (usar dados do emitente)
+                    xml_file.remetente_razao = xml_data.get('nome_emitente', 'N/A')
+                    xml_file.remetente_cidade = xml_data.get('cidade_emitente', 'N/A')
+                    xml_file.remetente_uf = xml_data.get('uf_emitente', 'N/A')
+                    xml_file.remetente_endereco = xml_data.get('endereco_emitente', 'N/A')
+                    xml_file.remetente_cep = xml_data.get('cep_emitente', 'N/A')
+                    # Dados do destinatário
+                    xml_file.destinatario_razao = xml_data.get('nome_destinatario', 'N/A')
+                    xml_file.destinatario_cidade = xml_data.get('cidade_destinatario', 'N/A')
+                    xml_file.destinatario_uf = xml_data.get('uf_destinatario', 'N/A')
+                    xml_file.destinatario_endereco = xml_data.get('endereco_destinatario', 'N/A')
+                    xml_file.destinatario_cep = xml_data.get('cep_destinatario', 'N/A')
+                    xml_file.imported_at = datetime.now()
                     
                     # Salvar XML físico no diretório
                     xml_dir = f"downloads/user_{self.user.id}"
