@@ -323,8 +323,11 @@ def save_xml_to_database(user_id: int, invoice_key: str, xml_content: str,
         ID do XML salvo no banco
     """
     try:
+        from models import ImportedXML
+        from new_app import db
+        
         # Verificar se XML já existe
-        existing_xml = XMLFile.query.filter_by(
+        existing_xml = ImportedXML.query.filter_by(
             user_id=user_id,
             invoice_key=invoice_key
         ).first()
@@ -335,17 +338,36 @@ def save_xml_to_database(user_id: int, invoice_key: str, xml_content: str,
         
         # Extrair dados do XML
         xml_data = extract_xml_data(xml_content)
+        logger.info(f"Dados extraídos do XML: NF {xml_data.get('numero_nf')}, Valor R$ {xml_data.get('valor_total', 0):.2f}")
         
-        # Criar novo registro XML
-        xml_file = XMLFile(
+        # Criar novo registro XML com todos os dados extraídos
+        xml_file = ImportedXML(
             user_id=user_id,
-            filename=f"{invoice_key}.xml",
             invoice_key=invoice_key,
-            file_path=file_path,
             xml_content=xml_content,
+            file_path=file_path,
             import_type=import_type,
-            imported_at=datetime.utcnow(),
-            job_id=job_id
+            job_id=job_id,
+            # Dados extraídos
+            numero_nf=xml_data.get('numero_nf', ''),
+            serie_nf=xml_data.get('serie_nf', ''),
+            data_emissao=xml_data.get('data_emissao'),
+            cnpj_emitente=xml_data.get('cnpj_emitente', ''),
+            nome_emitente=xml_data.get('nome_emitente', ''),
+            valor_total=xml_data.get('valor_total', 0.0),
+            peso_bruto=xml_data.get('peso_bruto', 0.0),
+            quantidade_volumes=xml_data.get('quantidade_volumes', 1),
+            remetente_razao=xml_data.get('remetente_razao', ''),
+            remetente_cidade=xml_data.get('remetente_cidade', ''),
+            remetente_uf=xml_data.get('remetente_uf', ''),
+            remetente_endereco=xml_data.get('remetente_endereco', ''),
+            remetente_cep=xml_data.get('remetente_cep', ''),
+            destinatario_cnpj_cpf=xml_data.get('destinatario_cnpj_cpf', ''),
+            destinatario_razao=xml_data.get('destinatario_razao', ''),
+            destinatario_cidade=xml_data.get('destinatario_cidade', ''),
+            destinatario_uf=xml_data.get('destinatario_uf', ''),
+            destinatario_endereco=xml_data.get('destinatario_endereco', ''),
+            destinatario_cep=xml_data.get('destinatario_cep', '')
         )
         
         db.session.add(xml_file)
