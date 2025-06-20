@@ -378,10 +378,10 @@ def dashboard():
     
     # Get recent activities with data isolation
     try:
-        activities_query = UsageRecord.query.filter_by(user_id=current_user.id)\
-            .filter(UsageRecord.created_at >= datetime.now() - timedelta(days=7))\
-            .order_by(UsageRecord.created_at.desc())\
-            .limit(10)
+        activities_query = UsageRecord.query.filter(
+            UsageRecord.user_id == current_user.id,
+            UsageRecord.created_at >= datetime.now() - timedelta(days=7)
+        ).order_by(UsageRecord.created_at.desc()).limit(10)
         activities_query = DataIsolationManager.filter_user_usage(activities_query, current_user.id)
         recent_activities = activities_query.all()
     except Exception as e:
@@ -1231,17 +1231,26 @@ def generate_danfe_simple(filename):
 
 @app.route('/download-xml/<int:xml_id>')
 @login_required
+@rate_limit_check(max_requests=200, window_minutes=15)
 def download_xml(xml_id):
-    """Download arquivo XML específico"""
-    # XMLFile removido - usando XMLFile
+    """Download arquivo XML específico com isolamento de dados"""
     from flask import send_file
     import io
     
-    xml_record = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    # Validar acesso ao XML com isolamento de dados
+    xml_query = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id)
+    xml_query = DataIsolationManager.filter_user_xmls(xml_query, current_user.id)
+    xml_record = xml_query.first()
     
     if not xml_record:
+        SecurityManager.log_security_event("UNAUTHORIZED_XML_ACCESS", current_user.id, f"XML ID: {xml_id}")
         flash('XML não encontrado.', 'error')
         return redirect(url_for('meus_xmls'))
+    
+    # Validar acesso do usuário ao XML
+    if not SecurityManager.validate_xml_access(xml_record):
+        SecurityManager.log_security_event("XML_ACCESS_DENIED", current_user.id, f"XML ID: {xml_id}")
+        abort(403)
     
     # Criar arquivo em memória
     xml_io = io.BytesIO(xml_record.xml_content.encode('utf-8'))
@@ -1307,33 +1316,39 @@ def generate_danfe_route(xml_id):
 
 @app.route('/generate-label/<int:xml_id>')
 @login_required
+@rate_limit_check(max_requests=50, window_minutes=15)
 def generate_label_route(xml_id):
-    """Gera e baixa etiqueta de transporte para um XML específico"""
+    """Gera e baixa etiqueta de transporte para um XML específico com isolamento de dados"""
     try:
-        # Buscar XML primeiro na XMLFile (dados completos), depois XMLFile
-        xml_record = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
-        xml_file = None
+        # Validar acesso ao XML com isolamento de dados
+        xml_query = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id)
+        xml_query = DataIsolationManager.filter_user_xmls(xml_query, current_user.id)
+        xml_record = xml_query.first()
         
         if not xml_record:
-            xml_file = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
-        
-        if not xml_record and not xml_file:
+            SecurityManager.log_security_event("UNAUTHORIZED_LABEL_ACCESS", current_user.id, f"XML ID: {xml_id}")
             flash('XML não encontrado.', 'error')
             return redirect(url_for('meus_xmls'))
         
-        # Usar dados da tabela encontrada
-        xml_content = xml_record.xml_content if xml_record else xml_file.xml_content
-        invoice_key = xml_record.invoice_key if xml_record else xml_file.invoice_key
+        # Validar acesso do usuário ao XML
+        if not SecurityManager.validate_xml_access(xml_record):
+            SecurityManager.log_security_event("LABEL_ACCESS_DENIED", current_user.id, f"XML ID: {xml_id}")
+            abort(403)
         
-        # Verificar módulo de etiquetas
+        # Usar dados do XML encontrado
+        xml_content = xml_record.xml_content
+        invoice_key = xml_record.invoice_key
+        
+        # Verificar módulo de etiquetas com validação de segurança
         labels_module = ServiceModule.query.filter_by(name='Etiquetas de Transporte').first()
         if not labels_module:
+            SecurityManager.log_security_event("LABELS_MODULE_NOT_FOUND", current_user.id)
             flash('Módulo de etiquetas não disponível.', 'error')
             return redirect(url_for('meus_xmls'))
         
-        # Verificar se usuário pode usar o serviço (trial ou saldo)
-        is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()
-        if not is_trial_active and current_user.current_balance < labels_module.cost_per_use:
+        # Validar uso do serviço com segurança
+        if not BillingSecurityManager.validate_service_usage(current_user, 'label_generation', 1):
+            SecurityManager.log_security_event("INSUFFICIENT_LABELS_ACCESS", current_user.id)
             flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
             return redirect(url_for('comprar_creditos'))
         
@@ -1461,19 +1476,30 @@ def comprar_creditos():
                          current_user=current_user)
 
 @app.route('/create-checkout-session', methods=['POST'])
-@login_required 
+@login_required
+@rate_limit_check(max_requests=10, window_minutes=5)
 def create_checkout_session():
-    """Criar sessão de checkout Stripe"""
+    """Criar sessão de checkout Stripe com validação de segurança"""
     try:
         data = request.get_json()
         package_id = data.get('package_id')
         
+        # Validação de entrada com sanitização
+        package_id = SecurityManager.sanitize_input(str(package_id)) if package_id else None
+        
         if not package_id:
+            SecurityManager.log_security_event("CHECKOUT_INVALID_PACKAGE", current_user.id, "Missing package_id")
             return jsonify({'error': 'Package ID is required'}), 400
         
         package = PricingManager.get_credit_package(package_id)
         if not package:
+            SecurityManager.log_security_event("CHECKOUT_INVALID_PACKAGE", current_user.id, f"Invalid package: {package_id}")
             return jsonify({'error': 'Invalid package'}), 400
+        
+        # Validar operação de crédito
+        if not BillingSecurityManager.validate_credit_operation(current_user, package['credits'], 'purchase'):
+            SecurityManager.log_security_event("CHECKOUT_VALIDATION_FAILED", current_user.id, f"Package: {package_id}")
+            return jsonify({'error': 'Credit operation validation failed'}), 403
         
         # Inicializar gerenciador Stripe
         stripe_manager = StripePaymentManager()
@@ -1529,23 +1555,35 @@ def create_checkout_session():
 
 @app.route('/payment-success')
 @login_required
+@rate_limit_check(max_requests=20, window_minutes=10)
 def payment_success():
-    """Página de sucesso do pagamento"""
+    """Página de sucesso do pagamento com isolamento de dados"""
     session_id = request.args.get('session_id')
     
+    # Sanitizar entrada de dados
+    session_id = SecurityManager.sanitize_input(session_id) if session_id else None
+    
     if not session_id:
+        SecurityManager.log_security_event("PAYMENT_SUCCESS_NO_SESSION", current_user.id)
         flash('Sessão de pagamento não encontrada.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Buscar transação no banco
-    transaction = StripeTransaction.query.filter_by(
+    # Buscar transação com isolamento de dados por usuário
+    transaction_query = StripeTransaction.query.filter_by(
         stripe_session_id=session_id,
         user_id=current_user.id
-    ).first()
+    )
+    transaction = transaction_query.first()
     
     if not transaction:
+        SecurityManager.log_security_event("UNAUTHORIZED_PAYMENT_ACCESS", current_user.id, f"Session: {session_id}")
         flash('Transação não encontrada.', 'error')
         return redirect(url_for('dashboard'))
+    
+    # Validar que o usuário é o proprietário da transação
+    if transaction.user_id != current_user.id:
+        SecurityManager.log_security_event("PAYMENT_OWNERSHIP_VIOLATION", current_user.id, f"Transaction: {transaction.id}")
+        abort(403)
     
     # Verificar status no Stripe
     stripe_manager = StripePaymentManager()
@@ -1619,8 +1657,17 @@ def historico_creditos():
 
 @app.route('/api/user/balance')
 @login_required
+@rate_limit_check(max_requests=100, window_minutes=10)
 def api_user_balance():
-    """API para obter saldo atual do usuário"""
+    """API para obter saldo atual do usuário com isolamento de dados"""
+    # Validar acesso do usuário aos próprios dados
+    if not SecurityManager.validate_user_access(current_user.id):
+        SecurityManager.log_security_event("UNAUTHORIZED_BALANCE_ACCESS", current_user.id)
+        abort(403)
+    
+    # Registrar acesso à API
+    SecurityManager.log_security_event("BALANCE_API_ACCESS", current_user.id)
+    
     return jsonify({
         'balance': current_user.current_balance or 0.0,
         'is_trial': current_user.is_trial_active(),
