@@ -1792,13 +1792,13 @@ def label_generator(xml_id):
         
         if not xml_record and not xml_file:
             flash('XML não encontrado.', 'error')
-            return redirect(url_for('my_xmls'))
+            return redirect(url_for('meus_xmls'))
         
         # Verificar módulo de etiquetas
         labels_module = ServiceModule.query.filter_by(name='Etiquetas de Transporte').first()
         if not labels_module:
             flash('Módulo de etiquetas não disponível.', 'error')
-            return redirect(url_for('my_xmls'))
+            return redirect(url_for('meus_xmls'))
         
         # Verificar se usuário pode usar o serviço (trial ou saldo)
         is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()
@@ -1814,7 +1814,7 @@ def label_generator(xml_id):
     except Exception as e:
         logger.error(f"Erro ao configurar etiquetas: {e}")
         flash('Erro ao carregar configuração de etiquetas.', 'error')
-        return redirect(url_for('my_xmls'))
+        return redirect(url_for('meus_xmls'))
 
 
 @app.route('/gerar-etiquetas-personalizadas/<int:xml_id>', methods=['POST'])
@@ -1831,7 +1831,7 @@ def generate_custom_labels(xml_id):
         
         if not xml_record and not xml_file:
             flash('XML não encontrado.', 'error')
-            return redirect(url_for('my_xmls'))
+            return redirect(url_for('meus_xmls'))
         
         xml_data = xml_record if xml_record else xml_file
         
@@ -1839,7 +1839,7 @@ def generate_custom_labels(xml_id):
         labels_module = ServiceModule.query.filter_by(name='Etiquetas de Transporte').first()
         if not labels_module:
             flash('Módulo de etiquetas não disponível.', 'error')
-            return redirect(url_for('my_xmls'))
+            return redirect(url_for('meus_xmls'))
         
         # Verificar acesso (trial ou saldo)
         is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()

@@ -29,11 +29,15 @@ class CustomTransportLabelGenerator:
         self.company_name = company_name
         self.company_subtitle = company_subtitle
         
-        # Configurações de escala baseadas no tamanho do papel
+        # Configurações de escala baseadas no tamanho do papel para impressão responsiva
         self.scale_factor = min(paper_width_mm / 100, paper_height_mm / 150)
-        self.base_font_size = max(8, int(10 * self.scale_factor))
-        self.header_font_size = max(10, int(12 * self.scale_factor))
-        self.large_font_size = max(16, int(20 * self.scale_factor))
+        self.base_font_size = max(7, int(9 * self.scale_factor))
+        self.header_font_size = max(9, int(11 * self.scale_factor))
+        self.large_font_size = max(14, int(18 * self.scale_factor))
+        
+        # Configurações específicas para impressão responsiva
+        self.line_height = max(3 * mm, self.base_font_size * 1.2)
+        self.section_spacing = max(2 * mm, self.line_height * 0.5)
     
     def generate_transport_label(self, xml_content: str, pedido_number: str = None, 
                                area_code: str = "01", company_logo_path: str = None) -> BytesIO:
