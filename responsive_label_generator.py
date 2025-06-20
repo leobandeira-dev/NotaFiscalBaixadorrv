@@ -19,7 +19,7 @@ class ResponsiveTransportLabelGenerator:
     """Gerador de etiquetas de transporte com layout verdadeiramente responsivo"""
     
     def __init__(self, company_name="SUA EMPRESA", company_subtitle="TRANSPORTE", 
-                 paper_width_mm=100, paper_height_mm=150):
+                 paper_width_mm=100, paper_height_mm=150, layout_style="layout1"):
         """
         Inicializa o gerador com configurações responsivas
         
@@ -28,11 +28,13 @@ class ResponsiveTransportLabelGenerator:
             company_subtitle: Subtítulo da empresa
             paper_width_mm: Largura do papel em milímetros
             paper_height_mm: Altura do papel em milímetros
+            layout_style: Estilo de layout ("layout1" = moderno, "layout2" = alto contraste)
         """
         self.company_name = company_name
         self.company_subtitle = company_subtitle
         self.paper_width_mm = paper_width_mm
         self.paper_height_mm = paper_height_mm
+        self.layout_style = layout_style
         self.page_width = paper_width_mm * mm
         self.page_height = paper_height_mm * mm
         
@@ -725,7 +727,9 @@ def generate_multiple_responsive_labels_from_volumes(xml_record, volumes_config:
                                                    company_logo_path: str = None,
                                                    paper_width_mm: int = 100,
                                                    paper_height_mm: int = 150,
-                                                   area_code: str = "01") -> list:
+                                                   area_code: str = "01",
+                                                   company_subtitle: str = "TRANSPORTE",
+                                                   layout_style: str = "layout1") -> list:
     """
     Gera múltiplas etiquetas responsivas separadas baseadas na configuração de volumes
     
@@ -764,8 +768,10 @@ def generate_multiple_responsive_labels_from_volumes(xml_record, volumes_config:
             # Criar novo gerador para cada lote para evitar acúmulo de memória
             generator = ResponsiveTransportLabelGenerator(
                 company_name=company_name,
+                company_subtitle=company_subtitle,
                 paper_width_mm=paper_width_mm,
-                paper_height_mm=paper_height_mm
+                paper_height_mm=paper_height_mm,
+                layout_style=layout_style
             )
             
             # Gerar etiquetas do lote atual

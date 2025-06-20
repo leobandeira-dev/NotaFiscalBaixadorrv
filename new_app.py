@@ -2185,8 +2185,10 @@ def generate_custom_labels(xml_id):
         
         # Configurações da empresa (usando configurações salvas do usuário)
         company_name = current_user.company_name or "SUA EMPRESA"
+        company_subtitle = current_user.company_subtitle or "TRANSPORTE"
         company_logo_path = current_user.company_logo_path
         area_code = current_user.default_area_code or "01"
+        layout_style = current_user.preferred_layout or "layout1"
         
         # Gerar etiquetas com sistema de batch processing (elimina erros de memória)
         labels = generate_multiple_responsive_labels_from_volumes(
@@ -2196,7 +2198,9 @@ def generate_custom_labels(xml_id):
             company_logo_path=company_logo_path,
             paper_width_mm=paper_width_mm,
             paper_height_mm=paper_height_mm,
-            area_code=area_code
+            area_code=area_code,
+            company_subtitle=company_subtitle,
+            layout_style=layout_style
         )
         
         if not labels:
