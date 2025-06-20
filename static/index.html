@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMLDownloader Pro - Automatize sua gestão fiscal</title>
+    <title>CROSS XML Downloader PRO - Automatize sua gestão fiscal</title>
     
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -593,13 +593,13 @@
             <div class="row align-items-center">
                 <div class="col-lg-6 hero-content">
                     <h1 class="animate-in">
-                        <span class="highlight">XMLDownloader Pro</span><br>
-                        Automatize sua gestão fiscal em minutos
+                        <span class="highlight">CROSS XML Downloader PRO</span><br>
+                        Acesse qualquer XML usando a chave da nota fiscal
                     </h1>
                     
                     <p class="animate-in">
-                        Pare de perder tempo baixando XMLs manualmente. Nossa plataforma automatiza todo o processo fiscal, 
-                        <strong>economizando até 85% do seu tempo</strong>.
+                        Identifique seus volumes embarcados com um clique usando nosso módulo de etiqueta integrada. 
+                        <strong>Economize até 85% do seu tempo</strong> na gestão fiscal e logística.
                     </p>
                     
                     <div class="feature-grid animate-in">
@@ -872,10 +872,10 @@
     <section id="como-funciona" class="section steps">
         <div class="container">
             <h2 class="section-title">Como funciona</h2>
-            <p class="section-subtitle">Em apenas 3 passos você automatiza toda sua gestão fiscal</p>
+            <p class="section-subtitle">Em apenas 4 passos você automatiza toda sua gestão fiscal</p>
             
             <div class="row g-4">
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <div class="step-item">
                         <div class="step-number">1</div>
                         <h4>Cadastre-se grátis</h4>
@@ -883,7 +883,7 @@
                     </div>
                 </div>
                 
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <div class="step-item">
                         <div class="step-number">2</div>
                         <h4>Cole as chaves dos XMLs</h4>
@@ -891,11 +891,136 @@
                     </div>
                 </div>
                 
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <div class="step-item">
                         <div class="step-number">3</div>
                         <h4>Baixe tudo automaticamente</h4>
                         <p>Receba todos os XMLs e DANFEs organizados e prontos para uso. Economia de até 85% no tempo.</p>
+                    </div>
+                </div>
+                
+                <div class="col-lg-3">
+                    <div class="step-item">
+                        <div class="step-number">4</div>
+                        <h4>Gere etiquetas com um clique</h4>
+                        <p>Identifique seus volumes embarcados automaticamente com etiquetas profissionais personalizadas.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Labor Savings Calculator -->
+    <section class="section" style="background: #f8fafc;">
+        <div class="container">
+            <h2 class="section-title">Calculadora de Economia de Mão de Obra</h2>
+            <p class="section-subtitle">Projete sua economia de tempo e recursos com automação</p>
+            
+            <div class="calculator" style="background: white; border-radius: 16px; padding: 2.5rem; box-shadow: 0 8px 30px rgba(0,0,0,0.08);">
+                <div class="row align-items-center mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">XMLs processados por mês:</label>
+                        <input type="range" id="laborXmlSlider" class="calculator-slider" min="100" max="5000" value="1000" step="100">
+                        <div class="text-center mt-2">
+                            <span id="laborXmlCount" class="badge" style="background: var(--primary-purple); font-size: 1rem;">1.000</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Salário/hora do funcionário (R$):</label>
+                        <input type="range" id="salarySlider" class="calculator-slider" min="10" max="100" value="25" step="5">
+                        <div class="text-center mt-2">
+                            <span id="salaryValue" class="badge" style="background: #f59e0b; font-size: 1rem;">R$ 25,00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Tempo manual por XML (min):</label>
+                        <input type="range" id="timeSlider" class="calculator-slider" min="2" max="10" value="5" step="1">
+                        <div class="text-center mt-2">
+                            <span id="timeValue" class="badge" style="background: #10b981; font-size: 1rem;">5 min</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="calculator-result" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                    <div class="result-item" style="background: #f0f9ff; border-color: #0ea5e9;">
+                        <div style="color: #0ea5e9; font-size: 0.9rem; font-weight: 600;">
+                            <i class="fas fa-clock me-1"></i>Tempo Economizado/Mês
+                        </div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #0ea5e9;">
+                            <span id="timeSaved">83h</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #0ea5e9;">Equivale a 2 semanas de trabalho</div>
+                    </div>
+                    
+                    <div class="result-item" style="background: #f0fdf4; border-color: #10b981;">
+                        <div style="color: #10b981; font-size: 0.9rem; font-weight: 600;">
+                            <i class="fas fa-dollar-sign me-1"></i>Economia Mensal
+                        </div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #10b981;">
+                            R$ <span id="monthlySavings">2.083</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #10b981;">Em custos de mão de obra</div>
+                    </div>
+                    
+                    <div class="result-item" style="background: #fefce8; border-color: #eab308;">
+                        <div style="color: #eab308; font-size: 0.9rem; font-weight: 600;">
+                            <i class="fas fa-chart-line me-1"></i>Economia Anual
+                        </div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #eab308;">
+                            R$ <span id="yearlySavings">24.996</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #eab308;">ROI de 2.500% sobre investimento</div>
+                    </div>
+                    
+                    <div class="result-item" style="background: #fdf2f8; border-color: #ec4899;">
+                        <div style="color: #ec4899; font-size: 0.9rem; font-weight: 600;">
+                            <i class="fas fa-user-friends me-1"></i>Capacidade Liberada
+                        </div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #ec4899;">
+                            <span id="peopleEquivalent">0.5</span> pessoa
+                        </div>
+                        <div style="font-size: 0.8rem; color: #ec4899;">Para outras atividades estratégicas</div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--primary-purple);">
+                            <h5 style="color: var(--primary-purple); margin-bottom: 1rem;">
+                                <i class="fas fa-lightbulb me-2"></i>Benefícios Adicionais
+                            </h5>
+                            <ul style="margin: 0; padding-left: 1rem; color: #666;">
+                                <li>Redução de erros manuais em 95%</li>
+                                <li>Disponibilidade 24/7 para processamento</li>
+                                <li>Escalabilidade automática conforme demanda</li>
+                                <li>Liberação de equipe para tarefas estratégicas</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div style="background: #f0fdf4; padding: 1.5rem; border-radius: 12px; border-left: 4px solid #10b981;">
+                            <h5 style="color: #10b981; margin-bottom: 1rem;">
+                                <i class="fas fa-calculator me-2"></i>Investimento vs Retorno
+                            </h5>
+                            <div style="color: #666;">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Custo mensal CROSS:</span>
+                                    <strong style="color: #10b981;">R$ <span id="crossCost">100</span></strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Economia de mão de obra:</span>
+                                    <strong style="color: #10b981;">R$ <span id="laborSavingsDisplay">2.083</span></strong>
+                                </div>
+                                <hr style="margin: 1rem 0;">
+                                <div class="d-flex justify-content-between">
+                                    <span><strong>ROI mensal:</strong></span>
+                                    <strong style="color: #10b981; font-size: 1.2rem;"><span id="roiPercent">2.083</span>%</strong>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -976,6 +1101,59 @@
 
         // Initialize calculator
         updateCalculator();
+        
+        // Labor Savings Calculator
+        const laborXmlSlider = document.getElementById('laborXmlSlider');
+        const salarySlider = document.getElementById('salarySlider');
+        const timeSlider = document.getElementById('timeSlider');
+        
+        function updateLaborCalculator() {
+            const xmlCount = parseInt(laborXmlSlider.value);
+            const hourlyRate = parseFloat(salarySlider.value);
+            const minutesPerXml = parseInt(timeSlider.value);
+            
+            // Update display values
+            document.getElementById('laborXmlCount').textContent = xmlCount.toLocaleString('pt-BR');
+            document.getElementById('salaryValue').textContent = `R$ ${hourlyRate.toFixed(2)}`;
+            document.getElementById('timeValue').textContent = `${minutesPerXml} min`;
+            
+            // Calculate savings
+            const totalMinutesPerMonth = xmlCount * minutesPerXml;
+            const totalHoursPerMonth = totalMinutesPerMonth / 60;
+            const monthlySavings = totalHoursPerMonth * hourlyRate;
+            const yearlySavings = monthlySavings * 12;
+            
+            // Calculate CROSS system cost (volume-based pricing)
+            let xmlPrice = 0.10;
+            if (xmlCount > 2000) xmlPrice = 0.06;
+            else if (xmlCount > 1000) xmlPrice = 0.07;
+            else if (xmlCount > 500) xmlPrice = 0.08;
+            
+            const crossMonthlyCost = xmlCount * xmlPrice;
+            const roi = ((monthlySavings - crossMonthlyCost) / crossMonthlyCost * 100);
+            
+            // People equivalent (assuming 160 hours/month per person)
+            const peopleEquivalent = totalHoursPerMonth / 160;
+            
+            // Update displays
+            document.getElementById('timeSaved').textContent = `${Math.round(totalHoursPerMonth)}h`;
+            document.getElementById('monthlySavings').textContent = monthlySavings.toLocaleString('pt-BR');
+            document.getElementById('yearlySavings').textContent = yearlySavings.toLocaleString('pt-BR');
+            document.getElementById('peopleEquivalent').textContent = peopleEquivalent.toFixed(1);
+            document.getElementById('crossCost').textContent = crossMonthlyCost.toFixed(0);
+            document.getElementById('laborSavingsDisplay').textContent = monthlySavings.toLocaleString('pt-BR');
+            document.getElementById('roiPercent').textContent = Math.round(roi).toLocaleString('pt-BR');
+        }
+        
+        // Add event listeners for labor calculator
+        if (laborXmlSlider && salarySlider && timeSlider) {
+            laborXmlSlider.addEventListener('input', updateLaborCalculator);
+            salarySlider.addEventListener('input', updateLaborCalculator);
+            timeSlider.addEventListener('input', updateLaborCalculator);
+            
+            // Initialize labor calculator
+            updateLaborCalculator();
+        }
 
         // Intersection Observer for animations
         const observerOptions = {
