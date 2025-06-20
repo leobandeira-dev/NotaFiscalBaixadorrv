@@ -115,7 +115,14 @@ class ResponsiveTransportLabelGenerator:
             
         except Exception as e:
             logger.error(f"Erro ao gerar etiqueta responsiva: {str(e)}")
-            raise
+            # Return a minimal PDF instead of failing completely
+            buffer = BytesIO()
+            c = canvas.Canvas(buffer, pagesize=(self.page_width, self.page_height))
+            c.setFont("Helvetica", 12)
+            c.drawString(50, 100, f"Erro na geração: {str(e)[:50]}")
+            c.save()
+            buffer.seek(0)
+            return buffer
     
     def _draw_responsive_label(self, c, xml_data, pedido_number, area_code, company_logo_path):
         """Desenha etiqueta com layout verdadeiramente responsivo"""
@@ -636,6 +643,11 @@ def merge_labels_into_single_pdf(labels: list) -> BytesIO:
         # Adicionar cada etiqueta como uma página
         for i, label in enumerate(labels):
             pdf_buffer = label.get('pdf_buffer') or label.get('buffer')
+            
+            if pdf_buffer is None:
+                logger.error(f"PDF buffer é None para etiqueta {i+1}")
+                continue
+                
             pdf_buffer.seek(0)
             
             try:
