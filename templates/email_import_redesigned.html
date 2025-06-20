@@ -736,7 +736,7 @@ function testPop3Connection() {
         }
         
         const email = emailElement.value;
-        const password = passwordElement.value;
+        let password = passwordElement.value;
         const port = portElement.value;
         const ssl = sslElement.checked;
         
@@ -748,9 +748,23 @@ function testPop3Connection() {
             server = serverSelectElement.value;
         }
         
-        if (!email || !password || !server) {
+        // Check if password is configured (has placeholder text indicating saved password)
+        const hasConfiguredPassword = passwordElement.placeholder.includes('••••••••');
+        
+        if (!email || (!password && !hasConfiguredPassword) || !server) {
             alert('Por favor, preencha todos os campos obrigatórios (email, senha e servidor)');
             return;
+        }
+        
+        // If password is empty but one is configured, prompt user to enter it for testing
+        if (!password && hasConfiguredPassword) {
+            const testPassword = prompt('Digite sua senha para testar a conexão:');
+            if (!testPassword) {
+                alert('Senha é necessária para testar a conexão');
+                return;
+            }
+            // Use the entered password for testing
+            password = testPassword;
         }
         
         // Update button state
