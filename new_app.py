@@ -2370,12 +2370,17 @@ def pop3_troubleshoot():
 
 @app.route('/save_pop3_credentials', methods=['POST'])
 @login_required
-@rate_limit_check(max_requests=5, window_minutes=10)
+@rate_limit_check(max_requests=5, window_minutes=10)  
 def save_pop3_credentials():
     """Salva credenciais POP3 do usuário"""
     try:
+        password = request.form.get('pop3_password')
+        if not password:
+            flash('Senha é obrigatória', 'error')
+            return redirect(url_for('email_import'))
+            
         current_user.pop3_email = request.form.get('pop3_email')
-        current_user.pop3_password = generate_password_hash(request.form.get('pop3_password'))
+        current_user.pop3_password = generate_password_hash(password)
         current_user.pop3_server = request.form.get('pop3_server')
         current_user.pop3_port = int(request.form.get('pop3_port', 995))
         current_user.pop3_ssl = 'pop3_ssl' in request.form
@@ -2396,8 +2401,13 @@ def save_pop3_credentials():
 def save_smtp_credentials():
     """Salva credenciais SMTP do usuário"""
     try:
+        password = request.form.get('smtp_password')
+        if not password:
+            flash('Senha é obrigatória', 'error')
+            return redirect(url_for('email_import'))
+            
         current_user.smtp_email = request.form.get('smtp_email')
-        current_user.smtp_password = generate_password_hash(request.form.get('smtp_password'))
+        current_user.smtp_password = generate_password_hash(password)
         current_user.smtp_server = request.form.get('smtp_server')
         current_user.smtp_port = int(request.form.get('smtp_port', 587))
         current_user.smtp_ssl = 'smtp_ssl' in request.form
