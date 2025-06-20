@@ -59,6 +59,14 @@ class User(UserMixin, db.Model):
     smtp_ssl = db.Column(db.Boolean, default=True)
     smtp_configured = db.Column(db.Boolean, default=False)
     
+    # Configurações de recebimento de email (POP3)
+    pop3_server = db.Column(db.String(100), nullable=True)
+    pop3_port = db.Column(db.Integer, default=995)
+    pop3_email = db.Column(db.String(120), nullable=True)
+    pop3_password = db.Column(db.String(256), nullable=True)  # Criptografada
+    pop3_ssl = db.Column(db.Boolean, default=True)
+    pop3_configured = db.Column(db.Boolean, default=False)
+    
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -149,6 +157,28 @@ class User(UserMixin, db.Model):
             # Para simplificar, vamos usar o mesmo método do IMAP
             # Em produção, considere usar criptografia reversível
             return self.smtp_password
+        return None
+    
+    def set_pop3_credentials(self, email, password, server, port=995, ssl=True):
+        """Define as credenciais para recebimento de email via POP3"""
+        self.pop3_email = email
+        self.pop3_password = generate_password_hash(password)  # Criptografa a senha
+        self.pop3_server = server
+        self.pop3_port = port
+        self.pop3_ssl = ssl
+        self.pop3_configured = True
+        db.session.commit()
+    
+    def has_pop3_configured(self):
+        """Verifica se o usuário configurou recebimento via POP3"""
+        return self.pop3_configured and self.pop3_email and self.pop3_password
+    
+    def get_pop3_password(self):
+        """Retorna a senha POP3 descriptografada"""
+        if self.pop3_password:
+            # Para simplificar, vamos usar o mesmo método do IMAP
+            # Em produção, considere usar criptografia reversível
+            return self.pop3_password
         return None
     
     def is_trial_active(self):

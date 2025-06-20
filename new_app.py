@@ -2276,6 +2276,102 @@ def view_smtp_credentials():
     
     return render_template('smtp_credentials_view.html', users=users_with_smtp)
 
+@app.route('/save-pop3-credentials', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=10)
+def save_pop3_credentials():
+    """Salva as credenciais POP3 do usuário"""
+    try:
+        email = request.form.get('pop3_email')
+        password = request.form.get('pop3_password')
+        server = request.form.get('pop3_server')
+        custom_server = request.form.get('custom_pop3_server')
+        port = int(request.form.get('pop3_port', 995))
+        ssl = 'pop3_ssl' in request.form
+        
+        logger.info(f"Salvando credenciais POP3 para usuário {current_user.id}: {email}, {server}:{port}, SSL: {ssl}")
+        
+        # Use custom server if specified
+        if server == 'custom' and custom_server:
+            server = custom_server
+        
+        # Validate inputs
+        if not email or not password or not server:
+            flash('Todos os campos obrigatórios devem ser preenchidos', 'error')
+            return redirect(url_for('email_import'))
+        
+        # Test POP3 connection before saving
+        import poplib
+        
+        try:
+            logger.info(f"Testando conexão POP3 com {server}:{port}")
+            if ssl:
+                pop3 = poplib.POP3_SSL(server, port)
+            else:
+                pop3 = poplib.POP3(server, port)
+            
+            pop3.user(email)
+            pop3.pass_(password)
+            pop3.quit()
+            logger.info("Conexão POP3 testada com sucesso")
+            
+        except Exception as e:
+            logger.error(f"Erro ao testar conexão POP3: {e}")
+            flash(f'Erro ao conectar com o servidor POP3: {str(e)}', 'error')
+            return redirect(url_for('email_import'))
+        
+        # Save POP3 credentials directly
+        logger.info("Salvando credenciais POP3 no banco de dados")
+        current_user.pop3_email = email
+        current_user.pop3_password = generate_password_hash(password)
+        current_user.pop3_server = server
+        current_user.pop3_port = port
+        current_user.pop3_ssl = ssl
+        current_user.pop3_configured = True
+        
+        db.session.commit()
+        logger.info("Credenciais POP3 salvas com sucesso no banco")
+        
+        flash('Credenciais POP3 salvas com sucesso!', 'success')
+        
+    except Exception as e:
+        logger.error(f"Erro ao salvar credenciais POP3: {e}")
+        flash('Erro interno do servidor.', 'error')
+    
+    return redirect(url_for('email_import'))
+
+@app.route('/view-pop3-credentials')
+@login_required
+def view_pop3_credentials():
+    """Visualiza as credenciais POP3 cadastradas"""
+    # Se for admin, mostra todos os usuários, senão apenas o próprio
+    if current_user.is_admin or current_user.is_super_admin:
+        users_with_pop3 = User.query.filter(User.pop3_configured == True).all()
+    else:
+        users_with_pop3 = [current_user] if current_user.pop3_configured else []
+    
+    return render_template('pop3_credentials_view.html', users=users_with_pop3)
+
+@app.route('/remove-pop3-config', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=10)
+def remove_pop3_config():
+    """Remove POP3 configuration"""
+    try:
+        current_user.pop3_server = None
+        current_user.pop3_port = 995
+        current_user.pop3_email = None
+        current_user.pop3_password = None
+        current_user.pop3_ssl = True
+        current_user.pop3_configured = False
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Configuração POP3 removida com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao remover configuração POP3: {e}")
+        return jsonify({'success': False, 'message': 'Erro interno do servidor'})
+
 @app.route('/remove-smtp-config', methods=['POST'])
 @login_required
 @rate_limit_check(max_requests=5, window_minutes=10)
