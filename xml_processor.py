@@ -228,33 +228,46 @@ def extract_xml_data(xml_content: str) -> dict:
             # Informações de transporte
             transp = infNFe.find('nfe:transp', ns)
             if transp is not None:
-                # Volumes
-                vol = transp.find('nfe:vol', ns)
-                if vol is not None:
+                # Buscar todos os volumes
+                volumes = transp.findall('nfe:vol', ns)
+                total_volumes = len(volumes)
+                total_peso = 0.0
+                
+                for vol in volumes:
                     # Peso bruto
                     pesoB = vol.find('nfe:pesoB', ns)
                     if pesoB is not None and pesoB.text:
                         try:
-                            nf_data['peso_bruto'] = float(pesoB.text)
+                            total_peso += float(pesoB.text)
                         except:
-                            nf_data['peso_bruto'] = 0.0
-                    else:
-                        nf_data['peso_bruto'] = 0.0
+                            pass
                     
-                    # Quantidade de volumes
+                    # Quantidade de volumes (individual)
                     qVol = vol.find('nfe:qVol', ns)
                     if qVol is not None and qVol.text:
                         try:
-                            nf_data['quantidade_volumes'] = int(float(qVol.text))
+                            vol_qty = int(float(qVol.text))
+                            total_volumes = max(total_volumes, vol_qty)
                         except:
-                            nf_data['quantidade_volumes'] = 0
-                    else:
-                        nf_data['quantidade_volumes'] = 0
-                else:
-                    nf_data['peso_bruto'] = 0.0
-                    nf_data['quantidade_volumes'] = 0
+                            pass
+                
+                nf_data['peso_bruto'] = total_peso
+                nf_data['volumes'] = total_volumes if total_volumes > 0 else 1
+                nf_data['quantidade_volumes'] = total_volumes if total_volumes > 0 else 1
+                
+                # Transportadora
+                transporta = transp.find('nfe:transporta', ns)
+                if transporta is not None:
+                    transp_nome = transporta.find('nfe:xNome', ns)
+                    if transp_nome is not None and transp_nome.text:
+                        nf_data['transportadora'] = transp_nome.text
+                    
+                    transp_cnpj = transporta.find('nfe:CNPJ', ns)
+                    if transp_cnpj is not None and transp_cnpj.text:
+                        nf_data['transportadora_cnpj'] = transp_cnpj.text
             else:
                 nf_data['peso_bruto'] = 0.0
+                nf_data['volumes'] = 0
                 nf_data['quantidade_volumes'] = 0
         
         # Preencher campos padrão se não encontrados
