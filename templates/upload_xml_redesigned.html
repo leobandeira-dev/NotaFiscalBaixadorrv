@@ -1,0 +1,529 @@
+{% extends "base.html" %}
+
+{% block title %}Upload de XMLs{% endblock %}
+
+{% block content %}
+<style>
+/* Upload XML Page Styles - Purple Nubank Theme */
+.upload-header {
+    background: linear-gradient(135deg, #8A05BE 0%, #A855F7 100%);
+    color: white;
+    margin: -1.5rem -1.5rem 2rem -1.5rem;
+    padding: 2rem 1.5rem;
+    border-radius: 0 0 16px 16px;
+}
+
+.upload-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.upload-subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin: 0.5rem 0 0 0;
+}
+
+.upload-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.upload-card-header {
+    background: linear-gradient(135deg, #8A05BE 0%, #A855F7 100%);
+    color: white;
+    padding: 1.25rem;
+    border-bottom: none;
+}
+
+.upload-card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.upload-card-body {
+    padding: 1.5rem;
+}
+
+.upload-area {
+    border: 2px dashed #d1d5db;
+    border-radius: 12px;
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background: #f9fafb;
+    cursor: pointer;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    border-color: #8A05BE;
+    background: linear-gradient(135deg, #f8f4ff 0%, #faf5ff 100%);
+    transform: translateY(-2px);
+}
+
+.upload-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.upload-icon {
+    font-size: 3rem;
+    color: #8A05BE;
+    margin-bottom: 1rem;
+}
+
+.upload-text {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+}
+
+.upload-subtext {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.info-card {
+    background: linear-gradient(135deg, #EBF4FF 0%, #DBEAFE 100%);
+    border: 1px solid #BFDBFE;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.help-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.btn-purple {
+    background: linear-gradient(135deg, #8A05BE 0%, #A855F7 100%);
+    border: none;
+    color: white;
+    padding: 0.75rem 2rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.btn-purple:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(138, 5, 190, 0.3);
+    color: white;
+}
+
+.btn-purple:disabled {
+    opacity: 0.6;
+    transform: none;
+    box-shadow: none;
+}
+
+.file-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: between;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-grow: 1;
+}
+
+.file-icon {
+    color: #8A05BE;
+    font-size: 1.25rem;
+}
+
+.file-name {
+    font-weight: 500;
+    color: #374151;
+}
+
+.file-size {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.file-remove {
+    color: #ef4444;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.file-remove:hover {
+    background: #fee2e2;
+}
+
+.progress-bar {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 1rem;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #8A05BE 0%, #A855F7 100%);
+    transition: width 0.3s ease;
+    border-radius: 4px;
+}
+
+.help-section h6 {
+    color: #8A05BE;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+}
+
+.help-section h6:first-child {
+    margin-top: 0;
+}
+
+.alert-purple {
+    background: linear-gradient(135deg, #f8f4ff 0%, #faf5ff 100%);
+    border: 1px solid #d8b4fe;
+    color: #7c3aed;
+    border-radius: 8px;
+}
+</style>
+
+<div class="upload-header">
+    <h1 class="upload-title">
+        <i class="fas fa-upload"></i>
+        Upload de XMLs
+    </h1>
+    <p class="upload-subtitle">
+        Importe seus arquivos XML diretamente - 100% gratuito, sem consumir créditos
+    </p>
+</div>
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'error' else 'warning' if category == 'warning' else 'success' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<!-- Info Card -->
+<div class="info-card">
+    <div class="d-flex align-items-start">
+        <i class="fas fa-gift text-blue-600 me-3 mt-1"></i>
+        <div>
+            <h6 class="fw-bold mb-2">Upload gratuito e ilimitado</h6>
+            <p class="mb-0">Faça upload dos seus arquivos XML diretamente sem consumir créditos. Os XMLs são processados automaticamente e ficam disponíveis para download de DANFE e geração de etiquetas de transporte.</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="upload-card">
+            <div class="upload-card-header">
+                <h5 class="upload-card-title">
+                    <i class="fas fa-file-upload"></i>
+                    Importar Arquivos XML
+                </h5>
+            </div>
+            <div class="upload-card-body">
+                <form method="POST" enctype="multipart/form-data" id="uploadForm">
+                    <div class="upload-area" id="uploadArea">
+                        <div class="upload-content">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h5 class="upload-text">Arraste os arquivos aqui ou clique para selecionar</h5>
+                            <p class="upload-subtext">Apenas arquivos .xml são aceitos (múltiplos arquivos permitidos)</p>
+                            <input type="file" class="form-control" id="xml_files" name="xml_files" 
+                                   multiple accept=".xml" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div id="fileList" class="file-list" style="display: none;">
+                        <h6 class="fw-bold mt-3 mb-2">Arquivos selecionados:</h6>
+                        <div id="selectedFiles"></div>
+                    </div>
+
+                    <div id="uploadProgress" class="progress-bar" style="display: none;">
+                        <div id="progressFill" class="progress-fill" style="width: 0%;"></div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div>
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Tamanho máximo: 50MB por arquivo
+                            </small>
+                        </div>
+                        <button type="submit" class="btn btn-purple" id="uploadBtn" disabled>
+                            <i class="fas fa-upload"></i>
+                            Fazer Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Recent Uploads -->
+        <div class="upload-card">
+            <div class="upload-card-header">
+                <h5 class="upload-card-title">
+                    <i class="fas fa-history"></i>
+                    Uploads Recentes
+                </h5>
+            </div>
+            <div class="upload-card-body">
+                {% if recent_uploads %}
+                    <div class="recent-uploads">
+                        {% for xml in recent_uploads %}
+                        <div class="file-item">
+                            <div class="file-info">
+                                <i class="fas fa-file-code file-icon"></i>
+                                <div>
+                                    <div class="file-name">{{ xml.filename }}</div>
+                                    <div class="file-size">{{ xml.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="{{ url_for('download_xml', xml_id=xml.id) }}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-download"></i>
+                                </a>
+                                {% if xml.danfe_generated %}
+                                <a href="{{ url_for('download_danfe', xml_id=xml.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-file-pdf"></i>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">Nenhum upload realizado ainda</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="help-card">
+            <div class="help-section">
+                <h6><i class="fas fa-question-circle me-2"></i>Ajuda e Informações</h6>
+                
+                <h6>Formatos aceitos:</h6>
+                <ul class="small mb-3">
+                    <li>Arquivos XML de Nota Fiscal Eletrônica (NFe)</li>
+                    <li>Extensão .xml obrigatória</li>
+                    <li>Tamanho máximo: 50MB por arquivo</li>
+                    <li>Múltiplos arquivos podem ser selecionados</li>
+                </ul>
+
+                <h6>Processamento automático:</h6>
+                <ul class="small mb-3">
+                    <li>Extração automática de dados da NFe</li>
+                    <li>Geração automática de DANFE (PDF)</li>
+                    <li>Preparação para etiquetas de transporte</li>
+                    <li>Armazenamento seguro no seu painel</li>
+                </ul>
+
+                <h6>Vantagens do upload:</h6>
+                <ul class="small mb-3">
+                    <li><strong>100% gratuito</strong> - não consome créditos</li>
+                    <li>Processamento instantâneo</li>
+                    <li>Acesso imediato aos dados</li>
+                    <li>Integração com módulo de etiquetas</li>
+                </ul>
+
+                <h6>Segurança:</h6>
+                <ul class="small">
+                    <li>Dados protegidos por criptografia</li>
+                    <li>Acesso restrito ao seu usuário</li>
+                    <li>Backup automático dos arquivos</li>
+                    <li>Conformidade com LGPD</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('xml_files');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const fileList = document.getElementById('fileList');
+    const selectedFiles = document.getElementById('selectedFiles');
+    const uploadForm = document.getElementById('uploadForm');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+
+    let files = [];
+
+    // Click to select files
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    // Drag and drop
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+    });
+
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+    });
+
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    // File input change
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+
+    function handleFiles(fileList) {
+        files = Array.from(fileList).filter(file => file.name.toLowerCase().endsWith('.xml'));
+        updateFileDisplay();
+        updateUploadButton();
+    }
+
+    function updateFileDisplay() {
+        if (files.length > 0) {
+            document.getElementById('fileList').style.display = 'block';
+            selectedFiles.innerHTML = '';
+            
+            files.forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                fileItem.innerHTML = `
+                    <div class="file-info">
+                        <i class="fas fa-file-code file-icon"></i>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${formatFileSize(file.size)}</div>
+                        </div>
+                    </div>
+                    <i class="fas fa-times file-remove" onclick="removeFile(${index})"></i>
+                `;
+                selectedFiles.appendChild(fileItem);
+            });
+        } else {
+            document.getElementById('fileList').style.display = 'none';
+        }
+    }
+
+    function removeFile(index) {
+        files.splice(index, 1);
+        updateFileDisplay();
+        updateUploadButton();
+    }
+
+    function updateUploadButton() {
+        uploadBtn.disabled = files.length === 0;
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Form submission
+    uploadForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (files.length === 0) return;
+
+        const formData = new FormData();
+        files.forEach(file => {
+            formData.append('xml_files', file);
+        });
+
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        uploadProgress.style.display = 'block';
+
+        // Simulate progress (replace with actual progress if available)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += Math.random() * 15;
+            if (progress > 90) progress = 90;
+            progressFill.style.width = progress + '%';
+        }, 200);
+
+        fetch(window.location.pathname, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.text())
+        .then(html => {
+            clearInterval(progressInterval);
+            progressFill.style.width = '100%';
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
+        })
+        .catch(error => {
+            clearInterval(progressInterval);
+            uploadProgress.style.display = 'none';
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Fazer Upload';
+            alert('Erro no upload: ' + error.message);
+        });
+    });
+
+    // Make removeFile global
+    window.removeFile = removeFile;
+});
+</script>
+{% endblock %}

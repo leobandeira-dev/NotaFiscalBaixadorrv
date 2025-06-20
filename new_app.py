@@ -2071,7 +2071,13 @@ def revoke_api_credentials():
 def upload_xml():
     """Upload manual de arquivos XML"""
     if request.method == 'GET':
-        return render_template('upload_xml.html')
+        # Get recent uploads for display
+        recent_uploads = XMLFile.query.filter_by(
+            user_id=current_user.id,
+            import_type='UPLOAD'
+        ).order_by(XMLFile.created_at.desc()).limit(10).all()
+        
+        return render_template('upload_xml_redesigned.html', recent_uploads=recent_uploads)
     
     try:
         from xml_processor import save_xml_to_database
@@ -2137,7 +2143,7 @@ def upload_xml():
 @rate_limit_check(max_requests=10, window_minutes=10)
 def email_import():
     """Página de configuração para importação via email"""
-    return render_template('email_import_fixed.html',
+    return render_template('email_import_redesigned.html',
                          current_user=current_user)
 
 @app.route('/save-email-credentials', methods=['POST'])

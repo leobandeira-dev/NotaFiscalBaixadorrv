@@ -1,0 +1,490 @@
+{% extends "base.html" %}
+
+{% block title %}Importação via Email{% endblock %}
+
+{% block content %}
+<style>
+/* Email Import Page Styles - Purple Nubank Theme */
+.email-import-header {
+    background: linear-gradient(135deg, #8A05BE 0%, #A855F7 100%);
+    color: white;
+    margin: -1.5rem -1.5rem 2rem -1.5rem;
+    padding: 2rem 1.5rem;
+    border-radius: 0 0 16px 16px;
+}
+
+.email-import-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.email-import-subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+    margin: 0.5rem 0 0 0;
+}
+
+.status-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.status-configured {
+    border-left: 4px solid #10B981;
+    background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+}
+
+.status-not-configured {
+    border-left: 4px solid #F59E0B;
+    background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%);
+}
+
+.config-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.config-card-header {
+    background: linear-gradient(135deg, #8A05BE 0%, #A855F7 100%);
+    color: white;
+    padding: 1.25rem;
+    border-bottom: none;
+}
+
+.config-card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.config-card-body {
+    padding: 1.5rem;
+}
+
+.info-card {
+    background: linear-gradient(135deg, #EBF4FF 0%, #DBEAFE 100%);
+    border: 1px solid #BFDBFE;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.help-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.btn-purple {
+    background: linear-gradient(135deg, #8A05BE 0%, #A855F7 100%);
+    border: none;
+    color: white;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-purple:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(138, 5, 190, 0.3);
+    color: white;
+}
+
+.btn-check-now {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    border: none;
+    color: white;
+    padding: 0.625rem 1.25rem;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn-check-now:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    color: white;
+}
+
+.form-control {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #8A05BE;
+    box-shadow: 0 0 0 3px rgba(138, 5, 190, 0.1);
+}
+
+.form-select {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.form-select:focus {
+    border-color: #8A05BE;
+    box-shadow: 0 0 0 3px rgba(138, 5, 190, 0.1);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.status-info {
+    background: #F3F4F6;
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: #6B7280;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.help-section h6 {
+    color: #8A05BE;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    margin-top: 1rem;
+}
+
+.help-section h6:first-child {
+    margin-top: 0;
+}
+</style>
+
+<div class="email-import-header">
+    <h1 class="email-import-title">
+        <i class="fas fa-envelope"></i>
+        Importação via Email
+    </h1>
+    <p class="email-import-subtitle">
+        Configure sua conta de email para importação automática de XMLs sem consumir créditos
+    </p>
+</div>
+
+<!-- Info Card -->
+<div class="info-card">
+    <div class="d-flex align-items-start">
+        <i class="fas fa-info-circle text-blue-600 me-3 mt-1"></i>
+        <div>
+            <h6 class="fw-bold mb-2">Como funciona a importação automática</h6>
+            <p class="mb-0">Configure suas credenciais de email para que o sistema monitore automaticamente sua caixa de entrada em busca de XMLs anexados. Os XMLs são importados automaticamente, <strong>sem consumir créditos do sistema</strong>.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Status Card -->
+{% if current_user.has_email_import_configured() %}
+<div class="status-card status-configured">
+    <div class="d-flex align-items-start">
+        <i class="fas fa-check-circle text-success me-3 mt-1 fs-5"></i>
+        <div class="flex-grow-1">
+            <h6 class="fw-bold text-success mb-2">Email configurado com sucesso</h6>
+            <div class="status-info">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <strong>Email:</strong> {{ current_user.import_email }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Servidor:</strong> {{ current_user.import_email_server }}:{{ current_user.import_email_port }}{% if current_user.import_email_ssl %} (SSL){% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Última verificação:</strong> {{ current_user.import_email_last_check.strftime('%d/%m/%Y %H:%M') if current_user.import_email_last_check else 'Nunca' }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Intervalo:</strong> 
+                        {% if current_user.import_email_check_interval == 15 %}15 minutos
+                        {% elif current_user.import_email_check_interval == 30 %}30 minutos
+                        {% elif current_user.import_email_check_interval == 60 %}1 hora
+                        {% elif current_user.import_email_check_interval == 120 %}2 horas
+                        {% elif current_user.import_email_check_interval == 240 %}4 horas
+                        {% elif current_user.import_email_check_interval == 480 %}8 horas
+                        {% elif current_user.import_email_check_interval == 1440 %}24 horas
+                        {% else %}{{ current_user.import_email_check_interval }} minutos{% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="action-buttons mt-3">
+                <button type="button" class="btn btn-check-now" onclick="checkEmails()">
+                    <i class="fas fa-sync"></i> Verificar Emails Agora
+                </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="showEditForm()">
+                    <i class="fas fa-edit"></i> Editar Configurações
+                </button>
+                <button type="button" class="btn btn-outline-danger" onclick="removeEmailConfig()">
+                    <i class="fas fa-trash"></i> Remover Configuração
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="status-card status-not-configured">
+    <div class="d-flex align-items-start">
+        <i class="fas fa-exclamation-circle text-warning me-3 mt-1 fs-5"></i>
+        <div>
+            <h6 class="fw-bold text-warning mb-2">Email não configurado</h6>
+            <p class="mb-0">Configure suas credenciais de email abaixo para começar a importar XMLs automaticamente.</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="config-card">
+            <div class="config-card-header">
+                <h5 class="config-card-title">
+                    <i class="fas fa-cog"></i>
+                    Configurações de Email
+                </h5>
+            </div>
+            <div class="config-card-body">
+                <form method="POST" action="{{ url_for('save_email_credentials') }}" id="emailForm" 
+                      {% if current_user.has_email_import_configured() %}style="display: none;"{% endif %}>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Seu Email</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ current_user.import_email or '' }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Senha do Email</label>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Digite sua senha de email" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="server" class="form-label">Servidor IMAP</label>
+                                <select class="form-select" id="server" name="server" onchange="updateServerSettings()" required>
+                                    <option value="">Selecione o provedor</option>
+                                    <option value="imap.gmail.com" {% if current_user.import_email_server == 'imap.gmail.com' %}selected{% endif %}>Gmail</option>
+                                    <option value="outlook.office365.com" {% if current_user.import_email_server == 'outlook.office365.com' %}selected{% endif %}>Outlook/Hotmail</option>
+                                    <option value="imap.yahoo.com" {% if current_user.import_email_server == 'imap.yahoo.com' %}selected{% endif %}>Yahoo Mail</option>
+                                    <option value="custom">Outro (configurar manualmente)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="port" class="form-label">Porta IMAP</label>
+                                <input type="number" class="form-control" id="port" name="port" 
+                                       value="{{ current_user.import_email_port or 993 }}" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="custom_server" style="display: none;">
+                        <label for="custom_server_input" class="form-label">Servidor IMAP Personalizado</label>
+                        <input type="text" class="form-control" id="custom_server_input" name="custom_server" 
+                               placeholder="Ex: mail.suaempresa.com">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="check_interval" class="form-label">Intervalo de Verificação</label>
+                        <select class="form-select" id="check_interval" name="check_interval" required>
+                            <option value="15" {% if current_user.import_email_check_interval == 15 %}selected{% endif %}>15 minutos</option>
+                            <option value="30" {% if current_user.import_email_check_interval == 30 %}selected{% endif %}>30 minutos</option>
+                            <option value="60" {% if current_user.import_email_check_interval == 60 %}selected{% endif %}>1 hora (Padrão)</option>
+                            <option value="120" {% if current_user.import_email_check_interval == 120 %}selected{% endif %}>2 horas</option>
+                            <option value="240" {% if current_user.import_email_check_interval == 240 %}selected{% endif %}>4 horas</option>
+                            <option value="480" {% if current_user.import_email_check_interval == 480 %}selected{% endif %}>8 horas</option>
+                            <option value="1440" {% if current_user.import_email_check_interval == 1440 %}selected{% endif %}>24 horas</option>
+                        </select>
+                        <div class="form-text">Com que frequência o sistema deve verificar sua caixa de email automaticamente</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="ssl" name="ssl" 
+                                   {% if current_user.import_email_ssl != False %}checked{% endif %}>
+                            <label class="form-check-label" for="ssl">
+                                Usar SSL/TLS (recomendado para segurança)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-purple">
+                            <i class="fas fa-save"></i> Salvar Configurações
+                        </button>
+                        {% if current_user.has_email_import_configured() %}
+                        <button type="button" class="btn btn-outline-secondary" onclick="hideEditForm()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="help-card">
+            <div class="help-section">
+                <h6><i class="fas fa-question-circle me-2"></i>Ajuda e Configuração</h6>
+                
+                <h6>Gmail:</h6>
+                <ul class="small mb-3">
+                    <li>Ative autenticação em duas etapas</li>
+                    <li>Gere uma senha de aplicativo</li>
+                    <li>Use a senha de aplicativo, não sua senha normal</li>
+                </ul>
+
+                <h6>Outlook/Hotmail:</h6>
+                <ul class="small mb-3">
+                    <li>Use sua senha normal da conta Microsoft</li>
+                    <li>Certifique-se que IMAP está habilitado</li>
+                </ul>
+
+                <h6>Como funciona:</h6>
+                <ul class="small mb-3">
+                    <li>O sistema verifica sua caixa de entrada automaticamente</li>
+                    <li>XMLs anexados são baixados e processados</li>
+                    <li>Suas credenciais são criptografadas e seguras</li>
+                    <li>Não há custo por XMLs importados via email</li>
+                </ul>
+
+                <h6>Segurança:</h6>
+                <ul class="small">
+                    <li>Todas as senhas são criptografadas</li>
+                    <li>Conexões protegidas por SSL/TLS</li>
+                    <li>Acesso apenas aos anexos XML</li>
+                    <li>Nenhum email é lido ou armazenado</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateServerSettings() {
+    const server = document.getElementById('server').value;
+    const customServer = document.getElementById('custom_server');
+    const port = document.getElementById('port');
+    const ssl = document.getElementById('ssl');
+
+    if (server === 'custom') {
+        customServer.style.display = 'block';
+        document.getElementById('custom_server_input').required = true;
+    } else {
+        customServer.style.display = 'none';
+        document.getElementById('custom_server_input').required = false;
+        
+        // Auto-configure based on provider
+        switch(server) {
+            case 'imap.gmail.com':
+                port.value = 993;
+                ssl.checked = true;
+                break;
+            case 'outlook.office365.com':
+                port.value = 993;
+                ssl.checked = true;
+                break;
+            case 'imap.yahoo.com':
+                port.value = 993;
+                ssl.checked = true;
+                break;
+        }
+    }
+}
+
+function showEditForm() {
+    document.getElementById('emailForm').style.display = 'block';
+}
+
+function hideEditForm() {
+    document.getElementById('emailForm').style.display = 'none';
+}
+
+function checkEmails() {
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+    btn.disabled = true;
+
+    fetch('{{ url_for("check_emails_now") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Verificação concluída! ${data.message}`);
+            location.reload();
+        } else {
+            alert('Erro: ' + data.message);
+        }
+    })
+    .catch(error => {
+        alert('Erro ao verificar emails: ' + error);
+    })
+    .finally(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+function removeEmailConfig() {
+    if (confirm('Tem certeza que deseja remover a configuração de email? Isso desabilitará a importação automática.')) {
+        fetch('{{ url_for("remove_email_config") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Configuração removida com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao remover configuração: ' + error);
+        });
+    }
+}
+</script>
+{% endblock %}
