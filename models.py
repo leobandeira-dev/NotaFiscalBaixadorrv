@@ -59,6 +59,14 @@ class User(UserMixin, db.Model):
     smtp_ssl = db.Column(db.Boolean, default=True)
     smtp_configured = db.Column(db.Boolean, default=False)
     
+    # Configurações IMAP (monitoramento de caixa de entrada)
+    imap_server = db.Column(db.String(100), nullable=True)
+    imap_port = db.Column(db.Integer, default=993)
+    imap_email = db.Column(db.String(120), nullable=True)
+    imap_password = db.Column(db.String(256), nullable=True)  # Criptografada
+    imap_ssl = db.Column(db.Boolean, default=True)
+    imap_configured = db.Column(db.Boolean, default=False)
+    
     # Configurações de recebimento de email (POP3)
     pop3_server = db.Column(db.String(100), nullable=True)
     pop3_port = db.Column(db.Integer, default=995)
