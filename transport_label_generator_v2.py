@@ -144,7 +144,7 @@ class CustomTransportLabelGenerator:
                     c.drawImage(company_logo_path, 
                               self.page_width/2 - 30*mm, y_pos - 20*mm, 
                               width=60*mm, height=20*mm, preserveAspectRatio=True)
-                    return
+                    return y_pos - 25*mm
                 except Exception as e:
                     logger.warning(f"Erro ao carregar logo: {e}")
             
@@ -155,17 +155,20 @@ class CustomTransportLabelGenerator:
             c.setFont("Helvetica", 12)
             c.drawCentredString(self.page_width / 2, y_pos - 15, self.company_subtitle)
             
+            return y_pos - 25*mm
+            
         except Exception as e:
             logger.warning(f"Erro no cabeçalho: {e}")
             # Fallback simples
             c.setFont("Helvetica-Bold", 20)
             c.drawCentredString(self.page_width / 2, y_pos, "ETIQUETA DE TRANSPORTE")
+            return y_pos - 25*mm
     
     def _draw_id_section(self, c, xml_data, y_pos):
         """Desenha seção do ID e QR Code"""
         # ID text
         c.setFont("Helvetica", 12)
-        invoice_key = xml_data.get('chave_acesso', '00000-000-000-000')
+        invoice_key = xml_data.get('chave_acesso', '00000000000000000000000000000000000000000000')
         formatted_id = f"ID: {invoice_key[:5]}-{invoice_key[5:8]}-{invoice_key[8:11]}-{invoice_key[11:14]}"
         c.drawString(self.margin, y_pos, formatted_id)
         
@@ -173,7 +176,7 @@ class CustomTransportLabelGenerator:
         qr_data = xml_data.get('chave_acesso', invoice_key)
         self._draw_qr_code(c, qr_data, self.page_width - 60 * mm, y_pos - 20, 40 * mm)
         
-        return y_pos
+        return y_pos - 25*mm
     
     def _draw_nf_section(self, c, xml_data, y_pos):
         """Desenha seção NF com fundo preto"""
@@ -189,7 +192,7 @@ class CustomTransportLabelGenerator:
         
         # Voltar cor para preto
         c.setFillColor(colors.black)
-        return y_pos
+        return y_pos - 15*mm
     
     def _draw_pedido_section(self, c, pedido_number, y_pos):
         """Desenha seção Pedido com fundo preto"""
@@ -204,7 +207,7 @@ class CustomTransportLabelGenerator:
         
         # Voltar cor para preto
         c.setFillColor(colors.black)
-        return y_pos
+        return y_pos - 15*mm
     
     def _draw_remetente_section(self, c, xml_data, y_pos):
         """Desenha seção Remetente com fundo preto"""
@@ -223,7 +226,7 @@ class CustomTransportLabelGenerator:
         
         # Voltar cor para preto
         c.setFillColor(colors.black)
-        return y_pos
+        return y_pos - 15*mm
     
     def _draw_destinatario_section(self, c, xml_data, y_pos):
         """Desenha informações do destinatário"""
@@ -247,7 +250,7 @@ class CustomTransportLabelGenerator:
         endereco = ", ".join(endereco_parts) or "Endereço não informado"
         c.drawString(self.margin, y_pos - 15, f"Endereço: {endereco}")
         
-        return y_pos
+        return y_pos - 20*mm
     
     def _draw_cidade_section(self, c, xml_data, y_pos):
         """Desenha seção Cidade/UF com fundo preto"""
