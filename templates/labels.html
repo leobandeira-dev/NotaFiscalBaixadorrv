@@ -153,11 +153,99 @@
 {% endblock %}
 
 {% block content %}
-<div class="header-section">
-    <h1><i class="fas fa-tags"></i> Módulo de Etiquetas de Transporte</h1>
-    <p class="text-muted">Gere etiquetas personalizadas para seus XMLs importados</p>
-</div>
-            
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="header-section">
+                <h1><i class="fas fa-tags"></i> Módulo de Etiquetas de Transporte</h1>
+                <p class="text-muted">Configure e gere etiquetas personalizadas para seus XMLs importados</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Painel de Configurações -->
+        <div class="col-lg-4">
+            <div class="config-panel mb-4">
+                <h5 class="config-title"><i class="fas fa-cogs me-2"></i>Configurações de Layout</h5>
+                <form id="labelConfigForm">
+                    <!-- Configurações da Empresa -->
+                    <div class="mb-3">
+                        <label class="form-label">Nome da Empresa</label>
+                        <input type="text" class="form-control" id="company_name" 
+                               value="{{ current_user.company_name or 'SUA EMPRESA' }}" 
+                               placeholder="Nome da sua empresa">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Subtítulo</label>
+                        <input type="text" class="form-control" id="company_subtitle" 
+                               value="{{ current_user.company_subtitle or 'TRANSPORTE' }}" 
+                               placeholder="Ex: TRANSPORTE, LOGÍSTICA">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Código da Área</label>
+                        <input type="text" class="form-control" id="area_code" 
+                               value="{{ current_user.default_area_code or '01' }}" 
+                               placeholder="Ex: 01, 02, A1">
+                    </div>
+                    
+                    <!-- Upload de Logo -->
+                    <div class="mb-3">
+                        <label class="form-label">Logo da Empresa</label>
+                        <input type="file" class="form-control" id="company_logo" 
+                               accept="image/*" onchange="previewLogo(this)">
+                        {% if current_user.company_logo_path %}
+                        <div id="logoPreview" class="mt-2">
+                            <img src="{{ url_for('serve_logo', filename=current_user.company_logo_path.split('/')[-1]) }}" 
+                                 class="img-thumbnail" style="max-height: 60px;">
+                        </div>
+                        {% else %}
+                        <div id="logoPreview" class="mt-2" style="display: none;">
+                            <img id="logoImg" class="img-thumbnail" style="max-height: 60px;">
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Tamanho do Papel -->
+                    <div class="mb-3">
+                        <label class="form-label">Tamanho do Papel</label>
+                        <select class="form-select" id="paper_size" onchange="updatePaperDimensions()">
+                            <option value="10x15">10x15cm (Padrão)</option>
+                            <option value="A4">A4 (210x297mm)</option>
+                            <option value="A5">A5 (148x210mm)</option>
+                            <option value="7x10">7x10cm (Pequeno)</option>
+                            <option value="5x8">5x8cm (Muito Pequeno)</option>
+                            <option value="custom">Personalizado</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Dimensões Personalizadas -->
+                    <div id="customDimensions" class="mb-3" style="display: none;">
+                        <div class="row">
+                            <div class="col-6">
+                                <label class="form-label">Largura (mm)</label>
+                                <input type="number" class="form-control" id="paper_width_mm" 
+                                       value="100" min="50" max="300">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Altura (mm)</label>
+                                <input type="number" class="form-control" id="paper_height_mm" 
+                                       value="150" min="70" max="400">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="saveConfiguration()">
+                        <i class="fas fa-save me-2"></i>Salvar Configurações
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Lista de XMLs -->
+        <div class="col-lg-8">
             {% if xmls %}
                 <!-- Ações em Lote -->
                 <div class="bulk-actions">
@@ -431,5 +519,198 @@
         document.addEventListener('DOMContentLoaded', function() {
             updateSelection();
         });
+        
+        // Funções para o painel de configurações
+        function updatePaperDimensions() {
+            const paperSize = document.getElementById('paper_size').value;
+            const customDimensions = document.getElementById('customDimensions');
+            const widthInput = document.getElementById('paper_width_mm');
+            const heightInput = document.getElementById('paper_height_mm');
+            
+            if (paperSize === 'custom') {
+                customDimensions.style.display = 'block';
+            } else {
+                customDimensions.style.display = 'none';
+                
+                // Atualizar dimensões baseadas no tamanho selecionado
+                const dimensions = {
+                    '10x15': { width: 100, height: 150 },
+                    'A4': { width: 210, height: 297 },
+                    'A5': { width: 148, height: 210 },
+                    '7x10': { width: 70, height: 100 },
+                    '5x8': { width: 50, height: 80 }
+                };
+                
+                if (dimensions[paperSize]) {
+                    widthInput.value = dimensions[paperSize].width;
+                    heightInput.value = dimensions[paperSize].height;
+                }
+            }
+        }
+        
+        function previewLogo(input) {
+            const file = input.files[0];
+            const preview = document.getElementById('logoPreview');
+            const img = document.getElementById('logoImg');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (img) {
+                        img.src = e.target.result;
+                    } else {
+                        const newImg = document.createElement('img');
+                        newImg.id = 'logoImg';
+                        newImg.className = 'img-thumbnail';
+                        newImg.style.maxHeight = '60px';
+                        newImg.src = e.target.result;
+                        preview.appendChild(newImg);
+                    }
+                    preview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function saveConfiguration() {
+            const formData = new FormData();
+            formData.append('company_name', document.getElementById('company_name').value);
+            formData.append('company_subtitle', document.getElementById('company_subtitle').value);
+            formData.append('area_code', document.getElementById('area_code').value);
+            
+            const logoFile = document.getElementById('company_logo').files[0];
+            if (logoFile) {
+                formData.append('company_logo', logoFile);
+            }
+            
+            fetch('/configurar-etiquetas', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Configurações salvas com sucesso!');
+                } else {
+                    alert('Erro ao salvar configurações: ' + (data.message || 'Erro desconhecido'));
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao salvar configurações');
+            });
+        }
+        
+        // Função para gerar etiqueta com configurações atuais
+        function generateLabelWithConfig(xmlId) {
+            const formData = new FormData();
+            formData.append('company_name', document.getElementById('company_name').value);
+            formData.append('company_subtitle', document.getElementById('company_subtitle').value);
+            formData.append('area_code', document.getElementById('area_code').value);
+            formData.append('paper_size', document.getElementById('paper_size').value);
+            formData.append('paper_width_mm', document.getElementById('paper_width_mm').value);
+            formData.append('paper_height_mm', document.getElementById('paper_height_mm').value);
+            formData.append('total_volumes', '1');
+            formData.append('peso_volume_1', '0');
+            formData.append('pedido_volume_1', 'PED' + Date.now());
+            
+            const logoFile = document.getElementById('company_logo').files[0];
+            if (logoFile) {
+                formData.append('company_logo', logoFile);
+            }
+            
+            // Criar e submeter formulário temporário
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/gerar-etiquetas-personalizadas/${xmlId}`;
+            form.style.display = 'none';
+            
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'company_logo') {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = value;
+                    form.appendChild(input);
+                }
+            }
+            
+            if (logoFile) {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.name = 'company_logo';
+                fileInput.files = document.getElementById('company_logo').files;
+                form.appendChild(fileInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
 </script>
+
+<style>
+/* Estilos para o painel de configurações */
+.config-panel {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    border: 2px solid #8A05BE;
+    position: sticky;
+    top: 20px;
+}
+
+.config-title {
+    color: #8A05BE;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #f3e8ff;
+}
+
+.config-panel .form-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.config-panel .form-control,
+.config-panel .form-select {
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.config-panel .form-control:focus,
+.config-panel .form-select:focus {
+    border-color: #8A05BE;
+    box-shadow: 0 0 0 0.2rem rgba(138, 5, 190, 0.25);
+}
+
+.config-panel .btn {
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.config-panel .btn-outline-primary {
+    border-color: #8A05BE;
+    color: #8A05BE;
+}
+
+.config-panel .btn-outline-primary:hover {
+    background-color: #8A05BE;
+    border-color: #8A05BE;
+    color: white;
+}
+
+@media (max-width: 991.98px) {
+    .config-panel {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+}
+</style>
 {% endblock %}
