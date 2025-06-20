@@ -196,20 +196,23 @@ class TransulExactLayoutGenerator:
         y_start = self.page_height - self.margin
         current_y = y_start
         
-        # 1. CABEÇALHO EMPRESA (Transul / TRANSPORTE) - Centralizado
+        # Espaço de 2mm antes do container da empresa
+        current_y -= 2 * mm
+        
+        # 1. CABEÇALHO EMPRESA (LAF LOGISTICA / OPERADOR LOGISTICO) - Centralizado
         header_height = 15 * mm
         self._draw_styled_text_section(
             c, self.margin, current_y - header_height, self.content_width, header_height,
-            "Transul", self.fonts['header_large'], 
+            "LAF LOGISTICA", self.fonts['header_large'], 
             self.colors['white'], self.colors['black'], center_text=True
         )
         
-        # Subtítulo TRANSPORTE
+        # Subtítulo OPERADOR LOGISTICO
         subtitle_height = 8 * mm
         current_y -= header_height
         self._draw_styled_text_section(
             c, self.margin, current_y - subtitle_height, self.content_width, subtitle_height,
-            "TRANSPORTE", self.fonts['body_regular'], 
+            "OPERADOR LOGISTICO", self.fonts['body_regular'], 
             self.colors['white'], self.colors['dark_gray'], center_text=True
         )
         current_y -= subtitle_height + self.section_spacing
@@ -254,7 +257,19 @@ class TransulExactLayoutGenerator:
         
         # 5. REMETENTE - Fundo preto com texto branco
         remetente_height = 10 * mm
-        remetente_text = f"Remetente: {xml_data.get('emitente_nome', 'N/A')[:40]}"
+        # Resumir nome do remetente para caber no container
+        remetente_nome = xml_data.get('emitente_nome', 'N/A')
+        if len(remetente_nome) > 30:
+            # Pegar primeira palavra + última palavra se muito longo
+            palavras = remetente_nome.split()
+            if len(palavras) > 1:
+                remetente_resumido = f"{palavras[0]} {palavras[-1]}"
+            else:
+                remetente_resumido = remetente_nome[:30]
+        else:
+            remetente_resumido = remetente_nome
+            
+        remetente_text = f"Remetente: {remetente_resumido}"
         self._draw_styled_text_section(
             c, self.margin, current_y - remetente_height, self.content_width, remetente_height,
             remetente_text, self.fonts['body_bold'], 
@@ -267,11 +282,37 @@ class TransulExactLayoutGenerator:
         destinatario_width = self.content_width * 0.70
         area_width = self.content_width * 0.25
         
-        # Preparar linhas do destinatário
+        # Resumir nome do destinatário para caber no container
+        dest_nome = xml_data.get('destinatario_nome', 'N/A')
+        if len(dest_nome) > 25:
+            # Pegar primeira palavra + última palavra se muito longo
+            palavras = dest_nome.split()
+            if len(palavras) > 1:
+                dest_resumido = f"{palavras[0]} {palavras[-1]}"
+            else:
+                dest_resumido = dest_nome[:25]
+        else:
+            dest_resumido = dest_nome
+        
+        # Preparar endereço completo de entrega
+        endereco = xml_data.get('destinatario_endereco', '')
+        bairro = xml_data.get('destinatario_bairro', '')
+        cidade = xml_data.get('destinatario_cidade', '')
+        uf = xml_data.get('destinatario_uf', '')
+        cep = xml_data.get('destinatario_cep', '')
+        
+        # Montar endereço completo
+        endereco_completo = endereco
+        if bairro and endereco:
+            endereco_completo = f"{endereco}, {bairro}"
+        elif bairro:
+            endereco_completo = bairro
+            
+        # Preparar linhas do destinatário com endereço completo
         dest_lines = [
-            f"Destinatário: {xml_data.get('destinatario_nome', 'N/A')[:35]}",
-            f"Endereço: {xml_data.get('destinatario_endereco', 'N/A')[:35]}",
-            f"{xml_data.get('destinatario_cidade', '')}, {xml_data.get('destinatario_cep', '')}"
+            f"DESTINATÁRIO: {dest_resumido}",
+            f"Endereço: {endereco_completo[:30]}",
+            f"{cidade}/{uf} - CEP: {cep}"
         ]
         
         # Destinatário
