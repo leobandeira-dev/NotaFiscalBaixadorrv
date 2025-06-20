@@ -122,6 +122,26 @@ class User(UserMixin, db.Model):
         self.current_balance += amount
         db.session.commit()
     
+    def generate_api_credentials(self):
+        """Gera novas credenciais API para o usuário"""
+        self.api_key = secrets.token_urlsafe(32)
+        self.api_secret = secrets.token_urlsafe(32)
+        db.session.commit()
+        return {
+            'api_key': self.api_key,
+            'api_secret': self.api_secret
+        }
+    
+    def revoke_api_credentials(self):
+        """Revoga as credenciais API do usuário"""
+        self.api_key = None
+        self.api_secret = None
+        db.session.commit()
+    
+    def has_api_credentials(self):
+        """Verifica se o usuário tem credenciais API ativas"""
+        return bool(self.api_key and self.api_secret)
+    
     def to_dict(self):
         """Converte o usuário para dicionário"""
         return {

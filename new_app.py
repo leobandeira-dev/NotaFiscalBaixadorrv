@@ -2022,10 +2022,48 @@ def labels_module():
                          all_cidades=sorted(all_cidades))
 
 @app.route('/api-docs')
+@login_required
 @rate_limit_check(max_requests=30, window_minutes=10)
 def api_docs():
-    """Documentação da API com isolamento de dados"""
-    return render_template('api_docs.html')
+    """Documentação da API com geração de credenciais"""
+    # Obter saldo atual de créditos XML
+    from simple_credit_system import get_user_xml_balance
+    xml_balance = get_user_xml_balance(current_user.id)
+    
+    return render_template('api_docs.html', 
+                         xml_balance=xml_balance,
+                         has_api_credentials=current_user.has_api_credentials(),
+                         api_key=current_user.api_key if current_user.has_api_credentials() else None)
+
+@app.route('/generate-api-credentials', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=15)
+def generate_api_credentials():
+    """Gerar novas credenciais API para o usuário"""
+    try:
+        credentials = current_user.generate_api_credentials()
+        flash('Credenciais API geradas com sucesso!', 'success')
+        return jsonify({
+            'success': True,
+            'api_key': credentials['api_key'],
+            'api_secret': credentials['api_secret']
+        })
+    except Exception as e:
+        logger.error(f"Erro ao gerar credenciais API: {e}")
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
+
+@app.route('/revoke-api-credentials', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=15)
+def revoke_api_credentials():
+    """Revogar credenciais API do usuário"""
+    try:
+        current_user.revoke_api_credentials()
+        flash('Credenciais API revogadas com sucesso!', 'info')
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Erro ao revogar credenciais API: {e}")
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
 
 @app.route('/pricing')
 @rate_limit_check(max_requests=30, window_minutes=10)
