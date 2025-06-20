@@ -435,8 +435,8 @@ class ResponsiveTransportLabelGenerator:
         self._apply_section_frame(c, self.margin, section_y, self.content_width, section_height)
         
         # Calcular espaçamentos proporcionais à altura da seção
-        line_spacing = section_height * 0.12  # 12% da altura para cada linha
-        start_y = section_y + section_height * 0.85  # Começar no topo
+        line_spacing = section_height * 0.15  # 15% da altura para cada linha (mais espaço)
+        start_y = section_y + section_height * 0.80  # Começar um pouco mais baixo
         
         # TÍTULO "DESTINATÁRIO" 
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
@@ -608,15 +608,19 @@ class ResponsiveTransportLabelGenerator:
         # Aplicar enquadramento baseado no estilo
         self._apply_section_frame(c, area_x, area_y, area_width, area_height)
         
-        # Título "ÁREA" menor e mais elegante
-        c.setFillColor(colors.black)
+        # Título "ÁREA" - ajustar cor baseado no layout
+        if self.layout_style == "layout2":
+            c.setFillColor(colors.white)  # Texto branco para fundo preto
+        else:
+            c.setFillColor(colors.black)  # Texto preto para fundo cinza
+            
         c.setFont("Helvetica-Bold", max(9, self.fonts['small_text'] + 1))
-        title_y = area_y + area_height * 0.78
+        title_y = area_y + area_height * 0.75
         c.drawCentredString(area_x + area_width/2, title_y, "ÁREA")
         
         # Código da área maior e em destaque
         c.setFont("Helvetica-Bold", max(16, self.fonts['section_content'] + 4))
-        code_y = area_y + area_height * 0.32
+        code_y = area_y + area_height * 0.35
         c.drawCentredString(area_x + area_width/2, code_y, area_code)
         
         # Linha separadora sutil entre título e código
