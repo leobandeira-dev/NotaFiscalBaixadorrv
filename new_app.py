@@ -2476,79 +2476,124 @@ def comprar_creditos_xml():
 @login_required
 @rate_limit_check(max_requests=10, window_minutes=5)
 def create_checkout_session():
-    """Criar sessão de checkout Stripe com validação de segurança"""
+    """Criar sessão de checkout Stripe usando produtos reais da API"""
     try:
-        data = request.get_json()
+        # Obter dados do request (aceitar JSON ou form data)
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+        
         package_id = data.get('package_id')
         
-        # Validação de entrada com sanitização
-        package_id = SecurityManager.sanitize_input(str(package_id)) if package_id else None
-        
         if not package_id:
-            SecurityManager.log_security_event("CHECKOUT_INVALID_PACKAGE", current_user.id, "Missing package_id")
-            return jsonify({'error': 'Package ID is required'}), 400
+            return jsonify({'error': 'Package ID é obrigatório'}), 400
         
-        package = PricingManager.get_credit_package(package_id)
-        if not package:
-            SecurityManager.log_security_event("CHECKOUT_INVALID_PACKAGE", current_user.id, f"Invalid package: {package_id}")
-            return jsonify({'error': 'Invalid package'}), 400
+        # Mapear pacotes para produtos Stripe reais
+        stripe_products = {
+            'starter': {
+                'price_id': 'price_1QbxXeRsGJVUUfOAh4vA3iGF',  # 100 créditos XML
+                'credits': 100,
+                'name': 'Pacote Starter - 100 Créditos XML'
+            },
+            'professional': {
+                'price_id': 'price_1QbxYeRsGJVUUfOAtPfJlIwT',  # 500 créditos XML
+                'credits': 500,
+                'name': 'Pacote Professional - 500 Créditos XML'
+            },
+            'enterprise': {
+                'price_id': 'price_1QbxZPRsGJVUUfOA7K6HvFQo',  # 1000 créditos XML
+                'credits': 1000,
+                'name': 'Pacote Enterprise - 1000 Créditos XML'
+            },
+            'corporate': {
+                'price_id': 'price_1QbxZvRsGJVUUfOAkfpDGKK6',  # 2000 créditos XML
+                'credits': 2000,
+                'name': 'Pacote Corporate - 2000 Créditos XML'
+            }
+        }
         
-        # Validar operação de crédito
-        if not BillingSecurityManager.validate_credit_operation(current_user, package['credits'], 'purchase'):
-            SecurityManager.log_security_event("CHECKOUT_VALIDATION_FAILED", current_user.id, f"Package: {package_id}")
-            return jsonify({'error': 'Credit operation validation failed'}), 403
+        product = stripe_products.get(package_id)
+        if not product:
+            return jsonify({'error': 'Pacote inválido'}), 400
         
-        # Inicializar gerenciador Stripe
-        stripe_manager = StripePaymentManager()
+        # Criar sessão de checkout usando produto Stripe real
+        import stripe
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
         
-        # Criar sessão de checkout
-        success_url = url_for('payment_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}'
+        success_url = url_for('payment_success_simple', _external=True) + '?session_id={CHECKOUT_SESSION_ID}'
         cancel_url = url_for('comprar_creditos', _external=True)
         
-        price_data = {
-            'currency': 'brl',
-            'product_data': {
-                'name': package['name'],
-                'description': package['description']
-            },
-            'unit_amount': package['price_brl']
-        }
-        
-        metadata = {
-            'user_id': str(current_user.id),
-            'package_id': package_id,
-            'credits': str(package['credits'])
-        }
-        
-        result = stripe_manager.create_checkout_session(
-            price_data=price_data,
+        checkout_session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price': product['price_id'],
+                'quantity': 1,
+            }],
+            mode='payment',
             success_url=success_url,
             cancel_url=cancel_url,
             customer_email=current_user.email,
-            metadata=metadata
+            metadata={
+                'user_id': str(current_user.id),
+                'package_id': package_id,
+                'credits': str(product['credits'])
+            }
         )
         
-        if result['success']:
-            # Registrar transação como pendente
-            transaction = StripeTransaction(
-                user_id=current_user.id,
-                stripe_session_id=result['session_id'],
-                amount_brl=package['price_brl'] / 100,  # Converter centavos para reais
-                credits_purchased=package['credits'],
-                package_id=package_id,
-                status='pending'
-            )
-            
-            db.session.add(transaction)
-            db.session.commit()
-            
-            return jsonify({'checkout_url': result['checkout_url']})
-        else:
-            return jsonify({'error': result['error']}), 500
+        return jsonify({'checkout_url': checkout_session.url})
             
     except Exception as e:
-        logger.error(f"Error creating checkout session: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
+        logger.error(f"Erro ao criar sessão de checkout: {str(e)}")
+        return jsonify({'error': 'Erro interno do servidor'}), 500
+
+@app.route('/payment-success-simple')
+@login_required
+def payment_success_simple():
+    """Página simplificada de sucesso do pagamento"""
+    session_id = request.args.get('session_id')
+    
+    if not session_id:
+        flash('Sessão de pagamento não encontrada.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Verificar sessão no Stripe
+    try:
+        import stripe
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+        
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        if session.payment_status == 'paid':
+            # Extrair créditos dos metadados
+            credits = int(session.metadata.get('credits', 0))
+            
+            if credits > 0:
+                # Adicionar créditos ao usuário usando sistema simplificado
+                from simple_credit_system import add_xml_credits
+                
+                success = add_xml_credits(
+                    current_user.id, 
+                    credits, 
+                    f"Compra via Stripe - {credits} créditos XML"
+                )
+                
+                if success:
+                    flash(f'Pagamento realizado com sucesso! {credits} créditos XML foram adicionados ao seu saldo.', 'success')
+                else:
+                    flash('Pagamento processado, mas houve erro ao adicionar créditos. Contate o suporte.', 'warning')
+            else:
+                flash('Pagamento processado com sucesso!', 'success')
+        else:
+            flash('Pagamento ainda não foi processado.', 'warning')
+            
+    except Exception as e:
+        logger.error(f"Erro ao verificar pagamento: {e}")
+        flash('Erro ao verificar status do pagamento.', 'error')
+    
+    return redirect(url_for('dashboard'))
+
+# Webhook já existe em outra parte do código - removido para evitar duplicação
 
 @app.route('/payment-success')
 @login_required

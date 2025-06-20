@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+{% block title %}Comprar Créditos XML - CROSS XML Downloader PRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header com saldo atual -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-4">
+                    <h2 class="mb-3">Comprar Créditos XML</h2>
+                    <p class="lead text-muted mb-3">Escolha o pacote ideal para suas necessidades</p>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mx-auto">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Saldo atual:</strong> {{ xml_balance }} créditos XML disponíveis
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recomendação -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <i class="fas fa-star me-2"></i>
+                <strong>Recomendação:</strong> Baseado no seu uso, o pacote Starter (100 XMLs) é ideal para você.
+            </div>
+        </div>
+    </div>
+
+    <!-- Pacotes de créditos -->
+    <div class="row">
+        <!-- Pacote Starter -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100 border-primary border-3">
+                <div class="card-header bg-primary text-white text-center">
+                    <small><i class="fas fa-star me-1"></i>RECOMENDADO</small>
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="card-title">Pacote Básico</h4>
+                    <p class="text-muted">Ideal para uso ocasional</p>
+                    <div class="my-4">
+                        <h2 class="text-primary">R$ 10,00</h2>
+                        <small class="text-muted">100 créditos XML</small>
+                    </div>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="fas fa-check text-success me-2"></i>100 downloads de XML</li>
+                        <li><i class="fas fa-check text-success me-2"></i>DANFE grátis ilimitado</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Suporte por email</li>
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <button onclick="comprarCreditos('starter')" class="btn btn-primary w-100">
+                        <i class="fas fa-shopping-cart me-2"></i>Comprar Agora
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pacote Professional -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h4 class="card-title">Pacote Profissional</h4>
+                    <p class="text-muted">Para empresas de médio porte</p>
+                    <div class="my-4">
+                        <h2 class="text-primary">R$ 40,00</h2>
+                        <small class="text-muted">500 créditos XML</small>
+                    </div>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="fas fa-check text-success me-2"></i>500 downloads de XML</li>
+                        <li><i class="fas fa-check text-success me-2"></i>DANFE grátis ilimitado</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Suporte por email</li>
+                        <li><i class="fas fa-check text-success me-2"></i>API de integração</li>
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <button onclick="comprarCreditos('professional')" class="btn btn-primary w-100">
+                        <i class="fas fa-shopping-cart me-2"></i>Comprar Agora
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pacote Enterprise -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h4 class="card-title">Pacote Empresarial</h4>
+                    <p class="text-muted">Para grandes volumes</p>
+                    <div class="my-4">
+                        <h2 class="text-primary">R$ 70,00</h2>
+                        <small class="text-muted">1000 créditos XML</small>
+                    </div>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="fas fa-check text-success me-2"></i>1000 downloads de XML</li>
+                        <li><i class="fas fa-check text-success me-2"></i>DANFE grátis ilimitado</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Suporte por email</li>
+                        <li><i class="fas fa-check text-success me-2"></i>API de integração</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Suporte prioritário</li>
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <button onclick="comprarCreditos('enterprise')" class="btn btn-primary w-100">
+                        <i class="fas fa-shopping-cart me-2"></i>Comprar Agora
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pacote Corporate -->
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <h4 class="card-title">Pacote Corporativo</h4>
+                    <p class="text-muted">Para operações em larga escala</p>
+                    <div class="my-4">
+                        <h2 class="text-primary">R$ 120,00</h2>
+                        <small class="text-muted">2000 créditos XML</small>
+                    </div>
+                    <ul class="list-unstyled text-start">
+                        <li><i class="fas fa-check text-success me-2"></i>2000 downloads de XML</li>
+                        <li><i class="fas fa-check text-success me-2"></i>DANFE grátis ilimitado</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Suporte por email</li>
+                        <li><i class="fas fa-check text-success me-2"></i>API de integração</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Suporte prioritário</li>
+                    </ul>
+                </div>
+                <div class="card-footer text-center">
+                    <button onclick="comprarCreditos('corporate')" class="btn btn-primary w-100">
+                        <i class="fas fa-shopping-cart me-2"></i>Comprar Agora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Informações adicionais -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="mb-3">Informações Importantes</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-shield-alt text-success me-2"></i>Pagamento 100% seguro via Stripe</li>
+                                <li><i class="fas fa-clock text-info me-2"></i>Créditos não expiram</li>
+                                <li><i class="fas fa-download text-primary me-2"></i>Download imediato após pagamento</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-file-pdf text-danger me-2"></i>DANFE sempre gratuito</li>
+                                <li><i class="fas fa-headset text-warning me-2"></i>Suporte técnico especializado</li>
+                                <li><i class="fas fa-code text-dark me-2"></i>API para integração</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function comprarCreditos(packageId) {
+    try {
+        // Mostrar loading
+        const button = event.target;
+        const originalText = button.innerHTML;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
+        button.disabled = true;
+        
+        // Fazer requisição para criar sessão de checkout
+        const response = await fetch('/create-checkout-session', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                package_id: packageId
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.checkout_url) {
+            // Redirecionar para o checkout do Stripe
+            window.location.href = data.checkout_url;
+        } else {
+            throw new Error(data.error || 'Erro ao criar sessão de pagamento');
+        }
+        
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao processar pagamento: ' + error.message);
+        
+        // Restaurar botão
+        button.innerHTML = originalText;
+        button.disabled = false;
+    }
+}
+</script>
+{% endblock %}
