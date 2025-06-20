@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Teste do sistema de enquadramento visual corrigido
+Teste visual extremo para verificar enquadramento
 """
 
 import sys
@@ -9,8 +9,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from responsive_label_generator import ResponsiveTransportLabelGenerator
 
-def test_framing_system():
-    """Teste específico do sistema de enquadramento"""
+def test_visual_framing():
+    """Teste com bordas extremamente contrastadas"""
     
     xml_content = """<?xml version="1.0" encoding="UTF-8"?>
     <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
@@ -61,13 +61,13 @@ def test_framing_system():
         </NFe>
     </nfeProc>"""
     
-    print("=== TESTE SISTEMA DE ENQUADRAMENTO CORRIGIDO ===")
+    print("=== TESTE VISUAL DE ENQUADRAMENTO ===")
     
-    # Teste Layout 1 - Com bordas corrigidas
-    print("\n--- Layout 1 (Moderno) - Bordas Corrigidas ---")
+    # Layout 1 - Bordas pretas grossas
+    print("Testando Layout 1 (bordas pretas grossas)...")
     generator1 = ResponsiveTransportLabelGenerator(
-        company_name="teste3",
-        company_subtitle="teste23",
+        company_name="TESTE BORDAS",
+        company_subtitle="LAYOUT 1",
         paper_width_mm=100,
         paper_height_mm=150,
         layout_style="layout1"
@@ -75,27 +75,20 @@ def test_framing_system():
     
     pdf1 = generator1.generate_transport_label(
         xml_content=xml_content,
-        pedido_number="PED1750428740753",
+        pedido_number="TESTE123",
         area_code="01"
     )
     
     if pdf1:
         with open("teste_enquadramento_layout1.pdf", "wb") as f:
             f.write(pdf1.getvalue())
-        size1 = len(pdf1.getvalue())
-        print(f"✅ Layout 1 Enquadrado: teste_enquadramento_layout1.pdf ({size1:,} bytes)")
-        print("   ✓ Fundo cinza claro com bordas cinza escuras visíveis")
-        print("   ✓ Margem interna de 3 pontos para espaçamento")
-        print("   ✓ Bordas de 2 pontos de espessura")
-        print("   ✓ Todas as seções com enquadramento aplicado")
-    else:
-        print("❌ Falha Layout 1")
+        print(f"✓ Layout 1: teste_enquadramento_layout1.pdf ({len(pdf1.getvalue()):,} bytes)")
     
-    # Teste Layout 2 - Com bordas corrigidas
-    print("\n--- Layout 2 (Alto Contraste) - Bordas Corrigidas ---")
+    # Layout 2 - Bordas brancas grossas
+    print("Testando Layout 2 (bordas brancas grossas)...")
     generator2 = ResponsiveTransportLabelGenerator(
-        company_name="teste3",
-        company_subtitle="teste23",
+        company_name="TESTE BORDAS",
+        company_subtitle="LAYOUT 2", 
         paper_width_mm=100,
         paper_height_mm=150,
         layout_style="layout2"
@@ -103,38 +96,17 @@ def test_framing_system():
     
     pdf2 = generator2.generate_transport_label(
         xml_content=xml_content,
-        pedido_number="PED1750428769424",
+        pedido_number="TESTE123",
         area_code="01"
     )
     
     if pdf2:
         with open("teste_enquadramento_layout2.pdf", "wb") as f:
             f.write(pdf2.getvalue())
-        size2 = len(pdf2.getvalue())
-        print(f"✅ Layout 2 Enquadrado: teste_enquadramento_layout2.pdf ({size2:,} bytes)")
-        print("   ✓ Fundo preto com bordas brancas visíveis")
-        print("   ✓ Margem interna de 3 pontos para espaçamento")
-        print("   ✓ Bordas brancas de 2 pontos de espessura")
-        print("   ✓ Texto branco contrastante sobre fundo preto")
-    else:
-        print("❌ Falha Layout 2")
+        print(f"✓ Layout 2: teste_enquadramento_layout2.pdf ({len(pdf2.getvalue()):,} bytes)")
     
-    print("\n=== CARACTERÍSTICAS DO ENQUADRAMENTO ===")
-    print("🔲 Bordas Visíveis:")
-    print("   • Layout 1: Bordas cinza escuras sobre fundo cinza claro")
-    print("   • Layout 2: Bordas brancas sobre fundo preto")
-    print("   • Espessura: 2 pontos para visibilidade máxima")
-    print("   • Margem interna: 3 pontos para espaçamento do texto")
-    
-    print("🔲 Aplicação Consistente:")
-    print("   • Cabeçalho da empresa")
-    print("   • Seções de destaque (NF, Pedido)")
-    print("   • Seção do remetente")
-    print("   • Seção do destinatário")
-    print("   • Seções de peso/volume")
-    print("   • Seção da área")
-    
+    print("\nSe as bordas não estiverem visíveis nestes PDFs, há um problema fundamental na função de enquadramento.")
     return True
 
 if __name__ == "__main__":
-    test_framing_system()
+    test_visual_framing()
