@@ -167,7 +167,6 @@ def generate_improved_labels_with_guaranteed_borders(xml_record, volumes_config,
         logger.error(f"Erro no sistema de etiquetas otimizadas: {str(e)}")
         raise
 
-from download_service import DownloadService
 from security import (
     SecurityManager, DataIsolationManager, BillingSecurityManager,
     require_authentication, require_admin, require_user_access,
@@ -501,7 +500,7 @@ def google_callback():
 @rate_limit_check(max_requests=50, window_minutes=10)
 def dashboard():
     """User dashboard with data isolation"""
-    from download_service import DownloadService
+
     
     # Get user XML statistics with isolation
     user_xmls_query = XMLFile.query.filter_by(user_id=current_user.id)
@@ -867,11 +866,15 @@ def process_download_job(job_id):
             for i, invoice_key in enumerate(job.invoice_keys):
                 downloader = None
                 try:
-                    # Create fresh downloader instance
-                    downloader = InvoiceDownloader()
-                    
-                    # Download XML with user_id for database saving and charging
-                    result = downloader.download_invoice_xml(invoice_key, job_id, 'xml', job.user_id)
+                    # Create fresh downloader instance based on environment
+                    if is_production:
+                        downloader = ProductionDownloader()
+                        # Use production method
+                        result = downloader.download_xml_production(invoice_key, job_id, job.user_id)
+                    else:
+                        downloader = InvoiceDownloader()
+                        # Use development method
+                        result = downloader.download_invoice_xml(invoice_key, job_id, 'xml', job.user_id)
                     
                     # Update job progress immediately
                     with jobs_lock:
