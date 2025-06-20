@@ -269,9 +269,6 @@ class ProductionDownloader:
                                     if downloaded_file != expected_file:
                                         os.rename(downloaded_file, expected_file)
                                     
-                                    # Process and save XML to database
-                                    self._process_and_save_xml(expected_file, invoice_key, job_id, user_id)
-                                    
                                     logger.info(f"[Job {job_id}] File downloaded successfully: {expected_file}")
                                     return {
                                         "success": True,
@@ -293,9 +290,6 @@ class ProductionDownloader:
                             xml_file_path = os.path.join(downloads_dir, f"{invoice_key}.xml")
                             with open(xml_file_path, 'w', encoding='utf-8') as f:
                                 f.write(xml_content)
-                            
-                            # Process and save XML to database
-                            self._process_and_save_xml(xml_file_path, invoice_key, job_id, user_id)
                             
                             logger.info(f"[Job {job_id}] XML extracted and saved: {xml_file_path}")
                             return {
@@ -320,27 +314,6 @@ class ProductionDownloader:
         
         finally:
             self.cleanup()
-    
-    def _process_and_save_xml(self, xml_file_path: str, invoice_key: str, job_id: str, user_id: int):
-        """Process XML file and save to database with charging"""
-        try:
-            # Import here to avoid circular imports
-            from download_service import process_xml_download
-            
-            logger.info(f"[Job {job_id}] Processing XML for database save: {invoice_key}")
-            
-            # Read XML content
-            with open(xml_file_path, 'r', encoding='utf-8') as f:
-                xml_content = f.read()
-            
-            # Process through existing download service
-            process_xml_download(user_id, invoice_key, xml_content, job_id)
-            
-            logger.info(f"[Job {job_id}] XML processed and saved to database: {invoice_key}")
-            
-        except Exception as e:
-            logger.error(f"[Job {job_id}] Error processing XML for database: {e}")
-            # Don't fail the download if database save fails
     
     def cleanup(self):
         """Clean up WebDriver resources"""
