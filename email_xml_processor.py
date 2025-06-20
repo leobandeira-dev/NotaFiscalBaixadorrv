@@ -370,7 +370,7 @@ class EmailXMLProcessor:
                             continue
                         
                         # Processar novo XML
-                        xml_record = self.save_xml_to_database(xml_attachment, message_info)
+                        xml_record = self.save_xml_to_database(xml_attachment)
                         if xml_record:
                             processed_xmls.append({
                                 'filename': xml_attachment['filename'],
