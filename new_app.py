@@ -558,12 +558,10 @@ def dashboard():
     
     # Get recent activities with data isolation
     try:
-        activities_query = UsageRecord.query.filter(
+        recent_activities = UsageRecord.query.filter(
             UsageRecord.user_id == current_user.id,
             UsageRecord.created_at >= datetime.now() - timedelta(days=7)
-        ).order_by(UsageRecord.created_at.desc()).limit(10)
-        activities_query = DataIsolationManager.filter_user_usage(activities_query, current_user.id)
-        recent_activities = activities_query.all()
+        ).order_by(UsageRecord.created_at.desc()).limit(10).all()
     except Exception as e:
         logger.error(f"Error getting recent activities: {e}")
         SecurityManager.log_security_event("DATA_ACCESS_ERROR", current_user.id, f"Activities error: {e}")
