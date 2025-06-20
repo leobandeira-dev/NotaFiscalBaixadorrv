@@ -574,8 +574,8 @@ def dashboard():
         status='PENDING'
     ).all()
     
-    # Get user XML credit balance using corrected system
-    from credit_system_fixed import get_user_xml_balance, get_user_stats
+    # Get user XML credit balance using simplified system
+    from simple_credit_system import get_user_xml_balance, get_user_stats
     
     xml_balance = get_user_xml_balance(current_user.id)
     user_stats = get_user_stats(current_user.id)

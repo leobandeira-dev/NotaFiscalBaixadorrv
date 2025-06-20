@@ -24,21 +24,8 @@ def get_user_xml_balance(user_id):
         if last_balance:
             return int(last_balance.balance_after)
         
-        # Fallback: calcular baseado em transações Stripe
-        total_purchased = db.session.query(func.sum(StripeTransaction.credits_purchased))\
-            .filter(
-                StripeTransaction.user_id == user_id,
-                StripeTransaction.status == 'completed'
-            ).scalar() or 0
-        
-        # Contar downloads (consumos) usando UsageRecord
-        total_consumed = db.session.query(func.count(UsageRecord.id))\
-            .filter(
-                UsageRecord.user_id == user_id,
-                UsageRecord.service_type == 'xml_download'
-            ).scalar() or 0
-        
-        return max(0, int(total_purchased) - int(total_consumed))
+        # Fallback: usar saldo zero se não há registros
+        return 0
         
     except Exception as e:
         logger.error(f"Erro ao calcular saldo XML do usuário {user_id}: {e}")
@@ -163,10 +150,9 @@ def get_user_stats(user_id):
                 StripeTransaction.status == 'completed'
             ).scalar() or 0
         
-        total_consumed = db.session.query(func.count(FeatureUsage.id))\
+        total_consumed = db.session.query(func.count(UsageRecord.id))\
             .filter(
-                FeatureUsage.user_id == user_id,
-                FeatureUsage.feature_key == 'xml_download'
+                UsageRecord.user_id == user_id
             ).scalar() or 0
         
         return {
