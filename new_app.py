@@ -2317,6 +2317,8 @@ def save_pop3_credentials():
     """Salva credenciais POP3 do usuário"""
     try:
         password = request.form.get('pop3_password')
+        logger.info(f"Password received: {'Yes' if password else 'No'}, Length: {len(password) if password else 0}")
+        
         if not password:
             flash('Senha é obrigatória', 'error')
             return redirect(url_for('email_import'))
@@ -2328,11 +2330,17 @@ def save_pop3_credentials():
         current_user.pop3_ssl = 'pop3_ssl' in request.form
         current_user.pop3_configured = True
         
+        logger.info(f"Before commit - POP3 configured: {current_user.pop3_configured}")
+        logger.info(f"Before commit - Password hash length: {len(current_user.pop3_password) if current_user.pop3_password else 0}")
+        
         db.session.commit()
+        
+        logger.info(f"After commit - POP3 configured: {current_user.pop3_configured}")
         flash('Configurações POP3 salvas com sucesso!', 'success')
         
     except Exception as e:
         logger.error(f"Erro ao salvar credenciais POP3: {e}")
+        db.session.rollback()
         flash(f'Erro ao salvar configurações POP3: {str(e)}', 'error')
     
     return redirect(url_for('email_import'))
