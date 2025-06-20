@@ -1718,6 +1718,180 @@ def serve_logo(filename):
     """Servir logos das empresas"""
     return send_from_directory(os.path.join('static', 'uploads', 'logos'), filename)
 
+# Enhanced Label Generation Routes
+@app.route('/configurar-etiquetas/<int:xml_id>')
+@login_required
+def label_generator(xml_id):
+    """Página de configuração avançada de etiquetas"""
+    try:
+        # Buscar XML nas duas tabelas
+        xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        xml_file = None
+        
+        if not xml_record:
+            xml_file = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        
+        if not xml_record and not xml_file:
+            flash('XML não encontrado.', 'error')
+            return redirect(url_for('my_xmls'))
+        
+        # Verificar módulo de etiquetas
+        labels_module = ServiceModule.query.filter_by(name='Etiquetas de Transporte').first()
+        if not labels_module:
+            flash('Módulo de etiquetas não disponível.', 'error')
+            return redirect(url_for('my_xmls'))
+        
+        # Verificar se usuário pode usar o serviço (trial ou saldo)
+        is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()
+        if not is_trial_active and current_user.current_balance < labels_module.cost_per_use:
+            flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
+            return redirect(url_for('comprar_creditos'))
+        
+        # Usar dados da tabela encontrada
+        xml_data = xml_record if xml_record else xml_file
+        
+        return render_template('label_generator.html', xml_data=xml_data)
+        
+    except Exception as e:
+        logger.error(f"Erro ao configurar etiquetas: {e}")
+        flash('Erro ao carregar configuração de etiquetas.', 'error')
+        return redirect(url_for('my_xmls'))
+
+
+@app.route('/gerar-etiquetas-personalizadas/<int:xml_id>', methods=['POST'])
+@login_required
+def generate_custom_labels(xml_id):
+    """Gera etiquetas personalizadas com volumes configuráveis"""
+    try:
+        # Buscar XML
+        xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        xml_file = None
+        
+        if not xml_record:
+            xml_file = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        
+        if not xml_record and not xml_file:
+            flash('XML não encontrado.', 'error')
+            return redirect(url_for('my_xmls'))
+        
+        xml_data = xml_record if xml_record else xml_file
+        
+        # Verificar módulo de etiquetas
+        labels_module = ServiceModule.query.filter_by(name='Etiquetas de Transporte').first()
+        if not labels_module:
+            flash('Módulo de etiquetas não disponível.', 'error')
+            return redirect(url_for('my_xmls'))
+        
+        # Verificar acesso (trial ou saldo)
+        is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()
+        
+        # Obter configurações do formulário
+        total_volumes = int(request.form.get('total_volumes', 1))
+        company_name = request.form.get('company_name', current_user.company_name or 'SUA EMPRESA')
+        company_subtitle = request.form.get('company_subtitle', current_user.company_subtitle or 'TRANSPORTE')
+        area_code = request.form.get('area_code', current_user.default_area_code or '01')
+        paper_size = request.form.get('paper_size', '10x15')
+        paper_width_mm = int(request.form.get('paper_width_mm', 100))
+        paper_height_mm = int(request.form.get('paper_height_mm', 150))
+        
+        # Verificar saldo antes de gerar
+        total_cost = total_volumes * labels_module.cost_per_use
+        if not is_trial_active and current_user.current_balance < total_cost:
+            flash(f'Saldo insuficiente. Necessário: R$ {total_cost:.2f}', 'warning')
+            return redirect(url_for('comprar_creditos'))
+        
+        # Processar logo se enviado
+        logo_path = current_user.company_logo_path
+        if 'company_logo' in request.files:
+            logo_file = request.files['company_logo']
+            if logo_file and logo_file.filename:
+                logo_path = save_company_logo(logo_file, current_user.id)
+                current_user.company_logo_path = logo_path
+                db.session.commit()
+        
+        # Atualizar configurações do usuário
+        current_user.company_name = company_name
+        current_user.company_subtitle = company_subtitle
+        current_user.default_area_code = area_code
+        db.session.commit()
+        
+        # Construir configuração de volumes
+        volumes_config = []
+        for i in range(1, total_volumes + 1):
+            peso = float(request.form.get(f'peso_volume_{i}', 0))
+            pedido = request.form.get(f'pedido_volume_{i}', f'PED{getattr(xml_data, "numero_nf", "00000")}-{i}')
+            volumes_config.append({
+                'peso': peso,
+                'pedido': pedido
+            })
+        
+        # Gerar etiquetas múltiplas
+        from transport_label_generator_v2 import generate_multiple_labels_from_volumes
+        
+        labels = generate_multiple_labels_from_volumes(
+            xml_record=xml_data,
+            volumes_config=volumes_config,
+            company_name=company_name,
+            company_logo_path=logo_path,
+            paper_width_mm=paper_width_mm,
+            paper_height_mm=paper_height_mm,
+            area_code=area_code
+        )
+        
+        if not labels:
+            flash('Erro ao gerar etiquetas.', 'error')
+            return redirect(url_for('label_generator', xml_id=xml_id))
+        
+        # Cobrar pelo serviço se não estiver em trial
+        if not is_trial_active:
+            # Cobrar por cada etiqueta gerada
+            total_cost = len(labels) * labels_module.cost_per_use
+            current_user.current_balance -= total_cost
+            
+            # Registrar uso para cada etiqueta
+            for i, label_info in enumerate(labels):
+                usage_record = UsageRecord(
+                    user_id=current_user.id,
+                    service_module_id=labels_module.id,
+                    cost=labels_module.cost_per_use,
+                    description=f"Etiqueta de transporte - Volume {label_info['volume']} - {label_info['pedido']}",
+                    created_at=datetime.now()
+                )
+                db.session.add(usage_record)
+            
+            db.session.commit()
+        
+        # Se apenas uma etiqueta, retornar diretamente
+        if len(labels) == 1:
+            label = labels[0]
+            response = make_response(label['buffer'].getvalue())
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'attachment; filename="{label["filename"]}"'
+            return response
+        
+        # Múltiplas etiquetas - criar ZIP
+        import zipfile
+        
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for label in labels:
+                zip_file.writestr(label['filename'], label['buffer'].getvalue())
+        
+        zip_buffer.seek(0)
+        
+        response = make_response(zip_buffer.getvalue())
+        response.headers['Content-Type'] = 'application/zip'
+        response.headers['Content-Disposition'] = f'attachment; filename="etiquetas_nf_{getattr(xml_data, "numero_nf", xml_id)}.zip"'
+        
+        flash(f'{len(labels)} etiquetas geradas com sucesso!', 'success')
+        return response
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar etiquetas personalizadas: {e}")
+        flash('Erro ao gerar etiquetas personalizadas.', 'error')
+        return redirect(url_for('label_generator', xml_id=xml_id))
+
+
 # Importar admin panel
 try:
     from admin_panel import init_admin_panel
