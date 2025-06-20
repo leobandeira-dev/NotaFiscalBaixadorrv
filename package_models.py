@@ -115,12 +115,15 @@ class FeatureUsage(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    subscription_id = db.Column(db.Integer, db.ForeignKey('user_subscriptions.id'), nullable=False)
+    subscription_id = db.Column(db.Integer, db.ForeignKey('user_subscriptions.id'), nullable=True)
     feature_key = db.Column(db.String(100), nullable=False)
     
     # Dados do uso
     usage_count = db.Column(db.Integer, default=1)
+    credits_consumed = db.Column(db.Integer, default=1)  # Créditos consumidos nesta operação
     usage_data = db.Column(db.JSON, nullable=True)  # Dados específicos do uso
+    description = db.Column(db.String(500), nullable=True)  # Descrição da operação
+    extra_metadata = db.Column(db.JSON, nullable=True)  # Metadados adicionais
     
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -128,6 +131,8 @@ class FeatureUsage(db.Model):
     # Relacionamentos
     user = db.relationship('User')
     subscription = db.relationship('UserSubscription')
+
+# StripeTransaction is already defined in models.py - using that one to avoid conflicts
 
 def init_stripe_products():
     """Inicializar produtos padrão do Stripe"""

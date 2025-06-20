@@ -5,9 +5,13 @@ Integração com botões de compra Stripe
 
 import os
 import stripe
+import logging
 from datetime import datetime, timedelta
-from models import db, User
-from package_models import StripeProduct, UserSubscription
+from models import db, User, StripeTransaction
+from package_models import StripeProduct, UserSubscription, FeatureUsage
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # Configurar Stripe
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
