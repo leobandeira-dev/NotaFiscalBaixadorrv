@@ -836,12 +836,8 @@ def meus_xmls():
     uf_filter = request.args.get('uf', '')
     cidade_filter = request.args.get('cidade', '')
     
-    # Query apenas XMLs corretamente processados (sem duplicatas)
-    query = ImportedXML.query.filter_by(user_id=current_user.id).filter(
-        ImportedXML.numero_nf.isnot(None),
-        ImportedXML.nome_emitente.isnot(None),
-        ImportedXML.valor_total.isnot(None)
-    )
+    # Query XMLs do usuário (sem duplicatas - apenas ImportedXML)
+    query = ImportedXML.query.filter_by(user_id=current_user.id)
     
     # Aplicar filtros
     if search_term:
@@ -1042,12 +1038,8 @@ def labels_module():
         except:
             pass
     
-    # Filtrar apenas XMLs com dados completos para evitar duplicatas
-    query = query.filter(
-        ImportedXML.numero_nf.isnot(None),
-        ImportedXML.nome_emitente.isnot(None),
-        ImportedXML.valor_total.isnot(None)
-    )
+    # Query apenas XMLs válidos (evitar registros vazios)
+    query = query.filter(ImportedXML.invoice_key.isnot(None))
     
     # Paginar diretamente no banco
     xmls_pagination = query.order_by(ImportedXML.imported_at.desc()).paginate(
