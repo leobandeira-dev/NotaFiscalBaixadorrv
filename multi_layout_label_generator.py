@@ -80,7 +80,9 @@ def create_qr_code(data):
     img.save(img_buffer, format='PNG')
     img_buffer.seek(0)
     
-    return img_buffer
+    # Return a reportlab-compatible ImageReader
+    from reportlab.lib.utils import ImageReader
+    return ImageReader(img_buffer)
 
 def generate_label_layout1(canvas_obj, xml_data, company_data, volume_info, paper_size):
     """Layout 1: Moderno com fundos cinza"""
@@ -94,7 +96,7 @@ def generate_label_layout1(canvas_obj, xml_data, company_data, volume_info, pape
     # Cabeçalho da empresa
     y_pos = height - 30
     
-    if company_data.get('logo_path') and os.path.exists(company_data['logo_path']):
+    if company_data.get('logo_path') and isinstance(company_data['logo_path'], str) and os.path.exists(company_data['logo_path']):
         try:
             canvas_obj.drawImage(company_data['logo_path'], 20, y_pos - 25, width=60, height=25, preserveAspectRatio=True)
             x_text = 90
@@ -195,7 +197,7 @@ def generate_label_layout2(canvas_obj, xml_data, company_data, volume_info, pape
     
     # Logo e nome da empresa em branco
     canvas_obj.setFillColor(white_text)
-    if company_data.get('logo_path') and os.path.exists(company_data['logo_path']):
+    if company_data.get('logo_path') and isinstance(company_data['logo_path'], str) and os.path.exists(company_data['logo_path']):
         try:
             canvas_obj.drawImage(company_data['logo_path'], 20, y_pos - 25, width=60, height=25, preserveAspectRatio=True)
             x_text = 90
