@@ -10,7 +10,7 @@ import secrets
 import pytz
 from datetime import datetime, timedelta
 from threading import Thread, Lock
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, send_file, make_response
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, send_file, make_response, abort
 from io import BytesIO
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
@@ -25,6 +25,8 @@ from transport_label_generator_v2 import CustomTransportLabelGenerator, generate
 from improved_transport_label import ImprovedTransportLabelGenerator
 from transul_exact_layout_generator import generate_transul_exact_label_from_xml
 from xml_processor import extract_xml_data
+from database_config import DatabaseConfig, DatabaseHealthCheck, validate_database_environment, initialize_database_with_retry
+from health_check import setup_health_endpoints
 
 def generate_improved_label_with_guaranteed_borders(xml_id, user, paper_config, layout_style='layout1'):
     """Função de integração que usa o novo sistema com bordas garantidas"""
@@ -196,13 +198,29 @@ def handle_custom_domain():
         # Domain is correctly configured
         pass
 
-# Database configuration
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-    'pool_pre_ping': True,
-    "pool_recycle": 300,
-}
+# Enhanced database configuration with Neon PostgreSQL support
+try:
+    database_url = DatabaseConfig.get_database_url()
+    engine_options = DatabaseConfig.get_engine_options()
+    
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = engine_options
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_RECORD_QUERIES"] = False
+    
+    logger.info("Enhanced database configuration applied successfully")
+except Exception as e:
+    logger.error(f"Database configuration error: {e}")
+    # Fallback configuration
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+        'pool_pre_ping': True,
+        "pool_recycle": 300,
+        'pool_size': 5,
+        'max_overflow': 10,
+        'pool_timeout': 30
+    }
 
 # Email configuration
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -2455,12 +2473,33 @@ def generate_custom_labels(xml_id):
         return redirect(url_for('label_generator', xml_id=xml_id))
 
 
+# Setup health check endpoints
+setup_health_endpoints(app)
+
 # Importar admin panel
 try:
     from admin_panel import init_admin_panel
     init_admin_panel(app)
 except ImportError:
     logger.warning("Admin panel not available")
+
+# Database initialization and setup
+def initialize_application():
+    """Initialize application during startup"""
+    try:
+        with app.app_context():
+            # Create tables if they don't exist
+            db.create_all()
+            
+            # Initialize default data
+            init_default_data()
+            
+            logger.info("Application initialized successfully")
+    except Exception as e:
+        logger.error(f"Application initialization failed: {e}")
+
+# Initialize application immediately
+initialize_application()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
