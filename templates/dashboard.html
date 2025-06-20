@@ -229,14 +229,14 @@
     </div>
     
     <div class="stat-card" style="border: 2px solid #8A05BE;">
-        <div class="stat-title">💳 Saldo atual</div>
-        <div class="stat-value" style="color: #8A05BE;">R$ {{ "%.2f"|format(current_user.current_balance or 0) }}</div>
-        {% if current_user.current_balance and current_user.current_balance >= 1 %}
-        <div class="stat-change positive">{{ (current_user.current_balance / 0.10)|int }} downloads disponíveis</div>
+        <div class="stat-title">💳 Créditos XML</div>
+        <div class="stat-value" style="color: #8A05BE;">{{ xml_balance or 0 }} créditos</div>
+        {% if xml_balance and xml_balance >= 1 %}
+        <div class="stat-change positive">{{ xml_balance }} downloads disponíveis</div>
         {% elif current_user.is_trial_active() %}
         <div class="stat-change positive">🎉 Período teste ativo</div>
         {% else %}
-        <div class="stat-change negative">⚠ Recarregue para continuar</div>
+        <div class="stat-change negative">⚠ Compre créditos para continuar</div>
         {% endif %}
     </div>
     

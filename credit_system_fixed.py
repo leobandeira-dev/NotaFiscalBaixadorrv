@@ -3,7 +3,7 @@ Sistema de Créditos XML Corrigido
 Funções para calcular e exibir corretamente saldos e histórico de créditos
 """
 from sqlalchemy import func
-from models import db, StripeTransaction, CreditBalance, FeatureUsage
+from models import db, StripeTransaction, CreditBalance, UsageRecord
 from flask_login import current_user
 from datetime import datetime
 import logging
@@ -31,11 +31,11 @@ def get_user_xml_balance(user_id):
                 StripeTransaction.status == 'completed'
             ).scalar() or 0
         
-        # Contar downloads (consumos)
-        total_consumed = db.session.query(func.count(FeatureUsage.id))\
+        # Contar downloads (consumos) usando UsageRecord
+        total_consumed = db.session.query(func.count(UsageRecord.id))\
             .filter(
-                FeatureUsage.user_id == user_id,
-                FeatureUsage.feature_key == 'xml_download'
+                UsageRecord.user_id == user_id,
+                UsageRecord.service_type == 'xml_download'
             ).scalar() or 0
         
         return max(0, int(total_purchased) - int(total_consumed))
@@ -98,11 +98,12 @@ def consume_xml_credit_fixed(user_id):
         db.session.add(credit_record)
         
         # Registrar na tabela de uso
-        usage_record = FeatureUsage(
+        usage_record = UsageRecord(
             user_id=user_id,
-            feature_key='xml_download',
-            usage_count=1,
-            timestamp=datetime.utcnow()
+            service_type='xml_download',
+            amount=1,
+            description='Download XML automático',
+            created_at=datetime.utcnow()
         )
         
         db.session.add(usage_record)

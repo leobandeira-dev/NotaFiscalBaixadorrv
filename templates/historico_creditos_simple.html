@@ -112,9 +112,9 @@
 
 <!-- Saldo Atual -->
 <div class="balance-card">
-    <div class="balance-amount">R$ {{ "%.2f"|format(current_user.current_balance or 0) }}</div>
+    <div class="balance-amount">{{ user_stats.saldo_atual if user_stats else 0 }} créditos XML</div>
     <div class="balance-subtitle">
-        Saldo disponível • Downloads restantes aproximados: {{ ((current_user.current_balance or 0) * 10) | int }}
+        Créditos disponíveis • Downloads XML disponíveis: {{ user_stats.saldo_atual if user_stats else 0 }}
     </div>
 </div>
 
