@@ -402,6 +402,7 @@ class XMLFile(db.Model):
     # Controle de processamento
     danfe_generated = db.Column(db.Boolean, default=False)
     label_generated = db.Column(db.Boolean, default=False)
+    label_file_path = db.Column(db.String(500), nullable=True)  # Caminho do arquivo de etiqueta gerado
     
     # Timestamps
     imported_at = db.Column(db.DateTime, default=datetime.utcnow)

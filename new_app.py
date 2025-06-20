@@ -1904,6 +1904,14 @@ def generate_custom_labels(xml_id):
             response.headers['Content-Disposition'] = f'inline; filename="etiquetas_nf_{nf_number}_multipaginas.pdf"'
             response.headers['X-Frame-Options'] = 'ALLOWALL'
         
+        # Marcar etiqueta como gerada e salvar o caminho do arquivo
+        xml_data.label_generated = True
+        if len(labels) == 1:
+            xml_data.label_file_path = f"etiquetas/nf_{xml_data.numero_nf or xml_id}_{labels[0]['filename']}"
+        else:
+            xml_data.label_file_path = f"etiquetas/nf_{xml_data.numero_nf or xml_id}_multipaginas.pdf"
+        db.session.commit()
+        
         flash(f'{len(labels)} etiquetas geradas com sucesso!', 'success')
         return response
         

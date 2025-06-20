@@ -166,9 +166,12 @@ def generate_label_layout1(canvas_obj, xml_data, company_data, volume_info, pape
     canvas_obj.rect(area_x, y_pos, 60, 30, fill=1, stroke=1)
     canvas_obj.setFillColor(text_color)
     canvas_obj.setFont("Helvetica-Bold", 8)
-    canvas_obj.drawCentredText(area_x + 30, y_pos + 20, "ÁREA")
+    text_width = canvas_obj.stringWidth("ÁREA", "Helvetica-Bold", 8)
+    canvas_obj.drawString(area_x + 30 - text_width/2, y_pos + 20, "ÁREA")
     canvas_obj.setFont("Helvetica-Bold", 16)
-    canvas_obj.drawCentredText(area_x + 30, y_pos + 8, company_data.get('area_code', '01'))
+    area_text = company_data.get('area_code', '01')
+    area_width = canvas_obj.stringWidth(area_text, "Helvetica-Bold", 16)
+    canvas_obj.drawString(area_x + 30 - area_width/2, y_pos + 8, area_text)
     
     # QR Code
     if xml_data['chave_nfe'] != 'N/A':
@@ -264,9 +267,12 @@ def generate_label_layout2(canvas_obj, xml_data, company_data, volume_info, pape
     canvas_obj.rect(area_x, y_pos, 60, 30, fill=1, stroke=0)
     canvas_obj.setFillColor(white_text)
     canvas_obj.setFont("Helvetica-Bold", 8)
-    canvas_obj.drawCentredText(area_x + 30, y_pos + 20, "ÁREA")
+    text_width = canvas_obj.stringWidth("ÁREA", "Helvetica-Bold", 8)
+    canvas_obj.drawString(area_x + 30 - text_width/2, y_pos + 20, "ÁREA")
     canvas_obj.setFont("Helvetica-Bold", 16)
-    canvas_obj.drawCentredText(area_x + 30, y_pos + 8, company_data.get('area_code', '01'))
+    area_text = company_data.get('area_code', '01')
+    area_width = canvas_obj.stringWidth(area_text, "Helvetica-Bold", 16)
+    canvas_obj.drawString(area_x + 30 - area_width/2, y_pos + 8, area_text)
     
     # QR Code (fundo branco)
     if xml_data['chave_nfe'] != 'N/A':
