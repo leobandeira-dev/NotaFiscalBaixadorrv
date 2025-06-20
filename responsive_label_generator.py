@@ -125,17 +125,17 @@ class ResponsiveTransportLabelGenerator:
         footer_height = self.spacing['section'] * 2
         available_height = self.content_height - header_height - footer_height
         
-        # Divisão proporcional do espaço (soma = 100%)
+        # Divisão proporcional do espaço (estilo transportadoras modernas)
         sections = {
-            'company_header': 0.15,    # 15%
-            'id_qr': 0.12,             # 12%
-            'nf_info': 0.08,           # 8%
-            'pedido_info': 0.08,       # 8%
-            'remetente': 0.08,         # 8%
-            'destinatario': 0.22,      # 22%
-            'cidade_uf': 0.08,         # 8%
-            'peso_volume': 0.12,       # 12%
-            'area_info': 0.07          # 7%
+            'company_header': 0.12,    # 12% - Header mais compacto
+            'id_qr': 0.10,             # 10% - ID e QR reduzidos  
+            'nf_info': 0.08,           # 8% - NF compacta
+            'pedido_info': 0.08,       # 8% - Pedido compacto
+            'remetente': 0.08,         # 8% - Remetente básico
+            'destinatario': 0.30,      # 30% - FOCO NO DESTINATÁRIO
+            'cidade_uf': 0.06,         # 6% - Cidade reduzida (já está no destinatário)
+            'peso_volume': 0.13,       # 13% - Peso/Volume destaque
+            'area_info': 0.05          # 5% - Área compacta
         }
         
         # Posição inicial
@@ -271,52 +271,81 @@ class ResponsiveTransportLabelGenerator:
         return self._draw_highlighted_section(c, "Remetente", remetente, y_pos, section_height)
     
     def _draw_destinatario_section(self, c, xml_data, y_pos, section_height):
-        """Desenha seção Destinatário expandida"""
+        """Desenha seção Destinatário com foco no endereço (estilo grandes transportadoras)"""
         section_y = y_pos - section_height
         
-        # Nome do destinatário
-        dest_nome = xml_data.get('destinatario_razao', xml_data.get('destinatario_nome', 'N/A'))[:50]
-        dest_endereco = xml_data.get('destinatario_endereco', '')
-        dest_cidade = xml_data.get('destinatario_cidade', '')
-        dest_uf = xml_data.get('destinatario_uf', '')
-        dest_cep = xml_data.get('destinatario_cep', '')
+        # Fundo azul muito claro (estilo transportadoras)
+        c.setFillColor(colors.Color(0.95, 0.97, 1.0))
+        c.rect(self.margin, section_y, self.content_width, section_height, fill=1)
         
-        # Formatação igual ao modelo Transul
+        # Borda destacada
+        c.setStrokeColor(colors.Color(0.7, 0.8, 0.9))
+        c.setLineWidth(1)
+        c.rect(self.margin, section_y, self.content_width, section_height, fill=0)
+        
+        # TÍTULO "DESTINATÁRIO" destacado
+        c.setFillColor(colors.black)
+        c.setFont("Helvetica-Bold", self.fonts['section_content'])
+        c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.9, "DESTINATÁRIO")
+        
+        # Nome da empresa destinatária (em destaque)
+        dest_nome = xml_data.get('destinatario_razao', xml_data.get('destinatario_nome', 'N/A'))
         c.setFont("Helvetica-Bold", self.fonts['normal_text'])
         c.setFillColor(colors.black)
-        c.drawString(self.margin, section_y + section_height * 0.85, f"Destinatário: {dest_nome}")
         
-        # Endereço na linha inferior
-        endereco_completo = f"Endereço: {dest_endereco}, {dest_cidade} - {dest_uf}, CEP: {dest_cep}"
-        c.setFont("Helvetica", self.fonts['small_text'])
-        c.drawString(self.margin, section_y + section_height * 0.5, endereco_completo[:80])
-        
-        # Endereço completo
-        endereco_parts = []
-        if xml_data.get('destinatario_endereco'):
-            endereco_parts.append(xml_data['destinatario_endereco'])
-        if xml_data.get('destinatario_numero'):
-            endereco_parts.append(xml_data['destinatario_numero'])
-        if xml_data.get('destinatario_bairro'):
-            endereco_parts.append(xml_data['destinatario_bairro'])
-        
-        endereco = ", ".join(endereco_parts) if endereco_parts else "Endereço não informado"
-        
-        # Quebrar endereço em linhas se necessário
-        c.setFont("Helvetica", self.fonts['small_text'])
-        max_width = self.content_width - self.spacing['field']
-        
-        # Linha 1 do endereço
-        if len(endereco) > 60:
-            linha1 = endereco[:60] + "..."
+        # Quebrar nome em duas linhas se muito longo
+        if len(dest_nome) > 35:
+            linha1 = dest_nome[:35]
+            linha2 = dest_nome[35:70]
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.78, linha1)
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.68, linha2)
+            nome_end_y = 0.58
         else:
-            linha1 = endereco
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.78, dest_nome)
+            nome_end_y = 0.68
         
-        c.drawString(self.margin, section_y + section_height * 0.55, f"Endereço: {linha1}")
+        # Endereço (seção principal)
+        endereco = xml_data.get('destinatario_endereco', '')
+        c.setFont("Helvetica", self.fonts['small_text'])
+        c.setFillColor(colors.Color(0.3, 0.3, 0.3))
+        c.drawString(self.margin + self.spacing['field'], section_y + section_height * (nome_end_y - 0.05), "Endereço:")
         
-        # CEP se disponível
-        if xml_data.get('destinatario_cep'):
-            c.drawString(self.margin, section_y + section_height * 0.25, f"CEP: {xml_data['destinatario_cep']}")
+        if endereco:
+            c.setFont("Helvetica-Bold", self.fonts['small_text'])
+            c.setFillColor(colors.black)
+            # Quebrar endereço se muito longo
+            if len(endereco) > 45:
+                linha1_end = endereco[:45]
+                linha2_end = endereco[45:90] if len(endereco) > 45 else ""
+                c.drawString(self.margin + self.spacing['field'], section_y + section_height * (nome_end_y - 0.12), linha1_end)
+                if linha2_end:
+                    c.drawString(self.margin + self.spacing['field'], section_y + section_height * (nome_end_y - 0.20), linha2_end)
+                cidade_y = nome_end_y - 0.28
+            else:
+                c.drawString(self.margin + self.spacing['field'], section_y + section_height * (nome_end_y - 0.12), endereco)
+                cidade_y = nome_end_y - 0.20
+        else:
+            cidade_y = nome_end_y - 0.12
+        
+        # Cidade/UF em destaque
+        cidade = xml_data.get('destinatario_cidade', '')
+        uf = xml_data.get('destinatario_uf', '')
+        if cidade and uf:
+            c.setFont("Helvetica-Bold", self.fonts['normal_text'])
+            c.setFillColor(colors.black)
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * cidade_y, f"{cidade} - {uf}")
+        
+        # CEP destacado
+        cep = xml_data.get('destinatario_cep', '')
+        if cep:
+            c.setFont("Helvetica", self.fonts['small_text'])
+            c.setFillColor(colors.Color(0.3, 0.3, 0.3))
+            # Formatar CEP
+            if len(cep) == 8 and cep.isdigit():
+                cep_formatado = f"{cep[:5]}-{cep[5:]}"
+            else:
+                cep_formatado = cep
+            c.drawString(self.margin + self.spacing['field'] + (self.content_width * 0.6), section_y + section_height * cidade_y, f"CEP: {cep_formatado}")
         
         return section_y
     
