@@ -836,58 +836,96 @@ def meus_xmls():
     uf_filter = request.args.get('uf', '')
     cidade_filter = request.args.get('cidade', '')
     
-    # Query XMLs do usuário (sem duplicatas - apenas ImportedXML)
-    query = ImportedXML.query.filter_by(user_id=current_user.id)
+    # Buscar XMLs de ambas as tabelas
+    imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).all()
+    xml_files = XMLFile.query.filter_by(user_id=current_user.id).all()
     
-    # Aplicar filtros
+    # Combinar todos os XMLs e remover duplicatas por invoice_key
+    all_xmls_dict = {}
+    
+    # Adicionar ImportedXML (prioridade para dados completos)
+    for xml in imported_xmls:
+        if xml.invoice_key:
+            all_xmls_dict[xml.invoice_key] = xml
+    
+    # Adicionar XMLFile apenas se não existir na ImportedXML
+    for xml in xml_files:
+        if xml.invoice_key and xml.invoice_key not in all_xmls_dict:
+            all_xmls_dict[xml.invoice_key] = xml
+    
+    # Converter para lista e aplicar filtros
+    all_xmls_list = list(all_xmls_dict.values())
+    
+    # Aplicar filtros de busca
     if search_term:
-        query = query.filter(
-            db.or_(
-                ImportedXML.invoice_key.contains(search_term),
-                ImportedXML.nome_emitente.contains(search_term),
-                ImportedXML.destinatario_razao.contains(search_term),
-                ImportedXML.numero_nf.contains(search_term)
-            )
-        )
+        filtered_xmls = []
+        for xml in all_xmls_list:
+            if (search_term.lower() in (xml.invoice_key or '').lower() or
+                search_term.lower() in (getattr(xml, 'nome_emitente', '') or '').lower() or
+                search_term.lower() in (getattr(xml, 'destinatario_razao', '') or '').lower() or
+                search_term.lower() in (getattr(xml, 'numero_nf', '') or '').lower()):
+                filtered_xmls.append(xml)
+        all_xmls_list = filtered_xmls
     
-    if date_from:
-        try:
-            date_from_parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
-            query = query.filter(ImportedXML.data_emissao >= date_from_parsed)
-        except:
-            pass
+    # Aplicar filtros de data
+    if date_from or date_to:
+        filtered_xmls = []
+        for xml in all_xmls_list:
+            xml_date = getattr(xml, 'data_emissao', None) or xml.imported_at.date()
+            
+            include_xml = True
+            if date_from:
+                try:
+                    date_from_parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
+                    if xml_date < date_from_parsed:
+                        include_xml = False
+                except:
+                    pass
+            
+            if date_to and include_xml:
+                try:
+                    date_to_parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
+                    if xml_date > date_to_parsed:
+                        include_xml = False
+                except:
+                    pass
+            
+            if include_xml:
+                filtered_xmls.append(xml)
+        all_xmls_list = filtered_xmls
     
-    if date_to:
-        try:
-            date_to_parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
-            query = query.filter(ImportedXML.data_emissao <= date_to_parsed)
-        except:
-            pass
+    # Aplicar filtros de UF e cidade
+    if uf_filter or cidade_filter:
+        filtered_xmls = []
+        for xml in all_xmls_list:
+            include_xml = True
+            
+            if uf_filter:
+                remetente_uf = getattr(xml, 'remetente_uf', None)
+                destinatario_uf = getattr(xml, 'destinatario_uf', None)
+                if not (remetente_uf == uf_filter or destinatario_uf == uf_filter):
+                    include_xml = False
+            
+            if cidade_filter and include_xml:
+                remetente_cidade = getattr(xml, 'remetente_cidade', None) or ''
+                destinatario_cidade = getattr(xml, 'destinatario_cidade', None) or ''
+                if not (cidade_filter.lower() in remetente_cidade.lower() or 
+                       cidade_filter.lower() in destinatario_cidade.lower()):
+                    include_xml = False
+            
+            if include_xml:
+                filtered_xmls.append(xml)
+        all_xmls_list = filtered_xmls
     
-    if uf_filter:
-        query = query.filter(
-            db.or_(
-                ImportedXML.remetente_uf == uf_filter,
-                ImportedXML.destinatario_uf == uf_filter
-            )
-        )
+    # Ordenar por data de importação (mais recente primeiro)
+    all_xmls_list.sort(key=lambda x: x.imported_at, reverse=True)
     
-    if cidade_filter:
-        query = query.filter(
-            db.or_(
-                ImportedXML.remetente_cidade.contains(cidade_filter),
-                ImportedXML.destinatario_cidade.contains(cidade_filter)
-            )
-        )
-    
-    # Paginar diretamente no banco
-    xmls_pagination = query.order_by(ImportedXML.imported_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    xmls = xmls_pagination.items
-    total_xmls = xmls_pagination.total
-    total_pages = xmls_pagination.pages
+    # Paginação manual
+    total_xmls = len(all_xmls_list)
+    total_pages = (total_xmls + per_page - 1) // per_page
+    start = (page - 1) * per_page
+    end = start + per_page
+    xmls = all_xmls_list[start:end]
     
     # Obter listas para filtros
     ufs = db.session.query(ImportedXML.remetente_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_uf.isnot(None)).distinct().all()
@@ -964,91 +1002,144 @@ def labels_module():
     valor_min = request.args.get('valor_min', '')
     valor_max = request.args.get('valor_max', '')
     
-    # Base query para ImportedXML
-    query = ImportedXML.query.filter_by(user_id=current_user.id)
+    # Buscar XMLs de ambas as tabelas para o módulo de etiquetas
+    imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).all()
+    xml_files = XMLFile.query.filter_by(user_id=current_user.id).all()
     
-    # Aplicar filtros
+    # Combinar todos os XMLs e remover duplicatas por invoice_key
+    all_xmls_dict = {}
+    
+    # Adicionar ImportedXML (prioridade para dados completos)
+    for xml in imported_xmls:
+        if xml.invoice_key:
+            all_xmls_dict[xml.invoice_key] = xml
+    
+    # Adicionar XMLFile apenas se não existir na ImportedXML
+    for xml in xml_files:
+        if xml.invoice_key and xml.invoice_key not in all_xmls_dict:
+            all_xmls_dict[xml.invoice_key] = xml
+    
+    # Converter para lista e aplicar filtros
+    all_xmls_list = list(all_xmls_dict.values())
+    
+    # Aplicar filtros de busca
     if search_term:
-        query = query.filter(
-            db.or_(
-                ImportedXML.invoice_key.contains(search_term),
-                ImportedXML.nome_emitente.contains(search_term),
-                ImportedXML.destinatario_razao.contains(search_term),
-                ImportedXML.numero_nf.contains(search_term),
-                ImportedXML.remetente_cidade.contains(search_term),
-                ImportedXML.destinatario_cidade.contains(search_term)
-            )
-        )
+        filtered_xmls = []
+        for xml in all_xmls_list:
+            if (search_term.lower() in (xml.invoice_key or '').lower() or
+                search_term.lower() in (getattr(xml, 'nome_emitente', '') or '').lower() or
+                search_term.lower() in (getattr(xml, 'destinatario_razao', '') or '').lower() or
+                search_term.lower() in (getattr(xml, 'numero_nf', '') or '').lower() or
+                search_term.lower() in (getattr(xml, 'remetente_cidade', '') or '').lower() or
+                search_term.lower() in (getattr(xml, 'destinatario_cidade', '') or '').lower()):
+                filtered_xmls.append(xml)
+        all_xmls_list = filtered_xmls
     
-    if date_from:
-        try:
-            date_from_parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
-            query = query.filter(ImportedXML.data_emissao >= date_from_parsed)
-        except:
-            pass
+    # Aplicar filtros de data
+    if date_from or date_to:
+        filtered_xmls = []
+        for xml in all_xmls_list:
+            xml_date = getattr(xml, 'data_emissao', None) or xml.imported_at.date()
+            
+            include_xml = True
+            if date_from:
+                try:
+                    date_from_parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
+                    if xml_date < date_from_parsed:
+                        include_xml = False
+                except:
+                    pass
+            
+            if date_to and include_xml:
+                try:
+                    date_to_parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
+                    if xml_date > date_to_parsed:
+                        include_xml = False
+                except:
+                    pass
+            
+            if include_xml:
+                filtered_xmls.append(xml)
+        all_xmls_list = filtered_xmls
     
-    if date_to:
-        try:
-            date_to_parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
-            query = query.filter(ImportedXML.data_emissao <= date_to_parsed)
-        except:
-            pass
+    # Aplicar filtros de UF e cidade
+    if uf_filter or cidade_filter:
+        filtered_xmls = []
+        for xml in all_xmls_list:
+            include_xml = True
+            
+            if uf_filter:
+                remetente_uf = getattr(xml, 'remetente_uf', None)
+                destinatario_uf = getattr(xml, 'destinatario_uf', None)
+                if not (remetente_uf == uf_filter or destinatario_uf == uf_filter):
+                    include_xml = False
+            
+            if cidade_filter and include_xml:
+                remetente_cidade = getattr(xml, 'remetente_cidade', None) or ''
+                destinatario_cidade = getattr(xml, 'destinatario_cidade', None) or ''
+                if not (cidade_filter.lower() in remetente_cidade.lower() or 
+                       cidade_filter.lower() in destinatario_cidade.lower()):
+                    include_xml = False
+            
+            if include_xml:
+                filtered_xmls.append(xml)
+        all_xmls_list = filtered_xmls
     
-    if uf_filter:
-        query = query.filter(
-            db.or_(
-                ImportedXML.remetente_uf == uf_filter,
-                ImportedXML.destinatario_uf == uf_filter
-            )
-        )
+    # Aplicar filtros de peso e valor
+    if peso_min or peso_max or valor_min or valor_max:
+        filtered_xmls = []
+        for xml in all_xmls_list:
+            include_xml = True
+            
+            if peso_min:
+                try:
+                    peso_min_val = float(peso_min)
+                    xml_peso = getattr(xml, 'peso_bruto', None)
+                    if xml_peso is None or float(xml_peso) < peso_min_val:
+                        include_xml = False
+                except:
+                    pass
+            
+            if peso_max and include_xml:
+                try:
+                    peso_max_val = float(peso_max)
+                    xml_peso = getattr(xml, 'peso_bruto', None)
+                    if xml_peso is None or float(xml_peso) > peso_max_val:
+                        include_xml = False
+                except:
+                    pass
+            
+            if valor_min and include_xml:
+                try:
+                    valor_min_val = float(valor_min)
+                    xml_valor = getattr(xml, 'valor_total', None)
+                    if xml_valor is None or float(xml_valor) < valor_min_val:
+                        include_xml = False
+                except:
+                    pass
+            
+            if valor_max and include_xml:
+                try:
+                    valor_max_val = float(valor_max)
+                    xml_valor = getattr(xml, 'valor_total', None)
+                    if xml_valor is None or float(xml_valor) > valor_max_val:
+                        include_xml = False
+                except:
+                    pass
+            
+            if include_xml:
+                filtered_xmls.append(xml)
+        all_xmls_list = filtered_xmls
     
-    if cidade_filter:
-        query = query.filter(
-            db.or_(
-                ImportedXML.remetente_cidade.contains(cidade_filter),
-                ImportedXML.destinatario_cidade.contains(cidade_filter)
-            )
-        )
+    # Ordenar por data de importação (mais recente primeiro)
+    all_xmls_list.sort(key=lambda x: x.imported_at, reverse=True)
     
-    if peso_min:
-        try:
-            peso_min_val = float(peso_min)
-            query = query.filter(ImportedXML.peso_bruto >= peso_min_val)
-        except:
-            pass
-    
-    if peso_max:
-        try:
-            peso_max_val = float(peso_max)
-            query = query.filter(ImportedXML.peso_bruto <= peso_max_val)
-        except:
-            pass
-    
-    if valor_min:
-        try:
-            valor_min_val = float(valor_min)
-            query = query.filter(ImportedXML.valor_total >= valor_min_val)
-        except:
-            pass
-    
-    if valor_max:
-        try:
-            valor_max_val = float(valor_max)
-            query = query.filter(ImportedXML.valor_total <= valor_max_val)
-        except:
-            pass
-    
-    # Query apenas XMLs válidos (evitar registros vazios)
-    query = query.filter(ImportedXML.invoice_key.isnot(None))
-    
-    # Paginar diretamente no banco
-    xmls_pagination = query.order_by(ImportedXML.imported_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
-    
-    xmls = xmls_pagination.items
-    total_xmls = xmls_pagination.total
-    total_pages = xmls_pagination.pages
+    # Paginação manual
+    total_xmls = len(all_xmls_list)
+    total_pages = (total_xmls + per_page - 1) // per_page
+    start = (page - 1) * per_page
+    end = start + per_page
+    xmls = all_xmls_list[start:end]
     
     # Obter listas para filtros
     ufs = db.session.query(ImportedXML.remetente_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_uf.isnot(None)).distinct().all()
@@ -1243,17 +1334,20 @@ def generate_danfe_route(xml_id):
 def generate_label_route(xml_id):
     """Gera e baixa etiqueta de transporte para um XML específico"""
     try:
-        # Verificar se o XML pertence ao usuário (tanto ImportedXML quanto XMLFile)
+        # Buscar XML primeiro na ImportedXML (dados completos), depois XMLFile
         xml_record = ImportedXML.query.filter_by(id=xml_id, user_id=current_user.id).first()
-        xml_file = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        xml_file = None
+        
+        if not xml_record:
+            xml_file = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
         
         if not xml_record and not xml_file:
             flash('XML não encontrado.', 'error')
             return redirect(url_for('meus_xmls'))
         
-        # Usar XMLFile se disponível, senão ImportedXML
-        xml_content = xml_file.xml_content if xml_file else xml_record.xml_content
-        invoice_key = xml_file.invoice_key if xml_file else xml_record.invoice_key
+        # Usar dados da tabela encontrada
+        xml_content = xml_record.xml_content if xml_record else xml_file.xml_content
+        invoice_key = xml_record.invoice_key if xml_record else xml_file.invoice_key
         
         # Verificar módulo de etiquetas
         labels_module = ServiceModule.query.filter_by(name='labels_module').first()
