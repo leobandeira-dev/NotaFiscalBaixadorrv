@@ -2198,6 +2198,76 @@ def save_email_credentials():
     
     return redirect(url_for('email_import'))
 
+@app.route('/save-smtp-credentials', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=10)
+def save_smtp_credentials():
+    """Salva as credenciais SMTP do usuário"""
+    try:
+        email = request.form.get('smtp_email')
+        password = request.form.get('smtp_password')
+        server = request.form.get('smtp_server')
+        custom_server = request.form.get('custom_smtp_server')
+        port = int(request.form.get('smtp_port', 587))
+        ssl = 'smtp_ssl' in request.form
+        
+        # Use custom server if specified
+        if server == 'custom' and custom_server:
+            server = custom_server
+        
+        # Validate inputs
+        if not email or not password or not server:
+            flash('Todos os campos obrigatórios devem ser preenchidos', 'error')
+            return redirect(url_for('email_import'))
+        
+        # Test SMTP connection before saving
+        import smtplib
+        from email.mime.text import MIMEText
+        
+        try:
+            if ssl:
+                smtp = smtplib.SMTP_SSL(server, port)
+            else:
+                smtp = smtplib.SMTP(server, port)
+                smtp.starttls()
+            
+            smtp.login(email, password)
+            smtp.quit()
+            
+        except Exception as e:
+            flash(f'Erro ao conectar com o servidor SMTP: {str(e)}', 'error')
+            return redirect(url_for('email_import'))
+        
+        # Save SMTP credentials
+        current_user.set_smtp_credentials(email, password, server, port, ssl)
+        flash('Credenciais SMTP salvas com sucesso!', 'success')
+        
+    except Exception as e:
+        logger.error(f"Erro ao salvar credenciais SMTP: {e}")
+        flash('Erro interno do servidor.', 'error')
+    
+    return redirect(url_for('email_import'))
+
+@app.route('/remove-smtp-config', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=10)
+def remove_smtp_config():
+    """Remove SMTP configuration"""
+    try:
+        current_user.smtp_server = None
+        current_user.smtp_port = 587
+        current_user.smtp_email = None
+        current_user.smtp_password = None
+        current_user.smtp_ssl = True
+        current_user.smtp_configured = False
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Configuração SMTP removida com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao remover configuração SMTP: {e}")
+        return jsonify({'success': False, 'message': 'Erro interno do servidor'})
+
 @app.route('/check-emails-now', methods=['POST'])
 @login_required
 @rate_limit_check(max_requests=10, window_minutes=10)

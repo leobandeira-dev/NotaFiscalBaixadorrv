@@ -611,5 +611,66 @@ function removeEmailConfig() {
         });
     }
 }
+
+function updateSmtpServerSettings() {
+    const server = document.getElementById('smtp_server').value;
+    const customServer = document.getElementById('custom_smtp_server');
+    const port = document.getElementById('smtp_port');
+    const ssl = document.getElementById('smtp_ssl');
+
+    if (server === 'custom') {
+        customServer.style.display = 'block';
+        document.getElementById('custom_smtp_server_input').required = true;
+    } else {
+        customServer.style.display = 'none';
+        document.getElementById('custom_smtp_server_input').required = false;
+        
+        // Auto-configure based on provider
+        switch(server) {
+            case 'smtp.gmail.com':
+                port.value = 587;
+                ssl.checked = true;
+                break;
+            case 'smtp-mail.outlook.com':
+                port.value = 587;
+                ssl.checked = true;
+                break;
+            case 'smtp.mail.yahoo.com':
+                port.value = 587;
+                ssl.checked = true;
+                break;
+        }
+    }
+}
+
+function showSmtpEditForm() {
+    document.getElementById('smtpForm').style.display = 'block';
+}
+
+function hideSmtpEditForm() {
+    document.getElementById('smtpForm').style.display = 'none';
+}
+
+function removeSmtpConfig() {
+    if (confirm('Tem certeza que deseja remover a configuração de SMTP?')) {
+        fetch('{{ url_for("remove_smtp_config") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao remover configuração SMTP: ' + error);
+        });
+    }
+}
 </script>
 {% endblock %}
