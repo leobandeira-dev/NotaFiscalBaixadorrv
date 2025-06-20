@@ -203,19 +203,27 @@ def extract_xml_data(xml_content: str) -> dict:
                     cep = enderDest.find('nfe:CEP', ns)
                     nf_data['destinatario_cep'] = cep.text if cep is not None else ''
             
-            # Totais da NFe
-            total = infNFe.find('nfe:total/nfe:ICMSTot', ns)
+            # Totais da NFe - busca flexível
+            total = find_element_flexible(infNFe, 'total', ns)
             if total is not None:
-                vNF = total.find('nfe:vNF', ns)
-                if vNF is not None and vNF.text:
-                    try:
-                        nf_data['valor_total'] = float(vNF.text)
-                    except:
+                icms_tot = find_element_flexible(total, 'ICMSTot', ns)
+                if icms_tot is not None:
+                    vNF = find_element_flexible(icms_tot, 'vNF', ns)
+                    if vNF is not None and vNF.text:
+                        try:
+                            nf_data['valor_total'] = float(vNF.text)
+                            logger.info(f"Valor total extraído: R$ {vNF.text}")
+                        except:
+                            nf_data['valor_total'] = 0.0
+                    else:
                         nf_data['valor_total'] = 0.0
+                        logger.warning("vNF não encontrado")
                 else:
                     nf_data['valor_total'] = 0.0
+                    logger.warning("ICMSTot não encontrado")
             else:
                 nf_data['valor_total'] = 0.0
+                logger.warning("Total não encontrado")
             
             # Informações de transporte
             transp = infNFe.find('nfe:transp', ns)
