@@ -2815,7 +2815,7 @@ def payment_success():
 
 @app.route('/stripe-webhook', methods=['POST'])
 def stripe_webhook():
-    """Webhook para processar eventos do Stripe"""
+    """Webhook para processar eventos do Stripe incluindo assinaturas recorrentes"""
     payload = request.get_data()
     sig_header = request.headers.get('Stripe-Signature')
     endpoint_secret = os.environ.get('STRIPE_WEBHOOK_SECRET')
@@ -2825,17 +2825,226 @@ def stripe_webhook():
         return '', 400
     
     try:
-        result = process_stripe_webhook(payload, sig_header, endpoint_secret)
+        import stripe
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
         
-        if result['success']:
-            return '', 200
-        else:
-            logger.error(f"Webhook processing failed: {result.get('error')}")
-            return '', 400
+        # Verificar assinatura do webhook
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, endpoint_secret
+        )
+        
+        app.logger.info(f"Webhook recebido: {event['type']}")
+        
+        # Processar eventos de checkout completado (primeira compra/assinatura)
+        if event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            process_checkout_session(session)
             
-    except Exception as e:
-        logger.error(f"Webhook error: {str(e)}")
+        # Processar eventos de fatura paga (pagamentos recorrentes)
+        elif event['type'] == 'invoice.payment_succeeded':
+            invoice = event['data']['object']
+            process_subscription_payment(invoice)
+            
+        # Processar eventos de assinatura ativa
+        elif event['type'] == 'customer.subscription.created':
+            subscription = event['data']['object']
+            process_subscription_created(subscription)
+            
+        # Processar eventos de assinatura cancelada
+        elif event['type'] == 'customer.subscription.deleted':
+            subscription = event['data']['object']
+            process_subscription_cancelled(subscription)
+            
+        else:
+            app.logger.info(f"Evento não processado: {event['type']}")
+        
+        return '', 200
+            
+    except ValueError as e:
+        app.logger.error(f"Payload inválido: {str(e)}")
         return '', 400
+    except stripe.error.SignatureVerificationError as e:
+        app.logger.error(f"Assinatura inválida: {str(e)}")
+        return '', 400
+    except Exception as e:
+        app.logger.error(f"Webhook error: {str(e)}")
+        return '', 400
+
+def process_checkout_session(session):
+    """Processar sessão de checkout completada (primeira compra)"""
+    try:
+        from package_models import UserSubscription
+        
+        metadata = session.get('metadata', {})
+        user_id = metadata.get('user_id')
+        product_type = metadata.get('product_type')
+        
+        if product_type == 'labels_subscription' and user_id:
+            # Verificar se já existe assinatura
+            existing_subscription = UserSubscription.query.filter_by(
+                user_id=int(user_id),
+                stripe_subscription_id=session.subscription,
+                status='active'
+            ).first()
+            
+            if not existing_subscription:
+                # Criar nova assinatura
+                subscription = UserSubscription()
+                subscription.user_id = int(user_id)
+                subscription.stripe_subscription_id = session.subscription
+                subscription.status = 'active'
+                subscription.starts_at = datetime.utcnow()
+                subscription.expires_at = datetime.utcnow() + timedelta(days=30)
+                subscription.auto_renew = True
+                
+                db.session.add(subscription)
+                db.session.commit()
+                
+                app.logger.info(f"Assinatura de etiquetas criada via webhook para usuário {user_id}")
+        
+    except Exception as e:
+        app.logger.error(f"Erro ao processar checkout session: {str(e)}")
+
+def process_subscription_payment(invoice):
+    """Processar pagamento recorrente de assinatura (faturas pagas)"""
+    try:
+        from package_models import UserSubscription
+        import stripe
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+        
+        # Obter dados da assinatura
+        subscription_id = invoice.get('subscription')
+        if not subscription_id:
+            return
+        
+        # Buscar assinatura local
+        local_subscription = UserSubscription.query.filter_by(
+            stripe_subscription_id=subscription_id
+        ).first()
+        
+        if local_subscription:
+            # Renovar assinatura por mais 30 dias
+            local_subscription.expires_at = datetime.utcnow() + timedelta(days=30)
+            local_subscription.status = 'active'
+            db.session.commit()
+            
+            app.logger.info(f"Assinatura renovada para usuário {local_subscription.user_id} - pagamento recorrente processado")
+        else:
+            # Buscar assinatura no Stripe para obter metadados
+            stripe_subscription = stripe.Subscription.retrieve(subscription_id)
+            metadata = stripe_subscription.get('metadata', {})
+            user_id = metadata.get('user_id')
+            
+            if user_id:
+                # Criar assinatura se não existir
+                subscription = UserSubscription()
+                subscription.user_id = int(user_id)
+                subscription.stripe_subscription_id = subscription_id
+                subscription.status = 'active'
+                subscription.starts_at = datetime.utcnow()
+                subscription.expires_at = datetime.utcnow() + timedelta(days=30)
+                subscription.auto_renew = True
+                
+                db.session.add(subscription)
+                db.session.commit()
+                
+                app.logger.info(f"Assinatura criada via pagamento recorrente para usuário {user_id}")
+        
+    except Exception as e:
+        app.logger.error(f"Erro ao processar pagamento recorrente: {str(e)}")
+
+def process_subscription_created(subscription):
+    """Processar criação de assinatura"""
+    try:
+        from package_models import UserSubscription
+        
+        metadata = subscription.get('metadata', {})
+        user_id = metadata.get('user_id')
+        
+        if user_id:
+            # Verificar se já existe
+            existing = UserSubscription.query.filter_by(
+                stripe_subscription_id=subscription['id']
+            ).first()
+            
+            if not existing:
+                # Criar nova assinatura
+                new_subscription = UserSubscription()
+                new_subscription.user_id = int(user_id)
+                new_subscription.stripe_subscription_id = subscription['id']
+                new_subscription.status = 'active'
+                new_subscription.starts_at = datetime.utcnow()
+                new_subscription.expires_at = datetime.utcnow() + timedelta(days=30)
+                new_subscription.auto_renew = True
+                
+                db.session.add(new_subscription)
+                db.session.commit()
+                
+                app.logger.info(f"Assinatura criada via evento subscription.created para usuário {user_id}")
+        
+    except Exception as e:
+        app.logger.error(f"Erro ao processar criação de assinatura: {str(e)}")
+
+def process_subscription_cancelled(subscription):
+    """Processar cancelamento de assinatura"""
+    try:
+        from package_models import UserSubscription
+        
+        # Buscar assinatura local
+        local_subscription = UserSubscription.query.filter_by(
+            stripe_subscription_id=subscription['id']
+        ).first()
+        
+        if local_subscription:
+            # Cancelar assinatura
+            local_subscription.status = 'cancelled'
+            local_subscription.cancelled_at = datetime.utcnow()
+            local_subscription.auto_renew = False
+            
+            db.session.commit()
+            
+            app.logger.info(f"Assinatura cancelada para usuário {local_subscription.user_id}")
+        
+    except Exception as e:
+        app.logger.error(f"Erro ao processar cancelamento de assinatura: {str(e)}")
+
+def check_labels_subscription_status(user_id):
+    """Verificar se o usuário tem assinatura ativa do módulo de etiquetas"""
+    try:
+        from package_models import UserSubscription
+        
+        active_subscription = UserSubscription.query.filter_by(
+            user_id=user_id,
+            status='active'
+        ).filter(
+            UserSubscription.expires_at > datetime.utcnow()
+        ).first()
+        
+        if active_subscription:
+            return {
+                'has_subscription': True,
+                'subscription_id': active_subscription.id,
+                'expires_at': active_subscription.expires_at,
+                'stripe_subscription_id': active_subscription.stripe_subscription_id,
+                'auto_renew': active_subscription.auto_renew
+            }
+        else:
+            return {
+                'has_subscription': False,
+                'subscription_id': None,
+                'expires_at': None,
+                'stripe_subscription_id': None,
+                'auto_renew': False
+            }
+    except Exception as e:
+        app.logger.error(f"Erro ao verificar status da assinatura: {str(e)}")
+        return {
+            'has_subscription': False,
+            'subscription_id': None,
+            'expires_at': None,
+            'stripe_subscription_id': None,
+            'auto_renew': False
+        }
 
 @app.route('/historico-creditos')
 @login_required
