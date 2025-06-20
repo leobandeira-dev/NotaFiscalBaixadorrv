@@ -206,13 +206,12 @@ class ImprovedTransportLabelGenerator:
         logo_area_x = x + 8
         text_area_x = x + logo_width + 16
         
-        # Desenhar logo se disponível
+        # Desenhar logo ou demonstração do espaço reservado
+        logo_max_height = height - 16  # 8pt margin top/bottom
+        logo_max_width = logo_width - 16  # 8pt margin left/right
+        
         if logo_path and os.path.exists(logo_path):
             try:
-                # Calcular dimensões da logo mantendo proporção
-                logo_max_height = height - 16  # 8pt margin top/bottom
-                logo_max_width = logo_width - 16  # 8pt margin left/right
-                
                 from reportlab.lib.utils import ImageReader
                 img = ImageReader(logo_path)
                 img_width, img_height = img.getSize()
@@ -233,6 +232,10 @@ class ImprovedTransportLabelGenerator:
                 
             except Exception as e:
                 print(f"Erro ao carregar logo: {e}")
+                self._draw_logo_placeholder(c, logo_area_x, y, logo_max_width, logo_max_height)
+        else:
+            # Demonstrar espaço reservado para logo
+            self._draw_logo_placeholder(c, logo_area_x, y, logo_max_width, logo_max_height)
         
         # Desenhar texto da empresa
         if self.layout_style == 'layout1':
@@ -249,6 +252,77 @@ class ImprovedTransportLabelGenerator:
         c.setFont("Helvetica", 10)
         subtitle_y = y + height * 0.35
         c.drawString(text_area_x, subtitle_y, self.company_subtitle)
+
+    def _draw_logo_placeholder(self, c, x, y, width, height):
+        """Desenha placeholder visual para demonstrar espaço da logo"""
+        
+        # Definir cores baseadas no layout
+        if self.layout_style == 'layout1':
+            placeholder_color = colors.Color(0.9, 0.9, 0.9)  # Cinza claro
+            border_color = colors.Color(0.6, 0.6, 0.6)  # Cinza médio
+            text_color = colors.Color(0.5, 0.5, 0.5)  # Cinza escuro
+        else:
+            placeholder_color = colors.Color(0.3, 0.3, 0.3)  # Cinza escuro
+            border_color = colors.Color(0.7, 0.7, 0.7)  # Cinza claro
+            text_color = colors.Color(0.8, 0.8, 0.8)  # Branco acinzentado
+        
+        # Desenhar fundo do placeholder
+        c.setFillColor(placeholder_color)
+        c.rect(x, y, width, height, fill=1, stroke=0)
+        
+        # Desenhar borda pontilhada para indicar área reservada
+        c.setStrokeColor(border_color)
+        c.setLineWidth(1)
+        c.setDash([3, 2])  # Linha pontilhada
+        c.rect(x, y, width, height, fill=0, stroke=1)
+        c.setDash([])  # Resetar para linha sólida
+        
+        # Desenhar moldura principal da logo
+        frame_width = width * 0.8
+        frame_height = height * 0.6
+        frame_x = x + (width - frame_width) / 2
+        frame_y = y + (height - frame_height) / 2
+        
+        c.setStrokeColor(text_color)
+        c.setLineWidth(1.5)
+        c.rect(frame_x, frame_y, frame_width, frame_height, fill=0, stroke=1)
+        
+        # Desenhar cruz de centralização (guias)
+        center_x = frame_x + frame_width / 2
+        center_y = frame_y + frame_height / 2
+        
+        c.setLineWidth(0.5)
+        c.setDash([2, 2])
+        # Linha horizontal
+        c.line(frame_x + 5, center_y, frame_x + frame_width - 5, center_y)
+        # Linha vertical
+        c.line(center_x, frame_y + 5, center_x, frame_y + frame_height - 5)
+        c.setDash([])
+        
+        # Texto "LOGO" centralizado
+        c.setFillColor(text_color)
+        c.setFont("Helvetica-Bold", 10)
+        logo_text = "LOGO"
+        logo_width = c.stringWidth(logo_text, "Helvetica-Bold", 10)
+        logo_x = center_x - logo_width / 2
+        logo_y = center_y - 3
+        c.drawString(logo_x, logo_y, logo_text)
+        
+        # Dimensões da área
+        c.setFont("Helvetica", 5)
+        dim_text = f"{int(frame_width)}x{int(frame_height)}pt"
+        dim_width = c.stringWidth(dim_text, "Helvetica", 5)
+        dim_x = frame_x + frame_width - dim_width - 2
+        dim_y = frame_y + 2
+        c.drawString(dim_x, dim_y, dim_text)
+        
+        # Texto explicativo
+        c.setFont("Helvetica", 7)
+        explain_text = "Área Reservada para Logo da Empresa"
+        explain_width = c.stringWidth(explain_text, "Helvetica", 7)
+        explain_x = x + (width - explain_width) / 2
+        explain_y = y + height * 0.05
+        c.drawString(explain_x, explain_y, explain_text)
 
     def _draw_highlighted_section(self, c, x, y, width, height, label, content, highlight_type='normal'):
         """Desenha seção com estilização visual melhorada"""
