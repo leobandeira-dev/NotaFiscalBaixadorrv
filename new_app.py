@@ -593,8 +593,12 @@ def dashboard():
 @app.route('/xml-download')
 @login_required
 def xml_download():
-    """XML download page - only shows after XMLs are downloaded"""
-    return render_template('xml_download.html')
+    """XML download page with current balance display"""
+    # Obter saldo atual usando sistema simplificado
+    from simple_credit_system import get_user_xml_balance
+    xml_balance = get_user_xml_balance(current_user.id)
+    
+    return render_template('xml_download.html', xml_balance=xml_balance)
 
 @app.route('/submit_keys', methods=['POST'])
 @login_required
@@ -625,15 +629,9 @@ def submit_keys():
             flash('Nenhuma chave válida encontrada. Chaves devem ter 44 dígitos.', 'error')
             return redirect(url_for('xml_download'))
         
-        # Check if user can use service using Stripe credit system
-        from stripe_integration import PricingManager, CreditManager
-        
-        xml_price = PricingManager.get_service_price('xml_download')
-        total_cost = len(valid_keys) * xml_price
-        
-        # Check if user has sufficient XML credits
-        from stripe_pricing_system import get_user_xml_credits
-        available_credits = get_user_xml_credits(current_user.id)
+        # Check if user has sufficient XML credits using simplified system
+        from simple_credit_system import get_user_xml_balance
+        available_credits = get_user_xml_balance(current_user.id)
         
         if available_credits < len(valid_keys):
             flash(f'Créditos XML insuficientes. Você possui {available_credits} créditos, mas precisa de {len(valid_keys)} para processar estas chaves.', 'warning')
@@ -2742,14 +2740,12 @@ def api_user_balance():
 
 # Modificar função de dedução de créditos para XML downloads
 def charge_for_xml_download(user_id: int, invoice_key: str) -> bool:
-    """Cobra pelo download de XML se não estiver em período de teste"""
-    price = PricingManager.get_service_price('xml_download')
+    """Cobra pelo download de XML usando sistema simplificado de créditos"""
+    from simple_credit_system import consume_xml_credit
     
-    return CreditManager.deduct_credits(
+    return consume_xml_credit(
         user_id=user_id,
-        amount=price,
-        description=f"Download XML: {invoice_key[:10]}...",
-        service_type="xml_download"
+        description=f"Download XML: {invoice_key[:10]}..."
     )
 
 @app.route('/configurar-etiquetas', methods=['GET', 'POST'])

@@ -469,9 +469,9 @@
                     </div>
                     <div class="balance-info">
                         <div class="balance-amount">
-                            R$ {{ "%.2f"|format(current_user.current_balance) }}
+                            {{ xml_balance or 0 }} créditos
                         </div>
-                        <div>Saldo Disponível</div>
+                        <div>Créditos XML Disponíveis</div>
                     </div>
                     {% if current_user.is_trial_active() %}
                     <div class="trial-badge">
