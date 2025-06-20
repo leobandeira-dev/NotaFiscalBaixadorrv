@@ -285,6 +285,9 @@ class EmailXMLProcessor:
                     xml_file.destinatario_cep = xml_data.get('cep_destinatario', 'N/A')
                     xml_file.imported_at = datetime.now()
                     
+                    # Armazenar conteúdo XML no banco de dados
+                    xml_file.xml_content = xml_attachment['content'].decode('utf-8')
+                    
                     # Salvar XML físico no diretório
                     xml_dir = f"downloads/user_{self.user.id}"
                     os.makedirs(xml_dir, exist_ok=True)
