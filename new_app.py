@@ -2305,7 +2305,7 @@ def generate_custom_labels(xml_id):
         company_name = request.form.get('company_name', current_user.company_name or 'SUA EMPRESA')
         company_subtitle = request.form.get('company_subtitle', current_user.company_subtitle or 'TRANSPORTE')
         area_code = request.form.get('area_code', current_user.default_area_code or '01')
-        layout_style = request.form.get('layout_style', 'layout1')
+        layout_style = request.form.get('layout_style', current_user.preferred_layout or 'transul')
         paper_size = request.form.get('paper_size', '10x15')
         paper_width_mm = int(request.form.get('paper_width_mm', 100))
         paper_height_mm = int(request.form.get('paper_height_mm', 150))
@@ -2359,7 +2359,7 @@ def generate_custom_labels(xml_id):
         company_subtitle = request.form.get('company_subtitle', current_user.company_subtitle or "TRANSPORTE")
         company_logo_path = logo_path  # Já processado acima
         area_code = request.form.get('area_code', current_user.default_area_code or "01")
-        layout_style = request.form.get('layout_style', 'layout1')
+        layout_style = request.form.get('layout_style', current_user.preferred_layout or 'transul')
         
         # Gerar etiquetas com sistema melhorado com bordas garantidas
         labels = generate_improved_labels_with_guaranteed_borders(
