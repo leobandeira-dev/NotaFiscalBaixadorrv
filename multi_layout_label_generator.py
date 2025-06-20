@@ -339,7 +339,17 @@ def generate_multi_layout_labels(xml_file_path, company_data, paper_config, layo
             # Merge PDFs here if needed
     
     buffer.seek(0)
-    return buffer
+    
+    # Return list format expected by the system
+    labels = []
+    for i in range(total_volumes):
+        labels.append({
+            'filename': f'etiqueta_volume_{i+1}.pdf',
+            'pdf_data': buffer,
+            'volume': i+1
+        })
+    
+    return labels
 
 def generate_custom_label_with_layout(xml_id, user, paper_config, layout_style='layout1'):
     """Função principal para integração com o sistema"""
