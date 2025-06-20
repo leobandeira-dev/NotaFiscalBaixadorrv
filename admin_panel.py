@@ -27,16 +27,16 @@ def admin_required(f):
 @admin_required
 def dashboard():
     """Dashboard principal do admin"""
-    from models import User, ImportedXML, UsageRecord, Charge, ServiceModule
+    from models import User, XMLFile, UsageRecord, Charge, ServiceModule
     
     # Estatísticas gerais
     stats = {
         'total_users': User.query.count(),
         'active_users': User.query.filter_by(active=True).count(),
-        'total_xmls': ImportedXML.query.count(),
+        'total_xmls': XMLFile.query.count(),
         'total_revenue': 0,  # Calcular baseado em cobranças
-        'this_month_xmls': ImportedXML.query.filter(
-            ImportedXML.imported_at >= datetime.now().replace(day=1)
+        'this_month_xmls': XMLFile.query.filter(
+            XMLFile.uploaded_at >= datetime.now().replace(day=1)
         ).count()
     }
     
@@ -82,13 +82,13 @@ def users():
 @admin_required
 def user_detail(user_id):
     """Detalhes de um usuário específico"""
-    from models import User, ImportedXML, UsageRecord, Charge
+    from models import User, XMLFile, UsageRecord, Charge
     
     user = User.query.get_or_404(user_id)
     
     # Estatísticas do usuário
     user_stats = {
-        'total_xmls': ImportedXML.query.filter_by(user_id=user_id).count(),
+        'total_xmls': XMLFile.query.filter_by(user_id=user_id).count(),
         'total_usage': UsageRecord.query.filter_by(user_id=user_id).count(),
         'total_charges': Charge.query.filter_by(user_id=user_id).count(),
         'total_spent': sum(
@@ -97,8 +97,8 @@ def user_detail(user_id):
     }
     
     # Atividade recente
-    recent_xmls = ImportedXML.query.filter_by(user_id=user_id).order_by(
-        ImportedXML.imported_at.desc()
+    recent_xmls = XMLFile.query.filter_by(user_id=user_id).order_by(
+        XMLFile.uploaded_at.desc()
     ).limit(10).all()
     
     recent_charges = Charge.query.filter_by(user_id=user_id).order_by(
@@ -299,14 +299,14 @@ def update_settings():
 @admin_required
 def api_stats():
     """API para estatísticas em tempo real"""
-    from models import User, ImportedXML, UsageRecord, Charge
+    from models import User, XMLFile, UsageRecord, Charge
     
     # Estatísticas dos últimos 30 dias
     thirty_days_ago = datetime.now() - timedelta(days=30)
     
     stats = {
         'users_this_month': User.query.filter(User.created_at >= thirty_days_ago).count(),
-        'xmls_this_month': ImportedXML.query.filter(ImportedXML.imported_at >= thirty_days_ago).count(),
+        'xmls_this_month': XMLFile.query.filter(XMLFile.uploaded_at >= thirty_days_ago).count(),
         'revenue_this_month': sum(
             charge.amount for charge in Charge.query.filter(
                 Charge.created_at >= thirty_days_ago,

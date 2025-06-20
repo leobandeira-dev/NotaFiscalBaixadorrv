@@ -29,6 +29,7 @@ class User(UserMixin, db.Model):
     trial_expires_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(days=7))
     active = db.Column(db.Boolean, default=True)
     is_admin = db.Column(db.Boolean, default=False)
+    is_super_admin = db.Column(db.Boolean, default=False)
     
     # Chaves API
     api_key = db.Column(db.String(64), unique=True)
