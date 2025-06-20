@@ -271,11 +271,17 @@ class CreditManager:
 class PricingManager:
     """Gerenciador de preços e pacotes"""
     
+    # IDs dos produtos Stripe
+    STRIPE_PRODUCTS = {
+        'xml_download': 'prod_SWv7Mmc4YDzCal',  # Download XML
+        'labels_module': 'prod_SSVViDPzXYZHhO',  # Etiquetas de Transporte
+    }
+    
     # Preços em reais
     PRICES = {
-        'xml_download': 0.10,  # R$ 0,10 por XML
-        'labels_module': 49.90,  # R$ 49,90 mensal para módulo de etiquetas
-        'danfe_generation': 0.00,  # Gratuito
+        'xml_download': 0.10,  # R$ 0,10 por XML - Produto Stripe: prod_SWv7Mmc4YDzCal
+        'labels_module': 49.90,  # R$ 49,90 mensal para módulo de etiquetas - Produto Stripe: prod_SSVViDPzXYZHhO
+        'danfe_generation': 0.00,  # Gratuito - sempre incluído
     }
     
     # Pacotes de créditos
