@@ -792,6 +792,385 @@ def admin_users():
     users = User.query.order_by(User.created_at.desc()).all()
     return render_template('admin_users.html', users=users)
 
+@app.route('/admin/users/<int:user_id>')
+@login_required
+def admin_user_detail(user_id):
+    """Detalhes de um usuário específico"""
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    user = User.query.get_or_404(user_id)
+    
+    # Estatísticas do usuário
+    user_stats = {
+        'total_xmls': XMLFile.query.filter_by(user_id=user_id).count(),
+        'total_spent': sum(
+            usage.cost for usage in UsageRecord.query.filter_by(user_id=user_id).all()
+        ),
+        'total_danfes': UsageRecord.query.filter_by(
+            user_id=user_id, 
+            service_type='danfe'
+        ).count(),
+        'total_labels': UsageRecord.query.filter_by(
+            user_id=user_id, 
+            service_type='label'
+        ).count()
+    }
+    
+    # Atividade recente
+    recent_xmls = XMLFile.query.filter_by(user_id=user_id).order_by(
+        XMLFile.imported_at.desc()
+    ).limit(10).all()
+    
+    recent_charges = Charge.query.filter_by(user_id=user_id).order_by(
+        Charge.created_at.desc()
+    ).limit(5).all()
+    
+    return render_template('admin_user_detail.html',
+                         user=user,
+                         user_stats=user_stats,
+                         recent_xmls=recent_xmls,
+                         recent_charges=recent_charges)
+
+@app.route('/admin/users/create', methods=['POST'])
+@login_required
+def admin_create_user():
+    """Criar novo usuário"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Acesso negado'})
+    
+    try:
+        name = request.form.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        initial_balance = float(request.form.get('initial_balance', 0))
+        is_admin = bool(request.form.get('is_admin'))
+        
+        # Verificar se email já existe
+        if User.query.filter_by(email=email).first():
+            return jsonify({'success': False, 'message': 'Email já cadastrado'})
+        
+        # Criar usuário
+        user = User(
+            name=name,
+            email=email,
+            is_admin=is_admin,
+            active=True,
+            current_balance=initial_balance
+        )
+        user.set_password(password)
+        
+        db.session.add(user)
+        db.session.commit()
+        
+        # Adicionar saldo inicial se especificado
+        if initial_balance > 0:
+            charge = Charge(
+                user_id=user.id,
+                amount=initial_balance,
+                description='Saldo inicial',
+                status='paid'
+            )
+            db.session.add(charge)
+            db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Usuário criado com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar usuário: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/users/edit', methods=['POST'])
+@login_required
+def admin_edit_user():
+    """Editar usuário"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Acesso negado'})
+    
+    try:
+        user_id = request.form.get('user_id')
+        user = User.query.get_or_404(user_id)
+        
+        user.name = request.form.get('name', user.name)
+        user.email = request.form.get('email', user.email)
+        user.active = bool(request.form.get('active'))
+        user.is_admin = bool(request.form.get('is_admin'))
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Usuário atualizado com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao editar usuário: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/users/add-balance', methods=['POST'])
+@login_required
+def admin_add_balance():
+    """Adicionar créditos a um usuário"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Acesso negado'})
+    
+    try:
+        user_id = request.form.get('user_id')
+        amount = float(request.form.get('amount'))
+        description = request.form.get('description', 'Créditos adicionados pelo admin')
+        
+        user = User.query.get_or_404(user_id)
+        
+        # Criar cobrança
+        charge = Charge(
+            user_id=user_id,
+            amount=amount,
+            description=description,
+            status='paid'
+        )
+        db.session.add(charge)
+        
+        # Atualizar saldo
+        user.current_balance = (user.current_balance or 0) + amount
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Créditos adicionados com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao adicionar créditos: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/users/<int:user_id>/toggle', methods=['POST'])
+@login_required
+def admin_toggle_user_status(user_id):
+    """Ativar/desativar usuário"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Acesso negado'})
+    
+    try:
+        user = User.query.get_or_404(user_id)
+        user.active = request.json.get('active', not user.active)
+        
+        db.session.commit()
+        
+        status = 'ativado' if user.active else 'desativado'
+        return jsonify({'success': True, 'message': f'Usuário {status} com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao alterar status do usuário: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/charges')
+@login_required
+def admin_charges():
+    """Gerenciar cobranças"""
+    if not current_user.is_admin:
+        flash('Acesso negado.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Filtros
+    status_filter = request.args.get('status')
+    date_from = request.args.get('date_from')
+    date_to = request.args.get('date_to')
+    page = int(request.args.get('page', 1))
+    
+    # Query base
+    query = Charge.query.join(User)
+    
+    # Aplicar filtros
+    if status_filter:
+        query = query.filter(Charge.status == status_filter)
+    if date_from:
+        query = query.filter(Charge.created_at >= date_from)
+    if date_to:
+        query = query.filter(Charge.created_at <= date_to)
+    
+    # Paginação
+    charges = query.order_by(Charge.created_at.desc()).paginate(
+        page=page, per_page=50, error_out=False
+    )
+    
+    # Estatísticas
+    stats = {
+        'total_revenue': db.session.query(db.func.sum(Charge.amount)).filter(
+            Charge.status == 'paid', Charge.amount > 0
+        ).scalar() or 0,
+        'monthly_revenue': db.session.query(db.func.sum(Charge.amount)).filter(
+            Charge.status == 'paid',
+            Charge.amount > 0,
+            Charge.created_at >= datetime.now().replace(day=1)
+        ).scalar() or 0,
+        'pending_charges': Charge.query.filter_by(status='pending').count(),
+        'success_rate': 0
+    }
+    
+    # Taxa de sucesso
+    total_charges = Charge.query.count()
+    if total_charges > 0:
+        paid_charges = Charge.query.filter_by(status='paid').count()
+        stats['success_rate'] = (paid_charges / total_charges) * 100
+    
+    # Lista de usuários para criação
+    users = User.query.order_by(User.name).all()
+    
+    return render_template('admin_charges.html',
+                         charges=charges.items,
+                         stats=stats,
+                         users=users,
+                         pagination=charges)
+
+@app.route('/admin/charges/create', methods=['POST'])
+@login_required
+def admin_create_charge():
+    """Criar nova cobrança"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Acesso negado'})
+    
+    try:
+        user_id = request.form.get('user_id')
+        amount = float(request.form.get('amount'))
+        description = request.form.get('description')
+        status = request.form.get('status', 'pending')
+        
+        user = User.query.get_or_404(user_id)
+        
+        # Criar cobrança
+        charge = Charge(
+            user_id=user_id,
+            amount=amount,
+            description=description,
+            status=status
+        )
+        db.session.add(charge)
+        
+        # Se paga, atualizar saldo
+        if status == 'paid':
+            user.current_balance = (user.current_balance or 0) + amount
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Cobrança criada com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar cobrança: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/charges/<int:charge_id>')
+@login_required
+def admin_charge_detail(charge_id):
+    """Detalhes de uma cobrança"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Acesso negado'})
+    
+    charge = Charge.query.get_or_404(charge_id)
+    
+    html = f"""
+    <div class="row">
+        <div class="col-md-6">
+            <h6>Informações da Cobrança</h6>
+            <p><strong>ID:</strong> {charge.id}</p>
+            <p><strong>Usuário:</strong> {charge.user.name or charge.user.email}</p>
+            <p><strong>Valor:</strong> R$ {charge.amount:.2f}</p>
+            <p><strong>Status:</strong> {charge.status}</p>
+            <p><strong>Descrição:</strong> {charge.description or 'N/A'}</p>
+        </div>
+        <div class="col-md-6">
+            <h6>Detalhes Técnicos</h6>
+            <p><strong>Criada em:</strong> {charge.created_at.strftime('%d/%m/%Y %H:%M') if charge.created_at else 'N/A'}</p>
+            <p><strong>Stripe ID:</strong> {charge.stripe_charge_id or 'N/A'}</p>
+            <p><strong>Asaas ID:</strong> {charge.asaas_charge_id or 'N/A'}</p>
+        </div>
+    </div>
+    """
+    
+    return jsonify({'success': True, 'html': html})
+
+@app.route('/admin/charges/<int:charge_id>/mark-paid', methods=['POST'])
+@login_required
+def admin_mark_charge_paid(charge_id):
+    """Marcar cobrança como paga"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Acesso negado'})
+    
+    try:
+        charge = Charge.query.get_or_404(charge_id)
+        
+        if charge.status != 'pending':
+            return jsonify({'success': False, 'message': 'Cobrança não está pendente'})
+        
+        charge.status = 'paid'
+        
+        # Atualizar saldo se for positivo
+        if charge.amount > 0:
+            charge.user.current_balance = (charge.user.current_balance or 0) + charge.amount
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Cobrança marcada como paga'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao marcar cobrança como paga: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/charges/<int:charge_id>/refund', methods=['POST'])
+@login_required
+def admin_refund_charge(charge_id):
+    """Reembolsar cobrança"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Acesso negado'})
+    
+    try:
+        charge = Charge.query.get_or_404(charge_id)
+        reason = request.json.get('reason', 'Reembolso administrativo')
+        
+        if charge.status != 'paid' or charge.amount <= 0:
+            return jsonify({'success': False, 'message': 'Cobrança não pode ser reembolsada'})
+        
+        # Criar cobrança de reembolso
+        refund_charge = Charge(
+            user_id=charge.user_id,
+            amount=-charge.amount,
+            description=f'Reembolso: {reason}',
+            status='paid'
+        )
+        db.session.add(refund_charge)
+        
+        # Atualizar saldo
+        charge.user.current_balance = (charge.user.current_balance or 0) - charge.amount
+        
+        # Marcar original como reembolsada
+        charge.status = 'refunded'
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Reembolso processado com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao processar reembolso: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/charges/<int:charge_id>/delete', methods=['DELETE'])
+@login_required
+def admin_delete_charge(charge_id):
+    """Excluir cobrança"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Acesso negado'})
+    
+    try:
+        charge = Charge.query.get_or_404(charge_id)
+        
+        # Se era paga, reverter do saldo
+        if charge.status == 'paid' and charge.amount != 0:
+            charge.user.current_balance = (charge.user.current_balance or 0) - charge.amount
+        
+        db.session.delete(charge)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Cobrança excluída com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao excluir cobrança: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
 @app.route('/admin/settings')
 @login_required
 def admin_settings():

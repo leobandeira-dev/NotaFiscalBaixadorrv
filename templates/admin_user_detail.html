@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes do Usuário - CROSS XML Downloader PRO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .admin-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            padding: 30px;
+        }
+        .info-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .stat-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .activity-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #007bff;
+        }
+        .balance-display {
+            font-size: 2em;
+            font-weight: 700;
+            color: #28a745;
+        }
+        .btn-action {
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 600;
+            margin: 5px;
+        }
+        .transaction-row {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .transaction-row:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="admin-container">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-user"></i> {{ user.name or 'Usuário' }}</h2>
+                    <p class="text-muted">{{ user.email }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-outline-secondary btn-action">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                    <button class="btn btn-warning btn-action" data-bs-toggle="modal" data-bs-target="#editUserModal">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <button class="btn btn-success btn-action" data-bs-toggle="modal" data-bs-target="#addBalanceModal">
+                        <i class="fas fa-plus"></i> Adicionar Créditos
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Informações do Usuário -->
+                <div class="col-md-4">
+                    <div class="info-card">
+                        <h5><i class="fas fa-info-circle"></i> Informações Básicas</h5>
+                        <hr>
+                        <div class="mb-3">
+                            <strong>Nome:</strong><br>
+                            {{ user.name or 'Não informado' }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Email:</strong><br>
+                            {{ user.email }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Status:</strong><br>
+                            {% if user.is_trial_active() %}
+                                <span class="badge bg-warning">Trial Ativo</span>
+                            {% elif user.active %}
+                                <span class="badge bg-success">Ativo</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inativo</span>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Cadastro:</strong><br>
+                            {{ user.created_at.strftime('%d/%m/%Y às %H:%M') if user.created_at else 'N/A' }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Último Login:</strong><br>
+                            {{ user.last_login.strftime('%d/%m/%Y às %H:%M') if user.last_login else 'Nunca' }}
+                        </div>
+                        <div class="mb-3">
+                            <strong>Administrador:</strong><br>
+                            {% if user.is_admin %}
+                                <span class="badge bg-primary">Sim</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Não</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="stat-box">
+                        <h6>Saldo Atual</h6>
+                        <div class="balance-display">R$ {{ "%.2f"|format(user.current_balance) }}</div>
+                    </div>
+                </div>
+
+                <!-- Atividades e Transações -->
+                <div class="col-md-8">
+                    <!-- Estatísticas Rápidas -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="stat-box">
+                                <h6>XMLs Baixados</h6>
+                                <div style="font-size: 1.5em;">{{ user_stats.total_xmls }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-box">
+                                <h6>Gasto Total</h6>
+                                <div style="font-size: 1.5em;">R$ {{ "%.2f"|format(user_stats.total_spent) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-box">
+                                <h6>DANFEs Gerados</h6>
+                                <div style="font-size: 1.5em;">{{ user_stats.total_danfes }}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-box">
+                                <h6>Etiquetas</h6>
+                                <div style="font-size: 1.5em;">{{ user_stats.total_labels }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- XMLs Recentes -->
+                    <div class="info-card">
+                        <h5><i class="fas fa-file-alt"></i> XMLs Recentes</h5>
+                        <hr>
+                        {% if recent_xmls %}
+                            {% for xml in recent_xmls %}
+                            <div class="activity-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ xml.numero_nf or 'N/A' }}</strong>
+                                        {% if xml.nome_emitente %}
+                                            - {{ xml.nome_emitente[:30] }}...
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">
+                                        {{ xml.imported_at.strftime('%d/%m/%Y %H:%M') if xml.imported_at else 'N/A' }}
+                                    </small>
+                                </div>
+                                {% if xml.valor_total %}
+                                    <small class="text-muted">Valor: R$ {{ "%.2f"|format(xml.valor_total) }}</small>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">Nenhum XML encontrado</p>
+                        {% endif %}
+                    </div>
+
+                    <!-- Transações Financeiras -->
+                    <div class="info-card">
+                        <h5><i class="fas fa-money-bill-wave"></i> Transações Recentes</h5>
+                        <hr>
+                        {% if recent_charges %}
+                            {% for charge in recent_charges %}
+                            <div class="transaction-row">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>{{ charge.description or 'Cobrança' }}</strong><br>
+                                        <small class="text-muted">
+                                            {{ charge.created_at.strftime('%d/%m/%Y %H:%M') if charge.created_at else 'N/A' }}
+                                        </small>
+                                    </div>
+                                    <div class="text-end">
+                                        <strong class="{% if charge.amount > 0 %}text-success{% else %}text-danger{% endif %}">
+                                            {% if charge.amount > 0 %}+{% endif %}R$ {{ "%.2f"|format(charge.amount) }}
+                                        </strong><br>
+                                        <small class="text-muted">{{ charge.status or 'pending' }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">Nenhuma transação encontrada</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Editar Usuário -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-edit"></i> Editar Usuário</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editUserForm">
+                    <div class="modal-body">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <div class="mb-3">
+                            <label class="form-label">Nome</label>
+                            <input type="text" name="name" class="form-control" value="{{ user.name or '' }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control" value="{{ user.email }}">
+                        </div>
+                        <div class="form-check mb-3">
+                            <input type="checkbox" name="active" class="form-check-input" id="userActive" 
+                                   {% if user.active %}checked{% endif %}>
+                            <label class="form-check-label" for="userActive">
+                                Usuário Ativo
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" name="is_admin" class="form-check-input" id="userAdmin"
+                                   {% if user.is_admin %}checked{% endif %}>
+                            <label class="form-check-label" for="userAdmin">
+                                Administrador
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Adicionar Créditos -->
+    <div class="modal fade" id="addBalanceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus-circle"></i> Adicionar Créditos</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="addBalanceForm">
+                    <div class="modal-body">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <div class="mb-3">
+                            <label class="form-label">Valor a Adicionar (R$)</label>
+                            <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <input type="text" name="description" class="form-control" 
+                                   placeholder="Motivo da adição de créditos" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Adicionar Créditos</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Form submissions
+        document.getElementById('editUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('/admin/users/edit', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao editar usuário: ' + data.message);
+                }
+            });
+        });
+
+        document.getElementById('addBalanceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('/admin/users/add-balance', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro ao adicionar créditos: ' + data.message);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
