@@ -20,6 +20,126 @@ logger = logging.getLogger(__name__)
 class EmailXMLProcessor:
     def __init__(self, user):
         self.user = user
+    
+    def process_xml_content(self, xml_content):
+        """Processa conteúdo XML e extrai dados da NFe"""
+        try:
+            # Parse XML
+            root = ET.fromstring(xml_content)
+            
+            # Definir namespaces
+            namespaces = {
+                'nfe': 'http://www.portalfiscal.inf.br/nfe'
+            }
+            
+            # Extrair dados da NFe
+            xml_data = {}
+            
+            # Buscar elemento infNFe
+            inf_nfe = root.find('.//nfe:infNFe', namespaces)
+            if inf_nfe is None:
+                logger.error("Elemento infNFe não encontrado no XML")
+                return None
+            
+            # Chave da NFe
+            xml_data['chave_nf'] = inf_nfe.get('Id', '').replace('NFe', '') if inf_nfe.get('Id') else 'N/A'
+            
+            # Dados da NFe
+            ide = inf_nfe.find('nfe:ide', namespaces)
+            if ide is not None:
+                xml_data['numero_nf'] = ide.findtext('nfe:nNF', 'N/A', namespaces)
+                xml_data['serie_nf'] = ide.findtext('nfe:serie', 'N/A', namespaces)
+                
+                # Data de emissão
+                dhemi = ide.findtext('nfe:dhEmi', namespaces=namespaces)
+                if dhemi:
+                    try:
+                        xml_data['data_emissao'] = datetime.fromisoformat(dhemi.replace('Z', '+00:00')).date()
+                    except:
+                        xml_data['data_emissao'] = None
+                else:
+                    xml_data['data_emissao'] = None
+            
+            # Dados do emitente
+            emit = inf_nfe.find('nfe:emit', namespaces)
+            if emit is not None:
+                xml_data['nome_emitente'] = emit.findtext('nfe:xNome', 'N/A', namespaces)
+                
+                # Endereço do emitente
+                enderemit = emit.find('nfe:enderEmit', namespaces)
+                if enderemit is not None:
+                    xml_data['cidade_emitente'] = enderemit.findtext('nfe:xMun', 'N/A', namespaces)
+                    xml_data['uf_emitente'] = enderemit.findtext('nfe:UF', 'N/A', namespaces)
+                    xml_data['cep_emitente'] = enderemit.findtext('nfe:CEP', 'N/A', namespaces)
+                    
+                    # Endereço completo
+                    logradouro = enderemit.findtext('nfe:xLgr', '', namespaces)
+                    numero = enderemit.findtext('nfe:nro', '', namespaces)
+                    bairro = enderemit.findtext('nfe:xBairro', '', namespaces)
+                    xml_data['endereco_emitente'] = f"{logradouro}, {numero}, {bairro}".strip(', ')
+            
+            # Dados do destinatário
+            dest = inf_nfe.find('nfe:dest', namespaces)
+            if dest is not None:
+                xml_data['nome_destinatario'] = dest.findtext('nfe:xNome', 'N/A', namespaces)
+                
+                # Endereço do destinatário
+                enderdest = dest.find('nfe:enderDest', namespaces)
+                if enderdest is not None:
+                    xml_data['cidade_destinatario'] = enderdest.findtext('nfe:xMun', 'N/A', namespaces)
+                    xml_data['uf_destinatario'] = enderdest.findtext('nfe:UF', 'N/A', namespaces)
+                    xml_data['cep_destinatario'] = enderdest.findtext('nfe:CEP', 'N/A', namespaces)
+                    
+                    # Endereço completo
+                    logradouro = enderdest.findtext('nfe:xLgr', '', namespaces)
+                    numero = enderdest.findtext('nfe:nro', '', namespaces)
+                    bairro = enderdest.findtext('nfe:xBairro', '', namespaces)
+                    xml_data['endereco_destinatario'] = f"{logradouro}, {numero}, {bairro}".strip(', ')
+            
+            # Dados da transportadora
+            transp = inf_nfe.find('nfe:transp', namespaces)
+            if transp is not None:
+                transporta = transp.find('nfe:transporta', namespaces)
+                if transporta is not None:
+                    xml_data['nome_transportadora'] = transporta.findtext('nfe:xNome', 'N/A', namespaces)
+                else:
+                    xml_data['nome_transportadora'] = 'N/A'
+            else:
+                xml_data['nome_transportadora'] = 'N/A'
+            
+            # Totais da NFe
+            total = inf_nfe.find('nfe:total/nfe:ICMSTot', namespaces)
+            if total is not None:
+                valor_total_str = total.findtext('nfe:vNF', '0', namespaces)
+                try:
+                    xml_data['valor_total'] = float(valor_total_str)
+                except:
+                    xml_data['valor_total'] = 0.0
+            else:
+                xml_data['valor_total'] = 0.0
+            
+            # Peso bruto e volumes
+            transp = inf_nfe.find('nfe:transp', namespaces)
+            if transp is not None:
+                # Peso bruto
+                peso_bruto_str = transp.findtext('nfe:vol/nfe:pesoB', '0', namespaces)
+                try:
+                    xml_data['peso_bruto'] = float(peso_bruto_str)
+                except:
+                    xml_data['peso_bruto'] = 0.0
+                
+                # Contar volumes
+                volumes = transp.findall('nfe:vol', namespaces)
+                xml_data['volumes'] = len(volumes) if volumes else 0
+            else:
+                xml_data['peso_bruto'] = 0.0
+                xml_data['volumes'] = 0
+            
+            return xml_data
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar XML: {e}")
+            return None
         
     def connect_pop3(self):
         """Conecta ao servidor POP3 do usuário"""

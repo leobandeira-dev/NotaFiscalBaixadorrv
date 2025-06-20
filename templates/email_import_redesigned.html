@@ -549,7 +549,7 @@
                                     <button type="button" class="btn btn-check-now" onclick="checkPop3Messages()">
                                         <i class="fas fa-envelope-open"></i> Verificar Mensagens
                                     </button>
-                                    <button type="button" class="btn btn-purple" onclick="showProcessEmailsModal()">
+                                    <button type="button" class="btn btn-purple" onclick="processEmailXMLs()">
                                         <i class="fas fa-download"></i> Processar XMLs
                                     </button>
                                     <button type="button" class="btn btn-outline-secondary" onclick="showPop3EditForm()">
@@ -871,6 +871,56 @@ function checkPop3Messages() {
         button.disabled = false;
         console.error('Error:', error);
         alert('❌ Erro ao verificar mensagens POP3');
+    });
+}
+
+function processEmailXMLs() {
+    const password = prompt('Digite a senha do email para processar XMLs:');
+    if (!password) {
+        return;
+    }
+    
+    const button = document.querySelector('button[onclick="processEmailXMLs()"]');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
+    button.disabled = true;
+    
+    fetch('{{ url_for("process_xmls_from_email") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            password: password
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        if (data.success) {
+            let message = `✅ Processamento concluído!\n\n`;
+            message += `📧 Mensagens verificadas: ${data.total_messages || 0}\n`;
+            message += `📄 XMLs processados: ${data.processed_count}\n`;
+            
+            if (data.processed_count > 0) {
+                message += `\nRedirecionando para "Meus XMLs" para visualizar os arquivos importados...`;
+                alert(message);
+                window.location.href = '{{ url_for("meus_xmls") }}';
+            } else {
+                message += `\nNenhum XML novo foi encontrado nos emails.`;
+                alert(message);
+            }
+        } else {
+            alert('❌ Erro: ' + data.message);
+        }
+    })
+    .catch(error => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        console.error('Error:', error);
+        alert('❌ Erro ao processar XMLs do email');
     });
 }
 
