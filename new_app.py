@@ -1381,31 +1381,74 @@ def generate_label_route(xml_id):
         area_code = current_user.default_area_code or '01'
         logo_path = current_user.company_logo_path
         
-        # Gerar etiqueta responsiva
-        from responsive_label_generator import generate_responsive_label_from_database_xml
+        # Extrair dados do XML para verificar quantidade de volumes
+        from xml_processor import extract_xml_data
+        xml_data = extract_xml_data(xml_content)
+        volumes_qty = xml_data.get('quantidade_volumes', 1)
         
         # Obter configurações de papel do usuário (padrão: 100x150mm)
         paper_width = getattr(current_user, 'paper_width_mm', 100)
         paper_height = getattr(current_user, 'paper_height_mm', 150)
         
-        label_buffer = generate_responsive_label_from_database_xml(
-            xml_record=xml_record,
-            pedido_number=pedido_number,
-            area_code=area_code,
-            company_name=company_name,
-            company_logo_path=logo_path,
-            paper_width_mm=paper_width,
-            paper_height_mm=paper_height
-        )
+        # Verificar se precisa gerar múltiplas etiquetas (mais de 1 volume)
+        if volumes_qty > 1:
+            # Gerar etiquetas multi-volume
+            from responsive_label_generator import generate_multiple_responsive_labels_from_volumes, merge_labels_into_single_pdf
+            
+            # Criar configuração de volumes baseada na quantidade real
+            volumes_config = []
+            peso_total = xml_data.get('peso_bruto', 0.0)
+            peso_por_volume = peso_total / volumes_qty if volumes_qty > 0 else 0.0
+            
+            for i in range(1, volumes_qty + 1):
+                volumes_config.append({
+                    'peso': peso_por_volume,
+                    'pedido': f'{pedido_number}-{i}'
+                })
+            
+            labels = generate_multiple_responsive_labels_from_volumes(
+                xml_record=xml_record,
+                volumes_config=volumes_config,
+                company_name=company_name,
+                company_logo_path=logo_path,
+                paper_width_mm=paper_width,
+                paper_height_mm=paper_height,
+                area_code=area_code
+            )
+            
+            # Filtrar labels válidos
+            valid_labels = [l for l in labels if l.get('pdf_buffer') is not None]
+            
+            if not valid_labels:
+                raise Exception(f"Nenhuma etiqueta válida gerada para {volumes_qty} volumes")
+            
+            # Mesclar em PDF único
+            label_buffer = merge_labels_into_single_pdf(valid_labels)
+            filename = f"etiquetas_transporte_{invoice_key}_{volumes_qty}volumes.pdf"
+            
+        else:
+            # Gerar etiqueta única
+            from responsive_label_generator import generate_responsive_label_from_database_xml
+            
+            label_buffer = generate_responsive_label_from_database_xml(
+                xml_record=xml_record,
+                pedido_number=pedido_number,
+                area_code=area_code,
+                company_name=company_name,
+                company_logo_path=logo_path,
+                paper_width_mm=paper_width,
+                paper_height_mm=paper_height
+            )
+            filename = f"etiqueta_transporte_{invoice_key}.pdf"
         
         # Registrar uso do módulo de etiquetas (sem cobrança adicional - incluído na assinatura)
         if labels_module:
             usage_record = UsageRecord(
                 user_id=current_user.id,
                 module_id=labels_module.id,
-                quantity=1,
+                quantity=volumes_qty,  # Registrar quantidade real de volumes
                 cost=0.0,  # Incluído na assinatura mensal
-                description=f"Etiqueta gerada para XML {invoice_key[:10]}..."
+                description=f"Etiquetas geradas para XML {invoice_key[:10]}... ({volumes_qty} volumes)"
             )
             
             db.session.add(usage_record)
@@ -1419,7 +1462,8 @@ def generate_label_route(xml_id):
         # Retornar arquivo para impressão no navegador
         response = make_response(label_buffer.getvalue())
         response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'inline; filename="etiqueta_transporte_{invoice_key}.pdf"'
+        response.headers['Content-Disposition'] = f'inline; filename="{filename}"'
+        response.headers['X-Frame-Options'] = 'ALLOWALL'
         return response
         
     except Exception as e:
