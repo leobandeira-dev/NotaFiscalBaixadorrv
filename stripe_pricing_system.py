@@ -271,8 +271,8 @@ def get_user_xml_credits(user_id: int) -> int:
                 StripeTransaction.status == 'completed'
             ).scalar() or 0
         
-        # Somar todos os créditos consumidos
-        total_consumed = db.session.query(func.sum(FeatureUsage.credits_consumed))\
+        # Somar todos os créditos consumidos (usando usage_count)
+        total_consumed = db.session.query(func.sum(FeatureUsage.usage_count))\
             .filter(
                 FeatureUsage.user_id == user_id,
                 FeatureUsage.feature_key == 'xml_download'

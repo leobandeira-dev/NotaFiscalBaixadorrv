@@ -574,13 +574,21 @@ def dashboard():
         status='PENDING'
     ).all()
     
+    # Get user XML credit balance using corrected system
+    from credit_system_fixed import get_user_xml_balance, get_user_stats
+    
+    xml_balance = get_user_xml_balance(current_user.id)
+    user_stats = get_user_stats(current_user.id)
+    
     return render_template('dashboard.html', 
                          xml_count=xml_count,
+                         xml_balance=xml_balance,
                          danfe_count=xml_count,  # DANFE is free for each XML
                          total_usage=total_usage,
                          this_month_usage=this_month_usage,
                          recent_activities=recent_activities,
-                         pending_charges=pending_charges)
+                         pending_charges=pending_charges,
+                         user_stats=user_stats)
 
 @app.route('/xml-download')
 @login_required
@@ -2632,7 +2640,13 @@ def stripe_webhook():
 @login_required
 def historico_creditos():
     """Histórico de uso de créditos"""
-    usage_history = CreditManager.get_usage_history(current_user.id, days=30)
+    from credit_system_fixed import get_credit_history, get_user_stats
+    
+    # Buscar histórico de créditos
+    credit_history = get_credit_history(current_user.id, limit=30)
+    
+    # Buscar estatísticas do usuário
+    user_stats = get_user_stats(current_user.id)
     
     # Buscar transações Stripe
     stripe_transactions = StripeTransaction.query.filter_by(
@@ -2640,7 +2654,8 @@ def historico_creditos():
     ).order_by(StripeTransaction.created_at.desc()).limit(20).all()
     
     return render_template('historico_creditos_simple.html',
-                         usage_history=usage_history,
+                         credit_history=credit_history,
+                         user_stats=user_stats,
                          stripe_transactions=stripe_transactions,
                          current_user=current_user)
 
