@@ -2174,26 +2174,29 @@ def generate_custom_labels(xml_id):
         
         logger.info(f"Total de volumes configurados: {len(volumes_config)}")
         
-        # Gerar etiquetas com layout escolhido pelo usuário
-        from multi_layout_label_generator import generate_custom_label_with_layout
+        # Gerar etiquetas usando sistema de processamento em lotes
+        from responsive_label_generator import generate_multiple_responsive_labels_from_volumes
         
-        # Configuração do papel
-        paper_config = {
-            'size': 'custom',
-            'custom_width': paper_width_mm / 10,  # Converter mm para cm
-            'custom_height': paper_height_mm / 10,
-            'total_volumes': total_volumes,
-            'volume_weights': [config['peso'] for config in volumes_config]
-        }
+        # Obter registro XML e dados da empresa
+        xml_record = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
+        if not xml_record:
+            flash('XML não encontrado.', 'error')
+            return redirect(url_for('label_generator', xml_id=xml_id))
         
-        # Usar layout selecionado no formulário ou padrão do usuário
-        layout_style = request.form.get('layout_style', current_user.preferred_layout or 'layout1')
+        # Configurações da empresa
+        company_name = current_user.company_name or "SUA EMPRESA"
+        company_logo_path = os.path.join('static', 'logos', current_user.logo_filename) if current_user.logo_filename else None
+        area_code = current_user.area_code or "01"
         
-        labels = generate_custom_label_with_layout(
-            xml_id=xml_id,
-            user=current_user,
-            paper_config=paper_config,
-            layout_style=layout_style
+        # Gerar etiquetas com sistema de batch processing (elimina erros de memória)
+        labels = generate_multiple_responsive_labels_from_volumes(
+            xml_record=xml_record,
+            volumes_config=volumes_config,
+            company_name=company_name,
+            company_logo_path=company_logo_path,
+            paper_width_mm=paper_width_mm,
+            paper_height_mm=paper_height_mm,
+            area_code=area_code
         )
         
         if not labels:
