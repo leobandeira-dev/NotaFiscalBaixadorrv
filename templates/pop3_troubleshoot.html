@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Resolução de Problemas POP3{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Problemas de Conexão POP3 Detectados
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <strong>Erro de Autenticação:</strong> As credenciais POP3 atuais não estão funcionando.
+                    </div>
+                    
+                    <h6>Possíveis causas:</h6>
+                    <ul>
+                        <li>Senha do email foi alterada</li>
+                        <li>Provedor de email desabilitou acesso POP3</li>
+                        <li>Configurações de segurança do email foram modificadas</li>
+                        <li>Servidor POP3 temporariamente indisponível</li>
+                    </ul>
+                    
+                    <h6>Soluções recomendadas:</h6>
+                    
+                    <div class="accordion" id="solutionsAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#solution1">
+                                    1. Atualizar credenciais POP3
+                                </button>
+                            </h2>
+                            <div id="solution1" class="accordion-collapse collapse show" data-bs-parent="#solutionsAccordion">
+                                <div class="accordion-body">
+                                    <form id="updatePop3Form">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Email POP3</label>
+                                                <input type="email" class="form-control" name="pop3_email" value="{{ current_user.pop3_email or '' }}" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Nova Senha</label>
+                                                <input type="password" class="form-control" name="pop3_password" placeholder="Digite a senha atual do email" required>
+                                            </div>
+                                        </div>
+                                        <div class="row mt-3">
+                                            <div class="col-md-4">
+                                                <label class="form-label">Servidor POP3</label>
+                                                <input type="text" class="form-control" name="pop3_server" value="{{ current_user.pop3_server or 'pop.titan.email' }}" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label">Porta</label>
+                                                <input type="number" class="form-control" name="pop3_port" value="{{ current_user.pop3_port or 995 }}" required>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-check mt-4">
+                                                    <input class="form-check-input" type="checkbox" name="pop3_ssl" checked>
+                                                    <label class="form-check-label">Usar SSL</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-save me-2"></i>Atualizar e Testar
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#solution2">
+                                    2. Usar upload manual de XMLs
+                                </button>
+                            </h2>
+                            <div id="solution2" class="accordion-collapse collapse" data-bs-parent="#solutionsAccordion">
+                                <div class="accordion-body">
+                                    <p>Como alternativa, você pode fazer upload manual dos XMLs:</p>
+                                    <a href="{{ url_for('upload_xml') }}" class="btn btn-success">
+                                        <i class="fas fa-upload me-2"></i>Upload Manual de XMLs
+                                    </a>
+                                    <p class="text-muted mt-2">Arquivos XML enviados manualmente não consomem créditos</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#solution3">
+                                    3. Configurações de email específicas
+                                </button>
+                            </h2>
+                            <div id="solution3" class="accordion-collapse collapse" data-bs-parent="#solutionsAccordion">
+                                <div class="accordion-body">
+                                    <h6>Para Gmail:</h6>
+                                    <ul>
+                                        <li>Servidor: pop.gmail.com</li>
+                                        <li>Porta: 995 (SSL)</li>
+                                        <li>Habilitar "Acesso a apps menos seguros" ou usar senha de app</li>
+                                    </ul>
+                                    
+                                    <h6>Para Outlook/Hotmail:</h6>
+                                    <ul>
+                                        <li>Servidor: outlook.office365.com</li>
+                                        <li>Porta: 995 (SSL)</li>
+                                        <li>Habilitar POP3 nas configurações do Outlook</li>
+                                    </ul>
+                                    
+                                    <h6>Para outros provedores:</h6>
+                                    <p>Consulte a documentação do seu provedor de email para configurações POP3 específicas.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Status de Conexão</h5>
+                </div>
+                <div class="card-body">
+                    <div id="connectionStatus" class="alert alert-secondary">
+                        <i class="fas fa-clock me-2"></i>Aguardando teste de conexão...
+                    </div>
+                    
+                    <button id="testConnectionBtn" class="btn btn-outline-primary w-100" disabled>
+                        <i class="fas fa-plug me-2"></i>Testar Conexão
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Suporte</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Precisa de ajuda adicional?</p>
+                    <button class="btn btn-outline-info w-100">
+                        <i class="fas fa-headset me-2"></i>Contatar Suporte
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('updatePop3Form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+    data.pop3_ssl = formData.has('pop3_ssl');
+    
+    try {
+        const response = await fetch('/update-pop3-config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('connectionStatus').innerHTML = 
+                '<i class="fas fa-check-circle text-success me-2"></i>Configuração atualizada com sucesso!';
+            document.getElementById('connectionStatus').className = 'alert alert-success';
+            
+            // Testar conexão automaticamente
+            testConnection();
+        } else {
+            document.getElementById('connectionStatus').innerHTML = 
+                '<i class="fas fa-exclamation-circle text-danger me-2"></i>' + result.message;
+            document.getElementById('connectionStatus').className = 'alert alert-danger';
+        }
+    } catch (error) {
+        document.getElementById('connectionStatus').innerHTML = 
+            '<i class="fas fa-exclamation-circle text-danger me-2"></i>Erro ao atualizar configuração';
+        document.getElementById('connectionStatus').className = 'alert alert-danger';
+    }
+});
+
+async function testConnection() {
+    const password = document.querySelector('input[name="pop3_password"]').value;
+    if (!password) {
+        alert('Digite a senha do email para testar a conexão');
+        return;
+    }
+    
+    document.getElementById('connectionStatus').innerHTML = 
+        '<i class="fas fa-spinner fa-spin me-2"></i>Testando conexão...';
+    document.getElementById('connectionStatus').className = 'alert alert-info';
+    
+    try {
+        const response = await fetch('/test-pop3-connection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ password: password })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById('connectionStatus').innerHTML = 
+                '<i class="fas fa-check-circle text-success me-2"></i>Conexão POP3 funcionando!';
+            document.getElementById('connectionStatus').className = 'alert alert-success';
+        } else {
+            document.getElementById('connectionStatus').innerHTML = 
+                '<i class="fas fa-exclamation-circle text-danger me-2"></i>' + result.message;
+            document.getElementById('connectionStatus').className = 'alert alert-danger';
+        }
+    } catch (error) {
+        document.getElementById('connectionStatus').innerHTML = 
+            '<i class="fas fa-exclamation-circle text-danger me-2"></i>Erro ao testar conexão';
+        document.getElementById('connectionStatus').className = 'alert alert-danger';
+    }
+}
+
+document.getElementById('testConnectionBtn').addEventListener('click', testConnection);
+
+// Habilitar botão de teste quando senha for digitada
+document.querySelector('input[name="pop3_password"]').addEventListener('input', function() {
+    document.getElementById('testConnectionBtn').disabled = !this.value;
+});
+</script>
+{% endblock %}

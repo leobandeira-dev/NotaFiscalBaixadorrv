@@ -2462,6 +2462,37 @@ def test_pop3_connection():
         logger.error(f"Erro ao testar conexão POP3: {e}")
         return jsonify({'success': False, 'message': f'Erro de conexão: {str(e)}'})
 
+@app.route('/update-pop3-config', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=10)
+def update_pop3_config():
+    """Atualiza configurações POP3 do usuário"""
+    try:
+        data = request.get_json()
+        
+        # Atualizar configurações POP3
+        current_user.pop3_email = data.get('pop3_email')
+        current_user.pop3_server = data.get('pop3_server')
+        current_user.pop3_port = int(data.get('pop3_port', 995))
+        current_user.pop3_ssl = data.get('pop3_ssl', True)
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Configurações POP3 atualizadas com sucesso'
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro ao atualizar configurações POP3: {e}")
+        return jsonify({'success': False, 'message': f'Erro: {str(e)}'})
+
+@app.route('/pop3-troubleshoot')
+@login_required
+def pop3_troubleshoot():
+    """Página de resolução de problemas POP3"""
+    return render_template('pop3_troubleshoot.html')
+
 @app.route('/process-email-xmls', methods=['POST'])
 @login_required
 @rate_limit_check(max_requests=3, window_minutes=10)
@@ -2492,7 +2523,23 @@ def process_email_xmls():
                 'total_messages': result['total_messages']
             })
         else:
-            return jsonify({'success': False, 'message': result['error']})
+            error_msg = result['error']
+            
+            # Tratar erros específicos
+            if 'AuthenticationError' in error_msg or 'authentication' in error_msg.lower():
+                return jsonify({
+                    'success': False, 
+                    'message': 'Erro de autenticação: Verifique se a senha do email está correta',
+                    'error_type': 'authentication'
+                })
+            elif 'P_LIST not allowed' in error_msg:
+                return jsonify({
+                    'success': False, 
+                    'message': 'Servidor POP3 temporariamente indisponível. Tente novamente em alguns minutos.',
+                    'error_type': 'protocol'
+                })
+            else:
+                return jsonify({'success': False, 'message': error_msg})
             
     except Exception as e:
         logger.error(f"Erro ao processar emails XML: {e}")
