@@ -149,6 +149,27 @@
             margin-bottom: 1rem;
             color: #d1d5db;
         }
+        
+        .btn-outline-purple {
+            color: #8A05BE;
+            border-color: #8A05BE;
+            background-color: transparent;
+        }
+        
+        .btn-outline-purple:hover {
+            color: white;
+            background-color: #8A05BE;
+            border-color: #8A05BE;
+        }
+        
+        .btn-outline-purple:focus,
+        .btn-outline-purple:active {
+            color: white;
+            background-color: #7c0db8;
+            border-color: #7c0db8;
+            box-shadow: 0 0 0 0.2rem rgba(138, 5, 190, 0.25);
+        }
+        }
 </style>
 {% endblock %}
 
@@ -380,10 +401,10 @@
                                             </button>
                                             
                                             <a href="{{ url_for('label_generator', xml_id=xml.id) }}" 
-                                               class="btn btn-outline-warning btn-custom btn-sm"
+                                               class="btn btn-outline-purple btn-custom btn-sm"
                                                target="_blank"
                                                title="Configuração avançada com múltiplos volumes">
-                                                <i class="fas fa-cogs"></i> Multi-Volume
+                                                <i class="fas fa-cogs"></i> Editar Volume/Peso
                                             </a>
                                             
                                             <a href="{{ url_for('download_xml_file', xml_id=xml.id) }}" 
