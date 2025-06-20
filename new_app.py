@@ -843,7 +843,17 @@ def asaas_webhook():
 def process_download_job(job_id):
     """Process download job in background with proper Flask context"""
     with app.app_context():  # Essential: Flask context for database operations
-        from automation_fixed import InvoiceDownloader
+        # Detect environment and choose appropriate downloader
+        is_production = os.environ.get('REPLIT_DEPLOYMENT') is not None
+        
+        if is_production:
+            from production_downloader import ProductionDownloader
+            downloader_class = ProductionDownloader
+            logger.info(f"[Job {job_id}] Using ProductionDownloader for deployed environment")
+        else:
+            from automation_fixed import InvoiceDownloader
+            downloader_class = InvoiceDownloader
+            logger.info(f"[Job {job_id}] Using InvoiceDownloader for development environment")
         
         with jobs_lock:
             job = download_jobs.get(job_id)
