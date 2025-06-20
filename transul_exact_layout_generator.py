@@ -5,6 +5,7 @@ Layout específico baseado na análise visual da imagem fornecida com styling ha
 
 import io
 import logging
+from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.units import mm
@@ -55,6 +56,27 @@ class TransulExactLayoutGenerator:
         # Configurações de design
         self.corner_radius = 2  # Cantos arredondados sutis
         self.border_thickness = 1
+    
+    def _generate_label_id(self, numero_nf, volume_number):
+        """
+        Gera ID único da etiqueta no formato: NumeroNF + Data + Hora + Min + Volume
+        Exemplo: 417549201206143 (NF 417549 + 20/12/06 + 14:32 + Volume 3)
+        """
+        now = datetime.now()
+        
+        # Extrair apenas números da NF
+        nf_numero = ''.join(filter(str.isdigit, str(numero_nf)))
+        
+        # Formato: DDMMHHMM (dia/mês/hora/minuto)
+        timestamp = now.strftime("%d%m%H%M")
+        
+        # Volume com 1 dígito
+        volume_str = str(volume_number)
+        
+        # Combinar: NF + Data/Hora + Volume
+        label_id = f"{nf_numero}{timestamp}{volume_str}"
+        
+        return label_id
     
     def _draw_rounded_rect(self, canvas, x, y, width, height, bg_color, border_color=None, radius=None):
         """
@@ -222,17 +244,21 @@ class TransulExactLayoutGenerator:
         id_width = self.content_width * 0.65
         qr_width = self.content_width * 0.30
         
+        # Gerar ID único estruturado
+        volume_number = volume_info.split('/')[0] if '/' in volume_info else '1'
+        unique_label_id = self._generate_label_id(xml_data.get('numero_nf', 'N/A'), volume_number)
+        
         # ID no lado esquerdo
-        id_text = f"ID: {xml_data.get('numero_nf', 'N/A')}-{xml_data.get('serie', '001')}-001-001"
+        id_text = f"ID: {unique_label_id}"
         self._draw_styled_text_section(
             c, self.margin, current_y - id_height, id_width, id_height,
             id_text, self.fonts['body_regular'], 
             self.colors['white'], self.colors['black'], center_text=False
         )
         
-        # QR Code no lado direito
+        # QR Code no lado direito (reflete o ID da etiqueta)
         self._draw_qr_code(c, self.margin + id_width + (self.content_width * 0.05), 
-                          current_y - id_height, qr_width, id_height, volume_info)
+                          current_y - id_height, qr_width, id_height, unique_label_id)
         current_y -= id_height + self.section_spacing
         
         # 3. NF - Fundo preto com texto branco
