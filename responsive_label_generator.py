@@ -97,7 +97,16 @@ class ResponsiveTransportLabelGenerator:
             BytesIO contendo o PDF da etiqueta
         """
         try:
-            # Parse XML
+            # Se for layout Transul, usar o gerador específico
+            if self.layout_style == "transul":
+                from transul_exact_layout_generator import generate_transul_exact_label_from_xml
+                return generate_transul_exact_label_from_xml(
+                    xml_content, pedido_number, area_code, company_logo_path, 
+                    "1/1",  # Volume info padrão
+                    self.paper_width_mm, self.paper_height_mm
+                )
+            
+            # Parse XML para layouts padrão
             from xml_processor import extract_xml_data
             xml_data = extract_xml_data(xml_content)
             
