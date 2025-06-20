@@ -388,7 +388,8 @@ class ResponsiveTransportLabelGenerator:
         
         c.setFont("Helvetica", self.fonts['id_text'])
         c.setFillColor(colors.black)
-        c.drawString(self.margin, section_y + section_height * 0.7, id_display)
+        margin_interna = 8
+        c.drawString(self.margin + margin_interna, section_y + section_height * 0.7, id_display)
         
         # QR Code responsivo
         qr_size = min(section_height * 0.8, self.content_width * 0.15)
