@@ -306,7 +306,7 @@ def api_stats():
     
     stats = {
         'users_this_month': User.query.filter(User.created_at >= thirty_days_ago).count(),
-        'xmls_this_month': XMLFile.query.filter(XMLFile.uploaded_at >= thirty_days_ago).count(),
+        'xmls_this_month': XMLFile.query.filter(XMLFile.imported_at >= thirty_days_ago).count(),
         'revenue_this_month': sum(
             charge.amount for charge in Charge.query.filter(
                 Charge.created_at >= thirty_days_ago,

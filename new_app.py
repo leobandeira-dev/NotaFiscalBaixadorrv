@@ -24,6 +24,11 @@ from transport_label_generator import TransportLabelGenerator, generate_label_fr
 from transport_label_generator_v2 import CustomTransportLabelGenerator, generate_custom_label_from_database_xml
 from xml_processor import extract_xml_data
 from download_service import DownloadService
+from security import (
+    SecurityManager, DataIsolationManager, BillingSecurityManager,
+    require_authentication, require_admin, require_user_access,
+    rate_limit_check, setup_security_headers, validate_production_config
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -76,6 +81,9 @@ google = oauth.register(
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Setup security headers
+setup_security_headers(app)
 login_manager.login_message = 'Faça login para acessar esta página.'
 login_manager.login_message_category = 'info'
 
@@ -333,40 +341,52 @@ def google_callback():
 
 @app.route('/dashboard')
 @login_required
+@rate_limit_check(max_requests=50, window_minutes=10)
 def dashboard():
-    """User dashboard"""
+    """User dashboard with data isolation"""
     from download_service import DownloadService
     
-    # Get user XML statistics
-    user_xmls = DownloadService.get_user_xmls(current_user.id)
+    # Get user XML statistics with isolation
+    user_xmls_query = XMLFile.query.filter_by(user_id=current_user.id)
+    user_xmls_query = DataIsolationManager.filter_user_xmls(user_xmls_query, current_user.id)
+    user_xmls = user_xmls_query.all()
     xml_count = len(user_xmls)
     
-    # Get usage statistics with error handling
+    # Get usage statistics with data isolation
     try:
-        total_usage = UsageRecord.query.filter_by(user_id=current_user.id).count()
+        usage_query = UsageRecord.query.filter_by(user_id=current_user.id)
+        usage_query = DataIsolationManager.filter_user_usage(usage_query, current_user.id)
+        total_usage = usage_query.count()
     except Exception as e:
         logger.error(f"Error counting usage records: {e}")
+        SecurityManager.log_security_event("DATA_ACCESS_ERROR", current_user.id, f"Usage count error: {e}")
         db.session.rollback()
         total_usage = 0
     
     try:
-        this_month_usage = UsageRecord.query.filter(
+        monthly_usage_query = UsageRecord.query.filter(
             UsageRecord.user_id == current_user.id,
             UsageRecord.created_at >= datetime.now().replace(day=1)
-        ).count()
+        )
+        monthly_usage_query = DataIsolationManager.filter_user_usage(monthly_usage_query, current_user.id)
+        this_month_usage = monthly_usage_query.count()
     except Exception as e:
         logger.error(f"Error counting monthly usage: {e}")
+        SecurityManager.log_security_event("DATA_ACCESS_ERROR", current_user.id, f"Monthly usage error: {e}")
         db.session.rollback()
         this_month_usage = 0
     
-    # Get recent activities from UsageRecord
+    # Get recent activities with data isolation
     try:
-        recent_activities = UsageRecord.query.filter_by(user_id=current_user.id)\
+        activities_query = UsageRecord.query.filter_by(user_id=current_user.id)\
             .filter(UsageRecord.created_at >= datetime.now() - timedelta(days=7))\
             .order_by(UsageRecord.created_at.desc())\
-            .limit(10).all()
+            .limit(10)
+        activities_query = DataIsolationManager.filter_user_usage(activities_query, current_user.id)
+        recent_activities = activities_query.all()
     except Exception as e:
         logger.error(f"Error getting recent activities: {e}")
+        SecurityManager.log_security_event("DATA_ACCESS_ERROR", current_user.id, f"Activities error: {e}")
         db.session.rollback()
         recent_activities = []
     
@@ -811,20 +831,23 @@ def sp_datetime_filter(utc_time):
 # Rotas principais do sistema
 @app.route('/meus-xmls')
 @login_required
+@rate_limit_check(max_requests=100, window_minutes=15)
 def meus_xmls():
-    """Lista apenas XMLs corretamente processados com dados completos"""
+    """Lista apenas XMLs corretamente processados com dados completos - com isolamento de dados"""
     page = request.args.get('page', 1, type=int)
     per_page = 12
     
-    # Filtros
-    search_term = request.args.get('search', '')
-    date_from = request.args.get('date_from', '')
-    date_to = request.args.get('date_to', '')
-    uf_filter = request.args.get('uf', '')
-    cidade_filter = request.args.get('cidade', '')
+    # Filtros com sanitização de entrada
+    search_term = SecurityManager.sanitize_input(request.args.get('search', ''))
+    date_from = SecurityManager.sanitize_input(request.args.get('date_from', ''))
+    date_to = SecurityManager.sanitize_input(request.args.get('date_to', ''))
+    uf_filter = SecurityManager.sanitize_input(request.args.get('uf', ''))
+    cidade_filter = SecurityManager.sanitize_input(request.args.get('cidade', ''))
     
-    # Buscar XMLs da tabela unificada
-    all_xmls_list = XMLFile.query.filter_by(user_id=current_user.id).all()
+    # Buscar XMLs com isolamento de dados por usuário
+    xmls_query = XMLFile.query.filter_by(user_id=current_user.id)
+    xmls_query = DataIsolationManager.filter_user_xmls(xmls_query, current_user.id)
+    all_xmls_list = xmls_query.all()
     
     # Aplicar filtros de busca
     if search_term:
