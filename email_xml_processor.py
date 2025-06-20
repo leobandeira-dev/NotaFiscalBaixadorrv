@@ -18,7 +18,7 @@ import tempfile
 logger = logging.getLogger(__name__)
 
 class EmailXMLProcessor:
-    def __init__(self, user):
+    def __init__(self, user=None):
         self.user = user
     
     def process_xml_content(self, xml_content):

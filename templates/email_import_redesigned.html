@@ -228,12 +228,16 @@
                 <div class="col-md-4">
                     <div class="mb-3">
                         <label for="imap_server" class="form-label">Servidor IMAP</label>
-                        <select class="form-control" id="imap_server" name="imap_server" onchange="updateImapPort()">
-                            <option value="imap.gmail.com">Gmail (imap.gmail.com)</option>
-                            <option value="outlook.office365.com">Outlook (outlook.office365.com)</option>
-                            <option value="imap.yahoo.com">Yahoo (imap.yahoo.com)</option>
-                            <option value="custom">Personalizado</option>
+                        <select class="form-control" id="imap_server_select" onchange="toggleImapCustomServer()">
+                            <option value="imap.gmail.com" {{ 'selected' if current_user.imap_server == 'imap.gmail.com' else '' }}>Gmail (imap.gmail.com)</option>
+                            <option value="outlook.office365.com" {{ 'selected' if current_user.imap_server == 'outlook.office365.com' else '' }}>Outlook (outlook.office365.com)</option>
+                            <option value="imap.yahoo.com" {{ 'selected' if current_user.imap_server == 'imap.yahoo.com' else '' }}>Yahoo (imap.yahoo.com)</option>
+                            <option value="custom" {{ 'selected' if current_user.imap_server and current_user.imap_server not in ['imap.gmail.com', 'outlook.office365.com', 'imap.yahoo.com'] else '' }}>Personalizado</option>
                         </select>
+                        <input type="text" class="form-control mt-2" id="imap_server_custom" name="imap_server" 
+                               placeholder="Digite o servidor personalizado" 
+                               value="{{ current_user.imap_server or 'imap.gmail.com' }}" 
+                               style="display: {{ 'block' if current_user.imap_server and current_user.imap_server not in ['imap.gmail.com', 'outlook.office365.com', 'imap.yahoo.com'] else 'none' }}">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -287,12 +291,17 @@
                 <div class="col-md-4">
                     <div class="mb-3">
                         <label for="pop3_server" class="form-label">Servidor POP3</label>
-                        <select class="form-control" id="pop3_server" name="pop3_server" onchange="updatePop3Port()">
-                            <option value="pop.gmail.com">Gmail (pop.gmail.com)</option>
-                            <option value="outlook.office365.com">Outlook (outlook.office365.com)</option>
-                            <option value="pop.yahoo.com">Yahoo (pop.yahoo.com)</option>
-                            <option value="custom">Personalizado</option>
+                        <select class="form-control" id="pop3_server_select" onchange="togglePop3CustomServer()">
+                            <option value="pop.gmail.com" {{ 'selected' if current_user.pop3_server == 'pop.gmail.com' else '' }}>Gmail (pop.gmail.com)</option>
+                            <option value="outlook.office365.com" {{ 'selected' if current_user.pop3_server == 'outlook.office365.com' else '' }}>Outlook (outlook.office365.com)</option>
+                            <option value="pop.yahoo.com" {{ 'selected' if current_user.pop3_server == 'pop.yahoo.com' else '' }}>Yahoo (pop.yahoo.com)</option>
+                            <option value="pop.titan.email" {{ 'selected' if current_user.pop3_server == 'pop.titan.email' else '' }}>Titan Email (pop.titan.email)</option>
+                            <option value="custom" {{ 'selected' if current_user.pop3_server and current_user.pop3_server not in ['pop.gmail.com', 'outlook.office365.com', 'pop.yahoo.com', 'pop.titan.email'] else '' }}>Personalizado</option>
                         </select>
+                        <input type="text" class="form-control mt-2" id="pop3_server_custom" name="pop3_server" 
+                               placeholder="Digite o servidor personalizado" 
+                               value="{{ current_user.pop3_server or 'pop.gmail.com' }}" 
+                               style="display: {{ 'block' if current_user.pop3_server and current_user.pop3_server not in ['pop.gmail.com', 'outlook.office365.com', 'pop.yahoo.com', 'pop.titan.email'] else 'none' }}">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -346,12 +355,17 @@
                 <div class="col-md-4">
                     <div class="mb-3">
                         <label for="smtp_server" class="form-label">Servidor SMTP</label>
-                        <select class="form-control" id="smtp_server" name="smtp_server" onchange="updateSmtpPort()">
-                            <option value="smtp.gmail.com">Gmail (smtp.gmail.com)</option>
-                            <option value="smtp.office365.com">Outlook (smtp.office365.com)</option>
-                            <option value="smtp.yahoo.com">Yahoo (smtp.yahoo.com)</option>
-                            <option value="custom">Personalizado</option>
+                        <select class="form-control" id="smtp_server_select" onchange="toggleSmtpCustomServer()">
+                            <option value="smtp.gmail.com" {{ 'selected' if current_user.smtp_server == 'smtp.gmail.com' else '' }}>Gmail (smtp.gmail.com)</option>
+                            <option value="smtp.office365.com" {{ 'selected' if current_user.smtp_server == 'smtp.office365.com' else '' }}>Outlook (smtp.office365.com)</option>
+                            <option value="smtp.yahoo.com" {{ 'selected' if current_user.smtp_server == 'smtp.yahoo.com' else '' }}>Yahoo (smtp.yahoo.com)</option>
+                            <option value="smtp.titan.email" {{ 'selected' if current_user.smtp_server == 'smtp.titan.email' else '' }}>Titan Email (smtp.titan.email)</option>
+                            <option value="custom" {{ 'selected' if current_user.smtp_server and current_user.smtp_server not in ['smtp.gmail.com', 'smtp.office365.com', 'smtp.yahoo.com', 'smtp.titan.email'] else '' }}>Personalizado</option>
                         </select>
+                        <input type="text" class="form-control mt-2" id="smtp_server_custom" name="smtp_server" 
+                               placeholder="Digite o servidor personalizado" 
+                               value="{{ current_user.smtp_server or 'smtp.gmail.com' }}" 
+                               style="display: {{ 'block' if current_user.smtp_server and current_user.smtp_server not in ['smtp.gmail.com', 'smtp.office365.com', 'smtp.yahoo.com', 'smtp.titan.email'] else 'none' }}">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -600,5 +614,75 @@ async function checkEmailsNow() {
         button.disabled = false;
     }
 }
+
+// Custom server toggle functions
+function toggleImapCustomServer() {
+    const select = document.getElementById('imap_server_select');
+    const customInput = document.getElementById('imap_server_custom');
+    const portInput = document.getElementById('imap_port');
+    
+    if (select.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.required = true;
+    } else {
+        customInput.style.display = 'none';
+        customInput.required = false;
+        customInput.value = select.value;
+        
+        // Update port based on server
+        if (select.value === 'imap.gmail.com') portInput.value = 993;
+        else if (select.value === 'outlook.office365.com') portInput.value = 993;
+        else if (select.value === 'imap.yahoo.com') portInput.value = 993;
+    }
+}
+
+function togglePop3CustomServer() {
+    const select = document.getElementById('pop3_server_select');
+    const customInput = document.getElementById('pop3_server_custom');
+    const portInput = document.getElementById('pop3_port');
+    
+    if (select.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.required = true;
+    } else {
+        customInput.style.display = 'none';
+        customInput.required = false;
+        customInput.value = select.value;
+        
+        // Update port based on server
+        if (select.value === 'pop.gmail.com') portInput.value = 995;
+        else if (select.value === 'outlook.office365.com') portInput.value = 995;
+        else if (select.value === 'pop.yahoo.com') portInput.value = 995;
+        else if (select.value === 'pop.titan.email') portInput.value = 995;
+    }
+}
+
+function toggleSmtpCustomServer() {
+    const select = document.getElementById('smtp_server_select');
+    const customInput = document.getElementById('smtp_server_custom');
+    const portInput = document.getElementById('smtp_port');
+    
+    if (select.value === 'custom') {
+        customInput.style.display = 'block';
+        customInput.required = true;
+    } else {
+        customInput.style.display = 'none';
+        customInput.required = false;
+        customInput.value = select.value;
+        
+        // Update port based on server
+        if (select.value === 'smtp.gmail.com') portInput.value = 587;
+        else if (select.value === 'smtp.office365.com') portInput.value = 587;
+        else if (select.value === 'smtp.yahoo.com') portInput.value = 587;
+        else if (select.value === 'smtp.titan.email') portInput.value = 587;
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleImapCustomServer();
+    togglePop3CustomServer();
+    toggleSmtpCustomServer();
+});
 </script>
 {% endblock %}
