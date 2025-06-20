@@ -341,18 +341,34 @@ def dashboard():
     user_xmls = DownloadService.get_user_xmls(current_user.id)
     xml_count = len(user_xmls)
     
-    # Get usage statistics
-    total_usage = UsageRecord.query.filter_by(user_id=current_user.id).count()
-    this_month_usage = UsageRecord.query.filter(
-        UsageRecord.user_id == current_user.id,
-        UsageRecord.created_at >= datetime.now().replace(day=1)
-    ).count()
+    # Get usage statistics with error handling
+    try:
+        total_usage = UsageRecord.query.filter_by(user_id=current_user.id).count()
+    except Exception as e:
+        logger.error(f"Error counting usage records: {e}")
+        db.session.rollback()
+        total_usage = 0
+    
+    try:
+        this_month_usage = UsageRecord.query.filter(
+            UsageRecord.user_id == current_user.id,
+            UsageRecord.created_at >= datetime.now().replace(day=1)
+        ).count()
+    except Exception as e:
+        logger.error(f"Error counting monthly usage: {e}")
+        db.session.rollback()
+        this_month_usage = 0
     
     # Get recent activities from UsageRecord
-    recent_activities = UsageRecord.query.filter_by(user_id=current_user.id)\
-        .filter(UsageRecord.created_at >= datetime.now() - timedelta(days=7))\
-        .order_by(UsageRecord.created_at.desc())\
-        .limit(10).all()
+    try:
+        recent_activities = UsageRecord.query.filter_by(user_id=current_user.id)\
+            .filter(UsageRecord.created_at >= datetime.now() - timedelta(days=7))\
+            .order_by(UsageRecord.created_at.desc())\
+            .limit(10).all()
+    except Exception as e:
+        logger.error(f"Error getting recent activities: {e}")
+        db.session.rollback()
+        recent_activities = []
     
     # Get pending charges
     pending_charges = Charge.query.filter_by(
