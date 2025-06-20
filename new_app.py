@@ -679,39 +679,8 @@ def process_download_job(job_id):
                         with jobs_lock:
                             job.successful += 1
                         
-                        # Process successful download with proper database handling
+                        # Track successful download (database save already handled by automation_fixed.py)
                         if 'file_path' in result and os.path.exists(result['file_path']):
-                            try:
-                                # Read XML content from file
-                                with open(result['file_path'], 'r', encoding='utf-8') as f:
-                                    xml_content = f.read()
-                                
-                                # Use DownloadService to properly save to database with charging
-                                download_success = DownloadService.process_successful_download(
-                                    user_id=job.user_id,
-                                    invoice_key=invoice_key,
-                                    xml_content=xml_content,
-                                    file_path=result['file_path'],
-                                    job_id=job_id
-                                )
-                                
-                                if download_success:
-                                    filename = os.path.basename(result['file_path'])
-                                    with jobs_lock:
-                                        job.files.append(filename)
-                                    logger.info(f"[Job {job_id}] Successfully processed and saved to database: {filename}")
-                                else:
-                                    logger.error(f"[Job {job_id}] Failed to save to database: {invoice_key}")
-                                    
-                            except Exception as db_error:
-                                logger.error(f"[Job {job_id}] Database error for {invoice_key}: {db_error}")
-                                # Still track the file even if database save fails
-                                filename = os.path.basename(result['file_path'])
-                                with jobs_lock:
-                                    job.files.append(filename)
-                        
-                        # Fallback for file tracking
-                        elif 'file_path' in result:
                             filename = os.path.basename(result['file_path'])
                             with jobs_lock:
                                 job.files.append(filename)
