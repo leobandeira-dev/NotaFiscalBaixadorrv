@@ -801,11 +801,31 @@ def job_status(job_id):
         
         return jsonify(job.to_dict())
 
+# Configurar timezone de São Paulo
+SP_TZ = pytz.timezone('America/Sao_Paulo')
+
+def to_sp_time(utc_time):
+    """Converte UTC para horário de São Paulo"""
+    if utc_time:
+        if utc_time.tzinfo is None:
+            utc_time = pytz.utc.localize(utc_time)
+        return utc_time.astimezone(SP_TZ)
+    return None
+
+# Registrar filtro de template para timezone
+@app.template_filter('sp_datetime')
+def sp_datetime_filter(utc_time):
+    """Filtro de template para converter para horário de São Paulo"""
+    sp_time = to_sp_time(utc_time)
+    if sp_time:
+        return sp_time.strftime('%d/%m/%Y às %H:%M')
+    return 'N/A'
+
 # Rotas principais do sistema
 @app.route('/meus-xmls')
 @login_required
 def meus_xmls():
-    """Lista XMLs do usuário logado com filtros"""
+    """Lista apenas XMLs corretamente processados com dados completos"""
     page = request.args.get('page', 1, type=int)
     per_page = 12
     
@@ -816,8 +836,12 @@ def meus_xmls():
     uf_filter = request.args.get('uf', '')
     cidade_filter = request.args.get('cidade', '')
     
-    # Base query para ImportedXML
-    query = ImportedXML.query.filter_by(user_id=current_user.id)
+    # Query apenas XMLs corretamente processados (sem duplicatas)
+    query = ImportedXML.query.filter_by(user_id=current_user.id).filter(
+        ImportedXML.numero_nf.isnot(None),
+        ImportedXML.nome_emitente.isnot(None),
+        ImportedXML.valor_total.isnot(None)
+    )
     
     # Aplicar filtros
     if search_term:
@@ -860,19 +884,14 @@ def meus_xmls():
             )
         )
     
-    # Buscar XMLs filtrados
-    imported_xmls = query.order_by(ImportedXML.imported_at.desc()).all()
-    xml_files = XMLFile.query.filter_by(user_id=current_user.id).order_by(XMLFile.imported_at.desc()).all()
+    # Paginar diretamente no banco
+    xmls_pagination = query.order_by(ImportedXML.imported_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     
-    # Combinar ambos os tipos de XML
-    all_xmls = imported_xmls + xml_files
-    
-    # Simular paginação manual
-    total_xmls = len(all_xmls)
-    total_pages = (total_xmls + per_page - 1) // per_page
-    start = (page - 1) * per_page
-    end = start + per_page
-    xmls = all_xmls[start:end]
+    xmls = xmls_pagination.items
+    total_xmls = xmls_pagination.total
+    total_pages = xmls_pagination.pages
     
     # Obter listas para filtros
     ufs = db.session.query(ImportedXML.remetente_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_uf.isnot(None)).distinct().all()
