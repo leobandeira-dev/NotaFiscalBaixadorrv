@@ -96,34 +96,35 @@ class ImprovedTransportLabelGenerator:
         section_height = max(20, int(self.page_height * 0.08))  # altura responsiva
         current_y = self.page_height - self.margin - section_height
         
-        # 1. EMPRESA - COM BORDA GARANTIDA
-        self._draw_section_with_guaranteed_border(
-            c, self.margin, current_y, self.content_width, section_height,
-            None, f"{self.company_name} - {self.company_subtitle}"
+        # 1. CABEÇALHO COM EMPRESA E LOGO - COM BORDA GARANTIDA
+        header_height = int(section_height * 1.8)  # Maior para acomodar logo
+        self._draw_company_header_with_logo_space(
+            c, self.margin, current_y, self.content_width, header_height,
+            company_logo_path
         )
-        current_y -= (section_height + spacing_pts)
+        current_y -= (header_height + spacing_pts)
         
-        # 2. ID/QR - COM BORDA GARANTIDA
+        # 2. ID/QR - COM DESTAQUE VISUAL
         nf_key = xml_data.get('chave_nfe', 'N/A')
         id_display = f"ID: {nf_key[-6:]}" if len(nf_key) >= 6 else f"ID: {nf_key}"
-        self._draw_section_with_guaranteed_border(
+        self._draw_highlighted_section(
             c, self.margin, current_y, self.content_width, section_height,
-            None, id_display
+            None, id_display, highlight_type='id'
         )
         current_y -= (section_height + spacing_pts)
         
-        # 3. NF - COM BORDA GARANTIDA
+        # 3. NF - SEÇÃO IMPORTANTE COM DESTAQUE
         numero_nf = xml_data.get('numero_nf', '00000')
-        self._draw_section_with_guaranteed_border(
+        self._draw_highlighted_section(
             c, self.margin, current_y, self.content_width, section_height,
-            "NF", numero_nf
+            "NF", numero_nf, highlight_type='important'
         )
         current_y -= (section_height + spacing_pts)
         
-        # 4. PEDIDO - COM BORDA GARANTIDA
-        self._draw_section_with_guaranteed_border(
+        # 4. PEDIDO - SEÇÃO IMPORTANTE COM DESTAQUE
+        self._draw_highlighted_section(
             c, self.margin, current_y, self.content_width, section_height,
-            "Pedido", pedido_number or "N/A"
+            "Pedido", pedido_number or "N/A", highlight_type='important'
         )
         current_y -= (section_height + spacing_pts)
         
@@ -179,6 +180,140 @@ class ImprovedTransportLabelGenerator:
         
         c.save()
         return buffer
+
+    def _draw_company_header_with_logo_space(self, c, x, y, width, height, logo_path):
+        """Desenha cabeçalho da empresa com espaço dedicado para logo"""
+        
+        # Desenhar borda do cabeçalho
+        if self.layout_style == 'layout1':
+            # Layout 1: fundo cinza claro com borda preta
+            c.setFillColor(colors.lightgrey)
+            c.rect(x, y, width, height, fill=1, stroke=0)
+            c.setStrokeColor(colors.black)
+            c.setLineWidth(2)
+            c.rect(x, y, width, height, fill=0, stroke=1)
+        else:
+            # Layout 2: fundo preto com borda branca
+            c.setFillColor(colors.black)
+            c.rect(x, y, width, height, fill=1, stroke=0)
+            c.setStrokeColor(colors.white)
+            c.setLineWidth(2)
+            c.rect(x, y, width, height, fill=0, stroke=1)
+        
+        # Definir área para logo (30% da largura)
+        logo_width = width * 0.3
+        text_width = width * 0.7
+        logo_area_x = x + 8
+        text_area_x = x + logo_width + 16
+        
+        # Desenhar logo se disponível
+        if logo_path and os.path.exists(logo_path):
+            try:
+                # Calcular dimensões da logo mantendo proporção
+                logo_max_height = height - 16  # 8pt margin top/bottom
+                logo_max_width = logo_width - 16  # 8pt margin left/right
+                
+                from reportlab.lib.utils import ImageReader
+                img = ImageReader(logo_path)
+                img_width, img_height = img.getSize()
+                
+                # Calcular escala mantendo proporção
+                scale_w = logo_max_width / img_width
+                scale_h = logo_max_height / img_height
+                scale = min(scale_w, scale_h)
+                
+                final_width = img_width * scale
+                final_height = img_height * scale
+                
+                # Centralizar logo na área reservada
+                logo_x = logo_area_x + (logo_max_width - final_width) / 2
+                logo_y = y + (height - final_height) / 2
+                
+                c.drawImage(logo_path, logo_x, logo_y, final_width, final_height)
+                
+            except Exception as e:
+                print(f"Erro ao carregar logo: {e}")
+        
+        # Desenhar texto da empresa
+        if self.layout_style == 'layout1':
+            c.setFillColor(colors.black)
+        else:
+            c.setFillColor(colors.white)
+        
+        # Nome da empresa (linha superior)
+        c.setFont("Helvetica-Bold", 14)
+        company_y = y + height * 0.65
+        c.drawString(text_area_x, company_y, self.company_name)
+        
+        # Subtítulo da empresa (linha inferior)
+        c.setFont("Helvetica", 10)
+        subtitle_y = y + height * 0.35
+        c.drawString(text_area_x, subtitle_y, self.company_subtitle)
+
+    def _draw_highlighted_section(self, c, x, y, width, height, label, content, highlight_type='normal'):
+        """Desenha seção com estilização visual melhorada"""
+        
+        # Cores baseadas no tipo de destaque
+        if highlight_type == 'id':
+            # Seção ID com destaque especial
+            if self.layout_style == 'layout1':
+                bg_color = colors.Color(0.9, 0.95, 1.0)  # Azul muito claro
+                border_color = colors.Color(0.2, 0.4, 0.8)  # Azul escuro
+                text_color = colors.Color(0.1, 0.1, 0.1)
+            else:
+                bg_color = colors.Color(0.1, 0.2, 0.4)  # Azul escuro
+                border_color = colors.Color(0.7, 0.8, 1.0)  # Azul claro
+                text_color = colors.white
+        elif highlight_type == 'important':
+            # Seções importantes (NF, Pedido)
+            if self.layout_style == 'layout1':
+                bg_color = colors.Color(0.95, 0.95, 0.7)  # Amarelo claro
+                border_color = colors.Color(0.8, 0.6, 0.0)  # Dourado
+                text_color = colors.black
+            else:
+                bg_color = colors.Color(0.4, 0.3, 0.0)  # Dourado escuro
+                border_color = colors.Color(1.0, 0.9, 0.3)  # Amarelo
+                text_color = colors.white
+        else:
+            # Seções normais
+            if self.layout_style == 'layout1':
+                bg_color = colors.lightgrey
+                border_color = colors.black
+                text_color = colors.black
+            else:
+                bg_color = colors.black
+                border_color = colors.white
+                text_color = colors.white
+        
+        # Desenhar fundo
+        c.setFillColor(bg_color)
+        c.rect(x, y, width, height, fill=1, stroke=0)
+        
+        # Desenhar borda com estilo melhorado
+        c.setStrokeColor(border_color)
+        c.setLineWidth(2)
+        c.rect(x, y, width, height, fill=0, stroke=1)
+        
+        # Margens internas
+        margin = 8
+        text_x = x + margin
+        text_y = y + height / 2
+        
+        # Desenhar texto com estilo melhorado
+        c.setFillColor(text_color)
+        
+        if label:
+            # Seção com label (ex: "NF: 417549")
+            c.setFont("Helvetica-Bold", 10)
+            label_width = c.stringWidth(label + ": ", "Helvetica-Bold", 10)
+            c.drawString(text_x, text_y + 2, label + ":")
+            
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(text_x + label_width, text_y + 2, str(content))
+        else:
+            # Seção sem label (ex: só "ID: 417549")
+            c.setFont("Helvetica-Bold", 11)
+            c.drawString(text_x, text_y + 2, str(content))
 
 def test_improved_system():
     """Teste do sistema melhorado"""
