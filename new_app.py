@@ -29,6 +29,7 @@ from access_control import (
 )
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
+from stripe_pricing_system import XMLPricingTiers, get_user_xml_credits, consume_xml_credit, get_pricing_recommendations, create_xml_credit_subscription
 from transport_label_generator import TransportLabelGenerator, generate_label_from_database_xml
 from transport_label_generator_v2 import CustomTransportLabelGenerator, generate_custom_label_from_database_xml
 from improved_transport_label import ImprovedTransportLabelGenerator
@@ -1405,6 +1406,77 @@ def admin_features_usage():
                          usage_stats=usage_stats,
                          top_users=top_users)
 
+
+
+@app.route('/api/pricing/calculate', methods=['POST'])
+@login_required
+def api_calculate_pricing():
+    """API para calcular preço baseado na quantidade de XMLs"""
+    try:
+        xml_count = int(request.json.get('xml_count', 0))
+        
+        if xml_count <= 0:
+            return jsonify({'error': 'Quantidade inválida'}), 400
+        
+        pricing = XMLPricingTiers.calculate_price(xml_count)
+        
+        return jsonify({
+            'success': True,
+            'pricing': pricing
+        })
+        
+    except Exception as e:
+        logger.error(f"Erro no cálculo de preços: {e}")
+        return jsonify({'error': 'Erro interno'}), 500
+
+@app.route('/webhook/stripe/purchase-success', methods=['POST'])
+def stripe_purchase_success():
+    """Webhook para processar compras bem-sucedidas do Stripe"""
+    try:
+        payload = request.get_data()
+        sig_header = request.headers.get('Stripe-Signature')
+        
+        # Processar webhook do Stripe
+        event = process_stripe_webhook(payload, sig_header)
+        
+        if event and event['type'] == 'checkout.session.completed':
+            session = event['data']['object']
+            
+            # Extrair dados da compra
+            customer_email = session['customer_details']['email']
+            metadata = session.get('metadata', {})
+            xml_count = int(metadata.get('xml_count', 0))
+            tier_name = metadata.get('tier_name', '')
+            
+            # Encontrar usuário
+            user = User.query.filter_by(email=customer_email).first()
+            if user and xml_count > 0:
+                # Encontrar tier correspondente
+                tier_data = None
+                for tier in XMLPricingTiers.TIERS:
+                    if tier['xml_count'] == xml_count:
+                        tier_data = tier
+                        break
+                
+                if tier_data:
+                    # Criar assinatura de créditos
+                    success = create_xml_credit_subscription(
+                        user.id, 
+                        tier_data, 
+                        session['id']
+                    )
+                    
+                    if success:
+                        logger.info(f"Créditos XML adicionados para usuário {user.email}: {xml_count} créditos")
+                    else:
+                        logger.error(f"Falha ao adicionar créditos para {user.email}")
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        logger.error(f"Erro no webhook de compra Stripe: {e}")
+        return jsonify({'error': 'Erro interno'}), 500
+
 @app.route('/admin/settings')
 @login_required
 def admin_settings():
@@ -2277,24 +2349,29 @@ def bulk_generate_labels_route():
 
 # ==================== ROTAS DE PAGAMENTO STRIPE ====================
 
-@app.route('/comprar-creditos')
+@app.route('/comprar-creditos-xml')
 @login_required
-def comprar_creditos():
-    """Página para compra de créditos"""
-    packages = PricingManager.CREDIT_PACKAGES
-    
-    # Calcular economia para cada pacote
-    packages_with_savings = {}
-    for package_id, package_data in packages.items():
-        savings = PricingManager.calculate_xml_package_savings(package_id)
-        packages_with_savings[package_id] = {
-            **package_data,
-            'savings': savings
-        }
-    
-    return render_template('comprar_creditos.html', 
-                         packages=packages_with_savings,
-                         current_user=current_user)
+def comprar_creditos_xml():
+    """Página para compra de créditos XML com preços dinâmicos"""
+    try:
+        # Obter créditos atuais do usuário
+        current_credits = get_user_xml_credits(current_user.id)
+        
+        # Obter tiers de preços
+        pricing_tiers = XMLPricingTiers.get_all_tiers()
+        
+        # Obter recomendações personalizadas
+        recommendations = get_pricing_recommendations(current_user.id)
+        
+        return render_template('comprar_creditos.html',
+                             current_credits=current_credits,
+                             pricing_tiers=pricing_tiers,
+                             recommendations=recommendations)
+        
+    except Exception as e:
+        logger.error(f"Erro na página de compra de créditos: {e}")
+        flash('Erro ao carregar página de compra de créditos', 'error')
+        return redirect(url_for('dashboard'))
 
 @app.route('/create-checkout-session', methods=['POST'])
 @login_required
