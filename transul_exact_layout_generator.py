@@ -84,7 +84,7 @@ class TransulExactLayoutGenerator:
     
     def _draw_company_header_with_logo(self, canvas, x, y, width, height, company_name, logo_path):
         """
-        Desenha cabeçalho da empresa com logo integrada
+        Desenha cabeçalho da empresa com logo integrada - SEM container em contraste
         
         Args:
             canvas: Canvas do ReportLab
@@ -96,18 +96,21 @@ class TransulExactLayoutGenerator:
         try:
             from reportlab.lib.utils import ImageReader
             
-            # Fundo do cabeçalho
-            canvas.setFillColor(self.colors['black'])
-            canvas.rect(x, y, width, height, fill=1, stroke=0)
+            # SEM fundo contrastante - logo deve aparecer diretamente
+            # Apenas uma borda sutil para delimitar a área
+            canvas.setStrokeColor(self.colors['light_gray'])
+            canvas.setLineWidth(1)
+            canvas.rect(x, y, width, height, fill=0, stroke=1)
             
-            # Dimensões da logo (30% da largura, centralizada verticalmente)
-            logo_width = width * 0.3
-            logo_height = height * 0.8
-            logo_x = x + (width * 0.05)  # 5% de margem esquerda
-            logo_y = y + (height - logo_height) / 2
-            
-            # Tentar desenhar a logo
-            if os.path.exists(logo_path):
+            # Verificar se logo existe
+            if logo_path and os.path.exists(logo_path):
+                # Dimensões da logo (40% da largura, centralizada)
+                logo_width = width * 0.4
+                logo_height = height * 0.9
+                logo_x = x + (width * 0.05)  # 5% de margem esquerda
+                logo_y = y + (height - logo_height) / 2
+                
+                # Desenhar a logo da empresa SEM fundo
                 canvas.drawImage(ImageReader(logo_path), logo_x, logo_y, 
                                width=logo_width, height=logo_height, 
                                preserveAspectRatio=True, mask='auto')
@@ -115,27 +118,33 @@ class TransulExactLayoutGenerator:
                 # Nome da empresa ao lado da logo
                 text_x = logo_x + logo_width + (width * 0.05)
                 text_width = width - (text_x - x) - (width * 0.05)
+                
+                # Texto da empresa em preto para contraste com fundo branco
+                canvas.setFillColor(self.colors['black'])
+                canvas.setFont(self.fonts['header_large'][0], self.fonts['header_large'][1])
+                
+                # Centralizar texto verticalmente
+                text_y = y + (height / 2) - (self.fonts['header_large'][1] / 2)
+                canvas.drawString(text_x, text_y, company_name[:20])
+                
             else:
-                # Se não há logo, usar toda a largura para o texto
-                text_x = x + (width * 0.05)
-                text_width = width * 0.9
-            
-            # Desenhar nome da empresa
-            canvas.setFillColor(self.colors['white'])
-            canvas.setFont(self.fonts['header_large'][0], self.fonts['header_large'][1])
-            
-            # Centralizar texto verticalmente
-            text_y = y + (height / 2) - (self.fonts['header_large'][1] / 2)
-            canvas.drawString(text_x, text_y, company_name[:25])  # Limitar comprimento
+                # Se não há logo, desenhar apenas o nome da empresa centralizado
+                canvas.setFillColor(self.colors['black'])
+                canvas.setFont(self.fonts['header_large'][0], self.fonts['header_large'][1])
+                
+                # Centralizar texto
+                text_x = x + width / 2
+                text_y = y + (height / 2) - (self.fonts['header_large'][1] / 2)
+                canvas.drawCentredString(text_x, text_y, company_name[:25])
             
         except Exception as e:
             logger.error(f"Erro ao desenhar cabeçalho com logo: {e}")
-            # Fallback: desenhar apenas texto
-            self._draw_styled_text_section(
-                canvas, x, y, width, height,
-                company_name, self.fonts['header_large'], 
-                self.colors['white'], self.colors['black'], center_text=True
-            )
+            # Fallback: desenhar apenas texto simples
+            canvas.setFillColor(self.colors['black'])
+            canvas.setFont(self.fonts['header_large'][0], self.fonts['header_large'][1])
+            text_x = x + width / 2
+            text_y = y + (height / 2) - (self.fonts['header_large'][1] / 2)
+            canvas.drawCentredString(text_x, text_y, company_name[:25])
     
     def _draw_rounded_rect(self, canvas, x, y, width, height, bg_color, border_color=None, radius=None):
         """
