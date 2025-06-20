@@ -338,21 +338,23 @@ class ResponsiveTransportLabelGenerator:
             
             try:
                 c.drawImage(company_logo_path, logo_x, logo_y, width=logo_size, height=logo_size)
-                text_x = logo_x + logo_size + self.spacing['field']
+                text_x = logo_x + logo_size + 8  # margem interna
                 c.drawString(text_x, section_y + section_height * 0.75, self.company_name)
                 c.setFont("Helvetica", self.fonts['company_sub'])
                 c.drawString(text_x, section_y + section_height * 0.35, self.company_subtitle)
             except Exception as e:
                 logger.warning(f"Erro ao carregar logo: {e}")
-                # Fallback sem logo
-                c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.6, self.company_name)
+                # Fallback sem logo - com margem interna
+                margin_interna = 8
+                c.drawString(self.margin + margin_interna, section_y + section_height * 0.75, self.company_name)
                 c.setFont("Helvetica", self.fonts['company_sub'])
-                c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.3, self.company_subtitle)
+                c.drawString(self.margin + margin_interna, section_y + section_height * 0.35, self.company_subtitle)
         else:
-            # Sem logo - Espaçamento vertical corrigido
-            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.75, self.company_name)
+            # Sem logo - Espaçamento vertical corrigido com margem interna
+            margin_interna = 8
+            c.drawString(self.margin + margin_interna, section_y + section_height * 0.75, self.company_name)
             c.setFont("Helvetica", self.fonts['company_sub'])
-            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.35, self.company_subtitle)
+            c.drawString(self.margin + margin_interna, section_y + section_height * 0.35, self.company_subtitle)
         
         # Resetar cor para preto
         c.setFillColor(colors.black)
