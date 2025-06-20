@@ -89,6 +89,20 @@ class User(UserMixin, db.Model):
         """Verifica se o trial está ativo"""
         return datetime.utcnow() < self.trial_expires_at
     
+    def is_labels_trial_active(self):
+        """Verifica se o trial de etiquetas está ativo"""
+        return datetime.utcnow() < self.labels_trial_expires_at if self.labels_trial_expires_at else False
+    
+    def has_labels_access(self):
+        """Verifica se o usuário tem acesso ao módulo de etiquetas"""
+        # Trial de etiquetas ativo
+        if self.is_labels_trial_active():
+            return True
+        # Assinatura ativa e não expirada
+        if self.labels_subscription_active and self.labels_subscription_expires_at:
+            return datetime.utcnow() < self.labels_subscription_expires_at
+        return False
+    
     def can_use_service(self, cost=0):
         """Verifica se o usuário pode usar um serviço"""
         if self.is_trial_active():

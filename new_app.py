@@ -1351,18 +1351,18 @@ def generate_label_route(xml_id):
         xml_content = xml_record.xml_content
         invoice_key = xml_record.invoice_key
         
-        # Verificar módulo de etiquetas com validação de segurança
+        # Verificar acesso ao módulo de etiquetas
+        if not current_user.has_labels_access():
+            SecurityManager.log_security_event("LABELS_ACCESS_DENIED", current_user.id, f"Trial active: {current_user.is_labels_trial_active()}, Subscription active: {current_user.labels_subscription_active}")
+            flash('Você precisa de uma assinatura ativa do módulo de etiquetas para acessar esta funcionalidade.', 'warning')
+            return redirect(url_for('comprar_creditos'))
+        
+        # Verificar módulo de etiquetas para cobrança
         labels_module = ServiceModule.query.filter_by(name='Etiquetas de Transporte').first()
         if not labels_module:
             SecurityManager.log_security_event("LABELS_MODULE_NOT_FOUND", current_user.id)
             flash('Módulo de etiquetas não disponível.', 'error')
             return redirect(url_for('meus_xmls'))
-        
-        # Validar uso do serviço com segurança
-        if not BillingSecurityManager.validate_service_usage(current_user, 'label_generation', 1):
-            SecurityManager.log_security_event("INSUFFICIENT_LABELS_ACCESS", current_user.id)
-            flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
-            return redirect(url_for('comprar_creditos'))
         
         # Gerar etiqueta personalizada
         pedido_number = request.args.get('pedido', invoice_key[:5])
@@ -1398,19 +1398,13 @@ def generate_label_route(xml_id):
             paper_height_mm=paper_height
         )
         
-        # Cobrar pelo serviço apenas se não estiver em trial
-        if not is_trial_active:
-            current_user.deduct_balance(
-                labels_module.cost_per_use,
-                f"Geração de etiqueta para XML {invoice_key[:10]}..."
-            )
-            
-            # Registrar uso
+        # Registrar uso do módulo de etiquetas (sem cobrança adicional - incluído na assinatura)
+        if labels_module:
             usage_record = UsageRecord(
                 user_id=current_user.id,
                 module_id=labels_module.id,
                 quantity=1,
-                cost=labels_module.cost_per_use,
+                cost=0.0,  # Incluído na assinatura mensal
                 description=f"Etiqueta gerada para XML {invoice_key[:10]}..."
             )
             

@@ -397,6 +397,52 @@ class PricingManager:
             'savings_brl': savings,
             'savings_percent': round(savings_percent, 1)
         }
+    
+    @classmethod
+    def create_labels_subscription(cls, user_id: int) -> Dict[str, Any]:
+        """Cria assinatura mensal do módulo de etiquetas"""
+        try:
+            import stripe
+            from models import User, db
+            
+            user = User.query.get(user_id)
+            if not user:
+                return {'success': False, 'error': 'Usuário não encontrado'}
+            
+            # Criar customer no Stripe se não existir
+            customer_data = {
+                'email': user.email,
+                'name': user.name,
+                'metadata': {'user_id': str(user_id)}
+            }
+            
+            customer = stripe.Customer.create(**customer_data)
+            
+            # Criar assinatura para o produto de etiquetas
+            subscription = stripe.Subscription.create(
+                customer=customer.id,
+                items=[{
+                    'price_data': {
+                        'currency': 'brl',
+                        'product': cls.STRIPE_PRODUCTS['labels_module'],
+                        'unit_amount': int(cls.PRICES['labels_module'] * 100),  # R$ 49,90 em centavos
+                        'recurring': {'interval': 'month'}
+                    }
+                }],
+                payment_behavior='default_incomplete',
+                expand=['latest_invoice.payment_intent'],
+            )
+            
+            return {
+                'success': True,
+                'subscription_id': subscription.id,
+                'client_secret': subscription.latest_invoice.payment_intent.client_secret,
+                'customer_id': customer.id
+            }
+            
+        except Exception as e:
+            logger.error(f"Erro ao criar assinatura de etiquetas: {str(e)}")
+            return {'success': False, 'error': str(e)}
 
 def process_stripe_webhook(payload: bytes, sig_header: str, endpoint_secret: str) -> Dict[str, Any]:
     """
