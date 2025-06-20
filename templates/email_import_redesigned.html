@@ -516,6 +516,141 @@
                 </form>
             </div>
         </div>
+        
+        <!-- POP3 Configuration Section -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-gradient-purple text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-envelope-open"></i>
+                        Configuração POP3
+                    </h5>
+                    <a href="{{ url_for('view_pop3_credentials') }}" class="btn btn-light btn-sm">
+                        <i class="fas fa-eye"></i> Ver Credenciais
+                    </a>
+                </div>
+                <div class="card-body">
+                    <!-- POP3 Status Display -->
+                    {% if current_user.has_pop3_configured() %}
+                    <div class="status-card status-configured mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-check-circle text-success me-3 mt-1 fs-5"></i>
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold text-success mb-2">POP3 configurado</h6>
+                                <div class="status-info">
+                                    <p><strong>Email:</strong> {{ current_user.pop3_email }}</p>
+                                    <p><strong>Servidor:</strong> {{ current_user.pop3_server }}:{{ current_user.pop3_port }}{% if current_user.pop3_ssl %} (SSL){% endif %}</p>
+                                </div>
+                                
+                                <div class="action-buttons mt-3">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="showPop3EditForm()">
+                                        <i class="fas fa-edit"></i> Editar Configurações
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger" onclick="removePop3Config()">
+                                        <i class="fas fa-trash"></i> Remover Configuração
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="status-card status-not-configured mb-4">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-exclamation-circle text-warning me-3 mt-1 fs-5"></i>
+                            <div>
+                                <h6 class="fw-bold text-warning mb-2">POP3 não configurado</h6>
+                                <p class="mb-0">Configure suas credenciais POP3 para receber emails automaticamente no sistema.</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- POP3 Configuration Form -->
+                    <form method="POST" action="{{ url_for('save_pop3_credentials') }}" id="pop3Form" 
+                          {% if current_user.has_pop3_configured() %}style="display: none;"{% endif %}>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pop3_email" class="form-label">Email de Recepção</label>
+                                    <input type="email" class="form-control" id="pop3_email" name="pop3_email" 
+                                           value="{{ current_user.pop3_email or '' }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="pop3_password" class="form-label">Senha do Email</label>
+                                    <input type="password" class="form-control" id="pop3_password" name="pop3_password" 
+                                           placeholder="Digite sua senha de email" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="pop3_server" class="form-label">Servidor POP3</label>
+                                    <select class="form-select" id="pop3_server" name="pop3_server" onchange="updatePop3ServerSettings()" required>
+                                        <option value="">Selecione o provedor</option>
+                                        <option value="pop.gmail.com" {% if current_user.pop3_server == 'pop.gmail.com' %}selected{% endif %}>Gmail</option>
+                                        <option value="outlook.office365.com" {% if current_user.pop3_server == 'outlook.office365.com' %}selected{% endif %}>Outlook/Hotmail</option>
+                                        <option value="pop.mail.yahoo.com" {% if current_user.pop3_server == 'pop.mail.yahoo.com' %}selected{% endif %}>Yahoo Mail</option>
+                                        <option value="custom">Outro (configurar manualmente)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="pop3_port" class="form-label">Porta POP3</label>
+                                    <input type="number" class="form-control" id="pop3_port" name="pop3_port" 
+                                           value="{{ current_user.pop3_port or 995 }}" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="custom_pop3_server" style="display: none;">
+                            <label for="custom_pop3_server_input" class="form-label">Servidor POP3 Personalizado</label>
+                            <input type="text" class="form-control" id="custom_pop3_server_input" name="custom_pop3_server" 
+                                   placeholder="Ex: pop.suaempresa.com">
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="pop3_ssl" name="pop3_ssl" 
+                                           {% if current_user.pop3_ssl or current_user.pop3_ssl is none %}checked{% endif %}>
+                                    <label class="form-check-label" for="pop3_ssl">
+                                        Usar SSL/TLS (Recomendado)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-end mt-3">
+                            <button type="button" class="btn btn-outline-secondary me-2" onclick="hidePop3EditForm()">
+                                <i class="fas fa-times"></i> Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-purple">
+                                <i class="fas fa-save"></i> Salvar Configurações POP3
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Info Card -->
+                    <div class="card mt-4 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-info-circle text-info"></i>
+                                Sobre POP3
+                            </h6>
+                            <p class="card-text small mb-0">
+                                POP3 baixa e remove mensagens do servidor, ideal para um único dispositivo. 
+                                Diferente do IMAP que mantém sincronização.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -608,6 +743,68 @@ function removeEmailConfig() {
         })
         .catch(error => {
             alert('Erro ao remover configuração: ' + error);
+        });
+    }
+}
+
+function updatePop3ServerSettings() {
+    const server = document.getElementById('pop3_server').value;
+    const customServer = document.getElementById('custom_pop3_server');
+    const port = document.getElementById('pop3_port');
+    const ssl = document.getElementById('pop3_ssl');
+
+    if (server === 'custom') {
+        customServer.style.display = 'block';
+        document.getElementById('custom_pop3_server_input').required = true;
+    } else {
+        customServer.style.display = 'none';
+        document.getElementById('custom_pop3_server_input').required = false;
+        
+        // Auto-configure based on provider
+        switch(server) {
+            case 'pop.gmail.com':
+                port.value = 995;
+                ssl.checked = true;
+                break;
+            case 'outlook.office365.com':
+                port.value = 995;
+                ssl.checked = true;
+                break;
+            case 'pop.mail.yahoo.com':
+                port.value = 995;
+                ssl.checked = true;
+                break;
+        }
+    }
+}
+
+function showPop3EditForm() {
+    document.getElementById('pop3Form').style.display = 'block';
+}
+
+function hidePop3EditForm() {
+    document.getElementById('pop3Form').style.display = 'none';
+}
+
+function removePop3Config() {
+    if (confirm('Tem certeza que deseja remover a configuração de POP3?')) {
+        fetch('{{ url_for("remove_pop3_config") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erro: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erro ao remover configuração POP3');
         });
     }
 }
