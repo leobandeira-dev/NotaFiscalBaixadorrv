@@ -137,15 +137,20 @@ This is a Python Flask web application that automates the bulk download of XML i
 - June 20, 2025: **PRODUCTION READINESS VALIDATION ACHIEVED** - Production security check passed all 15 critical validation tests (100% success rate), functional testing achieved 87.5% success rate, system now fully production-ready with enterprise-grade security implementation and comprehensive multi-user data isolation
 - June 20, 2025: **OFFICIAL STRIPE PRODUCTS INTEGRATION COMPLETE** - Updated entire platform with official Stripe product IDs: prod_SWv7Mmc4YDzCal for XML downloads (R$0.10 each) and prod_SSVViDPzXYZHhO for transport labels module (R$49.90/month), integrated product references across pricing page, landing page, and stripe_integration.py for consistent billing system with official Stripe dashboard products
 - June 20, 2025: **USER INTERFACE PRICING CORRECTIONS** - Corrected labels module pricing from monthly subscription to one-time payment (R$49.90 único), removed technical Stripe product references from user-facing interfaces while maintaining backend integration, cleaned pricing display across landing page and pricing templates for professional presentation
+- June 20, 2025: **PRICING MODEL CORRECTIONS COMPLETE** - Corrected labels module to R$49.90/mês (monthly subscription), updated XML pricing to volume-based structure (R$0.06-0.10 based on purchase volume: 1-500=R$0.10, 501-1000=R$0.08, 1001-2000=R$0.07, 2001+=R$0.06), updated all pricing displays across landing page, pricing page, and documentation for consistency
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
 
 ## Current Pricing Structure
-- Download XML: R$ 0,10 per file (web + API)
+- Download XML: Volume-based pricing (R$ 0,06-0,10 per file)
+  - 1-500 XMLs: R$ 0,10 each
+  - 501-1,000: R$ 0,08 each
+  - 1,001-2,000: R$ 0,07 each
+  - 2,001+: R$ 0,06 each
 - DANFE Generation: FREE (always included)
-- Labels Module: R$ 49,90 (one-time payment)
+- Labels Module: R$ 49,90/mês (monthly subscription)
 - Minimum recharge: R$ 19,90
 - 7-day free trial for all new users
 
