@@ -254,17 +254,17 @@ class ResponsiveTransportLabelGenerator:
         footer_height = self.spacing['section'] * 2
         available_height = self.content_height - header_height - footer_height
         
-        # Divisão proporcional do espaço (estilo transportadoras modernas)
+        # Divisão proporcional do espaço - FOCO MÁXIMO NO DESTINATÁRIO
         sections = {
-            'company_header': 0.12,    # 12% - Header mais compacto
-            'id_qr': 0.10,             # 10% - ID e QR reduzidos  
-            'nf_info': 0.08,           # 8% - NF compacta
-            'pedido_info': 0.08,       # 8% - Pedido compacto
-            'remetente': 0.08,         # 8% - Remetente básico
-            'destinatario': 0.30,      # 30% - FOCO NO DESTINATÁRIO
-            'cidade_uf': 0.06,         # 6% - Cidade reduzida (já está no destinatário)
-            'peso_volume': 0.13,       # 13% - Peso/Volume destaque
-            'area_info': 0.05          # 5% - Área compacta
+            'company_header': 0.10,    # 10% - Header compacto
+            'id_qr': 0.08,             # 8% - ID e QR reduzidos  
+            'nf_info': 0.07,           # 7% - NF compacta
+            'pedido_info': 0.07,       # 7% - Pedido compacto
+            'remetente': 0.07,         # 7% - Remetente básico
+            'destinatario': 0.40,      # 40% - MÁXIMO ESPAÇO PARA DESTINATÁRIO
+            'cidade_uf': 0.05,         # 5% - Cidade reduzida
+            'peso_volume': 0.12,       # 12% - Peso/Volume
+            'area_info': 0.04          # 4% - Área compacta
         }
         
         # Posição inicial
@@ -339,9 +339,9 @@ class ResponsiveTransportLabelGenerator:
             try:
                 c.drawImage(company_logo_path, logo_x, logo_y, width=logo_size, height=logo_size)
                 text_x = logo_x + logo_size + self.spacing['field']
-                c.drawString(text_x, section_y + section_height * 0.6, self.company_name)
+                c.drawString(text_x, section_y + section_height * 0.65, self.company_name)
                 c.setFont("Helvetica", self.fonts['company_sub'])
-                c.drawString(text_x, section_y + section_height * 0.3, self.company_subtitle)
+                c.drawString(text_x, section_y + section_height * 0.25, self.company_subtitle)
             except Exception as e:
                 logger.warning(f"Erro ao carregar logo: {e}")
                 # Fallback sem logo
@@ -349,10 +349,10 @@ class ResponsiveTransportLabelGenerator:
                 c.setFont("Helvetica", self.fonts['company_sub'])
                 c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.3, self.company_subtitle)
         else:
-            # Sem logo
-            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.6, self.company_name)
+            # Sem logo - Melhor espaçamento vertical
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.65, self.company_name)
             c.setFont("Helvetica", self.fonts['company_sub'])
-            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.3, self.company_subtitle)
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.25, self.company_subtitle)
         
         # Resetar cor para preto
         c.setFillColor(colors.black)
@@ -434,9 +434,9 @@ class ResponsiveTransportLabelGenerator:
         # Aplicar enquadramento baseado no estilo
         self._apply_section_frame(c, self.margin, section_y, self.content_width, section_height)
         
-        # Calcular espaçamentos proporcionais à altura da seção
-        line_spacing = section_height * 0.15  # 15% da altura para cada linha (mais espaço)
-        start_y = section_y + section_height * 0.80  # Começar um pouco mais baixo
+        # Calcular espaçamentos proporcionais à altura da seção (40% de espaço total)
+        line_spacing = section_height * 0.18  # 18% da altura para cada linha (mais espaço)
+        start_y = section_y + section_height * 0.85  # Começar mais alto para usar todo o espaço
         
         # TÍTULO "DESTINATÁRIO" 
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
