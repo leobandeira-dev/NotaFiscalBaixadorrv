@@ -28,7 +28,7 @@ class ResponsiveTransportLabelGenerator:
             company_subtitle: Subtítulo da empresa
             paper_width_mm: Largura do papel em milímetros
             paper_height_mm: Altura do papel em milímetros
-            layout_style: Estilo de layout ("layout1" = moderno, "layout2" = alto contraste)
+            layout_style: Estilo de layout ("layout1" = moderno, "layout2" = alto contraste, "transul" = estilo Transul profissional)
         """
         self.company_name = company_name
         self.company_subtitle = company_subtitle
