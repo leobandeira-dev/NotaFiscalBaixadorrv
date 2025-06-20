@@ -381,6 +381,7 @@
                                             
                                             <a href="{{ url_for('label_generator', xml_id=xml.id) }}" 
                                                class="btn btn-outline-warning btn-custom btn-sm"
+                                               target="_blank"
                                                title="Configuração avançada com múltiplos volumes">
                                                 <i class="fas fa-cogs"></i> Multi-Volume
                                             </a>
@@ -626,10 +627,11 @@
                 formData.append('company_logo', logoFile);
             }
             
-            // Criar e submeter formulário temporário
+            // Criar e submeter formulário temporário que abre em nova aba
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = `/gerar-etiquetas-personalizadas/${xmlId}`;
+            form.target = '_blank';  // Abrir em nova aba
             form.style.display = 'none';
             
             for (let [key, value] of formData.entries()) {
@@ -652,6 +654,7 @@
             
             document.body.appendChild(form);
             form.submit();
+            document.body.removeChild(form);  // Limpar formulário após submissão
         }
 </script>
 

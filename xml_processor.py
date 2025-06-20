@@ -210,10 +210,17 @@ def extract_xml_data(xml_content: str) -> dict:
         for field, default_value in default_fields.items():
             if field not in nf_data:
                 nf_data[field] = default_value
-            if vol is not None:
-                nf_data['quantidade_volumes'] = vol.find('nfe:qVol', ns).text if vol.find('nfe:qVol', ns) is not None else ''
-                nf_data['peso_bruto'] = vol.find('nfe:pesoB', ns).text if vol.find('nfe:pesoB', ns) is not None else ''
-                nf_data['peso_liquido'] = vol.find('nfe:pesoL', ns).text if vol.find('nfe:pesoL', ns) is not None else ''
+        
+        # Extrair dados de volume se disponível
+        vol = transp.find('.//nfe:vol', ns) if transp is not None else None
+        if vol is not None:
+            qvol_elem = vol.find('nfe:qVol', ns)
+            pesob_elem = vol.find('nfe:pesoB', ns)
+            pesol_elem = vol.find('nfe:pesoL', ns)
+            
+            nf_data['quantidade_volumes'] = int(qvol_elem.text) if qvol_elem is not None and qvol_elem.text else 1
+            nf_data['peso_bruto'] = float(pesob_elem.text) if pesob_elem is not None and pesob_elem.text else 0.0
+            nf_data['peso_liquido'] = float(pesol_elem.text) if pesol_elem is not None and pesol_elem.text else 0.0
         
         # Chave de acesso
         chave_element = root.find('.//nfe:infNFe', ns)

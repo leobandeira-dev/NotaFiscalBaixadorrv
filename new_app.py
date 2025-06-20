@@ -1845,7 +1845,20 @@ def generate_custom_labels(xml_id):
         is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()
         
         # Obter configurações do formulário
-        total_volumes = int(request.form.get('total_volumes', 1))
+        form_volumes = int(request.form.get('total_volumes', 1))
+        
+        # Detectar quantidade real de volumes da NFe
+        xml_content = getattr(xml_data, 'xml_content', None) or getattr(xml_data, 'content', '')
+        if xml_content:
+            from xml_processor import extract_xml_data
+            extracted_data = extract_xml_data(xml_content)
+            nfe_volumes = int(extracted_data.get('quantidade_volumes', '1'))
+            # Usar o maior valor entre formulário e NFe
+            total_volumes = max(form_volumes, nfe_volumes)
+            logger.info(f"NFe detectada com {nfe_volumes} volumes, formulário configurou {form_volumes}, usando {total_volumes}")
+        else:
+            total_volumes = form_volumes
+            
         company_name = request.form.get('company_name', current_user.company_name or 'SUA EMPRESA')
         company_subtitle = request.form.get('company_subtitle', current_user.company_subtitle or 'TRANSPORTE')
         area_code = request.form.get('area_code', current_user.default_area_code or '01')
@@ -1924,13 +1937,14 @@ def generate_custom_labels(xml_id):
             
             db.session.commit()
         
-        # Se apenas uma etiqueta, retornar diretamente
+        # Se apenas uma etiqueta, retornar diretamente em nova aba
         if len(labels) == 1:
             label = labels[0]
             pdf_buffer = label.get('pdf_buffer') or label.get('buffer')
             response = make_response(pdf_buffer.getvalue())
             response.headers['Content-Type'] = 'application/pdf'
             response.headers['Content-Disposition'] = f'inline; filename="{label["filename"]}"'
+            response.headers['X-Frame-Options'] = 'ALLOWALL'
             return response
         
         # Múltiplas etiquetas - criar ZIP
