@@ -653,7 +653,7 @@ def submit_keys():
                 user_id=current_user.id,
                 module_id=xml_module.id,
                 quantity=len(valid_keys),
-                cost=total_cost if not current_user.is_trial_active() else 0.0,
+                cost=0.0,  # Cost tracking moved to credit system
                 description=f"Download de {len(valid_keys)} XMLs",
                 invoice_keys=json.dumps(valid_keys),
                 job_id=job_id

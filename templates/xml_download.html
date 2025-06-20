@@ -662,17 +662,17 @@
                 return;
             }
             
-            const totalCost = validKeys.length * 0.10;
-            const canAfford = isTrialActive || currentBalance >= totalCost;
+            const creditsNeeded = validKeys.length;
+            const hasEnoughCredits = isTrialActive || xmlCredits >= creditsNeeded;
             
-            if (!canAfford) {
+            if (!hasEnoughCredits) {
                 e.preventDefault();
-                alert(`Saldo insuficiente. Você precisa de R$ ${totalCost.toFixed(2)} mas tem apenas R$ ${currentBalance.toFixed(2)}.`);
+                alert(`Créditos XML insuficientes. Você precisa de ${creditsNeeded} crédito${creditsNeeded > 1 ? 's' : ''} mas tem apenas ${xmlCredits}.`);
                 return;
             }
             
             // Confirm submission
-            if (!confirm(`Iniciar download de ${validKeys.length} XMLs por R$ ${totalCost.toFixed(2)}?`)) {
+            if (!confirm(`Iniciar download de ${validKeys.length} XMLs usando ${creditsNeeded} crédito${creditsNeeded > 1 ? 's' : ''}?`)) {
                 e.preventDefault();
                 return;
             }
