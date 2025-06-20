@@ -613,11 +613,13 @@ def submit_keys():
         xml_price = PricingManager.get_service_price('xml_download')
         total_cost = len(valid_keys) * xml_price
         
-        # Check if user has sufficient credits (skip for trial users)
-        if not current_user.is_trial_active():
-            if current_user.current_balance < total_cost:
-                flash(f'Saldo insuficiente. Você precisa de R$ {total_cost:.2f} para processar {len(valid_keys)} chaves. Saldo atual: R$ {current_user.current_balance:.2f}', 'warning')
-                return redirect(url_for('comprar_creditos'))
+        # Check if user has sufficient XML credits
+        from stripe_pricing_system import get_user_xml_credits
+        available_credits = get_user_xml_credits(current_user.id)
+        
+        if available_credits < len(valid_keys):
+            flash(f'Créditos XML insuficientes. Você possui {available_credits} créditos, mas precisa de {len(valid_keys)} para processar estas chaves.', 'warning')
+            return redirect(url_for('comprar_creditos_xml'))
         
         # Create download job
         job_id = str(uuid.uuid4())
@@ -626,7 +628,7 @@ def submit_keys():
         with jobs_lock:
             download_jobs[job_id] = job
         
-        # Note: Credits will be deducted per successful download in automation_fixed.py
+        # Note: XML credits will be deducted per successful download in automation_fixed.py
         
         # Record usage
         xml_module = ServiceModule.query.filter_by(name='xml_download').first()
@@ -2349,11 +2351,90 @@ def bulk_generate_labels_route():
 
 # ==================== ROTAS DE PAGAMENTO STRIPE ====================
 
+@app.route('/creditos-xml')
+@login_required
+def creditos_xml():
+    """Dashboard completo de créditos XML do usuário"""
+    try:
+        from stripe_pricing_system import get_user_xml_credits, get_xml_usage_stats
+        from package_models import FeatureUsage, StripeTransaction
+        from datetime import datetime, timedelta
+        from sqlalchemy import desc, extract, func
+        
+        # Obter créditos atuais
+        current_credits = get_user_xml_credits(current_user.id)
+        
+        # Obter estatísticas de uso
+        stats = get_xml_usage_stats(current_user.id)
+        
+        # Histórico de compras (últimas 20 transações)
+        purchase_history = db.session.query(StripeTransaction)\
+            .filter_by(user_id=current_user.id, status='paid')\
+            .order_by(desc(StripeTransaction.created_at))\
+            .limit(20).all()
+        
+        # Histórico de uso (últimos 50 downloads)
+        usage_history = db.session.query(FeatureUsage)\
+            .filter_by(user_id=current_user.id, feature_key='xml_download')\
+            .order_by(desc(FeatureUsage.created_at))\
+            .limit(50).all()
+        
+        # Relatório mensal dos últimos 12 meses
+        monthly_summary = []
+        current_date = datetime.now()
+        
+        for i in range(12):
+            month_date = current_date - timedelta(days=30*i)
+            month_start = month_date.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            
+            if month_date.month == 12:
+                next_month = month_date.replace(year=month_date.year + 1, month=1, day=1)
+            else:
+                next_month = month_date.replace(month=month_date.month + 1, day=1)
+            
+            # Compras do mês
+            purchased = db.session.query(func.sum(StripeTransaction.credits_added))\
+                .filter(
+                    StripeTransaction.user_id == current_user.id,
+                    StripeTransaction.status == 'paid',
+                    StripeTransaction.created_at >= month_start,
+                    StripeTransaction.created_at < next_month
+                ).scalar() or 0
+            
+            # Uso do mês
+            used = db.session.query(func.sum(FeatureUsage.credits_consumed))\
+                .filter(
+                    FeatureUsage.user_id == current_user.id,
+                    FeatureUsage.feature_key == 'xml_download',
+                    FeatureUsage.created_at >= month_start,
+                    FeatureUsage.created_at < next_month
+                ).scalar() or 0
+            
+            monthly_summary.append({
+                'month_name': month_date.strftime('%B %Y'),
+                'purchased': int(purchased),
+                'used': int(used)
+            })
+        
+        return render_template('creditos_xml.html',
+                             current_credits=current_credits,
+                             stats=stats,
+                             purchase_history=purchase_history,
+                             usage_history=usage_history,
+                             monthly_summary=monthly_summary)
+        
+    except Exception as e:
+        logger.error(f"Erro no dashboard de créditos XML: {e}")
+        flash('Erro ao carregar dashboard de créditos', 'error')
+        return redirect(url_for('dashboard'))
+
 @app.route('/comprar-creditos-xml')
 @login_required
 def comprar_creditos_xml():
     """Página para compra de créditos XML com preços dinâmicos"""
     try:
+        from stripe_pricing_system import get_user_xml_credits, XMLPricingTiers, get_pricing_recommendations
+        
         # Obter créditos atuais do usuário
         current_credits = get_user_xml_credits(current_user.id)
         

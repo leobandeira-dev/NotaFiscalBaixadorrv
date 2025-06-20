@@ -76,7 +76,58 @@ def require_feature(feature_key, consume_credit=False, error_message=None):
 
 def require_xml_credits(f):
     """Decorator específico para funcionalidades que consomem créditos XML"""
-    return require_feature('xml_download', consume_credit=True)(f)
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            if request.is_json:
+                return jsonify({'error': 'Login necessário'}), 401
+            flash('Faça login para continuar.', 'warning')
+            return redirect(url_for('login'))
+        
+        # Importar aqui para evitar import circular
+        from stripe_pricing_system import get_user_xml_credits, consume_xml_credit
+        
+        # Verificar se usuário tem créditos XML suficientes
+        available_credits = get_user_xml_credits(current_user.id)
+        if available_credits <= 0:
+            message = 'Você não possui créditos XML suficientes. Compre créditos para continuar.'
+            if request.is_json:
+                return jsonify({'error': message, 'credits': 0}), 402
+            flash(message, 'warning')
+            return redirect(url_for('comprar_creditos_xml'))
+        
+        # Consumir 1 crédito XML
+        success = consume_xml_credit(current_user.id)
+        if not success:
+            message = 'Erro ao processar créditos XML. Tente novamente.'
+            if request.is_json:
+                return jsonify({'error': message}), 500
+            flash(message, 'error')
+            return redirect(url_for('dashboard'))
+        
+        # Registrar uso da funcionalidade para auditoria
+        try:
+            from package_models import FeatureUsage
+            from models import db
+            
+            usage = FeatureUsage(
+                user_id=current_user.id,
+                feature_key='xml_download',
+                credits_consumed=1,
+                metadata={
+                    'route': request.endpoint,
+                    'ip': request.remote_addr,
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+            )
+            db.session.add(usage)
+            db.session.commit()
+        except Exception as e:
+            # Log error but don't fail the request
+            print(f"Erro ao registrar uso de crédito XML: {e}")
+        
+        return f(*args, **kwargs)
+    return decorated_function
 
 def require_labels_subscription(f):
     """Decorator específico para módulo de etiquetas"""

@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+{% block title %}Meus Créditos XML - CROSS XML Downloader PRO{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header com saldo atual -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center py-5">
+                    <h1 class="display-4 text-primary mb-3">{{ current_credits }}</h1>
+                    <h3 class="text-muted mb-4">Créditos XML Disponíveis</h3>
+                    <p class="lead text-muted">Cada crédito permite baixar 1 arquivo XML completo</p>
+                    
+                    {% if current_credits <= 10 %}
+                        <div class="alert alert-warning d-inline-block">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Saldo baixo! Considere recarregar seus créditos.
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('comprar_creditos_xml') }}" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-plus me-2"></i>Comprar Mais Créditos
+                        </a>
+                        <a href="{{ url_for('xml_download') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-download me-2"></i>Baixar XMLs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-success">{{ stats.total_purchased }}</h3>
+                    <p class="text-muted mb-0">Total Comprado</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-danger">{{ stats.total_consumed }}</h3>
+                    <p class="text-muted mb-0">Total Usado</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-info">{{ stats.this_month_consumed }}</h3>
+                    <p class="text-muted mb-0">Usado Este Mês</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="text-warning">{{ stats.avg_daily_usage }}</h3>
+                    <p class="text-muted mb-0">Média Diária</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs para histórico -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <ul class="nav nav-tabs card-header-tabs" id="historyTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="purchases-tab" data-bs-toggle="tab" data-bs-target="#purchases" type="button" role="tab">
+                                <i class="fas fa-shopping-cart me-2"></i>Compras de Créditos
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="usage-tab" data-bs-toggle="tab" data-bs-target="#usage" type="button" role="tab">
+                                <i class="fas fa-download me-2"></i>Histórico de Uso
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="summary-tab" data-bs-toggle="tab" data-bs-target="#summary" type="button" role="tab">
+                                <i class="fas fa-chart-bar me-2"></i>Relatório Mensal
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="card-body">
+                    <div class="tab-content" id="historyTabsContent">
+                        <!-- Tab de Compras -->
+                        <div class="tab-pane fade show active" id="purchases" role="tabpanel">
+                            <h5 class="mb-3">Histórico de Compras</h5>
+                            {% if purchase_history %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Pacote</th>
+                                                <th>Créditos</th>
+                                                <th>Valor</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for purchase in purchase_history %}
+                                            <tr>
+                                                <td>{{ purchase.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                                <td>
+                                                    <span class="badge bg-primary">{{ purchase.package_name }}</span>
+                                                </td>
+                                                <td>
+                                                    <strong class="text-success">+{{ purchase.credits_added }}</strong>
+                                                </td>
+                                                <td>R$ {{ "%.2f"|format(purchase.amount) }}</td>
+                                                <td>
+                                                    {% if purchase.status == 'paid' %}
+                                                        <span class="badge bg-success">Pago</span>
+                                                    {% elif purchase.status == 'pending' %}
+                                                        <span class="badge bg-warning">Pendente</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">{{ purchase.status|title }}</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Nenhuma compra realizada ainda.</p>
+                                    <a href="{{ url_for('comprar_creditos_xml') }}" class="btn btn-primary">
+                                        Fazer Primeira Compra
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tab de Uso -->
+                        <div class="tab-pane fade" id="usage" role="tabpanel">
+                            <h5 class="mb-3">Histórico de Downloads</h5>
+                            {% if usage_history %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Ação</th>
+                                                <th>Créditos</th>
+                                                <th>Detalhes</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for usage in usage_history %}
+                                            <tr>
+                                                <td>{{ usage.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                                <td>
+                                                    <i class="fas fa-download text-primary me-2"></i>
+                                                    Download XML
+                                                </td>
+                                                <td>
+                                                    <strong class="text-danger">-{{ usage.credits_consumed }}</strong>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        {% if usage.metadata and usage.metadata.get('invoice_key') %}
+                                                            Chave: {{ usage.metadata.invoice_key[:10] }}...
+                                                        {% else %}
+                                                            {{ usage.description or 'Download XML' }}
+                                                        {% endif %}
+                                                    </small>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-download fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Nenhum download realizado ainda.</p>
+                                    <a href="{{ url_for('xml_download') }}" class="btn btn-primary">
+                                        Fazer Primeiro Download
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tab de Relatório -->
+                        <div class="tab-pane fade" id="summary" role="tabpanel">
+                            <h5 class="mb-3">Relatório dos Últimos 12 Meses</h5>
+                            <div class="row">
+                                {% for month_data in monthly_summary %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card border-0 bg-light">
+                                        <div class="card-body text-center">
+                                            <h6 class="card-title">{{ month_data.month_name }}</h6>
+                                            <div class="d-flex justify-content-between">
+                                                <small class="text-success">
+                                                    <i class="fas fa-plus"></i> {{ month_data.purchased }}
+                                                </small>
+                                                <small class="text-danger">
+                                                    <i class="fas fa-minus"></i> {{ month_data.used }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Previsão de créditos -->
+{% if current_credits > 0 and stats.avg_daily_usage > 0 %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm bg-light">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-3">
+                    <i class="fas fa-calculator me-2"></i>Previsão de Duração
+                </h6>
+                <p class="mb-0">
+                    Com base no seu uso médio de <strong>{{ stats.avg_daily_usage }}</strong> créditos por dia,
+                    seus <strong>{{ current_credits }}</strong> créditos atuais durarão aproximadamente
+                    <strong class="text-primary">{{ (current_credits / stats.avg_daily_usage)|round|int }} dias</strong>.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+// Auto-refresh da página a cada 30 segundos para manter dados atualizados
+setTimeout(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

@@ -203,15 +203,18 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ url_for('comprar_creditos') }}" class="nav-link {% if request.endpoint == 'comprar_creditos' %}active{% endif %}">
-                        <i class="fas fa-credit-card"></i>
-                        Comprar Créditos
+                    <a href="{{ url_for('creditos_xml') }}" class="nav-link {% if request.endpoint == 'creditos_xml' %}active{% endif %}">
+                        <i class="fas fa-coins"></i>
+                        Meus Créditos XML
+                        {% if current_user and current_user.is_authenticated %}
+                            <span class="badge bg-primary ms-auto">{{ get_user_xml_credits(current_user.id) }}</span>
+                        {% endif %}
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="{{ url_for('historico_creditos') }}" class="nav-link {% if request.endpoint == 'historico_creditos' %}active{% endif %}">
-                        <i class="fas fa-history"></i>
-                        Histórico
+                    <a href="{{ url_for('comprar_creditos_xml') }}" class="nav-link {% if request.endpoint == 'comprar_creditos_xml' %}active{% endif %}">
+                        <i class="fas fa-plus-circle"></i>
+                        Comprar Créditos XML
                     </a>
                 </div>
                 <div class="nav-item">
