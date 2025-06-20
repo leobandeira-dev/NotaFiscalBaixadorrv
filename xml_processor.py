@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 def extract_xml_data(xml_content: str) -> dict:
     """
-    Extrai dados estruturados do XML NFe para geração de etiquetas
+    Extrai dados estruturados do XML NFe para armazenamento completo no banco
     """
     try:
         # Parse do XML
@@ -30,49 +30,96 @@ def extract_xml_data(xml_content: str) -> dict:
             nf_data['numero_nf'] = ide.find('nfe:nNF', ns).text if ide.find('nfe:nNF', ns) is not None else ''
             nf_data['serie_nf'] = ide.find('nfe:serie', ns).text if ide.find('nfe:serie', ns) is not None else ''
             
-        # Emitente
+            # Data de emissão
+            dhEmi = ide.find('nfe:dhEmi', ns)
+            if dhEmi is not None and dhEmi.text:
+                try:
+                    # Formato: 2025-06-19T12:00:00-03:00
+                    date_str = dhEmi.text.split('T')[0]  # Pega apenas a data
+                    nf_data['data_emissao'] = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except:
+                    nf_data['data_emissao'] = None
+            else:
+                nf_data['data_emissao'] = None
+            
+        # Emitente (Remetente)
         emit = root.find('.//nfe:emit', ns)
         if emit is not None:
             nf_data['cnpj_emitente'] = emit.find('nfe:CNPJ', ns).text if emit.find('nfe:CNPJ', ns) is not None else ''
             nf_data['nome_emitente'] = emit.find('nfe:xNome', ns).text if emit.find('nfe:xNome', ns) is not None else ''
+            nf_data['remetente_razao'] = emit.find('nfe:xNome', ns).text if emit.find('nfe:xNome', ns) is not None else ''
             
-            # Endereço do emitente
+            # Endereço do emitente/remetente
             enderEmit = emit.find('nfe:enderEmit', ns)
             if enderEmit is not None:
-                nf_data['uf_emitente'] = enderEmit.find('nfe:UF', ns).text if enderEmit.find('nfe:UF', ns) is not None else ''
-                nf_data['cidade_emitente'] = enderEmit.find('nfe:xMun', ns).text if enderEmit.find('nfe:xMun', ns) is not None else ''
+                nf_data['remetente_uf'] = enderEmit.find('nfe:UF', ns).text if enderEmit.find('nfe:UF', ns) is not None else ''
+                nf_data['remetente_cidade'] = enderEmit.find('nfe:xMun', ns).text if enderEmit.find('nfe:xMun', ns) is not None else ''
+                
+                # Endereço completo
+                logradouro = enderEmit.find('nfe:xLgr', ns).text if enderEmit.find('nfe:xLgr', ns) is not None else ''
+                numero = enderEmit.find('nfe:nro', ns).text if enderEmit.find('nfe:nro', ns) is not None else ''
+                bairro = enderEmit.find('nfe:xBairro', ns).text if enderEmit.find('nfe:xBairro', ns) is not None else ''
+                
+                endereco_parts = [logradouro, numero, bairro]
+                nf_data['remetente_endereco'] = ', '.join([p for p in endereco_parts if p])
+                
+                cep = enderEmit.find('nfe:CEP', ns)
+                nf_data['remetente_cep'] = cep.text if cep is not None and cep.text else ''
         
         # Destinatário
         dest = root.find('.//nfe:dest', ns)
         if dest is not None:
-            nf_data['cnpj_destinatario'] = dest.find('nfe:CNPJ', ns).text if dest.find('nfe:CNPJ', ns) is not None else ''
-            nf_data['nome_destinatario'] = dest.find('nfe:xNome', ns).text if dest.find('nfe:xNome', ns) is not None else ''
+            # CNPJ ou CPF
+            cnpj = dest.find('nfe:CNPJ', ns)
+            cpf = dest.find('nfe:CPF', ns)
+            nf_data['destinatario_cnpj_cpf'] = cnpj.text if cnpj is not None and cnpj.text else (cpf.text if cpf is not None and cpf.text else '')
+            
+            nf_data['destinatario_razao'] = dest.find('nfe:xNome', ns).text if dest.find('nfe:xNome', ns) is not None else ''
             
             # Endereço do destinatário
             enderDest = dest.find('nfe:enderDest', ns)
             if enderDest is not None:
-                nf_data['endereco_destinatario'] = enderDest.find('nfe:xLgr', ns).text if enderDest.find('nfe:xLgr', ns) is not None else ''
-                nf_data['numero_destinatario'] = enderDest.find('nfe:nro', ns).text if enderDest.find('nfe:nro', ns) is not None else ''
-                nf_data['bairro_destinatario'] = enderDest.find('nfe:xBairro', ns).text if enderDest.find('nfe:xBairro', ns) is not None else ''
-                nf_data['cidade_destinatario'] = enderDest.find('nfe:xMun', ns).text if enderDest.find('nfe:xMun', ns) is not None else ''
-                nf_data['uf_destinatario'] = enderDest.find('nfe:UF', ns).text if enderDest.find('nfe:UF', ns) is not None else ''
-                nf_data['cep_destinatario'] = enderDest.find('nfe:CEP', ns).text if enderDest.find('nfe:CEP', ns) is not None else ''
+                nf_data['destinatario_uf'] = enderDest.find('nfe:UF', ns).text if enderDest.find('nfe:UF', ns) is not None else ''
+                nf_data['destinatario_cidade'] = enderDest.find('nfe:xMun', ns).text if enderDest.find('nfe:xMun', ns) is not None else ''
+                
+                # Endereço completo do destinatário
+                logradouro = enderDest.find('nfe:xLgr', ns).text if enderDest.find('nfe:xLgr', ns) is not None else ''
+                numero = enderDest.find('nfe:nro', ns).text if enderDest.find('nfe:nro', ns) is not None else ''
+                bairro = enderDest.find('nfe:xBairro', ns).text if enderDest.find('nfe:xBairro', ns) is not None else ''
+                
+                endereco_parts = [logradouro, numero, bairro]
+                nf_data['destinatario_endereco'] = ', '.join([p for p in endereco_parts if p])
+                
+                cep = enderDest.find('nfe:CEP', ns)
+                nf_data['destinatario_cep'] = cep.text if cep is not None and cep.text else ''
         
         # Totais da NFe
         total = root.find('.//nfe:total/nfe:ICMSTot', ns)
         if total is not None:
-            nf_data['valor_total'] = float(total.find('nfe:vNF', ns).text) if total.find('nfe:vNF', ns) is not None else 0.0
+            vNF = total.find('nfe:vNF', ns)
+            nf_data['valor_total'] = float(vNF.text) if vNF is not None and vNF.text else 0.0
+        else:
+            nf_data['valor_total'] = 0.0
         
         # Informações de transporte
         transp = root.find('.//nfe:transp', ns)
         if transp is not None:
-            # Transportadora
-            transporta = transp.find('nfe:transporta', ns)
-            if transporta is not None:
-                nf_data['transportadora'] = transporta.find('nfe:xNome', ns).text if transporta.find('nfe:xNome', ns) is not None else ''
-            
             # Volumes
             vol = transp.find('nfe:vol', ns)
+            if vol is not None:
+                # Peso bruto
+                pesoB = vol.find('nfe:pesoB', ns)
+                nf_data['peso_bruto'] = float(pesoB.text) if pesoB is not None and pesoB.text else 0.0
+                
+                # Quantidade de volumes
+                qVol = vol.find('nfe:qVol', ns)
+                nf_data['quantidade_volumes'] = int(qVol.text) if qVol is not None and qVol.text else 0
+            else:
+                nf_data['peso_bruto'] = 0.0
+                nf_data['quantidade_volumes'] = 0
+        else:
+            nf_data['peso_bruto'] = 0.0
+            nf_data['quantidade_volumes'] = 0
             if vol is not None:
                 nf_data['quantidade_volumes'] = vol.find('nfe:qVol', ns).text if vol.find('nfe:qVol', ns) is not None else ''
                 nf_data['peso_bruto'] = vol.find('nfe:pesoB', ns).text if vol.find('nfe:pesoB', ns) is not None else ''

@@ -804,12 +804,63 @@ def job_status(job_id):
 @app.route('/meus-xmls')
 @login_required
 def meus_xmls():
-    """Lista XMLs do usuário logado"""
+    """Lista XMLs do usuário logado com filtros"""
     page = request.args.get('page', 1, type=int)
     per_page = 12
     
-    # Buscar XMLs do usuário (tanto ImportedXML quanto XMLFile)
-    imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).all()
+    # Filtros
+    search_term = request.args.get('search', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    uf_filter = request.args.get('uf', '')
+    cidade_filter = request.args.get('cidade', '')
+    
+    # Base query para ImportedXML
+    query = ImportedXML.query.filter_by(user_id=current_user.id)
+    
+    # Aplicar filtros
+    if search_term:
+        query = query.filter(
+            db.or_(
+                ImportedXML.invoice_key.contains(search_term),
+                ImportedXML.nome_emitente.contains(search_term),
+                ImportedXML.destinatario_razao.contains(search_term),
+                ImportedXML.numero_nf.contains(search_term)
+            )
+        )
+    
+    if date_from:
+        try:
+            date_from_parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
+            query = query.filter(ImportedXML.data_emissao >= date_from_parsed)
+        except:
+            pass
+    
+    if date_to:
+        try:
+            date_to_parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
+            query = query.filter(ImportedXML.data_emissao <= date_to_parsed)
+        except:
+            pass
+    
+    if uf_filter:
+        query = query.filter(
+            db.or_(
+                ImportedXML.remetente_uf == uf_filter,
+                ImportedXML.destinatario_uf == uf_filter
+            )
+        )
+    
+    if cidade_filter:
+        query = query.filter(
+            db.or_(
+                ImportedXML.remetente_cidade.contains(cidade_filter),
+                ImportedXML.destinatario_cidade.contains(cidade_filter)
+            )
+        )
+    
+    # Buscar XMLs filtrados
+    imported_xmls = query.order_by(ImportedXML.imported_at.desc()).all()
     xml_files = XMLFile.query.filter_by(user_id=current_user.id).order_by(XMLFile.imported_at.desc()).all()
     
     # Combinar ambos os tipos de XML
@@ -822,12 +873,28 @@ def meus_xmls():
     end = start + per_page
     xmls = all_xmls[start:end]
     
+    # Obter listas para filtros
+    ufs = db.session.query(ImportedXML.remetente_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_uf.isnot(None)).distinct().all()
+    ufs_dest = db.session.query(ImportedXML.destinatario_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.destinatario_uf.isnot(None)).distinct().all()
+    all_ufs = list(set([uf[0] for uf in ufs] + [uf[0] for uf in ufs_dest if uf[0]]))
+    
+    cidades = db.session.query(ImportedXML.remetente_cidade).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_cidade.isnot(None)).distinct().all()
+    cidades_dest = db.session.query(ImportedXML.destinatario_cidade).filter(ImportedXML.user_id == current_user.id, ImportedXML.destinatario_cidade.isnot(None)).distinct().all()
+    all_cidades = list(set([cidade[0] for cidade in cidades] + [cidade[0] for cidade in cidades_dest if cidade[0]]))
+    
     return render_template('meus_xmls.html', 
                          xmls=xmls,
                          current_user=current_user,
                          page=page,
                          total_pages=total_pages,
-                         total_xmls=total_xmls)
+                         total_xmls=total_xmls,
+                         search_term=search_term,
+                         date_from=date_from,
+                         date_to=date_to,
+                         uf_filter=uf_filter,
+                         cidade_filter=cidade_filter,
+                         all_ufs=sorted(all_ufs),
+                         all_cidades=sorted(all_cidades))
 
 @app.route('/download-xml/<xml_id>')
 @login_required
@@ -860,7 +927,7 @@ def download_xml_file(xml_id):
 @app.route('/labels-module')
 @login_required 
 def labels_module():
-    """Módulo de geração de etiquetas"""
+    """Módulo de geração de etiquetas com filtros"""
     # Verificar se usuário tem saldo para acessar módulos premium
     # Por enquanto, permitir acesso se usuário tem saldo ou está no período trial
     if current_user.current_balance < 49.90 and current_user.trial_expires_at < datetime.now():
@@ -870,8 +937,93 @@ def labels_module():
     page = request.args.get('page', 1, type=int)
     per_page = 12
     
-    # Buscar XMLs do usuário para geração de etiquetas (tanto ImportedXML quanto XMLFile)
-    imported_xmls = ImportedXML.query.filter_by(user_id=current_user.id).order_by(ImportedXML.imported_at.desc()).all()
+    # Filtros
+    search_term = request.args.get('search', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    uf_filter = request.args.get('uf', '')
+    cidade_filter = request.args.get('cidade', '')
+    peso_min = request.args.get('peso_min', '')
+    peso_max = request.args.get('peso_max', '')
+    valor_min = request.args.get('valor_min', '')
+    valor_max = request.args.get('valor_max', '')
+    
+    # Base query para ImportedXML
+    query = ImportedXML.query.filter_by(user_id=current_user.id)
+    
+    # Aplicar filtros
+    if search_term:
+        query = query.filter(
+            db.or_(
+                ImportedXML.invoice_key.contains(search_term),
+                ImportedXML.nome_emitente.contains(search_term),
+                ImportedXML.destinatario_razao.contains(search_term),
+                ImportedXML.numero_nf.contains(search_term),
+                ImportedXML.remetente_cidade.contains(search_term),
+                ImportedXML.destinatario_cidade.contains(search_term)
+            )
+        )
+    
+    if date_from:
+        try:
+            date_from_parsed = datetime.strptime(date_from, '%Y-%m-%d').date()
+            query = query.filter(ImportedXML.data_emissao >= date_from_parsed)
+        except:
+            pass
+    
+    if date_to:
+        try:
+            date_to_parsed = datetime.strptime(date_to, '%Y-%m-%d').date()
+            query = query.filter(ImportedXML.data_emissao <= date_to_parsed)
+        except:
+            pass
+    
+    if uf_filter:
+        query = query.filter(
+            db.or_(
+                ImportedXML.remetente_uf == uf_filter,
+                ImportedXML.destinatario_uf == uf_filter
+            )
+        )
+    
+    if cidade_filter:
+        query = query.filter(
+            db.or_(
+                ImportedXML.remetente_cidade.contains(cidade_filter),
+                ImportedXML.destinatario_cidade.contains(cidade_filter)
+            )
+        )
+    
+    if peso_min:
+        try:
+            peso_min_val = float(peso_min)
+            query = query.filter(ImportedXML.peso_bruto >= peso_min_val)
+        except:
+            pass
+    
+    if peso_max:
+        try:
+            peso_max_val = float(peso_max)
+            query = query.filter(ImportedXML.peso_bruto <= peso_max_val)
+        except:
+            pass
+    
+    if valor_min:
+        try:
+            valor_min_val = float(valor_min)
+            query = query.filter(ImportedXML.valor_total >= valor_min_val)
+        except:
+            pass
+    
+    if valor_max:
+        try:
+            valor_max_val = float(valor_max)
+            query = query.filter(ImportedXML.valor_total <= valor_max_val)
+        except:
+            pass
+    
+    # Buscar XMLs filtrados
+    imported_xmls = query.order_by(ImportedXML.imported_at.desc()).all()
     xml_files = XMLFile.query.filter_by(user_id=current_user.id).order_by(XMLFile.imported_at.desc()).all()
     
     # Combinar ambos os tipos de XML
@@ -884,12 +1036,32 @@ def labels_module():
     end = start + per_page
     xmls = all_xmls[start:end]
     
+    # Obter listas para filtros
+    ufs = db.session.query(ImportedXML.remetente_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_uf.isnot(None)).distinct().all()
+    ufs_dest = db.session.query(ImportedXML.destinatario_uf).filter(ImportedXML.user_id == current_user.id, ImportedXML.destinatario_uf.isnot(None)).distinct().all()
+    all_ufs = list(set([uf[0] for uf in ufs] + [uf[0] for uf in ufs_dest if uf[0]]))
+    
+    cidades = db.session.query(ImportedXML.remetente_cidade).filter(ImportedXML.user_id == current_user.id, ImportedXML.remetente_cidade.isnot(None)).distinct().all()
+    cidades_dest = db.session.query(ImportedXML.destinatario_cidade).filter(ImportedXML.user_id == current_user.id, ImportedXML.destinatario_cidade.isnot(None)).distinct().all()
+    all_cidades = list(set([cidade[0] for cidade in cidades] + [cidade[0] for cidade in cidades_dest if cidade[0]]))
+    
     return render_template('labels.html', 
                          xmls=xmls,
                          current_user=current_user,
                          page=page,
                          total_pages=total_pages,
-                         total_xmls=total_xmls)
+                         total_xmls=total_xmls,
+                         search_term=search_term,
+                         date_from=date_from,
+                         date_to=date_to,
+                         uf_filter=uf_filter,
+                         cidade_filter=cidade_filter,
+                         peso_min=peso_min,
+                         peso_max=peso_max,
+                         valor_min=valor_min,
+                         valor_max=valor_max,
+                         all_ufs=sorted(all_ufs),
+                         all_cidades=sorted(all_cidades))
 
 @app.route('/api-docs')
 @login_required
