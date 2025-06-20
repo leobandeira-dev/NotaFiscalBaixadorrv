@@ -543,14 +543,8 @@ class ResponsiveTransportLabelGenerator:
         # Dividir seção em duas partes: peso e volume
         half_width = self.content_width / 2
         
-        # Seção Peso (lado esquerdo)
-        c.setFillColor(colors.lightgrey)
-        c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
-        
-        # Borda cinza
-        c.setStrokeColor(colors.grey)
-        c.setLineWidth(1)
-        c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
+        # Seção Peso (lado esquerdo) - aplicar enquadramento
+        self._apply_section_frame(c, self.margin, section_y, half_width - self.spacing['field']/2, section_height)
         
         # Título Peso
         c.setFillColor(colors.black)
@@ -571,15 +565,9 @@ class ResponsiveTransportLabelGenerator:
         c.setFont("Helvetica", self.fonts['normal_text'])
         c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.3, peso_formatado)
         
-        # Seção Volume (lado direito) - COM INFORMAÇÃO DINÂMICA
+        # Seção Volume (lado direito) - COM INFORMAÇÃO DINÂMICA - aplicar enquadramento
         volume_x = self.margin + half_width + self.spacing['field']/2
-        c.setFillColor(colors.lightgrey)
-        c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
-        
-        # Borda cinza
-        c.setStrokeColor(colors.grey)
-        c.setLineWidth(1)
-        c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
+        self._apply_section_frame(c, volume_x, section_y, half_width - self.spacing['field']/2, section_height)
         
         # Título Volume
         c.setFillColor(colors.black)
@@ -608,14 +596,8 @@ class ResponsiveTransportLabelGenerator:
         area_x = self.page_width - self.margin - area_width
         area_y = self.margin + (area_height * 0.1)  # Alinhamento mais baixo
         
-        # Fundo cinza claro mais suave
-        c.setFillColor(colors.Color(0.94, 0.94, 0.94))
-        c.rect(area_x, area_y, area_width, area_height, fill=1)
-        
-        # Borda mais destacada e profissional
-        c.setStrokeColor(colors.Color(0.5, 0.5, 0.5))
-        c.setLineWidth(1.5)
-        c.rect(area_x, area_y, area_width, area_height, fill=0)
+        # Aplicar enquadramento baseado no estilo
+        self._apply_section_frame(c, area_x, area_y, area_width, area_height)
         
         # Título "ÁREA" menor e mais elegante
         c.setFillColor(colors.black)
