@@ -590,7 +590,7 @@
                 formData.append('company_logo', logoFile);
             }
             
-            fetch('/configurar-etiquetas', {
+            fetch('/api/save-label-config', {
                 method: 'POST',
                 body: formData
             })

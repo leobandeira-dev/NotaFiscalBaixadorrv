@@ -10,7 +10,8 @@ import secrets
 import pytz
 from datetime import datetime, timedelta
 from threading import Thread, Lock
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, send_file, make_response
+from io import BytesIO
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -1670,6 +1671,10 @@ def configurar_etiquetas():
     """Configurar etiquetas personalizadas"""
     if request.method == 'POST':
         try:
+            # Verificar se é uma requisição AJAX
+            if request.is_json or request.headers.get('Content-Type', '').startswith('application/json'):
+                return jsonify({'error': 'JSON não suportado para upload de arquivos'}), 400
+            
             # Atualizar dados da empresa
             current_user.company_name = request.form.get('company_name', '').strip()
             current_user.company_subtitle = request.form.get('company_subtitle', '').strip()
@@ -1713,10 +1718,64 @@ def configurar_etiquetas():
     
     return render_template('configurar_etiquetas.html')
 
+def save_company_logo(logo_file, user_id):
+    """Salvar logo da empresa"""
+    try:
+        from werkzeug.utils import secure_filename
+        
+        # Criar diretório se não existir
+        upload_dir = os.path.join('static', 'uploads', 'logos')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Gerar nome do arquivo
+        filename = secure_filename(logo_file.filename)
+        if not filename:
+            filename = f'logo_{user_id}.png'
+        
+        # Adicionar timestamp para evitar cache
+        name, ext = os.path.splitext(filename)
+        filename = f'{name}_{user_id}_{int(datetime.now().timestamp())}{ext}'
+        
+        # Salvar arquivo
+        filepath = os.path.join(upload_dir, filename)
+        logo_file.save(filepath)
+        
+        return filename
+        
+    except Exception as e:
+        logger.error(f"Erro ao salvar logo: {e}")
+        return None
+
 @app.route('/static/uploads/logos/<filename>')
 def serve_logo(filename):
     """Servir logos das empresas"""
     return send_from_directory(os.path.join('static', 'uploads', 'logos'), filename)
+
+# API endpoint para salvar configurações via AJAX
+@app.route('/api/save-label-config', methods=['POST'])
+@login_required
+def save_label_config():
+    """Salvar configurações de etiquetas via AJAX"""
+    try:
+        # Atualizar dados da empresa
+        current_user.company_name = request.form.get('company_name', '').strip()
+        current_user.company_subtitle = request.form.get('company_subtitle', '').strip()
+        current_user.default_area_code = request.form.get('area_code', '01').strip()
+        
+        # Processar upload de logo se enviado
+        if 'company_logo' in request.files:
+            logo_file = request.files['company_logo']
+            if logo_file and logo_file.filename:
+                logo_path = save_company_logo(logo_file, current_user.id)
+                current_user.company_logo_path = logo_path
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Configurações salvas com sucesso!'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao salvar configurações: {e}")
+        return jsonify({'success': False, 'message': f'Erro ao salvar configurações: {str(e)}'})
 
 # Enhanced Label Generation Routes
 @app.route('/configurar-etiquetas/<int:xml_id>')
