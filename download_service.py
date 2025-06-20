@@ -43,44 +43,46 @@ class DownloadService:
     def process_successful_download(user_id: int, invoice_key: str, xml_content: str, 
                                   file_path: str, job_id: str) -> bool:
         """Processa download bem-sucedido com cobrança e salvamento no banco"""
-        try:
-            # Permitir downloads múltiplos - cada download gera registro único
-            logger.info(f"Processando novo download de XML {invoice_key} para usuário {user_id}")
-            
-            # Sistema baseado em créditos XML
-            
-            # Verificar e deduzir créditos
-            user = User.query.get(user_id)
-            if not user:
-                logger.error(f"Usuário {user_id} não encontrado")
-                return False
-            
-            # Verificar se usuário está em período de teste
-            from datetime import datetime
-            is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
-            
-            # Verificar e consumir crédito XML
-            if not is_trial_active:
-                from simple_credit_system import get_user_xml_balance, consume_xml_credit
-                available_credits = get_user_xml_balance(user_id)
-                if available_credits < 1:
-                    logger.error(f"Créditos XML insuficientes para usuário {user_id}")
+        from new_app import app
+        with app.app_context():
+            try:
+                # Permitir downloads múltiplos - cada download gera registro único
+                logger.info(f"Processando novo download de XML {invoice_key} para usuário {user_id}")
+                
+                # Sistema baseado em créditos XML
+                
+                # Verificar e deduzir créditos
+                user = User.query.get(user_id)
+                if not user:
+                    logger.error(f"Usuário {user_id} não encontrado")
                     return False
                 
-                # Consumir 1 crédito XML
-                if not consume_xml_credit(user_id):
-                    logger.error(f"Falha ao consumir crédito XML para usuário {user_id}")
-                    return False
-            
-            # Extrair dados do XML antes de salvar
-            from xml_processor import extract_xml_data
-            xml_data = extract_xml_data(xml_content)
-            
-            # Salvar XML no banco com dados extraídos
-            xml_file = XMLFile()
-            xml_file.user_id = user_id
-            xml_file.filename = f"{invoice_key}.xml"
-            xml_file.invoice_key = invoice_key
+                # Verificar se usuário está em período de teste
+                from datetime import datetime
+                is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
+                
+                # Verificar e consumir crédito XML
+                if not is_trial_active:
+                    from simple_credit_system import get_user_xml_balance, consume_xml_credit
+                    available_credits = get_user_xml_balance(user_id)
+                    if available_credits < 1:
+                        logger.error(f"Créditos XML insuficientes para usuário {user_id}")
+                        return False
+                    
+                    # Consumir 1 crédito XML
+                    if not consume_xml_credit(user_id):
+                        logger.error(f"Falha ao consumir crédito XML para usuário {user_id}")
+                        return False
+                
+                # Extrair dados do XML antes de salvar
+                from xml_processor import extract_xml_data
+                xml_data = extract_xml_data(xml_content)
+                
+                # Salvar XML no banco com dados extraídos
+                xml_file = XMLFile()
+                xml_file.user_id = user_id
+                xml_file.filename = f"{invoice_key}.xml"
+                xml_file.invoice_key = invoice_key
             xml_file.file_path = file_path
             xml_file.xml_content = xml_content
             xml_file.import_type = 'SISTEMA'
@@ -121,16 +123,15 @@ class DownloadService:
             usage_record.user_id = user_id
             usage_record.module_id = xml_module.id
             usage_record.quantity = 1
-            usage_record.cost = xml_price
+            usage_record.cost = 0.0  # Cost tracking moved to credit system
             usage_record.description = f"Download XML: {invoice_key[:10]}..."
             usage_record.job_id = job_id
             
             db.session.add(usage_record)
             
-            # Atualizar saldo do usuário apenas se não estiver em período de teste
+            # Log crédito debitado
             if not is_trial_active:
-                user.current_balance -= xml_price
-                logger.info(f"Cobrado R$ {xml_price:.2f} do usuário {user_id}")
+                logger.info(f"1 crédito XML debitado do usuário {user_id}")
             else:
                 logger.info(f"Download gratuito para usuário {user_id} (período de teste)")
             
@@ -139,7 +140,7 @@ class DownloadService:
             # Commit todas as mudanças
             db.session.commit()
             
-            logger.info(f"Download processado com sucesso: usuário {user_id}, XML {invoice_key}, cobrado R$ {xml_price:.2f}")
+            logger.info(f"Download processado com sucesso: usuário {user_id}, XML {invoice_key}, XML salvo no banco")
             return True
             
         except Exception as e:
