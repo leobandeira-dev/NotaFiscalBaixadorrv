@@ -45,6 +45,7 @@ def generate_improved_label_with_guaranteed_borders(xml_id, user, paper_config, 
     company_name = user.company_name or "SUA EMPRESA"
     company_subtitle = user.company_subtitle or "TRANSPORTE"
     area_code = user.default_area_code or "01"
+    company_logo_path = user.company_logo_path
     
     # Extrair dimensões do papel
     paper_size = paper_config.get('size', '10x15cm')
