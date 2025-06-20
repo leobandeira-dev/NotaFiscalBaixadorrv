@@ -28,7 +28,7 @@ class ResponsiveTransportLabelGenerator:
             company_subtitle: Subtítulo da empresa
             paper_width_mm: Largura do papel em milímetros
             paper_height_mm: Altura do papel em milímetros
-            layout_style: Estilo de layout ("layout1" = moderno, "layout2" = alto contraste, "transul" = estilo Transul profissional)
+            layout_style: Estilo de layout ("layout1" = moderno, "layout2" = alto contraste, "transul" = estilo Transul exato)
         """
         self.company_name = company_name
         self.company_subtitle = company_subtitle
@@ -146,7 +146,16 @@ class ResponsiveTransportLabelGenerator:
             BytesIO contendo o PDF da etiqueta com numeração dinâmica
         """
         try:
-            # Parse XML
+            # Se for layout Transul, usar o gerador específico
+            if self.layout_style == "transul":
+                from transul_exact_layout_generator import generate_transul_exact_label_from_xml
+                return generate_transul_exact_label_from_xml(
+                    xml_content, pedido_number, area_code, company_logo_path, 
+                    volume_info or f"{current_volume}/{total_volumes}",
+                    self.paper_width_mm, self.paper_height_mm
+                )
+            
+            # Parse XML para layouts padrão
             from xml_processor import extract_xml_data
             xml_data = extract_xml_data(xml_content)
             
