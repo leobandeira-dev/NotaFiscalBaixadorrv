@@ -183,6 +183,19 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
+# Configure for custom domain
+app.config['SERVER_NAME'] = None  # Allow any domain
+app.config['PREFERRED_URL_SCHEME'] = 'https'
+
+# Add middleware to handle custom domain
+@app.before_request
+def handle_custom_domain():
+    """Handle requests from custom domain"""
+    host = request.host
+    if host in ['crossxml.com.br', 'www.crossxml.com.br']:
+        # Domain is correctly configured
+        pass
+
 # Database configuration
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
