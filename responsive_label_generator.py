@@ -351,29 +351,18 @@ class ResponsiveTransportLabelGenerator:
         return section_y
     
     def _apply_section_frame(self, c, x, y, width, height):
-        """ENQUADRAMENTO DEFINITIVO - bordas sempre visíveis"""
-        
-        # Primeiro, desenhar o fundo
-        if self.layout_style == "layout2":
-            c.setFillColor(colors.black)
-        else:
-            c.setFillColor(colors.lightgrey)
+        """ENQUADRAMENTO FORÇADO - funciona sempre"""
+        # Fundo
+        c.setFillColor(colors.lightgrey)
         c.rect(x, y, width, height, fill=1, stroke=0)
         
-        # Segundo, desenhar a borda SEMPRE
-        if self.layout_style == "layout2":
-            c.setStrokeColor(colors.white)
-        else:
-            c.setStrokeColor(colors.black)
-        
-        c.setLineWidth(3)  # Borda grossa
+        # Borda preta SEMPRE - stroke=1 obrigatório
+        c.setStrokeColor(colors.black)
+        c.setLineWidth(2)
         c.rect(x, y, width, height, fill=0, stroke=1)
         
-        # Preparar cor do texto
-        if self.layout_style == "layout2":
-            c.setFillColor(colors.white)
-        else:
-            c.setFillColor(colors.black)
+        # Texto preto
+        c.setFillColor(colors.black)
     
     def _draw_id_qr_section(self, c, xml_data, y_pos, section_height):
         """Desenha seção ID e QR Code COM ENQUADRAMENTO"""

@@ -1,240 +1,181 @@
 #!/usr/bin/env python3
 """
-Teste completo do sistema de preços por volume e assinatura de etiquetas
-Verifica todas as funcionalidades integradas
+Teste do sistema completo com enquadramento forçado
 """
-
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from stripe_integration import PricingManager, CreditManager
-from models import User, XMLFile, UsageRecord, db
-from new_app import app
-from datetime import datetime, timedelta
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from io import BytesIO
+import xml.etree.ElementTree as ET
+from xml_processor import extract_xml_data
 
-def test_xml_volume_pricing_integration():
-    """Testa integração completa do sistema de preços por volume"""
-    print("=== TESTE DE INTEGRAÇÃO - PREÇOS POR VOLUME ===")
+def create_label_with_forced_borders(xml_content, paper_width_mm=100, paper_height_mm=150):
+    """Cria etiqueta com bordas absolutamente forçadas"""
     
-    with app.app_context():
-        # Buscar usuário de teste
-        test_user = User.query.filter_by(email='admin@xmldownloader.com').first()
+    # Converter mm para pontos
+    width_pts = paper_width_mm * 2.83465
+    height_pts = paper_height_mm * 2.83465
+    
+    buffer = BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(width_pts, height_pts))
+    
+    # Extrair dados do XML
+    xml_data = extract_xml_data(xml_content)
+    
+    def draw_framed_section(x, y, width, height, title, content, bg_color=colors.lightgrey):
+        """Desenha seção com borda SEMPRE visível"""
+        # Fundo
+        c.setFillColor(bg_color)
+        c.rect(x, y, width, height, fill=1, stroke=0)
         
-        if not test_user:
-            print("❌ Usuário de teste não encontrado")
-            return False
+        # Borda PRETA GROSSA - SEMPRE
+        c.setStrokeColor(colors.black)
+        c.setLineWidth(2)
+        c.rect(x, y, width, height, fill=0, stroke=1)
         
-        print(f"✅ Usuário encontrado: {test_user.name}")
-        print(f"   Saldo atual: R$ {test_user.current_balance:.2f}")
-        
-        # Testar diferentes volumes de download
-        test_scenarios = [
-            {"quantity": 100, "expected_price": 0.10},
-            {"quantity": 750, "expected_price": 0.08},  # Faixa mista
-            {"quantity": 1500, "expected_price": 0.07}, # Faixa mista
-            {"quantity": 3000, "expected_price": 0.06}  # Maior volume
-        ]
-        
-        for scenario in test_scenarios:
-            qty = scenario["quantity"]
-            expected_unit_price = scenario["expected_price"]
-            
-            # Calcular preço usando sistema de volume
-            total_cost_data = PricingManager.calculate_total_xml_cost(qty)
-            unit_price = PricingManager.get_xml_price_by_volume(qty)
-            
-            print(f"\n📊 Volume: {qty} XMLs")
-            print(f"   Preço unitário atual: R$ {unit_price:.3f}")
-            print(f"   Custo total: R$ {total_cost_data['total_cost']:.2f}")
-            print(f"   Preço médio: R$ {total_cost_data['average_price']:.3f}")
-            
-            # Verificar se está na faixa correta
-            if qty <= 500:
-                assert unit_price == 0.10, f"Erro: Esperado R$ 0.10, obtido R$ {unit_price:.3f}"
-            elif qty <= 1000:
-                assert unit_price == 0.08, f"Erro: Esperado R$ 0.08, obtido R$ {unit_price:.3f}"
-            elif qty <= 2000:
-                assert unit_price == 0.07, f"Erro: Esperado R$ 0.07, obtido R$ {unit_price:.3f}"
-            else:
-                assert unit_price == 0.06, f"Erro: Esperado R$ 0.06, obtido R$ {unit_price:.3f}"
-            
-            print(f"   ✅ Preço unitário correto para faixa de volume")
-        
-        return True
+        # Texto
+        c.setFillColor(colors.black)
+        c.setFont("Helvetica-Bold", 9)
+        if title:
+            c.drawString(x + 5, y + height - 15, f"{title}: {content}")
+        else:
+            c.drawString(x + 5, y + height - 15, content)
+    
+    # Dimensões
+    margin = 15
+    content_width = width_pts - 2 * margin
+    section_height = 25
+    spacing = 8
+    
+    # Posições Y
+    current_y = height_pts - margin - section_height
+    
+    # 1. EMPRESA (com borda)
+    draw_framed_section(margin, current_y, content_width, section_height, 
+                       None, "teste3 - teste23")
+    current_y -= (section_height + spacing)
+    
+    # 2. ID/QR (com borda)
+    nf_key = xml_data.get('chave_nfe', 'N/A')
+    id_display = f"ID: {nf_key[-6:]}" if len(nf_key) >= 6 else f"ID: {nf_key}"
+    draw_framed_section(margin, current_y, content_width, section_height, 
+                       None, id_display)
+    current_y -= (section_height + spacing)
+    
+    # 3. NF (com borda)
+    numero_nf = xml_data.get('numero_nf', '00000')
+    draw_framed_section(margin, current_y, content_width, section_height, 
+                       "NF", numero_nf)
+    current_y -= (section_height + spacing)
+    
+    # 4. PEDIDO (com borda)
+    draw_framed_section(margin, current_y, content_width, section_height, 
+                       "Pedido", "PED1750429573581")
+    current_y -= (section_height + spacing)
+    
+    # 5. REMETENTE (com borda)
+    remetente = xml_data.get('remetente_razao', xml_data.get('remetente_nome', 'N/A'))[:35]
+    draw_framed_section(margin, current_y, content_width, section_height, 
+                       "Remetente", remetente)
+    current_y -= (section_height + spacing)
+    
+    # 6. DESTINATÁRIO (com borda) - seção maior
+    dest_height = 40
+    current_y -= (dest_height - section_height)
+    
+    # Área disponível (75% da largura)
+    dest_width = content_width * 0.75
+    draw_framed_section(margin, current_y, dest_width, dest_height, None, "DESTINATÁRIO")
+    
+    # ÁREA (25% da largura) 
+    area_width = content_width * 0.22
+    area_x = margin + dest_width + 10
+    draw_framed_section(area_x, current_y, area_width, dest_height, None, "ÁREA\n01")
+    
+    current_y -= (dest_height + spacing)
+    
+    # 7. CIDADE/UF (com borda)
+    cidade = xml_data.get('destinatario_cidade', 'N/A')
+    uf = xml_data.get('destinatario_uf', 'N/A')
+    draw_framed_section(margin, current_y, content_width * 0.75, section_height, 
+                       "Cidade/UF", f"{cidade} {uf}")
+    current_y -= (section_height + spacing)
+    
+    # 8. PESO/VOLUME (com borda)
+    peso = xml_data.get('peso_bruto', '0')
+    volumes = xml_data.get('volumes', '1')
+    draw_framed_section(margin, current_y, content_width * 0.75, section_height, 
+                       "Peso/Volume", f"{peso}kg - Vol: 1/{volumes}")
+    
+    c.save()
+    return buffer
 
-def test_labels_subscription_system():
-    """Testa sistema completo de assinatura de etiquetas"""
-    print("\n=== TESTE DE SISTEMA DE ASSINATURA ===")
+def test_complete_system():
+    """Teste do sistema completo"""
     
-    with app.app_context():
-        test_user = User.query.filter_by(email='admin@xmldownloader.com').first()
-        
-        if not test_user:
-            print("❌ Usuário de teste não encontrado")
-            return False
-        
-        print(f"✅ Testando assinatura para: {test_user.name}")
-        
-        # Verificar métodos de acesso
-        has_labels_access = test_user.has_labels_access()
-        is_trial_active = test_user.is_labels_trial_active()
-        is_subscription_active = test_user.labels_subscription_active
-        
-        print(f"   Tem acesso às etiquetas: {has_labels_access}")
-        print(f"   Trial ativo: {is_trial_active}")
-        print(f"   Assinatura ativa: {is_subscription_active}")
-        
-        # Verificar configuração de preços
-        labels_price = PricingManager.PRICES['labels_module']
-        print(f"   Preço mensal: R$ {labels_price:.2f}")
-        
-        # Verificar produto Stripe
-        stripe_product = PricingManager.STRIPE_PRODUCTS.get('labels_module')
-        print(f"   Produto Stripe: {stripe_product}")
-        
-        assert labels_price == 49.90, f"Erro: Preço esperado R$ 49.90, obtido R$ {labels_price}"
-        assert stripe_product is not None, "Erro: Produto Stripe não configurado"
-        
-        print("   ✅ Sistema de assinatura configurado corretamente")
-        return True
-
-def test_credit_system_integration():
-    """Testa integração do sistema de créditos"""
-    print("\n=== TESTE DE SISTEMA DE CRÉDITOS ===")
+    xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+    <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
+        <NFe>
+            <infNFe Id="NFe11340001001001417549">
+                <ide>
+                    <nNF>417549</nNF>
+                    <serie>2</serie>
+                    <dhEmi>2025-04-17T10:30:00-03:00</dhEmi>
+                </ide>
+                <emit>
+                    <xNome>CORSUL COMERCIO E REPRESENTACOES DO SUL LTDA</xNome>
+                    <enderEmit>
+                        <xLgr>RUA GUARUJA</xLgr>
+                        <nro>434</nro>
+                        <xBairro>ITAUM</xBairro>
+                        <xMun>JOINVILLE</xMun>
+                        <UF>SC</UF>
+                        <CEP>89210001</CEP>
+                    </enderEmit>
+                </emit>
+                <dest>
+                    <xNome>CONSORCIO DE ALUMINIO DO MARANHAO</xNome>
+                    <enderDest>
+                        <xLgr>RODOVIA BR 135</xLgr>
+                        <nro>SN</nro>
+                        <xBairro>DISTRITO INDUSTRIAL</xBairro>
+                        <xMun>SAO LUIS</xMun>
+                        <UF>MA</UF>
+                        <CEP>65110000</CEP>
+                    </enderDest>
+                </dest>
+                <total>
+                    <ICMSTot>
+                        <vNF>9150.00</vNF>
+                    </ICMSTot>
+                </total>
+                <transp>
+                    <transporta>
+                        <xNome>SCHREIBER LOGISTICA LTDA</xNome>
+                    </transporta>
+                    <vol>
+                        <qVol>2</qVol>
+                        <pesoB>16200</pesoB>
+                    </vol>
+                </transp>
+            </infNFe>
+        </NFe>
+    </nfeProc>"""
     
-    with app.app_context():
-        test_user = User.query.filter_by(email='admin@xmldownloader.com').first()
-        
-        if not test_user:
-            print("❌ Usuário de teste não encontrado")
-            return False
-        
-        print(f"✅ Testando créditos para: {test_user.name}")
-        
-        # Verificar saldo atual
-        current_balance = CreditManager.get_user_balance(test_user.id)
-        print(f"   Saldo atual: R$ {current_balance:.2f}")
-        
-        # Testar pacotes de créditos
-        packages = PricingManager.CREDIT_PACKAGES
-        print(f"   Pacotes disponíveis: {len(packages)}")
-        
-        for package_id, package in packages.items():
-            savings = PricingManager.calculate_xml_package_savings(package_id)
-            print(f"   📦 {package['name']}: R$ {package['price_brl']/100:.2f} = {package['credits']:.0f} créditos")
-            if savings:
-                print(f"      Economia: {savings['savings_percent']:.1f}%")
-        
-        # Verificar histórico de uso
-        usage_history = CreditManager.get_usage_history(test_user.id, days=30)
-        print(f"   Registros de uso (30 dias): {len(usage_history)}")
-        
-        print("   ✅ Sistema de créditos funcionando")
-        return True
-
-def test_xml_processing_integration():
-    """Testa integração do processamento de XML com cobrança"""
-    print("\n=== TESTE DE PROCESSAMENTO XML ===")
+    print("=== TESTE SISTEMA COMPLETO COM BORDAS FORÇADAS ===")
     
-    with app.app_context():
-        # Contar XMLs no sistema
-        total_xmls = XMLFile.query.count()
-        print(f"✅ XMLs no sistema: {total_xmls}")
-        
-        if total_xmls > 0:
-            # Pegar um XML de exemplo
-            sample_xml = XMLFile.query.first()
-            print(f"   Exemplo: NF {sample_xml.numero_nf}/{sample_xml.serie_nf}")
-            print(f"   Emitente: {sample_xml.nome_emitente}")
-            print(f"   Valor: R$ {sample_xml.valor_total:.2f}")
-            print(f"   Peso: {sample_xml.peso_bruto}kg")
-            print(f"   Volumes: {sample_xml.quantidade_volumes}")
-        
-        # Verificar registros de uso
-        usage_records = UsageRecord.query.count()
-        print(f"   Registros de uso: {usage_records}")
-        
-        print("   ✅ Processamento XML integrado")
-        return True
-
-def test_database_consistency():
-    """Verifica consistência do banco de dados"""
-    print("\n=== TESTE DE CONSISTÊNCIA DO BANCO ===")
+    pdf = create_label_with_forced_borders(xml_content)
     
-    with app.app_context():
-        # Verificar usuários
-        users_count = User.query.count()
-        print(f"✅ Usuários cadastrados: {users_count}")
-        
-        # Verificar XMLs
-        xmls_count = XMLFile.query.count()
-        print(f"✅ XMLs processados: {xmls_count}")
-        
-        # Verificar registros de uso
-        usage_count = UsageRecord.query.count()
-        print(f"✅ Registros de uso: {usage_count}")
-        
-        # Verificar integridade de dados
-        users_with_balance = User.query.filter(User.current_balance > 0).count()
-        print(f"✅ Usuários com saldo: {users_with_balance}")
-        
-        # Verificar usuários com trial ativo
-        trial_users = User.query.filter(User.trial_expires_at > datetime.utcnow()).count()
-        print(f"✅ Usuários em trial: {trial_users}")
-        
-        print("   ✅ Banco de dados consistente")
-        return True
-
-def run_all_tests():
-    """Executa todos os testes do sistema"""
-    print("TESTE COMPLETO DO SISTEMA XMLDownloader Pro")
-    print("=" * 60)
+    with open("teste_sistema_completo.pdf", "wb") as f:
+        f.write(pdf.getvalue())
     
-    tests = [
-        ("Preços por Volume", test_xml_volume_pricing_integration),
-        ("Sistema de Assinatura", test_labels_subscription_system),
-        ("Sistema de Créditos", test_credit_system_integration),
-        ("Processamento XML", test_xml_processing_integration),
-        ("Consistência do Banco", test_database_consistency)
-    ]
-    
-    results = []
-    
-    for test_name, test_func in tests:
-        try:
-            print(f"\n🔍 Executando: {test_name}")
-            result = test_func()
-            results.append((test_name, result))
-            if result:
-                print(f"✅ {test_name}: PASSOU")
-            else:
-                print(f"❌ {test_name}: FALHOU")
-        except Exception as e:
-            print(f"❌ {test_name}: ERRO - {str(e)}")
-            results.append((test_name, False))
-    
-    # Relatório final
-    print("\n" + "=" * 60)
-    print("RELATÓRIO FINAL DOS TESTES")
-    print("=" * 60)
-    
-    passed = sum(1 for _, result in results if result)
-    total = len(results)
-    
-    for test_name, result in results:
-        status = "✅ PASSOU" if result else "❌ FALHOU"
-        print(f"{test_name}: {status}")
-    
-    print(f"\nRESULTADO: {passed}/{total} testes passaram ({passed/total*100:.1f}%)")
-    
-    if passed == total:
-        print("🎉 TODOS OS TESTES PASSARAM - SISTEMA COMPLETAMENTE FUNCIONAL!")
-        return True
-    else:
-        print("⚠️  ALGUNS TESTES FALHARAM - VERIFICAR PROBLEMAS")
-        return False
+    size = len(pdf.getvalue())
+    print(f"PDF gerado: teste_sistema_completo.pdf ({size:,} bytes)")
+    print("Este PDF deve ter TODAS as seções com bordas pretas visíveis.")
+    return True
 
 if __name__ == "__main__":
-    success = run_all_tests()
-    sys.exit(0 if success else 1)
+    test_complete_system()

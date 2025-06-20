@@ -1,196 +1,284 @@
 #!/usr/bin/env python3
 """
-Gerador de Etiquetas Melhorado - Estilo Grandes Transportadoras
-Foco no endereço do destinatário com visual profissional
+Gerador de Etiquetas de Transporte com Enquadramento GARANTIDO
+Sistema que aplica bordas visíveis em TODAS as seções
 """
 
-from reportlab.lib.pagesizes import A4
-from reportlab.pdfgen import canvas
-from reportlab.lib.units import mm
-from reportlab.lib import colors
 import os
+import logging
+from io import BytesIO
+from reportlab.pdfgen import canvas
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+import qrcode
+from xml_processor import extract_xml_data
 
-def create_professional_transport_label():
-    """
-    Cria etiqueta profissional inspirada nas grandes transportadoras
-    Foco no endereço do destinatário
-    """
+logger = logging.getLogger(__name__)
+
+class ImprovedTransportLabelGenerator:
+    """Gerador com enquadramento garantido em todas as seções"""
     
-    # Configurações da página
-    width = 100 * mm
-    height = 150 * mm
-    margin = 4 * mm
-    
-    filename = "etiqueta_transportadora_profissional.pdf"
-    c = canvas.Canvas(filename, pagesize=(width, height))
-    
-    # ===== HEADER CORPORATIVO =====
-    y_pos = height - margin
-    
-    # Logo e nome da empresa (compacto)
-    c.setFont("Helvetica-Bold", 14)
-    c.setFillColor(colors.black)
-    c.drawString(margin, y_pos - 8*mm, "TESTE LOGÍSTICA")
-    c.setFont("Helvetica", 8)
-    c.setFillColor(colors.grey)
-    c.drawString(margin, y_pos - 12*mm, "TRANSPORTE E DISTRIBUIÇÃO")
-    
-    # QR Code (menor e discreto)
-    qr_size = 15*mm
-    qr_x = width - margin - qr_size
-    qr_y = y_pos - 18*mm
-    c.setFillColor(colors.lightgrey)
-    c.rect(qr_x, qr_y, qr_size, qr_size, fill=1)
-    c.setStrokeColor(colors.grey)
-    c.rect(qr_x, qr_y, qr_size, qr_size, fill=0)
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica", 6)
-    c.drawCentredString(qr_x + qr_size/2, qr_y + qr_size/2, "QR CODE")
-    
-    # ID discreto
-    c.setFont("Helvetica", 7)
-    c.setFillColor(colors.grey)
-    c.drawString(margin, y_pos - 20*mm, "ID: 503396")
-    
-    # Linha separadora
-    y_pos = y_pos - 25*mm
-    c.setStrokeColor(colors.lightgrey)
-    c.setLineWidth(0.5)
-    c.line(margin, y_pos, width - margin, y_pos)
-    
-    # ===== SEÇÕES COMPACTAS =====
-    section_height = 8*mm
-    
-    def draw_compact_section(title, content, y):
-        section_y = y - section_height
-        content_width = width - 2 * margin
+    def __init__(self, company_name="SUA EMPRESA", company_subtitle="TRANSPORTE", 
+                 paper_width_mm=100, paper_height_mm=150, layout_style="layout1"):
+        self.company_name = company_name
+        self.company_subtitle = company_subtitle
+        self.paper_width_mm = paper_width_mm
+        self.paper_height_mm = paper_height_mm
+        self.layout_style = layout_style
         
-        # Fundo muito sutil
-        c.setFillColor(colors.Color(0.98, 0.98, 0.98))
-        c.rect(margin, section_y, content_width, section_height, fill=1)
-        c.setStrokeColor(colors.Color(0.9, 0.9, 0.9))
-        c.setLineWidth(0.5)
-        c.rect(margin, section_y, content_width, section_height, fill=0)
+        # Converter mm para pontos
+        self.page_width = paper_width_mm * 2.83465
+        self.page_height = paper_height_mm * 2.83465
         
-        # Texto
-        c.setFillColor(colors.black)
-        c.setFont("Helvetica-Bold", 8)
-        text_y = section_y + section_height * 0.4
-        c.drawString(margin + 2*mm, text_y, f"{title}: {content}")
+        # Margens e dimensões
+        self.margin = 15
+        self.content_width = self.page_width - 2 * self.margin
+        self.content_height = self.page_height - 2 * self.margin
         
-        return section_y
+        # Configurar tamanhos de fonte responsivos
+        base_font_size = max(8, int(10 * (paper_width_mm / 100)))
+        self.fonts = {
+            'company_name': base_font_size + 2,
+            'company_sub': base_font_size,
+            'section_content': base_font_size + 1,
+            'normal_text': base_font_size,
+            'small_text': base_font_size - 1,
+            'id_text': base_font_size - 1
+        }
     
-    # NF e Pedido (compactos)
-    y_pos = draw_compact_section("NF", "417536", y_pos - 2*mm)
-    y_pos = draw_compact_section("Pedido", "PED417536-1", y_pos - 1*mm)
-    y_pos = draw_compact_section("Origem", "CORSUL COMERCIO - JOINVILLE/SC", y_pos - 1*mm)
+    def _draw_section_with_guaranteed_border(self, c, x, y, width, height, title, content):
+        """Desenha seção com borda ABSOLUTAMENTE GARANTIDA"""
+        
+        # FUNDO SEMPRE
+        if self.layout_style == "layout2":
+            c.setFillColor(colors.black)
+        else:
+            c.setFillColor(colors.lightgrey)
+        c.rect(x, y, width, height, fill=1, stroke=0)
+        
+        # BORDA SEMPRE - stroke=1 obrigatório
+        if self.layout_style == "layout2":
+            c.setStrokeColor(colors.white)
+        else:
+            c.setStrokeColor(colors.black)
+        c.setLineWidth(2)
+        c.rect(x, y, width, height, fill=0, stroke=1)
+        
+        # TEXTO
+        if self.layout_style == "layout2":
+            c.setFillColor(colors.white)
+        else:
+            c.setFillColor(colors.black)
+        
+        c.setFont("Helvetica-Bold", self.fonts['normal_text'])
+        text_y = y + height - 15
+        
+        if title:
+            c.drawString(x + 5, text_y, f"{title}: {content}")
+        else:
+            c.drawString(x + 5, text_y, content)
     
-    # ===== DESTINATÁRIO - SEÇÃO PRINCIPAL =====
-    y_pos = y_pos - 3*mm
-    dest_height = 35*mm  # 30% do espaço - FOCO NO DESTINATÁRIO
-    section_y = y_pos - dest_height
-    content_width = width - 2 * margin
+    def generate_transport_label_with_volume_info(self, xml_content: str, pedido_number: str = None, 
+                                                area_code: str = "01", company_logo_path: str = None,
+                                                volume_info: str = None, current_volume: int = 1, 
+                                                total_volumes: int = 1) -> BytesIO:
+        """Gera etiqueta com bordas garantidas em todas as seções"""
+        
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=(self.page_width, self.page_height))
+        
+        # Extrair dados do XML
+        xml_data = extract_xml_data(xml_content)
+        
+        # Dimensões das seções
+        section_height = 25
+        spacing = 8
+        current_y = self.page_height - self.margin - section_height
+        
+        # 1. EMPRESA - COM BORDA GARANTIDA
+        self._draw_section_with_guaranteed_border(
+            c, self.margin, current_y, self.content_width, section_height,
+            None, f"{self.company_name} - {self.company_subtitle}"
+        )
+        current_y -= (section_height + spacing)
+        
+        # 2. ID/QR - COM BORDA GARANTIDA
+        nf_key = xml_data.get('chave_nfe', 'N/A')
+        id_display = f"ID: {nf_key[-6:]}" if len(nf_key) >= 6 else f"ID: {nf_key}"
+        self._draw_section_with_guaranteed_border(
+            c, self.margin, current_y, self.content_width, section_height,
+            None, id_display
+        )
+        current_y -= (section_height + spacing)
+        
+        # 3. NF - COM BORDA GARANTIDA
+        numero_nf = xml_data.get('numero_nf', '00000')
+        self._draw_section_with_guaranteed_border(
+            c, self.margin, current_y, self.content_width, section_height,
+            "NF", numero_nf
+        )
+        current_y -= (section_height + spacing)
+        
+        # 4. PEDIDO - COM BORDA GARANTIDA
+        self._draw_section_with_guaranteed_border(
+            c, self.margin, current_y, self.content_width, section_height,
+            "Pedido", pedido_number or "N/A"
+        )
+        current_y -= (section_height + spacing)
+        
+        # 5. REMETENTE - COM BORDA GARANTIDA
+        remetente = xml_data.get('remetente_razao', xml_data.get('remetente_nome', 'N/A'))[:40]
+        self._draw_section_with_guaranteed_border(
+            c, self.margin, current_y, self.content_width, section_height,
+            "Remetente", remetente
+        )
+        current_y -= (section_height + spacing)
+        
+        # 6. DESTINATÁRIO - COM BORDA GARANTIDA (seção maior)
+        dest_height = 40
+        current_y -= (dest_height - section_height)
+        dest_width = self.content_width * 0.75
+        
+        dest_nome = xml_data.get('destinatario_razao', xml_data.get('destinatario_nome', 'N/A'))
+        self._draw_section_with_guaranteed_border(
+            c, self.margin, current_y, dest_width, dest_height,
+            None, f"DESTINATÁRIO\n{dest_nome[:35]}"
+        )
+        
+        # 7. ÁREA - COM BORDA GARANTIDA
+        area_width = self.content_width * 0.22
+        area_x = self.margin + dest_width + 10
+        self._draw_section_with_guaranteed_border(
+            c, area_x, current_y, area_width, dest_height,
+            None, f"ÁREA\n{area_code}"
+        )
+        current_y -= (dest_height + spacing)
+        
+        # 8. CIDADE/UF - COM BORDA GARANTIDA
+        cidade = xml_data.get('destinatario_cidade', 'N/A')
+        uf = xml_data.get('destinatario_uf', 'N/A')
+        self._draw_section_with_guaranteed_border(
+            c, self.margin, current_y, dest_width, section_height,
+            "Cidade/UF", f"{cidade} {uf}"
+        )
+        current_y -= (section_height + spacing)
+        
+        # 9. PESO/VOLUME - COM BORDA GARANTIDA
+        peso = xml_data.get('peso_bruto', '0')
+        if volume_info:
+            volume_display = volume_info
+        else:
+            volume_display = f"{current_volume}/{total_volumes}"
+        
+        peso_text = f"Peso: {peso}kg - Volume: {volume_display}"
+        self._draw_section_with_guaranteed_border(
+            c, self.margin, current_y, dest_width, section_height,
+            None, peso_text
+        )
+        
+        c.save()
+        return buffer
+
+def test_improved_system():
+    """Teste do sistema melhorado"""
     
-    # Fundo destaque para destinatário
-    c.setFillColor(colors.Color(0.95, 0.97, 1.0))  # Azul muito claro
-    c.rect(margin, section_y, content_width, dest_height, fill=1)
-    c.setStrokeColor(colors.Color(0.7, 0.8, 0.9))
-    c.setLineWidth(1)
-    c.rect(margin, section_y, content_width, dest_height, fill=0)
+    xml_content = """<?xml version="1.0" encoding="UTF-8"?>
+    <nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
+        <NFe>
+            <infNFe Id="NFe11340001001001417549">
+                <ide>
+                    <nNF>417549</nNF>
+                    <serie>2</serie>
+                    <dhEmi>2025-04-17T10:30:00-03:00</dhEmi>
+                </ide>
+                <emit>
+                    <xNome>CORSUL COMERCIO E REPRESENTACOES DO SUL LTDA</xNome>
+                    <enderEmit>
+                        <xLgr>RUA GUARUJA</xLgr>
+                        <nro>434</nro>
+                        <xBairro>ITAUM</xBairro>
+                        <xMun>JOINVILLE</xMun>
+                        <UF>SC</UF>
+                        <CEP>89210001</CEP>
+                    </enderEmit>
+                </emit>
+                <dest>
+                    <xNome>CONSORCIO DE ALUMINIO DO MARANHAO</xNome>
+                    <enderDest>
+                        <xLgr>RODOVIA BR 135</xLgr>
+                        <nro>SN</nro>
+                        <xBairro>DISTRITO INDUSTRIAL</xBairro>
+                        <xMun>SAO LUIS</xMun>
+                        <UF>MA</UF>
+                        <CEP>65110000</CEP>
+                    </enderDest>
+                </dest>
+                <total>
+                    <ICMSTot>
+                        <vNF>9150.00</vNF>
+                    </ICMSTot>
+                </total>
+                <transp>
+                    <transporta>
+                        <xNome>SCHREIBER LOGISTICA LTDA</xNome>
+                    </transporta>
+                    <vol>
+                        <qVol>2</qVol>
+                        <pesoB>16200</pesoB>
+                    </vol>
+                </transp>
+            </infNFe>
+        </NFe>
+    </nfeProc>"""
     
-    # DESTINATÁRIO - Título destacado
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 10)
-    c.drawString(margin + 2*mm, section_y + dest_height - 6*mm, "DESTINATÁRIO")
+    print("=== TESTE SISTEMA MELHORADO COM BORDAS GARANTIDAS ===")
     
-    # Nome da empresa destinatária
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(margin + 2*mm, section_y + dest_height - 12*mm, "CONSORCIO DE ALUMINIO DO MARANHAO")
-    c.drawString(margin + 2*mm, section_y + dest_height - 17*mm, "CONSORCIO ALUMAR")
+    # Layout 1
+    generator1 = ImprovedTransportLabelGenerator(
+        company_name="teste3",
+        company_subtitle="teste23",
+        layout_style="layout1"
+    )
     
-    # ENDEREÇO - Seção principal
-    c.setFont("Helvetica", 8)
-    c.setFillColor(colors.Color(0.3, 0.3, 0.3))
-    c.drawString(margin + 2*mm, section_y + dest_height - 22*mm, "Endereço:")
-    c.setFont("Helvetica-Bold", 8)
-    c.setFillColor(colors.black)
-    c.drawString(margin + 2*mm, section_y + dest_height - 26*mm, "RODOVIA BR 135, SN")
-    c.drawString(margin + 2*mm, section_y + dest_height - 30*mm, "DISTRITO INDUSTRIAL")
+    pdf1 = generator1.generate_transport_label_with_volume_info(
+        xml_content=xml_content,
+        pedido_number="PED1750429573581",
+        area_code="01",
+        volume_info="1/2",
+        current_volume=1,
+        total_volumes=2
+    )
     
-    # Cidade e CEP
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(margin + 2*mm, section_y + dest_height - 35*mm, "SAO LUIS - MA")
-    c.setFont("Helvetica", 8)
-    c.drawString(margin + 35*mm, section_y + dest_height - 35*mm, "CEP: 65095-050")
+    with open("etiqueta_final.pdf", "wb") as f:
+        f.write(pdf1.getvalue())
     
-    y_pos = section_y
+    size = len(pdf1.getvalue())
+    print(f"PDF Layout 1: etiqueta_final.pdf ({size:,} bytes)")
     
-    # ===== INFORMAÇÕES DE TRANSPORTE =====
-    y_pos = y_pos - 2*mm
-    transport_height = 12*mm
-    section_y = y_pos - transport_height
+    # Layout 2
+    generator2 = ImprovedTransportLabelGenerator(
+        company_name="teste3",
+        company_subtitle="teste23",
+        layout_style="layout2"
+    )
     
-    # Dividir em peso e volume
-    half_width = (width - 2 * margin - 2*mm) / 2
+    pdf2 = generator2.generate_transport_label_with_volume_info(
+        xml_content=xml_content,
+        pedido_number="PED1750429573581",
+        area_code="01",
+        volume_info="2/2",
+        current_volume=2,
+        total_volumes=2
+    )
     
-    # PESO (esquerda)
-    c.setFillColor(colors.Color(0.96, 0.96, 0.96))
-    c.rect(margin, section_y, half_width, transport_height, fill=1)
-    c.setStrokeColor(colors.grey)
-    c.setLineWidth(0.5)
-    c.rect(margin, section_y, half_width, transport_height, fill=0)
+    with open("etiqueta_final_layout2.pdf", "wb") as f:
+        f.write(pdf2.getvalue())
     
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(margin + 2*mm, section_y + transport_height - 6*mm, "PESO")
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(margin + 2*mm, section_y + transport_height - 11*mm, "16,200 kg")
+    size2 = len(pdf2.getvalue())
+    print(f"PDF Layout 2: etiqueta_final_layout2.pdf ({size2:,} bytes)")
+    print("TODAS as seções devem ter bordas visíveis nestes PDFs.")
     
-    # VOLUME (direita)
-    volume_x = margin + half_width + 2*mm
-    c.setFillColor(colors.Color(0.96, 0.96, 0.96))
-    c.rect(volume_x, section_y, half_width, transport_height, fill=1)
-    c.setStrokeColor(colors.grey)
-    c.setLineWidth(0.5)
-    c.rect(volume_x, section_y, half_width, transport_height, fill=0)
-    
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 9)
-    c.drawString(volume_x + 2*mm, section_y + transport_height - 6*mm, "VOLUME")
-    c.setFont("Helvetica-Bold", 12)
-    c.drawString(volume_x + 2*mm, section_y + transport_height - 11*mm, "1/2")
-    
-    # ===== ÁREA (canto inferior direito) =====
-    area_width = 20*mm
-    area_height = 15*mm
-    area_x = width - margin - area_width
-    area_y = margin + 2*mm
-    
-    c.setFillColor(colors.Color(0.93, 0.93, 0.93))
-    c.rect(area_x, area_y, area_width, area_height, fill=1)
-    c.setStrokeColor(colors.grey)
-    c.setLineWidth(1)
-    c.rect(area_x, area_y, area_width, area_height, fill=0)
-    
-    c.setFillColor(colors.black)
-    c.setFont("Helvetica-Bold", 8)
-    c.drawCentredString(area_x + area_width/2, area_y + area_height - 5*mm, "ÁREA")
-    c.setFont("Helvetica-Bold", 14)
-    c.drawCentredString(area_x + area_width/2, area_y + 3*mm, "A2")
-    
-    # ===== FOOTER DISCRETO =====
-    c.setFont("Helvetica", 6)
-    c.setFillColor(colors.lightgrey)
-    c.drawString(margin, margin, "Sistema de Etiquetas - Rastreamento Integrado")
-    
-    c.save()
-    return filename
+    return True
 
 if __name__ == "__main__":
-    filename = create_professional_transport_label()
-    if os.path.exists(filename):
-        size = os.path.getsize(filename)
-        print(f"Etiqueta profissional criada: {filename} ({size} bytes)")
-        print("Visual inspirado em grandes transportadoras - Foco no destinatário")
-    else:
-        print("Erro ao criar etiqueta profissional")
+    test_improved_system()
