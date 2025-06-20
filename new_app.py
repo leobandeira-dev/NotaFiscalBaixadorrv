@@ -1713,6 +1713,67 @@ def save_label_config():
         logger.error(f"Erro ao salvar configurações: {e}")
         return jsonify({'success': False, 'message': f'Erro ao salvar configurações: {str(e)}'})
 
+@app.route('/download_generated_label/<int:xml_id>')
+@login_required
+def download_generated_label(xml_id):
+    """Download de etiqueta já gerada"""
+    xml_data = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id).first()
+    if not xml_data:
+        flash('XML não encontrado.', 'error')
+        return redirect(url_for('my_xmls'))
+    
+    if not xml_data.label_generated:
+        flash('Etiqueta ainda não foi gerada para este XML.', 'error')
+        return redirect(url_for('label_generator', xml_id=xml_id))
+    
+    # Re-gerar etiqueta com configurações salvas do usuário
+    try:
+        # Usar layout preferido do usuário
+        layout_style = current_user.preferred_layout or 'layout1'
+        
+        # Configuração padrão para re-geração
+        paper_config = {
+            'size': '10x15cm',
+            'total_volumes': xml_data.quantidade_volumes or 1,
+            'volume_weights': [xml_data.peso_bruto or 0.0] * (xml_data.quantidade_volumes or 1)
+        }
+        
+        labels = generate_custom_label_with_layout(
+            xml_id=xml_id,
+            user=current_user,
+            paper_config=paper_config,
+            layout_style=layout_style
+        )
+        
+        if not labels:
+            flash('Erro ao re-gerar etiqueta.', 'error')
+            return redirect(url_for('label_generator', xml_id=xml_id))
+        
+        # Retornar PDF
+        if len(labels) == 1:
+            label = labels[0]
+            pdf_buffer = label.get('pdf_buffer') or label.get('buffer')
+            response = make_response(pdf_buffer.getvalue())
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'inline; filename="{label["filename"]}"'
+            response.headers['X-Frame-Options'] = 'ALLOWALL'
+            return response
+        else:
+            from responsive_label_generator import merge_labels_into_single_pdf
+            merged_pdf = merge_labels_into_single_pdf(labels)
+            nf_number = getattr(xml_data, "numero_nf", xml_id)
+            
+            response = make_response(merged_pdf.getvalue())
+            response.headers['Content-Type'] = 'application/pdf'
+            response.headers['Content-Disposition'] = f'inline; filename="etiquetas_nf_{nf_number}_multipaginas.pdf"'
+            response.headers['X-Frame-Options'] = 'ALLOWALL'
+            return response
+            
+    except Exception as e:
+        logger.error(f"Erro ao baixar etiqueta gerada: {e}")
+        flash('Erro ao baixar etiqueta. Gerando nova...', 'error')
+        return redirect(url_for('label_generator', xml_id=xml_id))
+
 # Enhanced Label Generation Routes
 @app.route('/configurar-etiquetas/<int:xml_id>')
 @login_required

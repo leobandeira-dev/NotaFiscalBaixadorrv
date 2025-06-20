@@ -230,11 +230,21 @@
                                                 {{ 'Download DANFE' if xml.danfe_generated else 'Gerar DANFE' }}
                                             </a>
                                             
-                                            <a href="{{ url_for('generate_label_route', xml_id=xml.id) }}" 
-                                               class="btn btn-warning btn-custom">
-                                                <i class="fas fa-tags"></i> 
-                                                {{ 'Download Etiqueta' if xml.label_generated else 'Gerar Etiqueta' }}
-                                            </a>
+                                            {% if xml.label_generated %}
+                                                <a href="{{ url_for('download_generated_label', xml_id=xml.id) }}" 
+                                                   class="btn btn-success btn-custom">
+                                                    <i class="fas fa-download"></i> Download Etiqueta
+                                                </a>
+                                                <a href="{{ url_for('label_generator', xml_id=xml.id) }}" 
+                                                   class="btn btn-warning btn-custom btn-sm mt-1">
+                                                    <i class="fas fa-edit"></i> Editar Volume/Peso
+                                                </a>
+                                            {% else %}
+                                                <a href="{{ url_for('label_generator', xml_id=xml.id) }}" 
+                                                   class="btn btn-warning btn-custom">
+                                                    <i class="fas fa-tags"></i> Gerar Etiqueta
+                                                </a>
+                                            {% endif %}
                                         </div>
                                         
                                         <small class="text-muted d-block mt-2">
