@@ -1884,10 +1884,10 @@ def generate_custom_labels(xml_id):
                 'pedido': pedido
             })
         
-        # Gerar etiquetas múltiplas
-        from transport_label_generator_v2 import generate_multiple_labels_from_volumes
+        # Gerar etiquetas múltiplas responsivas
+        from responsive_label_generator import generate_multiple_responsive_labels_from_volumes
         
-        labels = generate_multiple_labels_from_volumes(
+        labels = generate_multiple_responsive_labels_from_volumes(
             xml_record=xml_data,
             volumes_config=volumes_config,
             company_name=company_name,

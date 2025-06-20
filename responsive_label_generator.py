@@ -459,3 +459,70 @@ def generate_responsive_label_from_database_xml(xml_record, pedido_number: str =
     except Exception as e:
         logger.error(f"Erro ao gerar etiqueta responsiva: {str(e)}")
         raise
+
+
+def generate_multiple_responsive_labels_from_volumes(xml_record, volumes_config: list, 
+                                                   company_name: str = "SUA EMPRESA", 
+                                                   company_logo_path: str = None,
+                                                   paper_width_mm: int = 100,
+                                                   paper_height_mm: int = 150,
+                                                   area_code: str = "01") -> list:
+    """
+    Gera múltiplas etiquetas responsivas separadas baseadas na configuração de volumes
+    
+    Args:
+        xml_record: Registro XML do banco
+        volumes_config: Lista de dicionários com configurações de cada volume
+                       [{"peso": 5.5, "pedido": "PED123-1"}, ...]
+        company_name: Nome da empresa
+        company_logo_path: Caminho para logo da empresa
+        paper_width_mm: Largura do papel em milímetros
+        paper_height_mm: Altura do papel em milímetros
+        area_code: Código da área
+        
+    Returns:
+        Lista de dicionários com os PDFs das etiquetas
+    """
+    try:
+        labels = []
+        
+        # Obter conteúdo XML
+        xml_content = getattr(xml_record, 'xml_content', None) or getattr(xml_record, 'content', '')
+        
+        if not xml_content:
+            raise ValueError("XML content not found in record")
+        
+        # Criar gerador responsivo
+        generator = ResponsiveTransportLabelGenerator(
+            company_name=company_name,
+            paper_width_mm=paper_width_mm,
+            paper_height_mm=paper_height_mm
+        )
+        
+        # Gerar uma etiqueta para cada volume
+        for i, volume_config in enumerate(volumes_config, 1):
+            peso = volume_config.get('peso', 0)
+            pedido = volume_config.get('pedido', f'PED{i}')
+            
+            # Gerar etiqueta individual para este volume
+            label_buffer = generator.generate_transport_label(
+                xml_content=xml_content,
+                pedido_number=pedido,
+                area_code=area_code,
+                company_logo_path=company_logo_path
+            )
+            
+            labels.append({
+                'volume': i,
+                'peso': peso,
+                'pedido': pedido,
+                'pdf_buffer': label_buffer,
+                'filename': f'etiqueta_volume_{i}_{pedido}.pdf'
+            })
+        
+        logger.info(f"Geradas {len(labels)} etiquetas responsivas separadas")
+        return labels
+        
+    except Exception as e:
+        logger.error(f"Erro ao gerar etiquetas responsivas múltiplas: {str(e)}")
+        raise
