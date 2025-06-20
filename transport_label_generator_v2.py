@@ -79,53 +79,34 @@ class CustomTransportLabelGenerator:
     def _draw_transport_label(self, c, xml_data, pedido_number, area_code, company_logo_path):
         """Desenha a etiqueta completa personalizada com layout responsivo"""
         
-        # Calcular distribuição responsiva do espaço disponível
-        usable_height = self.page_height - (40 * mm)  # Reservar espaço para margem superior/inferior e área
-        
         # Posição inicial Y (começa do topo)
         y_pos = self.page_height - 15 * mm
         
-        # 1. Header da empresa (10% do espaço)
-        header_height = usable_height * 0.10
+        # 1. Header da empresa
         y_pos = self._draw_company_header(c, y_pos, company_logo_path)
-        y_pos -= header_height
         
-        # 2. ID e QR Code (15% do espaço)
-        id_height = usable_height * 0.15
+        # 2. ID e QR Code
         y_pos = self._draw_id_section(c, xml_data, y_pos)
-        y_pos -= id_height
         
-        # 3. NF Section (8% do espaço)
-        nf_height = usable_height * 0.08
+        # 3. NF Section
         y_pos = self._draw_nf_section(c, xml_data, y_pos)
-        y_pos -= nf_height
         
-        # 4. Pedido Section (8% do espaço)
-        pedido_height = usable_height * 0.08
+        # 4. Pedido Section
         y_pos = self._draw_pedido_section(c, pedido_number or xml_data.get('numero_nf', '00000'), y_pos)
-        y_pos -= pedido_height
         
-        # 5. Remetente (8% do espaço)
-        remetente_height = usable_height * 0.08
+        # 5. Remetente
         y_pos = self._draw_remetente_section(c, xml_data, y_pos)
-        y_pos -= remetente_height
         
-        # 6. Destinatário (15% do espaço)
-        dest_height = usable_height * 0.15
+        # 6. Destinatário (seção expandida)
         y_pos = self._draw_destinatario_section(c, xml_data, y_pos)
-        y_pos -= dest_height
         
-        # 7. Cidade/UF (8% do espaço)
-        cidade_height = usable_height * 0.08
+        # 7. Cidade/UF
         y_pos = self._draw_cidade_section(c, xml_data, y_pos)
-        y_pos -= cidade_height
         
-        # 8. Peso Section (8% do espaço)
-        peso_height = usable_height * 0.08
+        # 8. Peso Section
         y_pos = self._draw_peso_section(c, xml_data, y_pos)
-        y_pos -= peso_height
         
-        # 9. Volume Section (8% do espaço)
+        # 9. Volume Section
         y_pos = self._draw_volume_section(c, xml_data, y_pos, volume_number=1)
         
         # 10. Área e Rodapé (posicionamento fixo no canto inferior)
