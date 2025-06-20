@@ -64,6 +64,7 @@ class EmailXMLProcessor:
             emit = inf_nfe.find('nfe:emit', namespaces)
             if emit is not None:
                 xml_data['nome_emitente'] = emit.findtext('nfe:xNome', 'N/A', namespaces)
+                xml_data['cnpj_emitente'] = emit.findtext('nfe:CNPJ', 'N/A', namespaces)
                 
                 # Endereço do emitente
                 enderemit = emit.find('nfe:enderEmit', namespaces)
@@ -82,6 +83,11 @@ class EmailXMLProcessor:
             dest = inf_nfe.find('nfe:dest', namespaces)
             if dest is not None:
                 xml_data['nome_destinatario'] = dest.findtext('nfe:xNome', 'N/A', namespaces)
+                
+                # CNPJ ou CPF do destinatário
+                cnpj_dest = dest.findtext('nfe:CNPJ', None, namespaces)
+                cpf_dest = dest.findtext('nfe:CPF', None, namespaces)
+                xml_data['destinatario_cnpj_cpf'] = cnpj_dest if cnpj_dest else (cpf_dest if cpf_dest else 'N/A')
                 
                 # Endereço do destinatário
                 enderdest = dest.find('nfe:enderDest', namespaces)
@@ -270,7 +276,9 @@ class EmailXMLProcessor:
                     xml_file.valor_total = xml_data.get('valor_total', 0.0)
                     xml_file.peso_bruto = xml_data.get('peso_bruto', 0.0)
                     xml_file.quantidade_volumes = xml_data.get('volumes', 0)
+                    xml_file.cnpj_emitente = xml_data.get('cnpj_emitente', 'N/A')
                     xml_file.nome_emitente = xml_data.get('nome_emitente', 'N/A')
+                    xml_file.destinatario_cnpj_cpf = xml_data.get('destinatario_cnpj_cpf', 'N/A')
                     # Dados do remetente (usar dados do emitente)
                     xml_file.remetente_razao = xml_data.get('nome_emitente', 'N/A')
                     xml_file.remetente_cidade = xml_data.get('cidade_emitente', 'N/A')
