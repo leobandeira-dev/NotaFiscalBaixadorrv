@@ -295,10 +295,10 @@ class CustomTransportLabelGenerator:
         # Texto branco
         c.setFillColor(colors.white)
         c.setFont("Helvetica-Bold", 12)
-        c.drawCentredText(area_x + area_width/2, area_y + area_height - 10, "ÁREA")
+        c.drawCentredString(area_x + area_width/2, area_y + area_height - 10, "ÁREA")
         
         c.setFont("Helvetica-Bold", 24)
-        c.drawCentredText(area_x + area_width/2, area_y + 8, area_code)
+        c.drawCentredString(area_x + area_width/2, area_y + 8, area_code)
         
         # Voltar cor para preto
         c.setFillColor(colors.black)
