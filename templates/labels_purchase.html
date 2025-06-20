@@ -169,10 +169,10 @@
                 </div>
 
                 <!-- Trial Info -->
-                {% if user.trial_expires_at and user.trial_expires_at > moment().utcnow() %}
+                {% if user.trial_expires_at %}
                 <div class="alert alert-info text-center mt-4">
                     <i class="fas fa-gift me-2"></i>
-                    <strong>Período de Teste Ativo:</strong> Você pode usar todos os recursos gratuitamente até {{ user.trial_expires_at.strftime('%d/%m/%Y às %H:%M') }}.
+                    <strong>Período de Teste:</strong> Disponível até {{ user.trial_expires_at.strftime('%d/%m/%Y às %H:%M') }}.
                 </div>
                 {% endif %}
 
