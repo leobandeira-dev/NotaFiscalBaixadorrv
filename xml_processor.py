@@ -126,38 +126,42 @@ def extract_xml_data(xml_content: str) -> dict:
                 xNome = find_element_flexible(emit, 'xNome', ns)
                 nome_emitente = xNome.text if xNome is not None else ''
                 nf_data['nome_emitente'] = nome_emitente
-                nf_data['remetente_razao'] = nome_emitente
                 if xNome is not None:
                     logger.info(f"Nome emitente extraído: {nome_emitente}")
-            else:
-                logger.warning("Emitente não encontrado no XML")
                 
                 # Endereço do emitente/remetente
-                enderEmit = emit.find('nfe:enderEmit', ns)
+                enderEmit = find_element_flexible(emit, 'enderEmit', ns)
                 if enderEmit is not None:
                     # UF
-                    uf = enderEmit.find('nfe:UF', ns)
+                    uf = find_element_flexible(enderEmit, 'UF', ns)
                     nf_data['remetente_uf'] = uf.text if uf is not None else ''
+                    nf_data['uf_emitente'] = uf.text if uf is not None else ''
                     
                     # Município
-                    xMun = enderEmit.find('nfe:xMun', ns)
+                    xMun = find_element_flexible(enderEmit, 'xMun', ns)
                     nf_data['remetente_cidade'] = xMun.text if xMun is not None else ''
+                    nf_data['cidade_emitente'] = xMun.text if xMun is not None else ''
                     
                     # Endereço completo
-                    xLgr = enderEmit.find('nfe:xLgr', ns)
-                    nro = enderEmit.find('nfe:nro', ns)
-                    xBairro = enderEmit.find('nfe:xBairro', ns)
+                    xLgr = find_element_flexible(enderEmit, 'xLgr', ns)
+                    nro = find_element_flexible(enderEmit, 'nro', ns)
+                    xBairro = find_element_flexible(enderEmit, 'xBairro', ns)
                     
                     logradouro = xLgr.text if xLgr is not None else ''
                     numero = nro.text if nro is not None else ''
                     bairro = xBairro.text if xBairro is not None else ''
                     
                     endereco_parts = [p for p in [logradouro, numero, bairro] if p]
-                    nf_data['remetente_endereco'] = ', '.join(endereco_parts)
+                    endereco_completo = ', '.join(endereco_parts)
+                    nf_data['remetente_endereco'] = endereco_completo
+                    nf_data['endereco_emitente'] = endereco_completo
                     
                     # CEP
-                    cep = enderEmit.find('nfe:CEP', ns)
+                    cep = find_element_flexible(enderEmit, 'CEP', ns)
                     nf_data['remetente_cep'] = cep.text if cep is not None else ''
+                    nf_data['cep_emitente'] = cep.text if cep is not None else ''
+            else:
+                logger.warning("Emitente não encontrado no XML")
             
             # Destinatário
             dest = infNFe.find('nfe:dest', ns)
@@ -273,6 +277,14 @@ def extract_xml_data(xml_content: str) -> dict:
         # Copiar dados do emitente para remetente se não estiverem preenchidos
         if not nf_data.get('remetente_razao'):
             nf_data['remetente_razao'] = nf_data.get('nome_emitente', '')
+        if not nf_data.get('remetente_cidade'):
+            nf_data['remetente_cidade'] = nf_data.get('cidade_emitente', '')
+        if not nf_data.get('remetente_uf'):
+            nf_data['remetente_uf'] = nf_data.get('uf_emitente', '')
+        if not nf_data.get('remetente_endereco'):
+            nf_data['remetente_endereco'] = nf_data.get('endereco_emitente', '')
+        if not nf_data.get('remetente_cep'):
+            nf_data['remetente_cep'] = nf_data.get('cep_emitente', '')
         
         # Preencher campos padrão se não encontrados
         default_fields = {
