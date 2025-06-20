@@ -1688,19 +1688,31 @@ def charge_for_xml_download(user_id: int, invoice_key: str) -> bool:
 
 @app.route('/configurar-etiquetas', methods=['GET', 'POST'])
 @login_required
+@rate_limit_check(max_requests=30, window_minutes=10)
 def configurar_etiquetas():
-    """Configurar etiquetas personalizadas"""
+    """Configurar etiquetas personalizadas com isolamento de dados"""
+    # Validar acesso do usuário aos próprios dados
+    if not SecurityManager.validate_user_access(current_user.id):
+        SecurityManager.log_security_event("UNAUTHORIZED_CONFIG_ACCESS", current_user.id)
+        abort(403)
+    
     if request.method == 'POST':
         try:
             # Verificar se é uma requisição AJAX
             if request.is_json or request.headers.get('Content-Type', '').startswith('application/json'):
                 return jsonify({'error': 'JSON não suportado para upload de arquivos'}), 400
             
-            # Atualizar dados da empresa
-            current_user.company_name = request.form.get('company_name', '').strip()
-            current_user.company_subtitle = request.form.get('company_subtitle', '').strip()
-            current_user.default_area_code = request.form.get('area_code', '01').strip()
-            current_user.preferred_layout = request.form.get('layout_style', 'layout1').strip()
+            # Sanitizar e validar dados de entrada
+            company_name = SecurityManager.sanitize_input(request.form.get('company_name', '').strip())
+            company_subtitle = SecurityManager.sanitize_input(request.form.get('company_subtitle', '').strip())
+            area_code = SecurityManager.sanitize_input(request.form.get('area_code', '01').strip())
+            layout_style = SecurityManager.sanitize_input(request.form.get('layout_style', 'layout1').strip())
+            
+            # Atualizar dados da empresa com validação
+            current_user.company_name = company_name[:200] if company_name else None
+            current_user.company_subtitle = company_subtitle[:100] if company_subtitle else None
+            current_user.default_area_code = area_code[:5] if area_code else '01'
+            current_user.preferred_layout = layout_style[:20] if layout_style else 'layout1'
             
             # Processar upload de logo
             if 'company_logo' in request.files:
@@ -1742,22 +1754,31 @@ def configurar_etiquetas():
 
 @app.route('/historico-creditos')
 @login_required
+@rate_limit_check(max_requests=50, window_minutes=10)
 def credit_history():
-    """Histórico detalhado de uso de créditos"""
-    # Paginação
-    page = request.args.get('page', 1, type=int)
-    per_page = 20
+    """Histórico detalhado de uso de créditos com isolamento de dados"""
+    # Validar acesso do usuário aos próprios dados
+    if not SecurityManager.validate_user_access(current_user.id):
+        SecurityManager.log_security_event("UNAUTHORIZED_HISTORY_ACCESS", current_user.id)
+        abort(403)
     
-    # Filtros
-    module_filter = request.args.get('module', '')
-    date_from = request.args.get('date_from', '')
-    date_to = request.args.get('date_to', '')
+    # Paginação com sanitização
+    page = max(1, request.args.get('page', 1, type=int))
+    per_page = min(50, max(10, request.args.get('per_page', 20, type=int)))
     
-    # Query base com tratamento de erro
+    # Filtros com sanitização
+    module_filter = SecurityManager.sanitize_input(request.args.get('module', ''))
+    date_from = SecurityManager.sanitize_input(request.args.get('date_from', ''))
+    date_to = SecurityManager.sanitize_input(request.args.get('date_to', ''))
+    
+    # Query base com isolamento de dados e tratamento de erro
     try:
-        query = db.session.query(UsageRecord, ServiceModule.name.label('module_name'))\
+        base_query = db.session.query(UsageRecord, ServiceModule.name.label('module_name'))\
             .outerjoin(ServiceModule, UsageRecord.module_id == ServiceModule.id)\
             .filter(UsageRecord.user_id == current_user.id)
+        
+        # Aplicar isolamento de dados por usuário
+        query = DataIsolationManager.filter_user_usage(base_query, current_user.id)
         
         # Aplicar filtros
         if module_filter:
@@ -1856,20 +1877,51 @@ def save_company_logo(logo_file, user_id):
         return None
 
 @app.route('/static/uploads/logos/<filename>')
+@rate_limit_check(max_requests=100, window_minutes=10)
 def serve_logo(filename):
-    """Servir logos das empresas"""
+    """Servir logos das empresas com validação de segurança"""
+    # Sanitizar nome do arquivo
+    filename = SecurityManager.sanitize_input(filename)
+    
+    # Validar formato do nome do arquivo para prevenir path traversal
+    if not filename or '..' in filename or '/' in filename or '\\' in filename:
+        SecurityManager.log_security_event("INVALID_LOGO_ACCESS", None, f"Filename: {filename}")
+        abort(400)
+    
+    # Verificar se arquivo existe e é seguro
+    logo_path = os.path.join('static', 'uploads', 'logos', filename)
+    if not os.path.exists(logo_path) or not os.path.isfile(logo_path):
+        abort(404)
+    
+    # Validar que é um arquivo de imagem válido
+    allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.svg'}
+    if not any(filename.lower().endswith(ext) for ext in allowed_extensions):
+        SecurityManager.log_security_event("INVALID_LOGO_FORMAT", None, f"Filename: {filename}")
+        abort(400)
+    
     return send_from_directory(os.path.join('static', 'uploads', 'logos'), filename)
 
 # API endpoint para salvar configurações via AJAX
 @app.route('/api/save-label-config', methods=['POST'])
 @login_required
+@rate_limit_check(max_requests=20, window_minutes=10)
 def save_label_config():
-    """Salvar configurações de etiquetas via AJAX"""
+    """Salvar configurações de etiquetas via AJAX com isolamento de dados"""
+    # Validar acesso do usuário aos próprios dados
+    if not SecurityManager.validate_user_access(current_user.id):
+        SecurityManager.log_security_event("UNAUTHORIZED_CONFIG_API_ACCESS", current_user.id)
+        return jsonify({'success': False, 'error': 'Acesso negado'}), 403
+    
     try:
-        # Atualizar dados da empresa
-        current_user.company_name = request.form.get('company_name', '').strip()
-        current_user.company_subtitle = request.form.get('company_subtitle', '').strip()
-        current_user.default_area_code = request.form.get('area_code', '01').strip()
+        # Sanitizar e validar dados de entrada
+        company_name = SecurityManager.sanitize_input(request.form.get('company_name', '').strip())
+        company_subtitle = SecurityManager.sanitize_input(request.form.get('company_subtitle', '').strip())
+        area_code = SecurityManager.sanitize_input(request.form.get('area_code', '01').strip())
+        
+        # Atualizar dados da empresa com validação
+        current_user.company_name = company_name[:200] if company_name else None
+        current_user.company_subtitle = company_subtitle[:100] if company_subtitle else None
+        current_user.default_area_code = area_code[:5] if area_code else '01'
         
         # Processar upload de logo se enviado
         if 'company_logo' in request.files:
