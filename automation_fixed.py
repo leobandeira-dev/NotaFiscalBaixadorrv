@@ -19,22 +19,22 @@ class InvoiceDownloader:
         self.setup_driver()
     
     def setup_driver(self):
-        """Setup Chrome WebDriver with appropriate options"""
+        """Setup Chrome WebDriver with production-ready configuration"""
         try:
-            logger.info("Setting up Chrome WebDriver...")
+            logger.info("Setting up Chrome WebDriver for production...")
             
             # Setup downloads directory
             downloads_dir = os.path.abspath('downloads')
             os.makedirs(downloads_dir, exist_ok=True)
             logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Chrome options optimized for speed
+            # Chrome options optimized for production environments
             chrome_options = Options()
             chrome_options.add_argument('--headless')
             chrome_options.add_argument('--no-sandbox')
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--window-size=1280,720')  # Smaller window for speed
+            chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--disable-web-security')
             chrome_options.add_argument('--allow-running-insecure-content')
             chrome_options.add_argument('--disable-extensions')
@@ -57,40 +57,87 @@ class InvoiceDownloader:
             chrome_options.add_argument('--disable-features=TranslateUI,BlinkGenPropertyTrees')
             chrome_options.add_argument('--aggressive-cache-discard')
             chrome_options.add_argument('--enable-features=NetworkService,NetworkServiceLogging')
+            # Production-specific flags
+            chrome_options.add_argument('--single-process')
+            chrome_options.add_argument('--disable-setuid-sandbox')
+            chrome_options.add_argument('--disable-site-isolation-trials')
+            chrome_options.add_argument('--disable-features=VizDisplayCompositor')
             
             # Download preferences
             prefs = {
                 "download.default_directory": downloads_dir,
                 "download.prompt_for_download": False,
                 "download.directory_upgrade": True,
-                "safebrowsing.enabled": True
+                "safebrowsing.enabled": False,
+                "profile.default_content_settings.popups": 0,
+                "profile.default_content_setting_values.automatic_downloads": 1
             }
             chrome_options.add_experimental_option("prefs", prefs)
             
-            # Try to find chromedriver
-            chromedriver_path = None
-            possible_paths = [
-                '/nix/store/3qnxr5x6gw3k9a9i7d0akz0m6bksbwff-chromedriver-125.0.6422.141/bin/chromedriver',
-                '/usr/bin/chromedriver',
-                '/usr/local/bin/chromedriver'
-            ]
+            # Multiple initialization strategies for production
+            driver_initialized = False
             
-            for path in possible_paths:
-                if os.path.exists(path):
-                    chromedriver_path = path
-                    logger.info(f"Found chromedriver at: {chromedriver_path}")
-                    break
-            
-            if chromedriver_path:
-                logger.info(f"Attempting to use chromedriver at: {chromedriver_path}")
+            # Strategy 1: WebDriverManager (most reliable)
+            try:
+                from webdriver_manager.chrome import ChromeDriverManager
                 from selenium.webdriver.chrome.service import Service
-                service = Service(chromedriver_path)
+                service = Service(ChromeDriverManager().install())
                 self.driver = webdriver.Chrome(service=service, options=chrome_options)
-            else:
-                logger.info("Using system chromedriver")
-                self.driver = webdriver.Chrome(options=chrome_options)
+                driver_initialized = True
+                logger.info("✅ WebDriver initialized with WebDriverManager")
+            except Exception as e:
+                logger.warning(f"WebDriverManager failed: {e}")
             
-            logger.info("Chrome WebDriver initialized successfully")
+            # Strategy 2: System ChromeDriver
+            if not driver_initialized:
+                try:
+                    self.driver = webdriver.Chrome(options=chrome_options)
+                    driver_initialized = True
+                    logger.info("✅ WebDriver initialized with system ChromeDriver")
+                except Exception as e:
+                    logger.warning(f"System ChromeDriver failed: {e}")
+            
+            # Strategy 3: Nix store paths
+            if not driver_initialized:
+                import glob
+                nix_paths = glob.glob('/nix/store/*/bin/chromedriver')
+                for path in nix_paths:
+                    try:
+                        from selenium.webdriver.chrome.service import Service
+                        service = Service(path)
+                        self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                        driver_initialized = True
+                        logger.info(f"✅ WebDriver initialized with Nix path: {path}")
+                        break
+                    except Exception as e:
+                        logger.warning(f"Nix path {path} failed: {e}")
+            
+            # Strategy 4: Manual paths
+            if not driver_initialized:
+                manual_paths = [
+                    '/usr/bin/chromedriver',
+                    '/usr/local/bin/chromedriver',
+                    'chromedriver'  # PATH lookup
+                ]
+                for path in manual_paths:
+                    try:
+                        from selenium.webdriver.chrome.service import Service
+                        service = Service(path)
+                        self.driver = webdriver.Chrome(service=service, options=chrome_options)
+                        driver_initialized = True
+                        logger.info(f"✅ WebDriver initialized with manual path: {path}")
+                        break
+                    except Exception as e:
+                        logger.warning(f"Manual path {path} failed: {e}")
+            
+            if not driver_initialized:
+                raise Exception("All WebDriver initialization strategies failed")
+            
+            # Configure timeouts for production
+            self.driver.set_page_load_timeout(45)  # Increased for production
+            self.driver.implicitly_wait(15)        # Increased for production
+            
+            logger.info("Chrome WebDriver configured successfully for production")
             
         except Exception as e:
             logger.error(f"Failed to setup Chrome WebDriver: {str(e)}")
