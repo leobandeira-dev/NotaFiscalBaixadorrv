@@ -18,6 +18,15 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from itsdangerous import URLSafeTimedSerializer
 from authlib.integrations.flask_client import OAuth
 from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, init_default_data
+from package_models import (
+    StripeProduct, PackageFeature, UserSubscription, FeatureUsage,
+    init_stripe_products, get_user_active_subscriptions, 
+    user_has_feature_access, consume_feature_credit
+)
+from access_control import (
+    require_feature, require_xml_credits, require_labels_subscription,
+    require_admin, get_user_package_status, inject_package_status
+)
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
 from transport_label_generator import TransportLabelGenerator, generate_label_from_database_xml
@@ -296,6 +305,7 @@ class DownloadJob:
 with app.app_context():
     db.create_all()
     init_default_data()
+    init_stripe_products()  # Inicializar produtos Stripe
     
     # Create admin user if not exists
     admin = User.query.filter_by(email='admin@xmldownloader.com').first()
@@ -1170,6 +1180,230 @@ def admin_delete_charge(charge_id):
     except Exception as e:
         logger.error(f"Erro ao excluir cobrança: {e}")
         return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/packages')
+@login_required
+@require_admin
+def admin_packages():
+    """Gerenciar pacotes e produtos Stripe"""
+    products = StripeProduct.query.order_by(StripeProduct.created_at.desc()).all()
+    
+    # Estatísticas
+    stats = {
+        'total_products': StripeProduct.query.filter_by(active=True).count(),
+        'active_subscriptions': UserSubscription.query.filter_by(status='active').count(),
+        'monthly_revenue': db.session.query(db.func.sum(Charge.amount)).filter(
+            Charge.status == 'paid',
+            Charge.amount > 0,
+            Charge.created_at >= datetime.now().replace(day=1)
+        ).scalar() or 0,
+        'conversion_rate': 0
+    }
+    
+    # Taxa de conversão
+    total_trials = UserSubscription.query.filter(
+        UserSubscription.trial_expires_at.isnot(None)
+    ).count()
+    if total_trials > 0:
+        converted_trials = UserSubscription.query.filter(
+            UserSubscription.trial_expires_at.isnot(None),
+            UserSubscription.status == 'active'
+        ).count()
+        stats['conversion_rate'] = (converted_trials / total_trials) * 100
+    
+    # Assinaturas recentes
+    recent_subscriptions = UserSubscription.query.join(User).join(StripeProduct).order_by(
+        UserSubscription.created_at.desc()
+    ).limit(20).all()
+    
+    return render_template('admin_packages.html', 
+                         products=products, 
+                         stats=stats,
+                         recent_subscriptions=recent_subscriptions)
+
+@app.route('/admin/packages/sync-stripe', methods=['POST'])
+@login_required
+@require_admin
+def admin_sync_stripe():
+    """Sincronizar produtos do Stripe"""
+    try:
+        # Inicializar produtos padrão
+        init_stripe_products()
+        
+        return jsonify({'success': True, 'message': 'Produtos sincronizados com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro na sincronização: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/packages/create', methods=['POST'])
+@login_required
+@require_admin
+def admin_create_package():
+    """Criar novo pacote"""
+    try:
+        stripe_product_id = request.form.get('stripe_product_id')
+        name = request.form.get('name')
+        description = request.form.get('description')
+        package_type = request.form.get('package_type')
+        default_price_id = request.form.get('default_price_id')
+        price_amount = request.form.get('price_amount')
+        credits_amount = request.form.get('credits_amount')
+        
+        # Verificar se produto já existe
+        if StripeProduct.query.filter_by(stripe_product_id=stripe_product_id).first():
+            return jsonify({'success': False, 'message': 'Produto já existe'})
+        
+        # Criar produto
+        product = StripeProduct(
+            stripe_product_id=stripe_product_id,
+            name=name,
+            description=description,
+            package_type=package_type,
+            default_price_id=default_price_id,
+            price_amount=int(price_amount) if price_amount else None,
+            credits_amount=int(credits_amount) if credits_amount else 0,
+            active=True
+        )
+        db.session.add(product)
+        db.session.flush()  # Para obter o ID
+        
+        # Adicionar funcionalidades
+        for key, value in request.form.items():
+            if key.startswith('features[') and key.endswith('[key]'):
+                feature_index = key.split('[')[1].split(']')[0]
+                feature_key = value
+                feature_name = request.form.get(f'features[{feature_index}][name]')
+                feature_limit = request.form.get(f'features[{feature_index}][limit]')
+                
+                if feature_key and feature_name:
+                    feature = PackageFeature(
+                        product_id=product.id,
+                        feature_key=feature_key,
+                        feature_name=feature_name,
+                        usage_limit=int(feature_limit) if feature_limit else -1,
+                        enabled=True
+                    )
+                    db.session.add(feature)
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Pacote criado com sucesso'})
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erro ao criar pacote: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/packages/<int:package_id>/toggle', methods=['POST'])
+@login_required
+@require_admin
+def admin_toggle_package(package_id):
+    """Ativar/desativar pacote"""
+    try:
+        product = StripeProduct.query.get_or_404(package_id)
+        product.active = request.json.get('active', not product.active)
+        
+        db.session.commit()
+        
+        status = 'ativado' if product.active else 'desativado'
+        return jsonify({'success': True, 'message': f'Pacote {status} com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao alterar status do pacote: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/packages/<int:package_id>/edit')
+@login_required
+@require_admin
+def admin_edit_package(package_id):
+    """Editar pacote"""
+    product = StripeProduct.query.get_or_404(package_id)
+    return render_template('admin_edit_package.html', product=product)
+
+@app.route('/admin/packages/<int:package_id>/subscriptions')
+@login_required
+@require_admin
+def admin_package_subscriptions(package_id):
+    """Ver assinantes de um pacote"""
+    product = StripeProduct.query.get_or_404(package_id)
+    subscriptions = UserSubscription.query.filter_by(product_id=package_id).join(User).order_by(
+        UserSubscription.created_at.desc()
+    ).all()
+    
+    return render_template('admin_package_subscriptions.html', 
+                         product=product, 
+                         subscriptions=subscriptions)
+
+@app.route('/admin/subscriptions/<int:subscription_id>/cancel', methods=['POST'])
+@login_required
+@require_admin
+def admin_cancel_subscription(subscription_id):
+    """Cancelar assinatura"""
+    try:
+        subscription = UserSubscription.query.get_or_404(subscription_id)
+        subscription.status = 'canceled'
+        subscription.canceled_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Assinatura cancelada com sucesso'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao cancelar assinatura: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/subscriptions/<int:subscription_id>/add-credits', methods=['POST'])
+@login_required
+@require_admin
+def admin_add_subscription_credits(subscription_id):
+    """Adicionar créditos a uma assinatura"""
+    try:
+        subscription = UserSubscription.query.get_or_404(subscription_id)
+        credits = int(request.json.get('credits', 0))
+        
+        subscription.credits_remaining += credits
+        subscription.credits_total += credits
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': f'{credits} créditos adicionados'})
+        
+    except Exception as e:
+        logger.error(f"Erro ao adicionar créditos: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+@app.route('/admin/features/usage')
+@login_required
+@require_admin
+def admin_features_usage():
+    """Relatório de uso de funcionalidades"""
+    # Uso por funcionalidade nos últimos 30 dias
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    
+    usage_stats = db.session.query(
+        FeatureUsage.feature_key,
+        db.func.count(FeatureUsage.id).label('usage_count'),
+        db.func.count(db.func.distinct(FeatureUsage.user_id)).label('unique_users')
+    ).filter(
+        FeatureUsage.created_at >= thirty_days_ago
+    ).group_by(FeatureUsage.feature_key).all()
+    
+    # Usuários mais ativos
+    top_users = db.session.query(
+        User.id,
+        User.name,
+        User.email,
+        db.func.count(FeatureUsage.id).label('usage_count')
+    ).join(FeatureUsage).filter(
+        FeatureUsage.created_at >= thirty_days_ago
+    ).group_by(User.id, User.name, User.email).order_by(
+        db.func.count(FeatureUsage.id).desc()
+    ).limit(10).all()
+    
+    return render_template('admin_features_usage.html',
+                         usage_stats=usage_stats,
+                         top_users=top_users)
 
 @app.route('/admin/settings')
 @login_required

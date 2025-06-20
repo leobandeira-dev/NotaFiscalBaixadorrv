@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Pacotes - CROSS XML Downloader PRO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .admin-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            padding: 30px;
+        }
+        .package-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        .package-card:hover {
+            transform: translateY(-5px);
+        }
+        .package-type-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .type-xml-credits {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        .type-subscription {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        .type-enterprise {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        .feature-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .feature-list li:last-child {
+            border-bottom: none;
+        }
+        .price-display {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #28a745;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+        }
+        .subscription-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="admin-container">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-box text-primary"></i> Gerenciar Pacotes</h2>
+                    <p class="text-muted">Administração de produtos Stripe e controle de acesso</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+                    </a>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#syncStripeModal">
+                        <i class="fas fa-sync"></i> Sincronizar Stripe
+                    </button>
+                    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#createPackageModal">
+                        <i class="fas fa-plus"></i> Novo Pacote
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estatísticas -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h6>Produtos Ativos</h6>
+                    <div style="font-size: 2em;">{{ stats.total_products }}</div>
+                </div>
+                <div class="stat-card">
+                    <h6>Assinaturas Ativas</h6>
+                    <div style="font-size: 2em;">{{ stats.active_subscriptions }}</div>
+                </div>
+                <div class="stat-card">
+                    <h6>Receita Mensal</h6>
+                    <div style="font-size: 2em;">R$ {{ "%.0f"|format(stats.monthly_revenue) }}</div>
+                </div>
+                <div class="stat-card">
+                    <h6>Taxa Conversão</h6>
+                    <div style="font-size: 2em;">{{ "%.1f"|format(stats.conversion_rate) }}%</div>
+                </div>
+            </div>
+
+            <!-- Lista de Pacotes -->
+            <div class="row">
+                {% for product in products %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="package-card">
+                        <div class="package-type-badge type-{{ product.package_type.replace('_', '-') }}">
+                            {{ product.package_type.replace('_', ' ').title() }}
+                        </div>
+                        
+                        <h5>{{ product.name }}</h5>
+                        <p class="text-muted">{{ product.description }}</p>
+                        
+                        <div class="price-display mb-3">
+                            {% if product.price_amount %}
+                                R$ {{ "%.2f"|format(product.price_amount / 100) }}
+                                {% if product.package_type == 'xml_credits' %}
+                                    <small>/XML</small>
+                                {% elif 'subscription' in product.package_type %}
+                                    <small>/mês</small>
+                                {% endif %}
+                            {% else %}
+                                Grátis
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <strong>Funcionalidades:</strong>
+                            <ul class="feature-list">
+                                {% for feature in product.features %}
+                                <li>
+                                    <i class="fas fa-{% if feature.enabled %}check text-success{% else %}times text-danger{% endif %}"></i>
+                                    {{ feature.feature_name }}
+                                    {% if feature.usage_limit and feature.usage_limit > 0 %}
+                                        <small class="text-muted">({{ feature.usage_limit }} usos)</small>
+                                    {% elif feature.usage_limit == -1 %}
+                                        <small class="text-muted">(ilimitado)</small>
+                                    {% endif %}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <small class="text-muted">
+                                <strong>Stripe ID:</strong> {{ product.stripe_product_id }}<br>
+                                <strong>Status:</strong> 
+                                {% if product.active %}
+                                    <span class="text-success">Ativo</span>
+                                {% else %}
+                                    <span class="text-danger">Inativo</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                        
+                        <div class="btn-group w-100" role="group">
+                            <button class="btn btn-outline-primary btn-sm" onclick="editPackage({{ product.id }})">
+                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" onclick="viewSubscriptions({{ product.id }})">
+                                <i class="fas fa-users"></i> Assinantes
+                            </button>
+                            {% if product.active %}
+                                <button class="btn btn-outline-warning btn-sm" onclick="togglePackage({{ product.id }}, false)">
+                                    <i class="fas fa-pause"></i> Desativar
+                                </button>
+                            {% else %}
+                                <button class="btn btn-outline-success btn-sm" onclick="togglePackage({{ product.id }}, true)">
+                                    <i class="fas fa-play"></i> Ativar
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Assinaturas Recentes -->
+            <div class="subscription-table mt-4">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Pacote</th>
+                                <th>Status</th>
+                                <th>Expira em</th>
+                                <th>Créditos</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for subscription in recent_subscriptions %}
+                            <tr>
+                                <td>
+                                    <strong>{{ subscription.user.name or 'N/A' }}</strong><br>
+                                    <small class="text-muted">{{ subscription.user.email }}</small>
+                                </td>
+                                <td>{{ subscription.product.name }}</td>
+                                <td>
+                                    {% if subscription.is_active() %}
+                                        <span class="badge bg-success">Ativo</span>
+                                    {% elif subscription.is_trial_active() %}
+                                        <span class="badge bg-warning">Trial</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inativo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if subscription.expires_at %}
+                                        {{ subscription.expires_at.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if subscription.credits_total > 0 %}
+                                        {{ subscription.credits_remaining }}/{{ subscription.credits_total }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="editSubscription({{ subscription.id }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger" onclick="cancelSubscription({{ subscription.id }})">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Sincronizar Stripe -->
+    <div class="modal fade" id="syncStripeModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-sync"></i> Sincronizar com Stripe</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Esta operação irá sincronizar os produtos e preços do Stripe com o sistema local.</p>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Produtos não encontrados localmente serão criados automaticamente.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="syncStripeProducts()">
+                        <i class="fas fa-sync"></i> Sincronizar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Criar Pacote -->
+    <div class="modal fade" id="createPackageModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-plus"></i> Criar Novo Pacote</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="createPackageForm">
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Stripe Product ID</label>
+                                    <input type="text" name="stripe_product_id" class="form-control" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de Pacote</label>
+                                    <select name="package_type" class="form-select" required>
+                                        <option value="xml_credits">Créditos XML</option>
+                                        <option value="labels_subscription">Assinatura Etiquetas</option>
+                                        <option value="enterprise">Empresarial</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nome do Pacote</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Descrição</label>
+                            <textarea name="description" class="form-control" rows="3"></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Price ID (Stripe)</label>
+                                    <input type="text" name="default_price_id" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Preço (centavos)</label>
+                                    <input type="number" name="price_amount" class="form-control">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Créditos/Duração</label>
+                                    <input type="number" name="credits_amount" class="form-control">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Funcionalidades</label>
+                            <div id="featuresContainer">
+                                <!-- Funcionalidades serão adicionadas dinamicamente -->
+                            </div>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addFeature()">
+                                <i class="fas fa-plus"></i> Adicionar Funcionalidade
+                            </button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Criar Pacote</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let featureCount = 0;
+
+        function addFeature() {
+            featureCount++;
+            const container = document.getElementById('featuresContainer');
+            const featureDiv = document.createElement('div');
+            featureDiv.className = 'row mb-2';
+            featureDiv.innerHTML = `
+                <div class="col-md-4">
+                    <input type="text" name="features[${featureCount}][key]" placeholder="Chave da funcionalidade" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-4">
+                    <input type="text" name="features[${featureCount}][name]" placeholder="Nome da funcionalidade" class="form-control form-control-sm">
+                </div>
+                <div class="col-md-3">
+                    <input type="number" name="features[${featureCount}][limit]" placeholder="Limite (-1 = ilimitado)" class="form-control form-control-sm" value="-1">
+                </div>
+                <div class="col-md-1">
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(featureDiv);
+        }
+
+        function syncStripeProducts() {
+            fetch('/admin/packages/sync-stripe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro na sincronização: ' + data.message);
+                }
+            });
+        }
+
+        function editPackage(packageId) {
+            // Implementar edição de pacote
+            window.location.href = `/admin/packages/${packageId}/edit`;
+        }
+
+        function viewSubscriptions(packageId) {
+            // Implementar visualização de assinantes
+            window.location.href = `/admin/packages/${packageId}/subscriptions`;
+        }
+
+        function togglePackage(packageId, activate) {
+            fetch(`/admin/packages/${packageId}/toggle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ active: activate })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            });
+        }
+
+        function editSubscription(subscriptionId) {
+            // Implementar edição de assinatura
+        }
+
+        function cancelSubscription(subscriptionId) {
+            if (confirm('Tem certeza que deseja cancelar esta assinatura?')) {
+                fetch(`/admin/subscriptions/${subscriptionId}/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Erro: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        // Form submission
+        document.getElementById('createPackageForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            
+            fetch('/admin/packages/create', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Erro: ' + data.message);
+                }
+            });
+        });
+
+        // Adicionar primeira funcionalidade por padrão
+        addFeature();
+    </script>
+</body>
+</html>
