@@ -1351,7 +1351,7 @@ def generate_label_route(xml_id):
         invoice_key = xml_record.invoice_key if xml_record else xml_file.invoice_key
         
         # Verificar módulo de etiquetas
-        labels_module = ServiceModule.query.filter_by(name='labels_module').first()
+        labels_module = ServiceModule.query.filter_by(name='Etiquetas de Transporte').first()
         if not labels_module:
             flash('Módulo de etiquetas não disponível.', 'error')
             return redirect(url_for('meus_xmls'))
@@ -1367,16 +1367,24 @@ def generate_label_route(xml_id):
         area_code = request.args.get('area', '01')
         company_name = request.args.get('empresa', 'SUA EMPRESA')
         
-        # Usar dados do XML para nome da empresa emitente se disponível
+        # Usar configurações do usuário para personalização
+        company_name = current_user.company_name or 'SUA EMPRESA'
         if xml_record:
             extracted_data = extract_xml_data(xml_content)
-            company_name = extracted_data.get('nome_emitente', company_name)
+            # Usar nome do emitente se usuário não configurou empresa
+            if not current_user.company_name:
+                company_name = extracted_data.get('nome_emitente', company_name)
+        
+        # Usar configurações salvas do usuário
+        area_code = current_user.default_area_code or '01'
+        logo_path = current_user.company_logo_path
         
         label_buffer = generate_custom_label_from_database_xml(
             xml_record or xml_file,
             pedido_number=pedido_number,
             area_code=area_code,
-            company_name=company_name
+            company_name=company_name,
+            company_logo_path=logo_path
         )
         
         # Cobrar pelo serviço apenas se não estiver em trial

@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Configurar Etiquetas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tags"></i> Configurações de Etiquetas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="company_name" class="form-label">Nome da Empresa</label>
+                            <input type="text" class="form-control" id="company_name" name="company_name" 
+                                   value="{{ current_user.company_name or '' }}" 
+                                   placeholder="Digite o nome da sua empresa">
+                            <div class="form-text">Este nome aparecerá nas etiquetas de transporte</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="company_subtitle" class="form-label">Subtítulo (opcional)</label>
+                            <input type="text" class="form-control" id="company_subtitle" name="company_subtitle" 
+                                   value="{{ current_user.company_subtitle or '' }}" 
+                                   placeholder="TRANSPORTE, LOGÍSTICA, etc.">
+                            <div class="form-text">Texto secundário que aparece abaixo do nome da empresa</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="company_logo" class="form-label">Logo da Empresa</label>
+                            <input type="file" class="form-control" id="company_logo" name="company_logo" 
+                                   accept="image/*">
+                            <div class="form-text">Formatos aceitos: PNG, JPG, JPEG. Tamanho máximo: 2MB</div>
+                            
+                            {% if current_user.company_logo_path %}
+                            <div class="mt-2">
+                                <small class="text-success">
+                                    <i class="fas fa-check"></i> Logo atual: {{ current_user.company_logo_path.split('/')[-1] }}
+                                </small>
+                                <div class="mt-1">
+                                    <img src="{{ url_for('serve_logo', filename=current_user.company_logo_path.split('/')[-1]) }}" 
+                                         alt="Logo atual" style="max-height: 60px;" class="border rounded">
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="area_code" class="form-label">Código da Área Padrão</label>
+                            <input type="text" class="form-control" id="area_code" name="area_code" 
+                                   value="{{ current_user.default_area_code or '01' }}" 
+                                   placeholder="01" maxlength="2">
+                            <div class="form-text">Código que aparece na seção ÁREA das etiquetas</div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('meus_xmls') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Voltar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Salvar Configurações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Preview das Etiquetas -->
+            {% if current_user.company_name %}
+            <div class="card shadow-sm mt-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-eye"></i> Preview da Etiqueta
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="border rounded p-3" style="background-color: #f8f9fa;">
+                        <div class="text-center mb-3">
+                            {% if current_user.company_logo_path %}
+                                <img src="{{ url_for('serve_logo', filename=current_user.company_logo_path.split('/')[-1]) }}" 
+                                     alt="Logo" style="max-height: 40px;">
+                            {% else %}
+                                <h5 class="mb-0">{{ current_user.company_name }}</h5>
+                                {% if current_user.company_subtitle %}
+                                <small class="text-muted">{{ current_user.company_subtitle }}</small>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        
+                        <div class="bg-dark text-white p-2 mb-2 rounded">
+                            <strong>NF: 12345</strong>
+                        </div>
+                        
+                        <div class="bg-dark text-white p-2 mb-2 rounded">
+                            <strong>Pedido: 67890</strong>
+                        </div>
+                        
+                        <div class="bg-dark text-white p-2 mb-2 rounded">
+                            <strong>Remetente: {{ current_user.company_name }}</strong>
+                        </div>
+                        
+                        <p class="mb-2"><strong>Destinatário:</strong> Cliente Exemplo</p>
+                        <p class="mb-2"><strong>Endereço:</strong> Rua Exemplo, 123 - Cidade/UF</p>
+                        
+                        <div class="d-flex justify-content-between align-items-end">
+                            <div>
+                                <div class="bg-dark text-white p-2 rounded d-inline-block me-2">
+                                    <strong>Peso: 10.5</strong>
+                                </div>
+                                <div class="bg-dark text-white p-2 rounded d-inline-block">
+                                    <strong>Volume: 1/2</strong>
+                                </div>
+                            </div>
+                            <div class="bg-dark text-white p-2 rounded text-center" style="min-width: 60px;">
+                                <div><strong>ÁREA</strong></div>
+                                <div class="h4 mb-0">{{ current_user.default_area_code or '01' }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

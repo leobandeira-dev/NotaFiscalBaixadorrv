@@ -38,6 +38,12 @@ class User(UserMixin, db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Configurações de etiquetas
+    company_name = db.Column(db.String(200), nullable=True)
+    company_subtitle = db.Column(db.String(100), nullable=True)
+    company_logo_path = db.Column(db.String(500), nullable=True)
+    default_area_code = db.Column(db.String(5), default='01')
+    
     # Relacionamentos
     usage_records = db.relationship('UsageRecord', backref='user', lazy=True, cascade='all, delete-orphan')
     charges = db.relationship('Charge', backref='user', lazy=True, cascade='all, delete-orphan')
