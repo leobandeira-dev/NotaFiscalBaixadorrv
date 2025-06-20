@@ -2462,6 +2462,86 @@ def test_pop3_connection():
         logger.error(f"Erro ao testar conexão POP3: {e}")
         return jsonify({'success': False, 'message': f'Erro de conexão: {str(e)}'})
 
+@app.route('/process-email-xmls', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=3, window_minutes=10)
+def process_email_xmls():
+    """Processa XMLs recebidos via email POP3"""
+    try:
+        if not current_user.has_pop3_configured():
+            return jsonify({'success': False, 'message': 'POP3 não configurado'})
+        
+        # Obter senha do formulário (necessária para autenticação POP3)
+        password = request.json.get('password')
+        if not password:
+            return jsonify({'success': False, 'message': 'Senha necessária para acessar emails'})
+        
+        from email_xml_processor import EmailXMLProcessor
+        
+        processor = EmailXMLProcessor(current_user)
+        result = processor.process_email_xmls(password)
+        
+        if result['success']:
+            logger.info(f"Processados {result['processed_count']} XMLs via email para usuário {current_user.id}")
+            
+            return jsonify({
+                'success': True,
+                'message': f"Processados {result['processed_count']} XMLs com sucesso",
+                'processed_count': result['processed_count'],
+                'processed_xmls': result['processed_xmls'],
+                'total_messages': result['total_messages']
+            })
+        else:
+            return jsonify({'success': False, 'message': result['error']})
+            
+    except Exception as e:
+        logger.error(f"Erro ao processar emails XML: {e}")
+        return jsonify({'success': False, 'message': f'Erro interno: {str(e)}'})
+
+@app.route('/process-xmls-from-email', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=5, window_minutes=10)
+def process_xmls_from_email():
+    """Verifica emails imediatamente e processa XMLs encontrados"""
+    try:
+        if not current_user.has_pop3_configured():
+            return jsonify({'success': False, 'message': 'POP3 não configurado'})
+        
+        # Obter senha do formulário
+        password = request.json.get('password')
+        if not password:
+            return jsonify({'success': False, 'message': 'Senha necessária para verificar emails'})
+        
+        from email_xml_processor import EmailXMLProcessor
+        
+        processor = EmailXMLProcessor(current_user)
+        result = processor.process_email_xmls(password)
+        
+        if result['success']:
+            message = f"✅ Verificação concluída!\n\n"
+            message += f"📧 Mensagens verificadas: {result.get('total_messages', 0)}\n"
+            message += f"📄 XMLs processados: {result['processed_count']}\n"
+            
+            if result['processed_xmls']:
+                message += f"\n📋 XMLs importados:\n"
+                for xml in result['processed_xmls'][:5]:  # Mostrar até 5 XMLs
+                    message += f"• {xml['filename']} (NF {xml['numero_nf']})\n"
+                if len(result['processed_xmls']) > 5:
+                    message += f"... e mais {len(result['processed_xmls']) - 5} XMLs"
+            
+            return jsonify({
+                'success': True,
+                'message': message,
+                'processed_count': result['processed_count'],
+                'total_messages': result.get('total_messages', 0)
+            })
+        else:
+            return jsonify({'success': False, 'message': f"❌ Erro: {result['error']}"})
+            
+    except Exception as e:
+        logger.error(f"Erro ao verificar emails: {e}")
+        return jsonify({'success': False, 'message': f'❌ Erro interno: {str(e)}'})
+
 @app.route('/remove-pop3-config', methods=['POST'])
 @login_required
 @rate_limit_check(max_requests=5, window_minutes=10)
@@ -2502,24 +2582,7 @@ def remove_smtp_config():
         logger.error(f"Erro ao remover configuração SMTP: {e}")
         return jsonify({'success': False, 'message': 'Erro interno do servidor'})
 
-@app.route('/check-emails-now', methods=['POST'])
-@login_required
-@rate_limit_check(max_requests=10, window_minutes=10)
-def check_emails_now():
-    """Verifica emails imediatamente"""
-    try:
-        if not current_user.has_email_import_configured():
-            return jsonify({'success': False, 'message': 'Email não configurado'})
-        
-        from email_processor import check_user_emails
-        processed_count = check_user_emails(current_user.id)
-        return jsonify({
-            'success': True, 
-            'message': f'{processed_count} XMLs processados'
-        })
-        
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)})
+
 
 @app.route('/remove-email-config', methods=['POST'])
 @login_required
