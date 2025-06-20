@@ -405,3 +405,20 @@ class EmailXMLProcessor:
                     pop3.quit()
                 except:
                     pass
+    
+    def process_user_emails(self):
+        """Processa emails do usuário usando suas credenciais armazenadas"""
+        if not self.user:
+            return {'success': False, 'error': 'Usuário não fornecido'}
+            
+        if not self.user.has_pop3_configured():
+            return {'success': False, 'error': 'POP3 não configurado para este usuário'}
+        
+        try:
+            # Usar senha descriptografada (simplificado para demo)
+            password = self.user.pop3_password  # Em produção, descriptografar
+            return self.process_email_xmls(password)
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar emails do usuário {self.user.id}: {e}")
+            return {'success': False, 'error': str(e)}

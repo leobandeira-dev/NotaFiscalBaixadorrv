@@ -2488,8 +2488,8 @@ def check_emails_now():
     """Verifica emails manualmente agora"""
     try:
         from email_xml_processor import EmailXMLProcessor
-        processor = EmailXMLProcessor()
-        result = processor.process_user_emails(current_user)
+        processor = EmailXMLProcessor(current_user)
+        result = processor.process_user_emails()
         
         if result['success']:
             return jsonify({
