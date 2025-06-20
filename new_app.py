@@ -1849,8 +1849,8 @@ def generate_custom_labels(xml_id):
             'volume_weights': [config['peso'] for config in volumes_config]
         }
         
-        # Usar layout preferido do usuário (layout1 ou layout2)
-        layout_style = current_user.preferred_layout or 'layout1'
+        # Usar layout selecionado no formulário ou padrão do usuário
+        layout_style = request.form.get('layout_style', current_user.preferred_layout or 'layout1')
         
         labels = generate_custom_label_with_layout(
             xml_id=xml_id,
