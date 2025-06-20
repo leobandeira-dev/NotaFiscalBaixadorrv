@@ -127,16 +127,16 @@ class CustomTransportLabelGenerator:
             
             # Fallback: texto da empresa
             c.setFont("Helvetica-Bold", 24)
-            c.drawCentredText(self.page_width / 2, y_pos, self.company_name)
+            c.drawCentredString(self.page_width / 2, y_pos, self.company_name)
             
             c.setFont("Helvetica", 12)
-            c.drawCentredText(self.page_width / 2, y_pos - 15, self.company_subtitle)
+            c.drawCentredString(self.page_width / 2, y_pos - 15, self.company_subtitle)
             
         except Exception as e:
             logger.warning(f"Erro no cabeçalho: {e}")
             # Fallback simples
             c.setFont("Helvetica-Bold", 20)
-            c.drawCentredText(self.page_width / 2, y_pos, "ETIQUETA DE TRANSPORTE")
+            c.drawCentredString(self.page_width / 2, y_pos, "ETIQUETA DE TRANSPORTE")
     
     def _draw_id_section(self, c, xml_data, y_pos):
         """Desenha seção do ID e QR Code"""
@@ -325,20 +325,26 @@ class CustomTransportLabelGenerator:
             # Converter para imagem
             img = qr_code.make_image(fill_color="black", back_color="white")
             
-            # Salvar temporariamente
-            temp_buffer = BytesIO()
-            img.save(temp_buffer, format='PNG')
-            temp_buffer.seek(0)
+            # Salvar arquivo temporário
+            import tempfile
+            import os
+            
+            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+                img.save(temp_file.name, format='PNG')
+                temp_path = temp_file.name
             
             # Desenhar no canvas
-            c.drawImage(temp_buffer, x, y, width=size, height=size)
+            c.drawImage(temp_path, x, y, width=size, height=size)
+            
+            # Limpar arquivo temporário
+            os.unlink(temp_path)
             
         except Exception as e:
             logger.warning(f"Erro ao gerar QR code: {e}")
             # Desenhar retângulo placeholder
             c.rect(x, y, size, size, stroke=1, fill=0)
             c.setFont("Helvetica", 8)
-            c.drawCentredText(x + size/2, y + size/2, "QR")
+            c.drawCentredString(x + size/2, y + size/2, "QR")
 
 
 def generate_custom_label_from_database_xml(xml_record, pedido_number: str = None, 
