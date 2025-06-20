@@ -41,6 +41,15 @@ class User(UserMixin, db.Model):
     api_key = db.Column(db.String(64), unique=True)
     api_secret = db.Column(db.String(64), unique=True)
     
+    # Credenciais para importação via email
+    import_email = db.Column(db.String(120), nullable=True)
+    import_email_password = db.Column(db.String(256), nullable=True)  # Criptografada
+    import_email_server = db.Column(db.String(100), nullable=True)
+    import_email_port = db.Column(db.Integer, nullable=True)
+    import_email_ssl = db.Column(db.Boolean, default=True)
+    import_email_configured = db.Column(db.Boolean, default=False)
+    import_email_last_check = db.Column(db.DateTime, nullable=True)
+    
     # Timestamps
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -84,6 +93,32 @@ class User(UserMixin, db.Model):
         self.api_key = self.generate_api_key()
         self.api_secret = self.generate_api_secret()
         db.session.commit()
+    
+    def set_email_credentials(self, email, password, server, port=993, ssl=True):
+        """Define as credenciais para importação via email"""
+        self.import_email = email
+        self.import_email_password = generate_password_hash(password)  # Criptografa a senha
+        self.import_email_server = server
+        self.import_email_port = port
+        self.import_email_ssl = ssl
+        self.import_email_configured = True
+        db.session.commit()
+    
+    def check_email_password(self, password):
+        """Verifica a senha do email de importação"""
+        if not self.import_email_password:
+            return False
+        return check_password_hash(self.import_email_password, password)
+    
+    def get_email_address(self):
+        """Retorna o endereço de email personalizado para importação"""
+        if self.import_email_configured and self.import_email:
+            return f"{self.id}@xmldownloader.pro"
+        return None
+    
+    def has_email_import_configured(self):
+        """Verifica se o usuário configurou importação via email"""
+        return self.import_email_configured and self.import_email and self.import_email_password
     
     def is_trial_active(self):
         """Verifica se o trial está ativo"""
