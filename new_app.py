@@ -20,7 +20,7 @@ from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings,
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
 from transport_label_generator import TransportLabelGenerator, generate_label_from_database_xml
-from transul_label_generator import TransulLabelGenerator, generate_label_from_database_xml as generate_transul_label
+from transport_label_generator_v2 import CustomTransportLabelGenerator, generate_custom_label_from_database_xml
 from xml_processor import extract_xml_data
 from download_service import DownloadService
 
@@ -1362,15 +1362,21 @@ def generate_label_route(xml_id):
             flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
             return redirect(url_for('comprar_creditos'))
         
-        # Gerar etiqueta usando o novo gerador Transul
-        generator = TransulLabelGenerator()
+        # Gerar etiqueta personalizada
         pedido_number = request.args.get('pedido', invoice_key[:5])
         area_code = request.args.get('area', '01')
+        company_name = request.args.get('empresa', 'SUA EMPRESA')
         
-        label_buffer = generator.generate_transport_label(
-            xml_content=xml_content,
+        # Usar dados do XML para nome da empresa emitente se disponível
+        if xml_record:
+            extracted_data = extract_xml_data(xml_content)
+            company_name = extracted_data.get('nome_emitente', company_name)
+        
+        label_buffer = generate_custom_label_from_database_xml(
+            xml_record or xml_file,
             pedido_number=pedido_number,
-            area_code=area_code
+            area_code=area_code,
+            company_name=company_name
         )
         
         # Cobrar pelo serviço apenas se não estiver em trial
