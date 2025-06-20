@@ -405,28 +405,41 @@ class ResponsiveTransportLabelGenerator:
         return section_y
     
     def _draw_area_section(self, c, area_code):
-        """Desenha seção ÁREA no canto inferior direito com layout enquadrado"""
-        area_width = max(20 * mm, self.content_width * 0.2)
-        area_height = max(15 * mm, self.content_height * 0.08)
-        area_x = self.page_width - self.margin - area_width
-        area_y = self.margin + area_height
+        """Desenha seção ÁREA no canto inferior direito com layout enquadrado profissional"""
+        # Dimensões mais proporcionais e bem enquadradas
+        area_width = max(22 * mm, self.content_width * 0.22)
+        area_height = max(18 * mm, self.content_height * 0.12)
         
-        # Fundo cinza claro
-        c.setFillColor(colors.lightgrey)
+        # Posicionamento no canto inferior direito com margem adequada
+        area_x = self.page_width - self.margin - area_width
+        area_y = self.margin + (area_height * 0.2)  # Melhor alinhamento vertical
+        
+        # Fundo cinza claro mais suave
+        c.setFillColor(colors.Color(0.94, 0.94, 0.94))
         c.rect(area_x, area_y, area_width, area_height, fill=1)
         
-        # Borda cinza
-        c.setStrokeColor(colors.grey)
-        c.setLineWidth(2)
+        # Borda mais destacada e profissional
+        c.setStrokeColor(colors.Color(0.5, 0.5, 0.5))
+        c.setLineWidth(1.5)
         c.rect(area_x, area_y, area_width, area_height, fill=0)
         
-        # Texto preto
+        # Título "ÁREA" menor e mais elegante
         c.setFillColor(colors.black)
-        c.setFont("Helvetica-Bold", self.fonts['section_header'])
-        c.drawCentredString(area_x + area_width/2, area_y + area_height * 0.7, "ÁREA")
+        c.setFont("Helvetica-Bold", max(8, self.fonts['small_text']))
+        title_y = area_y + area_height * 0.75
+        c.drawCentredString(area_x + area_width/2, title_y, "ÁREA")
         
-        c.setFont("Helvetica-Bold", max(12, self.fonts['section_content'] + 2))
-        c.drawCentredString(area_x + area_width/2, area_y + area_height * 0.2, area_code)
+        # Código da área maior e em destaque
+        c.setFont("Helvetica-Bold", max(14, self.fonts['section_content'] + 3))
+        code_y = area_y + area_height * 0.35
+        c.drawCentredString(area_x + area_width/2, code_y, area_code)
+        
+        # Linha separadora sutil entre título e código
+        line_y = area_y + area_height * 0.6
+        c.setStrokeColor(colors.Color(0.7, 0.7, 0.7))
+        c.setLineWidth(0.5)
+        margin_x = area_width * 0.15
+        c.line(area_x + margin_x, line_y, area_x + area_width - margin_x, line_y)
     
     def _draw_footer(self, c):
         """Desenha rodapé"""
