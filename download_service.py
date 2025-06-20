@@ -88,17 +88,17 @@ class DownloadService:
             xml_file.quantidade_volumes = xml_data.get('volumes', 0)
             xml_file.cnpj_emitente = (xml_data.get('cnpj_emitente', 'N/A') or 'N/A')[:14]
             xml_file.nome_emitente = (xml_data.get('nome_emitente', 'N/A') or 'N/A')[:255]
-            xml_file.remetente_razao = (xml_data.get('nome_emitente', 'N/A') or 'N/A')[:255]
-            xml_file.remetente_cidade = (xml_data.get('cidade_emitente', 'N/A') or 'N/A')[:100]
-            xml_file.remetente_uf = (xml_data.get('uf_emitente', 'N/A') or 'N/A')[:2]
-            xml_file.remetente_endereco = (xml_data.get('endereco_emitente', 'N/A') or 'N/A')[:500]
-            xml_file.remetente_cep = (xml_data.get('cep_emitente', 'N/A') or 'N/A')[:8]
-            xml_file.destinatario_cnpj_cpf = (xml_data.get('cnpj_destinatario', 'N/A') or 'N/A')[:14]
-            xml_file.destinatario_razao = (xml_data.get('nome_destinatario', 'N/A') or 'N/A')[:255]
-            xml_file.destinatario_cidade = (xml_data.get('cidade_destinatario', 'N/A') or 'N/A')[:100]
-            xml_file.destinatario_uf = (xml_data.get('uf_destinatario', 'N/A') or 'N/A')[:2]
-            xml_file.destinatario_endereco = (xml_data.get('endereco_destinatario', 'N/A') or 'N/A')[:500]
-            xml_file.destinatario_cep = (xml_data.get('cep_destinatario', 'N/A') or 'N/A')[:8]
+            xml_file.remetente_razao = (xml_data.get('remetente_razao', xml_data.get('nome_emitente', '')) or '')[:255]
+            xml_file.remetente_cidade = (xml_data.get('remetente_cidade', xml_data.get('cidade_emitente', '')) or '')[:100]
+            xml_file.remetente_uf = (xml_data.get('remetente_uf', xml_data.get('uf_emitente', '')) or '')[:2]
+            xml_file.remetente_endereco = (xml_data.get('remetente_endereco', xml_data.get('endereco_emitente', '')) or '')[:500]
+            xml_file.remetente_cep = (xml_data.get('remetente_cep', xml_data.get('cep_emitente', '')) or '')[:8]
+            xml_file.destinatario_cnpj_cpf = (xml_data.get('destinatario_cnpj_cpf', xml_data.get('cnpj_destinatario', '')) or '')[:14]
+            xml_file.destinatario_razao = (xml_data.get('destinatario_razao', xml_data.get('nome_destinatario', '')) or '')[:255]
+            xml_file.destinatario_cidade = (xml_data.get('destinatario_cidade', xml_data.get('cidade_destinatario', '')) or '')[:100]
+            xml_file.destinatario_uf = (xml_data.get('destinatario_uf', xml_data.get('uf_destinatario', '')) or '')[:2]
+            xml_file.destinatario_endereco = (xml_data.get('destinatario_endereco', xml_data.get('endereco_destinatario', '')) or '')[:500]
+            xml_file.destinatario_cep = (xml_data.get('destinatario_cep', xml_data.get('cep_destinatario', '')) or '')[:8]
             
             db.session.add(xml_file)
             

@@ -270,6 +270,10 @@ def extract_xml_data(xml_content: str) -> dict:
                 nf_data['volumes'] = 0
                 nf_data['quantidade_volumes'] = 0
         
+        # Copiar dados do emitente para remetente se não estiverem preenchidos
+        if not nf_data.get('remetente_razao'):
+            nf_data['remetente_razao'] = nf_data.get('nome_emitente', '')
+        
         # Preencher campos padrão se não encontrados
         default_fields = {
             'numero_nf': '',
