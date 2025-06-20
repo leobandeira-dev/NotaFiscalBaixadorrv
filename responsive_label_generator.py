@@ -309,17 +309,31 @@ class ResponsiveTransportLabelGenerator:
         self._draw_footer(c)
     
     def _draw_company_section(self, c, y_pos, section_height, company_logo_path):
-        """Desenha seção da empresa com altura responsiva"""
+        """Desenha seção da empresa com altura responsiva e enquadramento baseado no layout"""
         section_y = y_pos - section_height
+        
+        # Aplicar enquadramento baseado no estilo de layout
+        if self.layout_style == "layout2":
+            # Layout 2 (Transul) - Fundo preto com texto branco
+            c.setFillColor(colors.black)
+            c.rect(self.margin, section_y, self.content_width, section_height, fill=1)
+            c.setFillColor(colors.white)  # Texto branco
+        else:
+            # Layout 1 (Moderno) - Fundo cinza claro com borda
+            c.setFillColor(colors.Color(0.95, 0.95, 0.95))  # Cinza claro
+            c.rect(self.margin, section_y, self.content_width, section_height, fill=1)
+            c.setStrokeColor(colors.Color(0.7, 0.7, 0.7))  # Borda cinza
+            c.setLineWidth(1)
+            c.rect(self.margin, section_y, self.content_width, section_height, fill=0)
+            c.setFillColor(colors.black)  # Texto preto
         
         # Nome da empresa
         c.setFont("Helvetica-Bold", self.fonts['company_name'])
-        c.setFillColor(colors.black)
         
         if company_logo_path and isinstance(company_logo_path, str) and os.path.exists(company_logo_path):
             # Com logo
-            logo_size = min(section_height * 0.8, self.content_width * 0.15)
-            logo_x = self.margin
+            logo_size = min(section_height * 0.7, self.content_width * 0.15)
+            logo_x = self.margin + self.spacing['field']
             logo_y = section_y + (section_height - logo_size) / 2
             
             try:
@@ -327,20 +341,38 @@ class ResponsiveTransportLabelGenerator:
                 text_x = logo_x + logo_size + self.spacing['field']
                 c.drawString(text_x, section_y + section_height * 0.6, self.company_name)
                 c.setFont("Helvetica", self.fonts['company_sub'])
-                c.drawString(text_x, section_y + section_height * 0.2, self.company_subtitle)
+                c.drawString(text_x, section_y + section_height * 0.3, self.company_subtitle)
             except Exception as e:
                 logger.warning(f"Erro ao carregar logo: {e}")
                 # Fallback sem logo
-                c.drawString(self.margin, section_y + section_height * 0.6, self.company_name)
+                c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.6, self.company_name)
                 c.setFont("Helvetica", self.fonts['company_sub'])
-                c.drawString(self.margin, section_y + section_height * 0.2, self.company_subtitle)
+                c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.3, self.company_subtitle)
         else:
             # Sem logo
-            c.drawString(self.margin, section_y + section_height * 0.6, self.company_name)
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.6, self.company_name)
             c.setFont("Helvetica", self.fonts['company_sub'])
-            c.drawString(self.margin, section_y + section_height * 0.2, self.company_subtitle)
+            c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.3, self.company_subtitle)
         
+        # Resetar cor para preto
+        c.setFillColor(colors.black)
         return section_y
+    
+    def _apply_section_frame(self, c, x, y, width, height):
+        """Aplica enquadramento baseado no estilo de layout"""
+        if self.layout_style == "layout2":
+            # Layout 2 (Transul) - Fundo preto com texto branco
+            c.setFillColor(colors.black)
+            c.rect(x, y, width, height, fill=1)
+            c.setFillColor(colors.white)  # Texto branco
+        else:
+            # Layout 1 (Moderno) - Fundo cinza claro com borda
+            c.setFillColor(colors.Color(0.95, 0.95, 0.95))  # Cinza claro
+            c.rect(x, y, width, height, fill=1)
+            c.setStrokeColor(colors.Color(0.7, 0.7, 0.7))  # Borda cinza
+            c.setLineWidth(1)
+            c.rect(x, y, width, height, fill=0)
+            c.setFillColor(colors.black)  # Texto preto
     
     def _draw_id_qr_section(self, c, xml_data, y_pos, section_height):
         """Desenha seção ID e QR Code"""
@@ -365,24 +397,19 @@ class ResponsiveTransportLabelGenerator:
         return section_y
     
     def _draw_highlighted_section(self, c, title, content, y_pos, section_height):
-        """Desenha seção com fundo cinza claro e borda enquadrada"""
+        """Desenha seção com enquadramento baseado no estilo de layout"""
         section_y = y_pos - section_height
         
-        # Fundo cinza muito claro
-        c.setFillColor(colors.lightgrey)
-        c.rect(self.margin, section_y, self.content_width, section_height, fill=1)
+        # Aplicar enquadramento baseado no estilo
+        self._apply_section_frame(c, self.margin, section_y, self.content_width, section_height)
         
-        # Borda cinza média
-        c.setStrokeColor(colors.grey)
-        c.setLineWidth(1)
-        c.rect(self.margin, section_y, self.content_width, section_height, fill=0)
-        
-        # Texto preto
-        c.setFillColor(colors.black)
+        # Texto
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
         text_y = section_y + section_height * 0.3
         c.drawString(self.margin + self.spacing['field'], text_y, f"{title}: {content}")
         
+        # Resetar cor para preto
+        c.setFillColor(colors.black)
         return section_y
     
     def _draw_nf_section(self, c, xml_data, y_pos, section_height):
@@ -400,27 +427,19 @@ class ResponsiveTransportLabelGenerator:
         return self._draw_highlighted_section(c, "Remetente", remetente, y_pos, section_height)
     
     def _draw_destinatario_section(self, c, xml_data, y_pos, section_height):
-        """Desenha seção Destinatário com foco no endereço (estilo grandes transportadoras)"""
+        """Desenha seção Destinatário com enquadramento baseado no estilo de layout"""
         section_y = y_pos - section_height
         
-        # Fundo azul muito claro (estilo transportadoras)
-        c.setFillColor(colors.Color(0.95, 0.97, 1.0))
-        c.rect(self.margin, section_y, self.content_width, section_height, fill=1)
-        
-        # Borda destacada
-        c.setStrokeColor(colors.Color(0.7, 0.8, 0.9))
-        c.setLineWidth(1)
-        c.rect(self.margin, section_y, self.content_width, section_height, fill=0)
+        # Aplicar enquadramento baseado no estilo
+        self._apply_section_frame(c, self.margin, section_y, self.content_width, section_height)
         
         # TÍTULO "DESTINATÁRIO" destacado
-        c.setFillColor(colors.black)
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
         c.drawString(self.margin + self.spacing['field'], section_y + section_height * 0.9, "DESTINATÁRIO")
         
         # Nome da empresa destinatária (em destaque)
         dest_nome = xml_data.get('destinatario_razao', xml_data.get('destinatario_nome', 'N/A'))
         c.setFont("Helvetica-Bold", self.fonts['normal_text'])
-        c.setFillColor(colors.black)
         
         # Quebrar nome em duas linhas se muito longo
         if len(dest_nome) > 35:
@@ -436,12 +455,10 @@ class ResponsiveTransportLabelGenerator:
         # Endereço (seção principal)
         endereco = xml_data.get('destinatario_endereco', '')
         c.setFont("Helvetica", self.fonts['small_text'])
-        c.setFillColor(colors.Color(0.3, 0.3, 0.3))
         c.drawString(self.margin + self.spacing['field'], section_y + section_height * (nome_end_y - 0.05), "Endereço:")
         
         if endereco:
             c.setFont("Helvetica-Bold", self.fonts['small_text'])
-            c.setFillColor(colors.black)
             # Quebrar endereço se muito longo
             if len(endereco) > 45:
                 linha1_end = endereco[:45]
@@ -461,14 +478,12 @@ class ResponsiveTransportLabelGenerator:
         uf = xml_data.get('destinatario_uf', '')
         if cidade and uf:
             c.setFont("Helvetica-Bold", self.fonts['normal_text'])
-            c.setFillColor(colors.black)
             c.drawString(self.margin + self.spacing['field'], section_y + section_height * cidade_y, f"{cidade} - {uf}")
         
         # CEP destacado
         cep = xml_data.get('destinatario_cep', '')
         if cep:
             c.setFont("Helvetica", self.fonts['small_text'])
-            c.setFillColor(colors.Color(0.3, 0.3, 0.3))
             # Formatar CEP
             if len(cep) == 8 and cep.isdigit():
                 cep_formatado = f"{cep[:5]}-{cep[5:]}"
@@ -476,6 +491,8 @@ class ResponsiveTransportLabelGenerator:
                 cep_formatado = cep
             c.drawString(self.margin + self.spacing['field'] + (self.content_width * 0.6), section_y + section_height * cidade_y, f"CEP: {cep_formatado}")
         
+        # Resetar cor para preto
+        c.setFillColor(colors.black)
         return section_y
     
     def _draw_cidade_section(self, c, xml_data, y_pos, section_height):
@@ -486,22 +503,15 @@ class ResponsiveTransportLabelGenerator:
         return self._draw_highlighted_section(c, "Cidade/UF", cidade_uf, y_pos, section_height)
     
     def _draw_peso_volume_section(self, c, xml_data, y_pos, section_height):
-        """Desenha seção Peso e Volume com layout enquadrado"""
+        """Desenha seção Peso e Volume com enquadramento baseado no estilo de layout"""
         section_y = y_pos - section_height
         
         # Dividir seção em duas partes: peso e volume
         half_width = self.content_width / 2
         
-        # Seção Peso (lado esquerdo)
-        c.setFillColor(colors.lightgrey)
-        c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
+        # Seção Peso (lado esquerdo) - aplicar enquadramento
+        self._apply_section_frame(c, self.margin, section_y, half_width - self.spacing['field']/2, section_height)
         
-        # Borda cinza
-        c.setStrokeColor(colors.grey)
-        c.setLineWidth(1)
-        c.rect(self.margin, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
-        
-        c.setFillColor(colors.black)
         c.setFont("Helvetica-Bold", self.fonts['section_content'])
         
         # Usar peso específico do volume se disponível, senão peso bruto total
@@ -514,17 +524,9 @@ class ResponsiveTransportLabelGenerator:
         text_y = section_y + section_height * 0.3
         c.drawString(self.margin + self.spacing['field'], text_y, f"Peso: {peso_formatado}")
         
-        # Seção Volume (lado direito)
+        # Seção Volume (lado direito) - aplicar enquadramento
         volume_x = self.margin + half_width + self.spacing['field']/2
-        c.setFillColor(colors.lightgrey)
-        c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=1)
-        
-        # Borda cinza
-        c.setStrokeColor(colors.grey)
-        c.setLineWidth(1)
-        c.rect(volume_x, section_y, half_width - self.spacing['field']/2, section_height, fill=0)
-        
-        c.setFillColor(colors.black)
+        self._apply_section_frame(c, volume_x, section_y, half_width - self.spacing['field']/2, section_height)
         
         # Usar volume específico se disponível
         current_volume = xml_data.get('current_volume', 1)
