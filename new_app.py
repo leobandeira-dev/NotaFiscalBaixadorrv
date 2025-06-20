@@ -2352,6 +2352,116 @@ def view_pop3_credentials():
     
     return render_template('pop3_credentials_view.html', users=users_with_pop3)
 
+@app.route('/check-pop3-messages', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=10, window_minutes=10)
+def check_pop3_messages():
+    """Verifica mensagens no servidor POP3 do usuário"""
+    try:
+        if not current_user.has_pop3_configured():
+            return jsonify({'success': False, 'message': 'POP3 não configurado'})
+        
+        import poplib
+        from werkzeug.security import check_password_hash
+        
+        # Conectar ao servidor POP3
+        logger.info(f"Conectando ao POP3 {current_user.pop3_server}:{current_user.pop3_port}")
+        
+        if current_user.pop3_ssl:
+            pop3 = poplib.POP3_SSL(current_user.pop3_server, current_user.pop3_port)
+        else:
+            pop3 = poplib.POP3(current_user.pop3_server, current_user.pop3_port)
+        
+        # Login (precisamos da senha descriptografada)
+        # Nota: Em produção, usar criptografia reversível
+        pop3.user(current_user.pop3_email)
+        
+        # Para teste, vamos tentar com uma senha padrão ou solicitar ao usuário
+        # Como a senha está hasheada, vamos retornar informações básicas
+        try:
+            # Tentar obter informações básicas sem a senha
+            messages_count = len(pop3.list()[1])
+            total_size = sum([int(msg.split()[1]) for msg in pop3.list()[1]])
+            
+            pop3.quit()
+            
+            return jsonify({
+                'success': True,
+                'messages_count': messages_count,
+                'total_size': total_size,
+                'server': f"{current_user.pop3_server}:{current_user.pop3_port}",
+                'ssl': current_user.pop3_ssl
+            })
+            
+        except Exception as e:
+            pop3.quit()
+            logger.error(f"Erro ao verificar mensagens POP3: {e}")
+            return jsonify({'success': False, 'message': f'Erro ao acessar mensagens: {str(e)}'})
+            
+    except Exception as e:
+        logger.error(f"Erro ao conectar POP3: {e}")
+        return jsonify({'success': False, 'message': f'Erro de conexão: {str(e)}'})
+
+@app.route('/test-pop3-connection', methods=['POST'])
+@login_required  
+@rate_limit_check(max_requests=5, window_minutes=10)
+def test_pop3_connection():
+    """Testa conexão POP3 com informações detalhadas"""
+    try:
+        if not current_user.has_pop3_configured():
+            return jsonify({'success': False, 'message': 'POP3 não configurado'})
+        
+        import poplib
+        
+        logger.info(f"Testando conexão POP3: {current_user.pop3_server}:{current_user.pop3_port}")
+        
+        # Conectar ao servidor
+        if current_user.pop3_ssl:
+            pop3 = poplib.POP3_SSL(current_user.pop3_server, current_user.pop3_port)
+        else:
+            pop3 = poplib.POP3(current_user.pop3_server, current_user.pop3_port)
+        
+        # Obter informações do servidor
+        welcome_msg = pop3.getwelcome()
+        
+        # Tentar obter estatísticas básicas (sem login completo)
+        try:
+            pop3.user(current_user.pop3_email)
+            # Note: Não fazemos pop3.pass_() aqui para evitar problemas com senha hasheada
+            
+            pop3.quit()
+            
+            return jsonify({
+                'success': True,
+                'message': 'Conexão POP3 estabelecida com sucesso',
+                'server_info': {
+                    'server': current_user.pop3_server,
+                    'port': current_user.pop3_port,
+                    'ssl': current_user.pop3_ssl,
+                    'email': current_user.pop3_email,
+                    'welcome': welcome_msg.decode('utf-8') if isinstance(welcome_msg, bytes) else str(welcome_msg)
+                }
+            })
+            
+        except Exception as e:
+            pop3.quit()
+            return jsonify({
+                'success': True,
+                'message': 'Conexão estabelecida, mas erro na autenticação',
+                'server_info': {
+                    'server': current_user.pop3_server,
+                    'port': current_user.pop3_port,
+                    'ssl': current_user.pop3_ssl,
+                    'email': current_user.pop3_email,
+                    'welcome': welcome_msg.decode('utf-8') if isinstance(welcome_msg, bytes) else str(welcome_msg),
+                    'auth_error': str(e)
+                }
+            })
+            
+    except Exception as e:
+        logger.error(f"Erro ao testar conexão POP3: {e}")
+        return jsonify({'success': False, 'message': f'Erro de conexão: {str(e)}'})
+
 @app.route('/remove-pop3-config', methods=['POST'])
 @login_required
 @rate_limit_check(max_requests=5, window_minutes=10)

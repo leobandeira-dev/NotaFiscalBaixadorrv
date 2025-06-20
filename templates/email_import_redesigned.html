@@ -543,6 +543,12 @@
                                 </div>
                                 
                                 <div class="action-buttons mt-3">
+                                    <button type="button" class="btn btn-check-now" onclick="testPop3Connection()">
+                                        <i class="fas fa-plug"></i> Testar Conexão
+                                    </button>
+                                    <button type="button" class="btn btn-check-now" onclick="checkPop3Messages()">
+                                        <i class="fas fa-envelope-open"></i> Verificar Mensagens
+                                    </button>
                                     <button type="button" class="btn btn-outline-secondary" onclick="showPop3EditForm()">
                                         <i class="fas fa-edit"></i> Editar Configurações
                                     </button>
@@ -784,6 +790,85 @@ function showPop3EditForm() {
 
 function hidePop3EditForm() {
     document.getElementById('pop3Form').style.display = 'none';
+}
+
+function testPop3Connection() {
+    const button = document.querySelector('button[onclick="testPop3Connection()"]');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testando...';
+    button.disabled = true;
+    
+    fetch('{{ url_for("test_pop3_connection") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        if (data.success) {
+            let message = `✅ ${data.message}\n\n`;
+            if (data.server_info) {
+                message += `📧 Email: ${data.server_info.email}\n`;
+                message += `🖥️ Servidor: ${data.server_info.server}:${data.server_info.port}\n`;
+                message += `🔒 SSL: ${data.server_info.ssl ? 'Sim' : 'Não'}\n`;
+                if (data.server_info.welcome) {
+                    message += `💬 Servidor: ${data.server_info.welcome}`;
+                }
+                if (data.server_info.auth_error) {
+                    message += `\n⚠️ Erro de autenticação: ${data.server_info.auth_error}`;
+                }
+            }
+            alert(message);
+        } else {
+            alert('❌ Erro: ' + data.message);
+        }
+    })
+    .catch(error => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        console.error('Error:', error);
+        alert('❌ Erro ao testar conexão POP3');
+    });
+}
+
+function checkPop3Messages() {
+    const button = document.querySelector('button[onclick="checkPop3Messages()"]');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando...';
+    button.disabled = true;
+    
+    fetch('{{ url_for("check_pop3_messages") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        
+        if (data.success) {
+            let message = `📬 Verificação de Mensagens Concluída\n\n`;
+            message += `📊 Total de mensagens: ${data.messages_count}\n`;
+            message += `📦 Tamanho total: ${(data.total_size / 1024).toFixed(2)} KB\n`;
+            message += `🖥️ Servidor: ${data.server}\n`;
+            message += `🔒 SSL: ${data.ssl ? 'Sim' : 'Não'}`;
+            alert(message);
+        } else {
+            alert('❌ Erro: ' + data.message);
+        }
+    })
+    .catch(error => {
+        button.innerHTML = originalText;
+        button.disabled = false;
+        console.error('Error:', error);
+        alert('❌ Erro ao verificar mensagens POP3');
+    });
 }
 
 function removePop3Config() {
