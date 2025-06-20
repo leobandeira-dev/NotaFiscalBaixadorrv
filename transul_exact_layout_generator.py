@@ -287,8 +287,8 @@ class TransulExactLayoutGenerator:
         # 5. REMETENTE - Fundo preto com texto branco
         remetente_height = 10 * mm
         # Resumir nome do remetente para caber no container
-        remetente_nome = xml_data.get('emitente_nome', 'N/A')
-        if len(remetente_nome) > 30:
+        remetente_nome = xml_data.get('nome_emitente', xml_data.get('emitente_nome', 'N/A'))
+        if remetente_nome and remetente_nome != 'N/A' and len(remetente_nome) > 30:
             # Pegar primeira palavra + última palavra se muito longo
             palavras = remetente_nome.split()
             if len(palavras) > 1:
@@ -296,7 +296,7 @@ class TransulExactLayoutGenerator:
             else:
                 remetente_resumido = remetente_nome[:30]
         else:
-            remetente_resumido = remetente_nome
+            remetente_resumido = remetente_nome or 'N/A'
             
         remetente_text = f"Remetente: {remetente_resumido}"
         self._draw_styled_text_section(
