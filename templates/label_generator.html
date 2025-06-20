@@ -260,35 +260,70 @@
                                 <h5><i class="fas fa-edit me-2"></i>Configurar Volumes</h5>
                                 <p class="text-muted">Edite as quantidades de volumes e peso para cada etiqueta</p>
                                 
+                                <!-- Resumo da NFe -->
+                                <div class="alert alert-info mb-4">
+                                    <h6><i class="fas fa-file-invoice me-2"></i>Dados da NFe:</h6>
+                                    <div class="row">
+                                        <div class="col-md-3">
+                                            <strong>NF:</strong> {{ xml_data.numero_nf or 'N/A' }}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Peso Total:</strong> {{ '{:,.2f} kg'.format(xml_data.peso_bruto) if xml_data.peso_bruto else 'N/A' }}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Volumes NFe:</strong> {{ xml_data.quantidade_volumes or 1 }}
+                                        </div>
+                                        <div class="col-md-3">
+                                            <strong>Valor:</strong> {{ 'R$ {:,.2f}'.format(xml_data.valor_total) if xml_data.valor_total else 'N/A' }}
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div id="volumesList">
-                                    {% for i in range(xml_data.volumes_quantidade or 1) %}
-                                    <div class="volume-item" data-volume="{{ i + 1 }}">
-                                        <strong>Volume {{ i + 1 }}:</strong>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <label class="form-label mb-0">Peso (kg):</label>
-                                            <input type="number" class="form-control" name="peso_volume_{{ i + 1 }}" 
-                                                   value="{{ '%.2f'|format((xml_data.peso_bruto or 0) / (xml_data.volumes_quantidade or 1)) }}" 
-                                                   step="0.01" min="0" required>
+                                    {% set nfe_volumes = xml_data.quantidade_volumes or 1 %}
+                                    {% set peso_por_volume = (xml_data.peso_bruto or 0) / nfe_volumes %}
+                                    {% for i in range(nfe_volumes) %}
+                                    <div class="volume-item card mb-3" data-volume="{{ i + 1 }}">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h6 class="card-title mb-0">
+                                                    <i class="fas fa-box me-2"></i>Volume {{ i + 1 }} de {{ nfe_volumes }}
+                                                </h6>
+                                                {% if nfe_volumes > 1 and loop.index > 1 %}
+                                                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeVolume(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            
+                                            <div class="row mt-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Peso (kg):</label>
+                                                    <input type="number" class="form-control" name="peso_volume_{{ i + 1 }}" 
+                                                           value="{{ '%.2f'|format(peso_por_volume) }}" 
+                                                           step="0.01" min="0" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Número do Pedido:</label>
+                                                    <input type="text" class="form-control" name="pedido_volume_{{ i + 1 }}" 
+                                                           value="PED{{ xml_data.numero_nf }}-{{ i + 1 }}">
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <label class="form-label mb-0">Pedido:</label>
-                                            <input type="text" class="form-control" name="pedido_volume_{{ i + 1 }}" 
-                                                   value="PED{{ xml_data.numero_nf }}-{{ i + 1 }}" style="width: 150px;">
-                                        </div>
-                                        {% if loop.index > 1 %}
-                                        <button type="button" class="btn-remove-volume" onclick="removeVolume(this)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                        {% endif %}
                                     </div>
                                     {% endfor %}
                                 </div>
                                 
-                                <button type="button" class="btn-add-volume" onclick="addVolume()">
-                                    <i class="fas fa-plus me-2"></i>Adicionar Volume
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-outline-primary" onclick="addVolume()">
+                                        <i class="fas fa-plus me-2"></i>Adicionar Volume
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="resetVolumes()">
+                                        <i class="fas fa-undo me-2"></i>Resetar para NFe Original
+                                    </button>
+                                </div>
                                 
-                                <input type="hidden" name="total_volumes" id="totalVolumes" value="{{ xml_data.volumes_quantidade or 1 }}">
+                                <input type="hidden" name="total_volumes" id="totalVolumes" value="{{ nfe_volumes }}">
                             </div>
                         </form>
                     </div>
