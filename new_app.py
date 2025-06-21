@@ -329,11 +329,19 @@ class DownloadJob:
         self.failed = 0
         self.status = "starting"  # starting, running, completed, failed
         self.downloaded_files = []
+        self.files = []  # Add files attribute for compatibility
         self.errors = []
         self.start_time = datetime.now()
         self.end_time = None
         self.callback_url = None
         self.download_type = 'xml'
+    
+    @property
+    def progress_percentage(self):
+        """Calculate progress percentage"""
+        if self.total_keys == 0:
+            return 0
+        return round((self.processed / self.total_keys) * 100, 1)
 
     def to_dict(self):
         return {
@@ -382,6 +390,7 @@ def process_download_job(job_id, user_id):
                     job.successful += 1
                     if result.get('file_path'):
                         job.downloaded_files.append(result['file_path'])
+                        job.files.append(os.path.basename(result['file_path']))
                 else:
                     job.failed += 1
                     job.errors.append({
