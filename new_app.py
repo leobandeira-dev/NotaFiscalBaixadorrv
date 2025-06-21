@@ -276,8 +276,8 @@ app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
 app.config['MAIL_DEFAULT_SENDER'] = 'XMLDownloader <noreply@xmldownloader.com>'
 
 # OAuth configuration
-app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '')
-app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '')
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
 
 # Initialize database
 db.init_app(app)
@@ -723,9 +723,11 @@ def google_callback():
             
             if not user:
                 # Create new user
-                user = User(name=name, email=email)
-                # Set a random password for OAuth users
-                user.set_password(secrets.token_urlsafe(32))
+                user = User(
+                    name=name, 
+                    email=email,
+                    password_hash=generate_password_hash(secrets.token_urlsafe(32))
+                )
                 db.session.add(user)
                 db.session.commit()
                 flash('Conta criada com sucesso via Google!', 'success')
