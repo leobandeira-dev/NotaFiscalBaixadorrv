@@ -44,26 +44,23 @@ class DeployRobotFix:
         options.add_argument('--allow-running-insecure-content')
         options.add_argument('--disable-extensions')
         options.add_argument('--disable-plugins')
-        options.add_argument('--disable-images')
-        options.add_argument('--disable-javascript')
         options.add_argument('--disable-background-timer-throttling')
         options.add_argument('--disable-backgrounding-occluded-windows')
         options.add_argument('--disable-renderer-backgrounding')
         options.add_argument('--disable-features=TranslateUI')
         options.add_argument('--disable-ipc-flooding-protection')
         
-        # Configurações de memória para deploy
+        # Configurações de memória para deploy - mais conservadoras
         options.add_argument('--memory-pressure-off')
-        options.add_argument('--max_old_space_size=4096')
-        options.add_argument('--single-process')
+        options.add_argument('--max_old_space_size=2048')
         
         # Configurações de rede para deploy
         options.add_argument('--disable-background-networking')
         options.add_argument('--disable-default-apps')
         options.add_argument('--disable-sync')
         
-        # Janela otimizada para deploy
-        options.add_argument('--window-size=800,600')
+        # Janela otimizada para deploy - maior para melhor compatibilidade
+        options.add_argument('--window-size=1200,800')
         
         # User agent para evitar detecção
         options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
