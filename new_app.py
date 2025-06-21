@@ -2232,25 +2232,31 @@ def job_status(job_id):
             with jobs_lock:
                 download_jobs[job_id] = job
     
-    # Sync memory job with database if it exists
+    # Force complete sync with database - this is the critical fix
     if job:
         from models import DownloadJob as DBDownloadJob
         db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=current_user.id).first()
         
         if db_job:
-            # Update memory job with latest database values
+            # FORCE UPDATE: Override memory with database reality
             job.processed = db_job.processed
             job.successful = db_job.successful
             job.failed = db_job.failed
             job.status = db_job.status
             job.end_time = db_job.completed_at
             
-            # Update downloaded files
+            # Force update downloaded files
             import json
             db_files = json.loads(db_job.downloaded_files or '[]')
-            if db_files:
-                job.downloaded_files = db_files
-                job.files = [os.path.basename(f) for f in db_files]
+            job.downloaded_files = db_files
+            job.files = [os.path.basename(f) for f in db_files]
+            
+            # Force update errors
+            job.errors = json.loads(db_job.errors or '[]')
+            
+            # Log the forced synchronization for debugging
+            logger.info(f"🔄 FORCE SYNC [Job {job_id}]: DB shows {db_job.processed}/{db_job.total_keys} processed, {db_job.successful} successful, status: {db_job.status}")
+            logger.info(f"🔄 FORCE SYNC [Job {job_id}]: Memory updated to match database reality")
         
         if job.user_id != current_user.id:
             return jsonify({'error': 'Job not found'}), 404
