@@ -21,43 +21,43 @@ class XMLPricingTiers:
     
     TIERS = [
         {
-            'name': 'Pacote Básico',
+            'name': 'Starter - 100 Créditos XML',
             'xml_count': 100,
             'price_per_xml': 0.10,
             'total_price': 10.00,
             'savings': 0,
             'stripe_buy_button_id': 'buy_btn_1RbrKZKpjVGFiyHCl3l2hMEp',
-            'stripe_price_id': 'price_basic_100',
+            'stripe_price_id': 'price_1RcB6ZKpjVGFiyHCqBx0uFom',
             'description': 'Ideal para uso ocasional'
         },
         {
-            'name': 'Pacote Profissional',
+            'name': 'Professional - 500 Créditos XML',
             'xml_count': 500,
             'price_per_xml': 0.08,
             'total_price': 40.00,
             'savings': 20,
             'stripe_buy_button_id': 'buy_btn_professional_500',
-            'stripe_price_id': 'price_professional_500',
+            'stripe_price_id': 'price_1RcB6aKpjVGFiyHCnzyt2Gkg',
             'description': 'Para empresas de médio porte'
         },
         {
-            'name': 'Pacote Empresarial',
+            'name': 'Enterprise - 1000 Créditos XML',
             'xml_count': 1000,
             'price_per_xml': 0.07,
             'total_price': 70.00,
             'savings': 30,
             'stripe_buy_button_id': 'buy_btn_enterprise_1000',
-            'stripe_price_id': 'price_enterprise_1000',
+            'stripe_price_id': 'price_1RcB6aKpjVGFiyHCsOIWwjsH',
             'description': 'Para grandes volumes'
         },
         {
-            'name': 'Pacote Corporativo',
+            'name': 'Corporate - 2000 Créditos XML',
             'xml_count': 2000,
             'price_per_xml': 0.06,
             'total_price': 120.00,
             'savings': 40,
             'stripe_buy_button_id': 'buy_btn_corporate_2000',
-            'stripe_price_id': 'price_corporate_2000',
+            'stripe_price_id': 'price_1RcB6aKpjVGFiyHCjEAUSie0',
             'description': 'Para operações em larga escala'
         }
     ]

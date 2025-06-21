@@ -3691,27 +3691,43 @@ def comprar_creditos_xml():
             xml_products = [
                 {
                     'id': 'starter',
-                    'name': 'Pacote Starter',
-                    'description': '100 créditos XML',
+                    'name': 'Starter - 100 Créditos XML',
+                    'description': 'Ideal para uso ocasional',
                     'amount': 10.00,
                     'currency': 'BRL',
-                    'credits': 100
+                    'credits': 100,
+                    'price_id': 'price_1RcB6ZKpjVGFiyHCqBx0uFom',
+                    'popular': False
                 },
                 {
                     'id': 'professional', 
-                    'name': 'Pacote Professional',
-                    'description': '500 créditos XML',
+                    'name': 'Professional - 500 Créditos XML',
+                    'description': 'Para empresas de médio porte',
                     'amount': 40.00,
                     'currency': 'BRL',
-                    'credits': 500
+                    'credits': 500,
+                    'price_id': 'price_1RcB6aKpjVGFiyHCnzyt2Gkg',
+                    'popular': True
                 },
                 {
                     'id': 'enterprise',
-                    'name': 'Pacote Enterprise', 
-                    'description': '1500 créditos XML',
+                    'name': 'Enterprise - 1000 Créditos XML',
+                    'description': 'Para grandes volumes',
+                    'amount': 70.00,
+                    'currency': 'BRL',
+                    'credits': 1000,
+                    'price_id': 'price_1RcB6aKpjVGFiyHCsOIWwjsH',
+                    'popular': False
+                },
+                {
+                    'id': 'corporate',
+                    'name': 'Corporate - 2000 Créditos XML',
+                    'description': 'Para operações em larga escala',
                     'amount': 120.00,
                     'currency': 'BRL',
-                    'credits': 1500
+                    'credits': 2000,
+                    'price_id': 'price_1RcB6aKpjVGFiyHCjEAUSie0',
+                    'popular': False
                 }
             ]
         
