@@ -2309,36 +2309,42 @@ def process_and_save_uploaded_xml(user_id, xml_content, filename):
                 is_duplicate = True
                 logger.info(f"XML duplicado detectado - será gravado como duplicata: {xml_data['chave_nf']}")
         
-        # Criar novo registro no banco, incluindo marcação de duplicata
+        # Criar novo registro no banco usando os nomes corretos dos campos do modelo XMLFile
         xml_file = XMLFile(
             user_id=user_id,
             filename=xml_data['filename'],
             invoice_key=xml_data['chave_nf'],
-            numero_nf=xml_data['numero_nf'],
-            serie_nf=xml_data['serie_nf'],
-            data_emissao=xml_data['data_emissao'],
-            valor_total=xml_data['valor_total'],
-            peso_bruto=xml_data['peso_bruto'],
-            peso_liquido=xml_data['peso_liquido'],
-            quantidade_volumes=xml_data['quantidade_volumes'],
-            nome_emitente=xml_data['nome_emitente'][:255] if xml_data['nome_emitente'] != 'N/A' else 'N/A',
-            cnpj_emitente=xml_data['cnpj_emitente'][:20] if xml_data['cnpj_emitente'] != 'N/A' else 'N/A',
-            cidade_emitente=xml_data['cidade_emitente'][:100] if xml_data['cidade_emitente'] != 'N/A' else 'N/A',
-            uf_emitente=xml_data['uf_emitente'][:2] if xml_data['uf_emitente'] != 'N/A' else 'N/A',
-            cep_emitente=xml_data['cep_emitente'][:10] if xml_data['cep_emitente'] != 'N/A' else 'N/A',
-            endereco_emitente=xml_data['endereco_emitente'][:255] if xml_data['endereco_emitente'] != 'N/A' else 'N/A',
-            nome_destinatario=xml_data['nome_destinatario'][:255] if xml_data['nome_destinatario'] != 'N/A' else 'N/A',
-            destinatario_cnpj_cpf=xml_data['destinatario_cnpj_cpf'][:20] if xml_data['destinatario_cnpj_cpf'] != 'N/A' else 'N/A',
-            cidade_destinatario=xml_data['cidade_destinatario'][:100] if xml_data['cidade_destinatario'] != 'N/A' else 'N/A',
-            uf_destinatario=xml_data['uf_destinatario'][:2] if xml_data['uf_destinatario'] != 'N/A' else 'N/A',
-            cep_destinatario=xml_data['cep_destinatario'][:10] if xml_data['cep_destinatario'] != 'N/A' else 'N/A',
-            endereco_destinatario=xml_data['endereco_destinatario'][:255] if xml_data['endereco_destinatario'] != 'N/A' else 'N/A',
-            nome_transportadora=xml_data['nome_transportadora'][:255] if xml_data['nome_transportadora'] != 'N/A' else 'N/A',
-            transportadora_cnpj=xml_data['transportadora_cnpj'][:20] if xml_data['transportadora_cnpj'] != 'N/A' else 'N/A',
+            file_path=f"uploads/{xml_data['filename']}",
             xml_content=xml_content,
             import_type='upload',
-            is_duplicate=is_duplicate,  # Marca como duplicata se já existe
-            created_at=datetime.utcnow()
+            is_duplicate=is_duplicate,
+            
+            # Dados básicos da NFe
+            cnpj_emitente=xml_data.get('cnpj_emitente', 'N/A')[:14] if xml_data.get('cnpj_emitente') != 'N/A' else None,
+            nome_emitente=xml_data.get('nome_emitente', 'N/A')[:255] if xml_data.get('nome_emitente') != 'N/A' else None,
+            numero_nf=xml_data.get('numero_nf', 'N/A')[:50] if xml_data.get('numero_nf') != 'N/A' else None,
+            serie_nf=xml_data.get('serie_nf', 'N/A')[:10] if xml_data.get('serie_nf') != 'N/A' else None,
+            data_emissao=xml_data.get('data_emissao'),
+            valor_total=xml_data.get('valor_total'),
+            
+            # Informações de transporte
+            peso_bruto=xml_data.get('peso_bruto'),
+            quantidade_volumes=xml_data.get('quantidade_volumes'),
+            
+            # Dados do remetente (emitente)
+            remetente_razao=xml_data.get('nome_emitente', 'N/A')[:255] if xml_data.get('nome_emitente') != 'N/A' else None,
+            remetente_cidade=xml_data.get('cidade_emitente', 'N/A')[:100] if xml_data.get('cidade_emitente') != 'N/A' else None,
+            remetente_uf=xml_data.get('uf_emitente', 'N/A')[:2] if xml_data.get('uf_emitente') != 'N/A' else None,
+            remetente_endereco=xml_data.get('endereco_emitente', 'N/A')[:500] if xml_data.get('endereco_emitente') != 'N/A' else None,
+            remetente_cep=xml_data.get('cep_emitente', 'N/A')[:8] if xml_data.get('cep_emitente') != 'N/A' else None,
+            
+            # Dados do destinatário  
+            destinatario_cnpj_cpf=xml_data.get('destinatario_cnpj_cpf', 'N/A')[:14] if xml_data.get('destinatario_cnpj_cpf') != 'N/A' else None,
+            destinatario_razao=xml_data.get('nome_destinatario', 'N/A')[:255] if xml_data.get('nome_destinatario') != 'N/A' else None,
+            destinatario_cidade=xml_data.get('cidade_destinatario', 'N/A')[:100] if xml_data.get('cidade_destinatario') != 'N/A' else None,
+            destinatario_uf=xml_data.get('uf_destinatario', 'N/A')[:2] if xml_data.get('uf_destinatario') != 'N/A' else None,
+            destinatario_endereco=xml_data.get('endereco_destinatario', 'N/A')[:500] if xml_data.get('endereco_destinatario') != 'N/A' else None,
+            destinatario_cep=xml_data.get('cep_destinatario', 'N/A')[:8] if xml_data.get('cep_destinatario') != 'N/A' else None
         )
         
         db.session.add(xml_file)
