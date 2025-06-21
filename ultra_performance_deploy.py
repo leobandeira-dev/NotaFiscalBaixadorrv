@@ -41,7 +41,7 @@ class UltraPerformanceDeploy:
         options.add_argument('--disable-extensions')
         options.add_argument('--disable-plugins')
         options.add_argument('--disable-images')  # Não carregar imagens
-        options.add_argument('--disable-javascript')  # Sem JS desnecessário
+        # options.add_argument('--disable-javascript')  # JavaScript necessário para o site funcionar
         
         # ULTRA VELOCIDADE - CONFIGURAÇÕES AGRESSIVAS
         options.add_argument('--aggressive-cache-discard')
