@@ -710,7 +710,7 @@ def reset_password(token):
 
 @app.route('/auth/google')
 def google_login():
-    """Google OAuth login"""
+    """Google OAuth login with proper user agent handling"""
     # Configure session for maximum persistence
     session.permanent = True
     app.permanent_session_lifetime = timedelta(hours=2)
@@ -723,8 +723,22 @@ def google_login():
     session['oauth_redirect_uri'] = redirect_uri
     session.modified = True
     
-    # Use simplified OAuth without custom state (let Authlib handle it)
-    return google.authorize_redirect(redirect_uri)
+    # Create proper OAuth URL manually to avoid user agent issues
+    client_id = os.environ.get('GOOGLE_OAUTH_CLIENT_ID')
+    
+    oauth_params = {
+        'client_id': client_id,
+        'redirect_uri': redirect_uri,
+        'scope': 'openid profile email',
+        'response_type': 'code',
+        'access_type': 'offline',
+        'prompt': 'select_account'
+    }
+    
+    from urllib.parse import urlencode
+    oauth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(oauth_params)
+    
+    return redirect(oauth_url)
 
 @app.route('/auth/google/callback')
 def google_callback():
