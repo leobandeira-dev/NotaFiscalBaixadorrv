@@ -594,6 +594,7 @@ class XMLFile(db.Model):
             'destinatario_cep': self.destinatario_cep,
             'danfe_generated': self.danfe_generated,
             'label_generated': self.label_generated,
+            'is_duplicate': self.is_duplicate,
             'imported_at': self.imported_at.isoformat()
         }
     

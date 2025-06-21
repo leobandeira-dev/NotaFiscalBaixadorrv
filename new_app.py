@@ -2309,7 +2309,7 @@ def process_and_save_uploaded_xml(user_id, xml_content, filename):
                 is_duplicate = True
                 logger.info(f"XML duplicado detectado - será gravado como duplicata: {xml_data['chave_nf']}")
         
-        # Criar novo registro no banco
+        # Criar novo registro no banco, incluindo marcação de duplicata
         xml_file = XMLFile(
             user_id=user_id,
             filename=xml_data['filename'],
@@ -2337,6 +2337,7 @@ def process_and_save_uploaded_xml(user_id, xml_content, filename):
             transportadora_cnpj=xml_data['transportadora_cnpj'][:20] if xml_data['transportadora_cnpj'] != 'N/A' else 'N/A',
             xml_content=xml_content,
             import_type='upload',
+            is_duplicate=is_duplicate,  # Marca como duplicata se já existe
             created_at=datetime.utcnow()
         )
         

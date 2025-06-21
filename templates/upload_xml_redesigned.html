@@ -345,6 +345,11 @@
                                         {% else %}
                                             <span class="badge bg-secondary ms-1">Upload</span>
                                         {% endif %}
+                                        {% if xml.is_duplicate %}
+                                            <span class="badge bg-warning text-dark ms-1" title="Este XML possui a mesma chave de nota fiscal de outro arquivo já importado">
+                                                <i class="fas fa-copy me-1"></i>Duplicata
+                                            </span>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
