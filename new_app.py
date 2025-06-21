@@ -1006,6 +1006,12 @@ def dashboard():
                          user_stats=user_stats,
                          trial_status=trial_status)
 
+@app.route('/download')
+@login_required
+def download():
+    """Download page - redirects to xml-download for compatibility"""
+    return redirect(url_for('xml_download'))
+
 @app.route('/xml-download')
 @login_required
 def xml_download():
