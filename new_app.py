@@ -3635,101 +3635,54 @@ def comprar_creditos_xml():
         from credit_system_fixed import get_user_xml_balance
         xml_balance = get_user_xml_balance(current_user.id)
         
-        # Buscar produtos XML do Stripe
-        try:
-            stripe_products = stripe.Product.list(active=True, limit=20)
-            xml_products = []
-            
-            for product in stripe_products.data:
-                if 'xml' in product.name.lower() or 'credito' in product.name.lower():
-                    # Buscar preços para este produto
-                    prices = stripe.Price.list(product=product.id, active=True)
-                    if prices.data:
-                        price = prices.data[0]  # Pegar o primeiro preço ativo
-                        xml_products.append({
-                            'id': product.id,
-                            'name': product.name,
-                            'description': product.description,
-                            'price_id': price.id,
-                            'amount': price.unit_amount / 100,  # Converter de centavos para reais
-                            'currency': price.currency.upper(),
-                            'metadata': product.metadata
-                        })
-            
-            # Se não encontrou produtos, usar produtos padrão
-            if not xml_products:
-                xml_products = [
-                    {
-                        'id': 'starter',
-                        'name': 'Pacote Starter',
-                        'description': '100 créditos XML',
-                        'amount': 10.00,
-                        'currency': 'BRL',
-                        'credits': 100
-                    },
-                    {
-                        'id': 'professional', 
-                        'name': 'Pacote Professional',
-                        'description': '500 créditos XML',
-                        'amount': 40.00,
-                        'currency': 'BRL',
-                        'credits': 500
-                    },
-                    {
-                        'id': 'enterprise',
-                        'name': 'Pacote Enterprise', 
-                        'description': '1500 créditos XML',
-                        'amount': 120.00,
-                        'currency': 'BRL',
-                        'credits': 1500
-                    }
-                ]
-                        
-        except stripe.error.StripeError as e:
-            logger.error(f"Erro ao buscar produtos Stripe: {e}")
-            # Usar produtos padrão em caso de erro
-            xml_products = [
-                {
-                    'id': 'starter',
-                    'name': 'Starter - 100 Créditos XML',
-                    'description': 'Ideal para uso ocasional',
-                    'amount': 10.00,
-                    'currency': 'BRL',
-                    'credits': 100,
-                    'price_id': 'price_1RcB6ZKpjVGFiyHCqBx0uFom',
-                    'popular': False
-                },
-                {
-                    'id': 'professional', 
-                    'name': 'Professional - 500 Créditos XML',
-                    'description': 'Para empresas de médio porte',
-                    'amount': 40.00,
-                    'currency': 'BRL',
-                    'credits': 500,
-                    'price_id': 'price_1RcB6aKpjVGFiyHCnzyt2Gkg',
-                    'popular': True
-                },
-                {
-                    'id': 'enterprise',
-                    'name': 'Enterprise - 1000 Créditos XML',
-                    'description': 'Para grandes volumes',
-                    'amount': 70.00,
-                    'currency': 'BRL',
-                    'credits': 1000,
-                    'price_id': 'price_1RcB6aKpjVGFiyHCsOIWwjsH',
-                    'popular': False
-                },
-                {
-                    'id': 'corporate',
-                    'name': 'Corporate - 2000 Créditos XML',
-                    'description': 'Para operações em larga escala',
-                    'amount': 120.00,
-                    'currency': 'BRL',
-                    'credits': 2000,
-                    'price_id': 'price_1RcB6aKpjVGFiyHCjEAUSie0',
-                    'popular': False
-                }
-            ]
+        # Usar produtos oficiais do Stripe configurados diretamente
+        xml_products = [
+            {
+                'id': 'starter',
+                'name': 'Starter - 100 Créditos XML',
+                'description': 'Ideal para uso ocasional',
+                'amount': 10.00,
+                'currency': 'BRL',
+                'credits': 100,
+                'price_id': 'price_1RcB6ZKpjVGFiyHCqBx0uFom',
+                'popular': False
+            },
+            {
+                'id': 'professional', 
+                'name': 'Professional - 500 Créditos XML',
+                'description': 'Para empresas de médio porte',
+                'amount': 40.00,
+                'currency': 'BRL',
+                'credits': 500,
+                'price_id': 'price_1RcB6aKpjVGFiyHCnzyt2Gkg',
+                'popular': True
+            },
+            {
+                'id': 'enterprise',
+                'name': 'Enterprise - 1000 Créditos XML',
+                'description': 'Para grandes volumes',
+                'amount': 70.00,
+                'currency': 'BRL',
+                'credits': 1000,
+                'price_id': 'price_1RcB6aKpjVGFiyHCsOIWwjsH',
+                'popular': False
+            },
+            {
+                'id': 'corporate',
+                'name': 'Corporate - 2000 Créditos XML',
+                'description': 'Para operações em larga escala',
+                'amount': 120.00,
+                'currency': 'BRL',
+                'credits': 2000,
+                'price_id': 'price_1RcB6aKpjVGFiyHCjEAUSie0',
+                'popular': False
+            }
+        ]
+        
+        # Log dos produtos configurados para debug
+        logger.info(f"Produtos XML configurados: {len(xml_products)} pacotes")
+        
+
         
         return render_template('comprar_creditos_xml.html',
                              xml_balance=xml_balance,
