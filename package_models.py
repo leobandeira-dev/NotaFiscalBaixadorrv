@@ -6,6 +6,9 @@ Controle de acesso às funcionalidades por assinatura
 from datetime import datetime, timedelta
 from models import db
 
+# Import StripeTransaction from models to make it available
+from models import StripeTransaction
+
 class StripeProduct(db.Model):
     """Produtos do Stripe mapeados para pacotes do sistema"""
     __tablename__ = 'stripe_products'

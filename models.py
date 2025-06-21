@@ -374,6 +374,8 @@ class StripeTransaction(db.Model):
     # Transação
     amount_brl = db.Column(db.Float, nullable=False)  # Valor em reais
     credits_purchased = db.Column(db.Float, nullable=False)  # Créditos comprados
+    credits_added = db.Column(db.Float, nullable=False)  # Alias para credits_purchased (compatibilidade)
+    amount_paid = db.Column(db.Float, nullable=False)  # Alias para amount_brl (compatibilidade)
     package_id = db.Column(db.String(50))  # ID do pacote comprado
     
     # Status

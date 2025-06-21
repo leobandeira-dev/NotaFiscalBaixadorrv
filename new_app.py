@@ -3474,18 +3474,18 @@ def extrato_creditos():
     """Página de histórico de créditos com extrato bancário detalhado"""
     try:
         from stripe_pricing_system import get_user_xml_credits
-        from package_models import StripeTransaction, CreditBalance
+        from package_models import FeatureUsage
         from datetime import datetime, timedelta
         from sqlalchemy import desc, func, or_
         
         # Obter saldo atual
         current_credits = get_user_xml_credits(current_user.id)
         
-        # Obter transações Stripe (compras) dos últimos 30 dias
-        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        # Obter transações Stripe (compras) dos últimos 90 dias
+        ninety_days_ago = datetime.utcnow() - timedelta(days=90)
         stripe_transactions = db.session.query(StripeTransaction)\
             .filter(StripeTransaction.user_id == current_user.id)\
-            .filter(StripeTransaction.created_at >= thirty_days_ago)\
+            .filter(StripeTransaction.created_at >= ninety_days_ago)\
             .filter(or_(
                 StripeTransaction.status == 'paid',
                 StripeTransaction.status == 'completed'
@@ -3493,57 +3493,38 @@ def extrato_creditos():
             .order_by(desc(StripeTransaction.created_at))\
             .all()
         
-        # Obter histórico de uso dos últimos 30 dias
-        usage_history = db.session.query(XMLFile)\
-            .filter(XMLFile.user_id == current_user.id)\
-            .filter(XMLFile.import_type == 'SISTEMA')\
-            .filter(XMLFile.imported_at >= thirty_days_ago)\
-            .order_by(desc(XMLFile.imported_at))\
+        # Obter histórico de uso dos últimos 90 dias
+        usage_transactions = db.session.query(FeatureUsage)\
+            .filter(FeatureUsage.user_id == current_user.id)\
+            .filter(FeatureUsage.feature_key == 'xml_download')\
+            .filter(FeatureUsage.created_at >= ninety_days_ago)\
+            .order_by(desc(FeatureUsage.created_at))\
             .all()
         
-        # Criar extrato bancário unificado
-        credit_statement = []
+        # Calcular totais
+        total_purchased = sum([t.credits_purchased for t in stripe_transactions])
+        total_used = sum([u.credits_consumed for u in usage_transactions])
         
-        # Adicionar compras (créditos)
-        for transaction in stripe_transactions:
-            credit_statement.append({
-                'date': transaction.created_at,
-                'type': 'credit',
-                'description': f'Compra de {transaction.credits_added or 0} créditos XML',
-                'reference': f'Transação #{transaction.id}',
-                'amount': transaction.credits_added or 0,
-                'balance': 0  # Será calculado depois
-            })
+        # Obter dados dos últimos 30 dias para resumo mensal
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        monthly_purchased = sum([
+            t.credits_purchased for t in stripe_transactions 
+            if t.created_at >= thirty_days_ago
+        ])
+        monthly_used = sum([
+            u.credits_consumed for u in usage_transactions 
+            if u.created_at >= thirty_days_ago
+        ])
         
-        # Adicionar downloads (débitos)
-        for xml in usage_history:
-            credit_statement.append({
-                'date': xml.imported_at,
-                'type': 'debit', 
-                'description': f'Download XML - NF {xml.numero_nf or "N/A"}',
-                'reference': f'{xml.nome_emitente or "N/A"}' if xml.nome_emitente else '',
-                'amount': 1,  # 1 crédito por download
-                'balance': 0  # Será calculado depois
-            })
-        
-        # Ordenar por data (mais recente primeiro)
-        credit_statement.sort(key=lambda x: x['date'] or datetime.min, reverse=True)
-        
-        # Calcular saldos progressivos (do mais recente para o mais antigo)
-        running_balance = current_credits
-        for entry in credit_statement:
-            entry['balance'] = running_balance
-            if entry['type'] == 'credit':
-                # Subtrair porque estamos indo do presente para o passado
-                running_balance -= entry['amount']
-            else:
-                # Somar porque estamos indo do presente para o passado
-                running_balance += entry['amount']
-        
-        # Estatísticas do usuário
-        user_stats = {
-            'saldo_atual': current_credits,
-            'total_comprado': sum(t.credits_added or 0 for t in stripe_transactions),
+        # Renderizar template com dados do extrato bancário
+        return render_template('extrato_creditos_bancario.html',
+                             current_user=current_user,
+                             purchase_transactions=stripe_transactions,
+                             usage_transactions=usage_transactions,
+                             total_purchased=int(total_purchased),
+                             total_used=int(total_used),
+                             monthly_purchased=int(monthly_purchased),
+                             monthly_used=int(monthly_used))
             'total_usado': len(usage_history),
             'valor_gasto': sum(t.amount_paid or 0 for t in stripe_transactions)
         }

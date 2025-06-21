@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Extrato de Créditos XML{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">Extrato de Créditos XML</h1>
+            <p class="text-muted">Histórico detalhado de transações e saldo</p>
+        </div>
+        <div class="text-end">
+            <div class="small text-muted">Data de emissão</div>
+            <div class="fw-bold">{{ moment().format('DD/MM/YYYY - HH:mm') }}</div>
+        </div>
+    </div>
+
+    <!-- Resumo do Saldo -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-muted small">SALDO ATUAL</div>
+                    <div class="h2 mb-0 text-success">{{ current_user.xml_credits or 0 }} créditos</div>
+                    <div class="small text-muted">XML Downloads disponíveis</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-muted small">TOTAL ADQUIRIDO</div>
+                    <div class="h4 mb-0 text-primary">{{ total_purchased or 0 }} créditos</div>
+                    <div class="small text-muted">Acumulado histórico</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body text-center">
+                    <div class="text-muted small">TOTAL UTILIZADO</div>
+                    <div class="h4 mb-0 text-warning">{{ total_used or 0 }} créditos</div>
+                    <div class="small text-muted">Downloads realizados</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Extrato Bancário -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fas fa-file-alt text-primary me-2"></i>
+                Extrato Detalhado de Movimentação
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-3 py-3 border-0">Data/Hora</th>
+                            <th class="px-3 py-3 border-0">Descrição</th>
+                            <th class="px-3 py-3 border-0 text-center">Débito</th>
+                            <th class="px-3 py-3 border-0 text-center">Crédito</th>
+                            <th class="px-3 py-3 border-0 text-end">Saldo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set running_balance = current_user.xml_credits or 0 %}
+                        
+                        <!-- Transações de Compra (Créditos) -->
+                        {% for transaction in purchase_transactions %}
+                        <tr class="border-bottom">
+                            <td class="px-3 py-3">
+                                <div class="fw-medium">{{ transaction.created_at.strftime('%d/%m/%Y') }}</div>
+                                <div class="small text-muted">{{ transaction.created_at.strftime('%H:%M:%S') }}</div>
+                            </td>
+                            <td class="px-3 py-3">
+                                <div class="fw-medium">Compra de Créditos XML</div>
+                                <div class="small text-muted">
+                                    Transação Stripe: {{ transaction.stripe_payment_intent_id[:15] }}...
+                                    {% if transaction.package_id %}
+                                    <br>Pacote: {{ transaction.package_id }}
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-3 py-3 text-center text-muted">—</td>
+                            <td class="px-3 py-3 text-center">
+                                <span class="badge bg-success-subtle text-success">
+                                    +{{ transaction.credits_purchased|int }} créditos
+                                </span>
+                            </td>
+                            {% set running_balance = running_balance + transaction.credits_purchased %}
+                            <td class="px-3 py-3 text-end fw-medium">{{ running_balance|int }} créditos</td>
+                        </tr>
+                        {% endfor %}
+
+                        <!-- Transações de Uso (Débitos) -->
+                        {% for usage in usage_transactions %}
+                        <tr class="border-bottom">
+                            <td class="px-3 py-3">
+                                <div class="fw-medium">{{ usage.created_at.strftime('%d/%m/%Y') }}</div>
+                                <div class="small text-muted">{{ usage.created_at.strftime('%H:%M:%S') }}</div>
+                            </td>
+                            <td class="px-3 py-3">
+                                <div class="fw-medium">Download XML</div>
+                                <div class="small text-muted">
+                                    {{ usage.description or 'Consumo de crédito XML' }}
+                                    {% if usage.usage_data and usage.usage_data.invoice_key %}
+                                    <br>Chave: {{ usage.usage_data.invoice_key[:15] }}...
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td class="px-3 py-3 text-center">
+                                <span class="badge bg-danger-subtle text-danger">
+                                    -{{ usage.credits_consumed|int }} crédito
+                                </span>
+                            </td>
+                            <td class="px-3 py-3 text-center text-muted">—</td>
+                            {% set running_balance = running_balance - usage.credits_consumed %}
+                            <td class="px-3 py-3 text-end fw-medium">{{ running_balance|int }} créditos</td>
+                        </tr>
+                        {% endfor %}
+
+                        {% if not purchase_transactions and not usage_transactions %}
+                        <tr>
+                            <td colspan="5" class="px-3 py-5 text-center text-muted">
+                                <i class="fas fa-inbox fa-2x mb-3 d-block"></i>
+                                Nenhuma movimentação encontrada.<br>
+                                <small>Faça sua primeira compra de créditos para começar.</small>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Rodapé do Extrato -->
+        <div class="card-footer bg-light">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="small text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Extrato gerado automaticamente pelo sistema CROSS XML Downloader PRO
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <button class="btn btn-outline-primary btn-sm" onclick="window.print()">
+                        <i class="fas fa-print me-1"></i>
+                        Imprimir Extrato
+                    </button>
+                    <a href="{{ url_for('creditos_xml') }}" class="btn btn-primary btn-sm ms-2">
+                        <i class="fas fa-credit-card me-1"></i>
+                        Comprar Créditos
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo de Períodos -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">Resumo dos Últimos 30 Dias</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Créditos Adquiridos:</span>
+                        <span class="fw-medium text-success">+{{ monthly_purchased or 0 }} créditos</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Créditos Utilizados:</span>
+                        <span class="fw-medium text-danger">-{{ monthly_used or 0 }} créditos</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-medium">Saldo do Período:</span>
+                        <span class="fw-bold {{ 'text-success' if (monthly_purchased or 0) >= (monthly_used or 0) else 'text-warning' }}">
+                            {{ (monthly_purchased or 0) - (monthly_used or 0) }} créditos
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">Informações da Conta</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Titular:</span>
+                        <span class="fw-medium">{{ current_user.first_name }} {{ current_user.last_name }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">E-mail:</span>
+                        <span class="fw-medium">{{ current_user.email }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Cadastro:</span>
+                        <span class="fw-medium">{{ current_user.created_at.strftime('%d/%m/%Y') if current_user.created_at else '—' }}</span>
+                    </div>
+                    <hr class="my-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Status da Conta:</span>
+                        <span class="badge bg-success">Ativa</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .sidebar, .navbar, .btn { display: none !important; }
+    .container-fluid { margin-left: 0 !important; }
+    body { font-size: 12px; }
+    .card { border: 1px solid #dee2e6 !important; }
+}
+</style>
+{% endblock %}
