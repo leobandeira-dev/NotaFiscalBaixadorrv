@@ -3525,25 +3525,10 @@ def extrato_creditos():
                              total_used=int(total_used),
                              monthly_purchased=int(monthly_purchased),
                              monthly_used=int(monthly_used))
-            'total_usado': len(usage_history),
-            'valor_gasto': sum(t.amount_paid or 0 for t in stripe_transactions)
-        }
-        
-        return render_template('historico_creditos_simple.html',
-                             user_stats=user_stats,
-                             stripe_transactions=stripe_transactions,
-                             usage_history=usage_history,
-                             credit_statement=credit_statement,
-                             current_user=current_user)
-    
-    except Exception as e:
-        logger.error(f"Erro ao carregar histórico de créditos: {str(e)}")
-        flash('Erro ao carregar histórico de créditos.', 'error')
-        return redirect(url_for('dashboard'))
         
     except Exception as e:
-        logger.error(f"Erro no dashboard de créditos XML: {e}")
-        flash('Erro ao carregar dashboard de créditos', 'error')
+        logger.error(f"Erro ao carregar extrato de créditos: {str(e)}")
+        flash('Erro ao carregar extrato de créditos.', 'error')
         return redirect(url_for('dashboard'))
 
 @app.route('/comprar-creditos-xml')
