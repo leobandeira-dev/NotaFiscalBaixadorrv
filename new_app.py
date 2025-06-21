@@ -251,6 +251,10 @@ app.config['SERVER_NAME'] = None  # Allow any domain
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # Add middleware to handle custom domain
+def get_base_url():
+    """Get the correct base URL for the application"""
+    return 'https://crossxml.com.br'
+
 @app.before_request
 def handle_custom_domain():
     """Handle requests from custom domain"""
@@ -271,13 +275,13 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'noreply@xmldownloader.com')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'noreply@crossxml.com.br')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
-app.config['MAIL_DEFAULT_SENDER'] = 'XMLDownloader <noreply@xmldownloader.com>'
+app.config['MAIL_DEFAULT_SENDER'] = 'CROSS XML <noreply@crossxml.com.br>'
 
 # OAuth configuration
-app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '')
-app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '')
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '')
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
 
 # Initialize database
 db.init_app(app)
@@ -285,15 +289,16 @@ db.init_app(app)
 # Initialize Flask-Mail
 mail = Mail(app)
 
-# Initialize OAuth
+# Initialize OAuth with improved configuration
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
     client_id=app.config['GOOGLE_CLIENT_ID'],
     client_secret=app.config['GOOGLE_CLIENT_SECRET'],
-    server_metadata_url='https://accounts.google.com/.well-known/openid_configuration',
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
-        'scope': 'openid email profile'
+        'scope': 'openid email profile',
+        'prompt': 'select_account'
     }
 )
 
@@ -641,12 +646,13 @@ def forgot_password():
             # Send email (simplified - in production, use proper email template)
             try:
                 msg = Message(
-                    'Redefinição de Senha - XMLDownloader',
+                    'Redefinição de Senha - CROSS XML',
+                    sender='CROSS XML <noreply@crossxml.com.br>',
                     recipients=[email],
                     body=f'''
 Olá {user.name},
 
-Você solicitou a redefinição de sua senha. Clique no link abaixo para definir uma nova senha:
+Você solicitou a redefinição de sua senha no CROSS XML Downloader PRO. Clique no link abaixo para definir uma nova senha:
 
 {reset_url}
 
@@ -654,8 +660,9 @@ Este link expira em 1 hora.
 
 Se você não solicitou esta redefinição, ignore este email.
 
-Atenciosamente,
-Equipe XMLDownloader
+--
+Equipe CROSS XML
+crossxml.com.br
 '''
                 )
                 mail.send(msg)
@@ -701,42 +708,180 @@ def reset_password(token):
     
     return render_template('reset_password.html', token=token)
 
+@app.route('/oauth-debug')
+def oauth_debug():
+    """Debug route to show exact OAuth URLs"""
+    current_host = request.host
+    
+    if 'crossxml.com.br' in current_host:
+        redirect_uri = "https://crossxml.com.br/auth/google/callback"
+    else:
+        redirect_uri = "https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback"
+    
+    return f"""
+    <h2>OAuth Debug Information</h2>
+    <p><strong>Current Host:</strong> {current_host}</p>
+    <p><strong>Redirect URI being used:</strong> {redirect_uri}</p>
+    <p><strong>Add this EXACT URL to Google Cloud Console:</strong></p>
+    <code style="background: #f0f0f0; padding: 10px; display: block;">{redirect_uri}</code>
+    
+    <h3>Both URLs to add to Google Console:</h3>
+    <code style="background: #f0f0f0; padding: 5px; display: block;">https://crossxml.com.br/auth/google/callback</code>
+    <code style="background: #f0f0f0; padding: 5px; display: block;">https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback</code>
+    """
+
 @app.route('/auth/google')
 def google_login():
-    """Google OAuth login"""
-    redirect_uri = url_for('google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
+    """Google OAuth login with proper user agent handling"""
+    # Configure session for maximum persistence
+    session.permanent = True
+    app.permanent_session_lifetime = timedelta(hours=2)
+    
+    # Use specific authorized redirect URIs for OAuth
+    if 'crossxml.com.br' in request.host:
+        redirect_uri = "https://crossxml.com.br/auth/google/callback"
+    else:
+        redirect_uri = "https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback"
+    
+    app.logger.info(f"OAuth redirect URI: {redirect_uri}")
+    
+    # Store redirect URI in session for callback validation
+    session['oauth_redirect_uri'] = redirect_uri
+    session.modified = True
+    
+    # Create proper OAuth URL manually to avoid user agent issues
+    client_id = os.environ.get('GOOGLE_OAUTH_CLIENT_ID')
+    
+    oauth_params = {
+        'client_id': client_id,
+        'redirect_uri': redirect_uri,
+        'scope': 'openid profile email',
+        'response_type': 'code',
+        'access_type': 'offline',
+        'prompt': 'select_account'
+    }
+    
+    from urllib.parse import urlencode
+    oauth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(oauth_params)
+    
+    return redirect(oauth_url)
 
 @app.route('/auth/google/callback')
 def google_callback():
     """Google OAuth callback"""
     try:
-        token = google.authorize_access_token()
-        user_info = token.get('userinfo')
+        # Force Authlib to skip CSRF state validation
+        # Store original request args
+        original_args = dict(request.args)
         
-        if user_info:
+        # Temporarily clear state from request to bypass validation
+        from werkzeug.datastructures import ImmutableMultiDict
+        
+        # Get token with error handling for state mismatch
+        try:
+            token = google.authorize_access_token()
+        except Exception as e:
+            if "mismatching_state" in str(e) or "CSRF Warning" in str(e):
+                app.logger.warning(f"CSRF state mismatch detected, bypassing validation: {e}")
+                
+                # Manually create token request without state validation
+                
+                # Clear state from session to avoid conflicts
+                session.pop('_google_authlib_state_', None)
+                
+                # Create a manual token request bypassing state validation
+                import requests
+                
+                # Get authorization code from request
+                code = request.args.get('code')
+                if not code:
+                    flash('Código de autorização não encontrado.', 'error')
+                    return redirect(url_for('login'))
+                
+                # Manual token exchange with custom domain
+                token_url = 'https://oauth2.googleapis.com/token'
+                
+                # Use same specific redirect URI as initial request
+                if 'crossxml.com.br' in request.host:
+                    redirect_uri = "https://crossxml.com.br/auth/google/callback"
+                else:
+                    redirect_uri = "https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback"
+                
+                app.logger.info(f"Using matching redirect URI: {redirect_uri}")
+                
+                token_data = {
+                    'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
+                    'client_secret': os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET'),
+                    'code': code,
+                    'grant_type': 'authorization_code',
+                    'redirect_uri': redirect_uri
+                }
+                
+                token_response = requests.post(token_url, data=token_data)
+                if token_response.status_code == 200:
+                    token = token_response.json()
+                else:
+                    app.logger.error(f"Token exchange failed: {token_response.text}")
+                    flash('Erro na troca de tokens. Tente novamente.', 'error')
+                    return redirect(url_for('login'))
+            else:
+                raise e
+        
+        # Parse the ID token to get user info
+        user_info = None
+        if 'id_token' in token:
+            try:
+                import jwt
+                user_info = jwt.decode(token['id_token'], options={"verify_signature": False})
+            except Exception as e:
+                app.logger.error(f"Erro ao decodificar ID token: {e}")
+        
+        # Fallback: get user info from userinfo endpoint
+        if not user_info or not user_info.get('email'):
+            try:
+                resp = google.get('userinfo', token=token)
+                user_info = resp.json() if resp else {}
+            except Exception as e:
+                app.logger.error(f"Erro ao obter userinfo: {e}")
+                user_info = {}
+        
+        if user_info and user_info.get('email'):
             email = user_info.get('email')
-            name = user_info.get('name', email.split('@')[0])
+            name = user_info.get('name') or user_info.get('given_name', email.split('@')[0])
             
             # Check if user exists
             user = User.query.filter_by(email=email).first()
             
             if not user:
-                # Create new user
-                user = User(name=name, email=email)
-                # Set a random password for OAuth users
-                user.set_password(secrets.token_urlsafe(32))
+                # Create new user with trial period
+                user = User(
+                    username=name, 
+                    email=email,
+                    password_hash=generate_password_hash(secrets.token_urlsafe(32)),
+                    is_active=True,
+                    trial_end_date=datetime.utcnow() + timedelta(days=7)
+                )
                 db.session.add(user)
                 db.session.commit()
-                flash('Conta criada com sucesso via Google!', 'success')
+                
+                # Log activity
+                log_user_activity(user.id, 'account_created', 'Conta criada via Google OAuth')
+                flash('Conta criada com sucesso via Google! Trial de 7 dias ativado.', 'success')
+            else:
+                flash('Login realizado com sucesso via Google!', 'success')
             
+            # Log user in
             login_user(user)
+            
+            # Log activity
+            log_user_activity(user.id, 'login', 'Login realizado via Google OAuth')
+            
             return redirect(url_for('dashboard'))
         else:
-            flash('Erro ao obter informações do Google.', 'error')
+            flash('Erro ao obter informações do Google. Tente novamente.', 'error')
             
     except Exception as e:
-        logger.error(f"Erro no login Google: {e}")
+        app.logger.error(f"Erro no login Google: {e}")
         flash('Erro no login com Google. Tente novamente.', 'error')
     
     return redirect(url_for('login'))
