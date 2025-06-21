@@ -60,7 +60,7 @@ class SimpleProductionRobot:
             # Navegar
             logger.info("Navegando...")
             driver.get("https://meudanfe.com.br/")
-            time.sleep(8)  # Aguardar carregamento completo
+            time.sleep(5)  # Reduzido para acelerar
             
             # Buscar campo com múltiplas tentativas
             input_field = None
@@ -82,7 +82,7 @@ class SimpleProductionRobot:
             logger.info("Inserindo chave...")
             input_field.clear()
             input_field.send_keys(invoice_key)
-            time.sleep(3)
+            time.sleep(2)  # Reduzido
             
             # Buscar botão com múltiplas tentativas
             button = None
@@ -108,7 +108,7 @@ class SimpleProductionRobot:
             # Clicar
             logger.info("Clicando botão...")
             button.click()
-            time.sleep(10)  # Aguardar resultados
+            time.sleep(6)  # Reduzido de 10 para 6
             
             # Buscar XML com múltiplas tentativas
             xml_element = None
