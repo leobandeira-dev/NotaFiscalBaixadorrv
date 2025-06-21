@@ -321,21 +321,43 @@
                         {% for xml in recent_uploads %}
                         <div class="file-item">
                             <div class="file-info">
-                                <i class="fas fa-file-code file-icon"></i>
+                                {% if xml.import_type == 'email' %}
+                                    <i class="fas fa-envelope file-icon text-primary"></i>
+                                {% elif xml.import_type == 'api' %}
+                                    <i class="fas fa-robot file-icon text-success"></i>
+                                {% else %}
+                                    <i class="fas fa-upload file-icon text-secondary"></i>
+                                {% endif %}
                                 <div>
-                                    <div class="file-name">{{ xml.filename }}</div>
-                                    <div class="file-size">{{ xml.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                                    <div class="file-name">
+                                        {% if xml.numero_nf and xml.numero_nf != 'N/A' %}
+                                            NF {{ xml.numero_nf }} - {{ xml.nome_emitente[:30] }}{% if xml.nome_emitente|length > 30 %}...{% endif %}
+                                        {% else %}
+                                            {{ xml.filename[:40] }}{% if xml.filename|length > 40 %}...{% endif %}
+                                        {% endif %}
+                                    </div>
+                                    <div class="file-size">
+                                        {{ xml.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                        {% if xml.import_type == 'email' %}
+                                            <span class="badge bg-primary ms-1">Email</span>
+                                        {% elif xml.import_type == 'api' %}
+                                            <span class="badge bg-success ms-1">Sistema</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary ms-1">Upload</span>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                             <div class="d-flex gap-2">
-                                <a href="{{ url_for('download_xml', xml_id=xml.id) }}" class="btn btn-sm btn-outline-secondary">
+                                <a href="{{ url_for('download_xml_file', xml_id=xml.id) }}" class="btn btn-sm btn-outline-secondary" title="Download XML">
                                     <i class="fas fa-download"></i>
                                 </a>
-                                {% if xml.danfe_generated %}
-                                <a href="{{ url_for('download_danfe', xml_id=xml.id) }}" class="btn btn-sm btn-outline-primary">
+                                <a href="{{ url_for('generate_danfe_route', xml_id=xml.id) }}" class="btn btn-sm btn-outline-primary" title="Gerar DANFE">
                                     <i class="fas fa-file-pdf"></i>
                                 </a>
-                                {% endif %}
+                                <a href="{{ url_for('generate_label_route', xml_id=xml.id) }}" class="btn btn-sm btn-outline-success" title="Gerar Etiqueta">
+                                    <i class="fas fa-tags"></i>
+                                </a>
                             </div>
                         </div>
                         {% endfor %}

@@ -2073,11 +2073,10 @@ def revoke_api_credentials():
 def upload_xml():
     """Upload manual de arquivos XML"""
     if request.method == 'GET':
-        # Get recent uploads for display
+        # Get recent uploads for display (all import types)
         recent_uploads = XMLFile.query.filter_by(
-            user_id=current_user.id,
-            import_type='UPLOAD'
-        ).order_by(XMLFile.created_at.desc()).limit(10).all()
+            user_id=current_user.id
+        ).order_by(XMLFile.created_at.desc()).limit(5).all()
         
         return render_template('upload_xml_redesigned.html', recent_uploads=recent_uploads)
     
