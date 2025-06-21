@@ -627,10 +627,11 @@ def dashboard():
     ).all()
     
     # Get user XML credit balance using simplified system
-    from simple_credit_system import get_user_xml_balance, get_user_stats
+    from simple_credit_system import get_user_xml_balance, get_user_stats, get_trial_status
     
     xml_balance = get_user_xml_balance(current_user.id)
     user_stats = get_user_stats(current_user.id)
+    trial_status = get_trial_status(current_user.id)
     
     return render_template('dashboard.html', 
                          xml_count=xml_count,
@@ -640,7 +641,8 @@ def dashboard():
                          this_month_usage=this_month_usage,
                          recent_activities=recent_activities,
                          pending_charges=pending_charges,
-                         user_stats=user_stats)
+                         user_stats=user_stats,
+                         trial_status=trial_status)
 
 @app.route('/xml-download')
 @login_required

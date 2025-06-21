@@ -23,12 +23,19 @@ class DownloadService:
             if not user:
                 raise ValueError("Usuário não encontrado")
             
-            # Verificar créditos XML para todos os downloads
-            from simple_credit_system import get_user_xml_balance
-            available_credits = get_user_xml_balance(user_id)
+            # Verificar se usuário está em período de teste (trial de 7 dias)
+            from datetime import datetime
+            is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
             
-            if available_credits < len(invoice_keys):
-                raise ValueError(f"Créditos XML insuficientes. Necessário: {len(invoice_keys)}, Disponível: {available_credits}")
+            # Se não está em trial, verificar créditos XML
+            if not is_trial_active:
+                from simple_credit_system import get_user_xml_balance
+                available_credits = get_user_xml_balance(user_id)
+                
+                if available_credits < len(invoice_keys):
+                    raise ValueError(f"Créditos XML insuficientes. Necessário: {len(invoice_keys)}, Disponível: {available_credits}")
+            else:
+                logger.info(f"Usuário {user_id} está em período de trial - acesso gratuito aos XMLs")
             
             job_id = str(uuid.uuid4())
             logger.info(f"Job {job_id} criado para usuário {user_id} com {len(invoice_keys)} XMLs")
