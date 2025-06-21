@@ -13,11 +13,17 @@ class DomainFix:
     @staticmethod
     def is_custom_domain():
         """Detecta se está rodando no domínio crossxml.com.br"""
-        return any([
+        # Check multiple environment variables that indicate custom domain
+        domain_indicators = [
             'crossxml.com.br' in str(os.environ.get('REPLIT_DOMAINS', '')),
+            'crossxml.com.br' in str(os.environ.get('REPLIT_DEV_DOMAIN', '')),
             os.environ.get('CUSTOM_DOMAIN') == 'crossxml.com.br',
-            'crossxml' in str(os.environ.get('REPLIT_DEPLOYMENT', ''))
-        ])
+            'crossxml' in str(os.environ.get('REPLIT_DEPLOYMENT', '')),
+            # Force custom domain detection if we find certain deployment patterns
+            os.environ.get('REPLIT_DEPLOYMENT') and 'replit.app' not in str(os.environ.get('REPLIT_DEV_DOMAIN', ''))
+        ]
+        
+        return any(domain_indicators)
     
     @staticmethod
     def apply_domain_fixes():

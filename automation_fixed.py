@@ -33,24 +33,40 @@ class InvoiceDownloader:
             os.makedirs(downloads_dir, exist_ok=True)
             logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Apply ULTRA-SPEED Chrome optimizations
-            chrome_options = UltraSpeedOptimizer.get_ultra_chrome_options()
+            # Check environment and apply appropriate optimizations
+            import os
+            is_production = bool(os.environ.get('REPLIT_DEPLOYMENT'))
             
-            # Additional ultra-speed optimizations
-            chrome_options.add_argument('--disable-web-security')
-            chrome_options.add_argument('--allow-running-insecure-content')
-            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-            chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-            
-            # ULTRA-SPEED: Aggressive performance flags
-            chrome_options.add_argument('--aggressive-cache-discard')
-            chrome_options.add_argument('--disable-background-networking')
-            chrome_options.add_argument('--disable-background-timer-throttling')
-            chrome_options.add_argument('--memory-pressure-off')
-            chrome_options.add_argument('--single-process')
-            chrome_options.add_argument('--disable-renderer-backgrounding')
-            
-            logger.info("🚀 ULTRA-SPEED Chrome optimizations applied!")
+            if is_production:
+                # Production-specific Chrome configuration
+                chrome_options = webdriver.ChromeOptions()
+                chrome_options.add_argument('--headless=new')
+                chrome_options.add_argument('--no-sandbox')
+                chrome_options.add_argument('--disable-dev-shm-usage')
+                chrome_options.add_argument('--disable-gpu')
+                chrome_options.add_argument('--disable-extensions')
+                chrome_options.add_argument('--disable-plugins')
+                chrome_options.add_argument('--window-size=800,600')
+                chrome_options.add_argument('--disable-background-timer-throttling')
+                chrome_options.add_argument('--disable-backgrounding-occluded-windows')
+                chrome_options.add_argument('--disable-renderer-backgrounding')
+                chrome_options.add_argument('--memory-pressure-off')
+                chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+                logger.info("🔧 PRODUCTION Chrome configuration applied!")
+            else:
+                # Development configuration
+                chrome_options = UltraSpeedOptimizer.get_ultra_chrome_options()
+                chrome_options.add_argument('--disable-web-security')
+                chrome_options.add_argument('--allow-running-insecure-content')
+                chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+                chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+                chrome_options.add_argument('--aggressive-cache-discard')
+                chrome_options.add_argument('--disable-background-networking')
+                chrome_options.add_argument('--disable-background-timer-throttling')
+                chrome_options.add_argument('--memory-pressure-off')
+                chrome_options.add_argument('--single-process')
+                chrome_options.add_argument('--disable-renderer-backgrounding')
+                logger.info("🚀 DEVELOPMENT Chrome optimizations applied!")
             
             # Download preferences
             prefs = {
@@ -94,20 +110,28 @@ class InvoiceDownloader:
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
         """Download XML for a specific invoice key with ULTRA-SPEED optimizations"""
         try:
-            # Apply domain-specific fixes
+            # Apply domain-specific fixes and force production timeouts
             from domain_fix import DomainFix
-            domain_fixed = DomainFix.apply_domain_fixes()
+            import os
             
-            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Custom domain: {DomainFix.is_custom_domain()}")
-            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Domain fixes applied: {domain_fixed}")
+            # Check if running in deployment (production environment)
+            is_production = bool(os.environ.get('REPLIT_DEPLOYMENT'))
             
-            # Get domain-specific timeouts
-            if DomainFix.is_custom_domain():
-                timeouts = DomainFix.get_domain_specific_timeouts()
-                logger.info(f"🔧 [Job {job_id}] Using custom domain timeouts: {timeouts}")
+            logger.info(f"🔍 [Job {job_id}] Environment: {'PRODUCTION' if is_production else 'DEVELOPMENT'}")
+            logger.info(f"🔍 [Job {job_id}] REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
+            
+            # Force production timeouts when in deployment environment
+            if is_production:
+                timeouts = {
+                    'element_wait': 10,    # Extended timeout for production
+                    'xml_button': 8,       # More time for XML button
+                    'download_poll': 1.5,  # Slower polling for stability
+                    'max_attempts': 25     # More attempts
+                }
+                logger.info(f"🔧 [Job {job_id}] Using PRODUCTION timeouts: {timeouts}")
             else:
                 timeouts = UltraSpeedOptimizer.get_ultra_timeouts()
-                logger.info(f"🚀 [Job {job_id}] Using ultra-speed timeouts: {timeouts}")
+                logger.info(f"🚀 [Job {job_id}] Using development timeouts: {timeouts}")
             
             logger.info(f"🚀 [Job {job_id}] ULTRA-SPEED XML download starting: {invoice_key}")
             
@@ -183,15 +207,17 @@ class InvoiceDownloader:
                 if result['success']:
                     return result
             
-            # Strategy 2: ULTRA-SPEED polling for browser downloads
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast polling initiated...")
+            # Strategy 2: Environment-aware polling for browser downloads
+            logger.info(f"⚡ [Job {job_id}] Environment-aware polling initiated...")
+            logger.info(f"🔧 [Job {job_id}] Using timeouts - max_attempts: {timeouts['max_attempts']}, poll_interval: {timeouts['download_poll']}s")
             
-            # ULTRA-SPEED polling with minimal intervals
+            # Environment-aware polling with appropriate intervals
             for attempt in range(timeouts['max_attempts']):
-                time.sleep(timeouts['download_poll'])  # Now only 0.2s instead of 0.5s+
+                time.sleep(timeouts['download_poll'])
                 download_result = self.check_downloaded_file(invoice_key, job_id)
                 if download_result['success']:
-                    logger.info(f"🚀 [Job {job_id}] ULTRA-FAST SUCCESS - file captured in {attempt * timeouts['download_poll']:.1f}s")
+                    total_time = attempt * timeouts['download_poll']
+                    logger.info(f"🚀 [Job {job_id}] SUCCESS - file captured in {total_time:.1f}s (attempt {attempt+1}/{timeouts['max_attempts']})")
                     
                     # Process file with user_id for charging and database saving
                     if user_id and 'file_path' in download_result:
