@@ -22,39 +22,19 @@ class InvoiceDownloader:
         self.setup_driver()
     
     def setup_driver(self):
-        """Setup Chrome WebDriver with enhanced environment-optimized options"""
+        """Setup Chrome WebDriver with ULTRA performance for deploy"""
         try:
-            # Apply comprehensive performance fixes for deploy environment
-            performance_result = PerformanceSolution.apply_deploy_performance_fixes()
-            logger.info(f"Performance optimizations applied: {performance_result['environment']}")
+            # Use new ultra-performance system
+            from ultra_performance_deploy import UltraPerformanceDeploy, ChromeDriverManager
             
-            # Setup downloads directory
-            downloads_dir = os.path.abspath('downloads')
-            os.makedirs(downloads_dir, exist_ok=True)
-            logger.info(f"Setting download directory to: {downloads_dir}")
+            # Apply ultra performance optimizations
+            performance_result = UltraPerformanceDeploy.apply_ultra_performance()
+            logger.info(f"🚀 ULTRA PERFORMANCE applied: {performance_result}")
             
-            # Use production detection system for Chrome configuration
-            from production_fix import ProductionFix
-            is_production = ProductionFix.is_production_environment()
-            
-            if is_production:
-                # Production-specific Chrome configuration
-                chrome_options = ProductionFix.get_production_chrome_options()
-                logger.info("🔧 PRODUCTION Chrome configuration applied!")
-            else:
-                # Development configuration
-                chrome_options = UltraSpeedOptimizer.get_ultra_chrome_options()
-                chrome_options.add_argument('--disable-web-security')
-                chrome_options.add_argument('--allow-running-insecure-content')
-                chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-                chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-                chrome_options.add_argument('--aggressive-cache-discard')
-                chrome_options.add_argument('--disable-background-networking')
-                chrome_options.add_argument('--disable-background-timer-throttling')
-                chrome_options.add_argument('--memory-pressure-off')
-                chrome_options.add_argument('--single-process')
-                chrome_options.add_argument('--disable-renderer-backgrounding')
-                logger.info("🚀 DEVELOPMENT Chrome optimizations applied!")
+            # Use optimized driver creation
+            self.driver = ChromeDriverManager.get_optimized_driver()
+            logger.info("✅ ULTRA-optimized Chrome driver created successfully")
+            return
             
             # Download preferences
             prefs = {
@@ -105,13 +85,10 @@ class InvoiceDownloader:
             is_production = ProductionFix.is_production_environment()
             ProductionFix.apply_production_fixes()
             
-            # Use appropriate timeouts based on environment
-            if is_production:
-                timeouts = ProductionFix.get_production_timeouts()
-                logger.info(f"🔧 [Job {job_id}] Using PRODUCTION timeouts: {timeouts}")
-            else:
-                timeouts = UltraSpeedOptimizer.get_ultra_timeouts()
-                logger.info(f"🚀 [Job {job_id}] Using development timeouts: {timeouts}")
+            # Use ultra-performance timeouts for maximum speed
+            from ultra_performance_deploy import UltraPerformanceDeploy
+            timeouts = UltraPerformanceDeploy.get_ultra_timeouts()
+            logger.info(f"⚡ [Job {job_id}] Ultra timeouts: {timeouts}")
             
             logger.info(f"🚀 [Job {job_id}] ULTRA-SPEED XML download starting: {invoice_key}")
             
