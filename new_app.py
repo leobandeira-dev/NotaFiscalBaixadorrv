@@ -3237,8 +3237,8 @@ def generate_label_route(xml_id):
         # Verificar acesso ao módulo de etiquetas
         if not current_user.has_labels_access():
             SecurityManager.log_security_event("LABELS_ACCESS_DENIED", current_user.id, f"Trial active: {current_user.is_labels_trial_active()}, Subscription active: {current_user.labels_subscription_active}")
-            flash('Você precisa de uma assinatura ativa do módulo de etiquetas para acessar esta funcionalidade.', 'warning')
-            return redirect(url_for('comprar_creditos'))
+            flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
+            return redirect(url_for('labels_module'))
         
         # Verificar módulo de etiquetas para cobrança
         labels_module = ServiceModule.query.filter_by(name='Etiquetas de Transporte').first()
@@ -4507,11 +4507,10 @@ def label_generator(xml_id):
             flash('Módulo de etiquetas não disponível.', 'error')
             return redirect(url_for('meus_xmls'))
         
-        # Verificar se usuário pode usar o serviço (trial ou saldo)
-        is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()
-        if not is_trial_active and current_user.current_balance < labels_module.cost_per_use:
+        # Verificar acesso ao módulo de etiquetas
+        if not current_user.has_labels_access():
             flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
-            return redirect(url_for('comprar_creditos'))
+            return redirect(url_for('labels_module'))
         
         # Usar dados da tabela encontrada
         xml_data = xml_record if xml_record else xml_file
