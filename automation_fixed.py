@@ -11,7 +11,7 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 from typing import Dict, Any
 import re
 from optimization_deploy import DeployOptimizer
-from performance_analysis import PerformanceAnalyzer
+from performance_solution import PerformanceSolution, EnhancedDeployOptimizer, DeployPerformanceMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -21,18 +21,19 @@ class InvoiceDownloader:
         self.setup_driver()
     
     def setup_driver(self):
-        """Setup Chrome WebDriver with environment-optimized options"""
+        """Setup Chrome WebDriver with enhanced environment-optimized options"""
         try:
-            # Comprehensive performance analysis for debugging
-            PerformanceAnalyzer.log_performance_analysis()
+            # Apply comprehensive performance fixes for deploy environment
+            performance_result = PerformanceSolution.apply_deploy_performance_fixes()
+            logger.info(f"Performance optimizations applied: {performance_result['environment']}")
             
             # Setup downloads directory
             downloads_dir = os.path.abspath('downloads')
             os.makedirs(downloads_dir, exist_ok=True)
             logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Get optimized Chrome options for current environment
-            chrome_options = DeployOptimizer.get_optimized_chrome_options()
+            # Get enhanced Chrome options with deploy-specific optimizations
+            chrome_options = EnhancedDeployOptimizer.get_enhanced_chrome_options()
             
             # Additional specific optimizations
             chrome_options.add_argument('--disable-web-security')
@@ -78,11 +79,12 @@ class InvoiceDownloader:
             logger.error(f"Failed to setup Chrome WebDriver: {str(e)}")
             raise
     
+    @DeployPerformanceMonitor.measure_operation("xml_download")
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
-        """Download XML for a specific invoice key with environment-optimized timeouts"""
+        """Download XML for a specific invoice key with enhanced environment-optimized timeouts"""
         try:
-            # Get optimized timeouts for current environment
-            timeouts = DeployOptimizer.get_optimized_timeouts()
+            # Get enhanced optimized timeouts for current environment
+            timeouts = EnhancedDeployOptimizer.get_enhanced_timeouts()
             
             logger.info(f"[Job {job_id}] Starting XML download for invoice key: {invoice_key}")
             
