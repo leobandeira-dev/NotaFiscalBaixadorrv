@@ -130,6 +130,43 @@
     margin-bottom: 1rem;
     color: #d1d5db;
 }
+
+/* Import Type Tags */
+.import-tag-email {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: none;
+}
+
+.import-tag-sistema {
+    background: linear-gradient(135deg, #8A05BE, #7c2d92);
+    color: white;
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: none;
+}
+
+.import-tag-upload {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: none;
+}
+
+.import-tag-other {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: white;
+    font-weight: 600;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: none;
+}
 </style>
 {% endblock %}
 
@@ -197,9 +234,23 @@
                                             </div>
                                             <div class="col-sm-6">
                                                 <small class="text-muted">Importado via:</small><br>
-                                                <span class="badge bg-{{ 'primary' if xml.import_type == 'API' else 'secondary' }}">
-                                                    {{ xml.import_type }}
-                                                </span>
+                                                {% if xml.import_type == 'email' %}
+                                                    <span class="badge import-tag-email">
+                                                        <i class="fas fa-envelope"></i> Email
+                                                    </span>
+                                                {% elif xml.import_type == 'sistema' or xml.import_type == 'API' %}
+                                                    <span class="badge import-tag-sistema">
+                                                        <i class="fas fa-robot"></i> Sistema
+                                                    </span>
+                                                {% elif xml.import_type == 'upload' %}
+                                                    <span class="badge import-tag-upload">
+                                                        <i class="fas fa-upload"></i> Upload
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge import-tag-other">
+                                                        {{ xml.import_type }}
+                                                    </span>
+                                                {% endif %}
                                             </div>
                                         </div>
                                         
