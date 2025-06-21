@@ -854,13 +854,40 @@ def admin_dashboard():
     # Recent usage
     recent_usage = UsageRecord.query.order_by(UsageRecord.created_at.desc()).limit(10).all()
     
+    # Calcular estatísticas mensais
+    from datetime import datetime, timedelta
+    current_month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    
+    monthly_new_users = User.query.filter(User.created_at >= current_month_start).count()
+    monthly_xmls = XMLFile.query.filter(XMLFile.imported_at >= current_month_start).count()
+    monthly_revenue = db.session.query(db.func.sum(Charge.amount)).filter(
+        Charge.created_at >= current_month_start,
+        Charge.status == 'RECEIVED'
+    ).scalar() or 0
+    monthly_labels = XMLFile.query.filter(
+        XMLFile.imported_at >= current_month_start,
+        XMLFile.label_generated == True
+    ).count()
+    
+    # Total de XMLs processados
+    total_xmls = XMLFile.query.count()
+    
+    # Atividades recentes do sistema
+    recent_activities = UserActivity.query.order_by(UserActivity.created_at.desc()).limit(10).all()
+    
     return render_template('admin_dashboard.html',
                          total_users=total_users,
                          active_users=active_users,
                          total_usage=total_usage,
                          total_revenue=total_revenue,
+                         total_xmls=total_xmls,
                          recent_users=recent_users,
-                         recent_usage=recent_usage)
+                         recent_usage=recent_usage,
+                         recent_activities=recent_activities,
+                         monthly_new_users=monthly_new_users,
+                         monthly_xmls=monthly_xmls,
+                         monthly_revenue=monthly_revenue,
+                         monthly_labels=monthly_labels)
 
 @app.route('/admin/users')
 def admin_users():
