@@ -591,6 +591,25 @@
         <div class="col-lg-6">
             <div class="feature-highlight">
                 <div class="feature-icon">
+                    <i class="fas fa-key" style="color: #3b82f6;"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Download XML por Chave</h4>
+                    <p>Importe XMLs automaticamente usando somente a chave da nota fiscal de 44 dígitos.</p>
+                    <ul class="feature-list">
+                        <li>Cole múltiplas chaves de uma vez</li>
+                        <li>Download automático e simultâneo</li>
+                        <li>Validação em tempo real</li>
+                        <li>Preços a partir de R$ 0,06/XML</li>
+                    </ul>
+                    <a href="{{ url_for('xml_download') }}" class="btn btn-primary btn-sm">Baixar XMLs</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="feature-highlight">
+                <div class="feature-icon">
                     <i class="fas fa-tags" style="color: #8A05BE;"></i>
                 </div>
                 <div class="feature-content">
@@ -606,7 +625,9 @@
                 </div>
             </div>
         </div>
-        
+    </div>
+    
+    <div class="row mt-4">
         <div class="col-lg-6">
             <div class="feature-highlight">
                 <div class="feature-icon">
@@ -622,6 +643,25 @@
                         <li>Documentação completa</li>
                     </ul>
                     <a href="{{ url_for('api_docs') }}" class="btn btn-info btn-sm">Ver Documentação</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="feature-highlight">
+                <div class="feature-icon">
+                    <i class="fas fa-file-pdf" style="color: #10b981;"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>DANFE Automática</h4>
+                    <p>Geração gratuita de DANFE em PDF com layout oficial SEFAZ para todos os XMLs importados.</p>
+                    <ul class="feature-list">
+                        <li>Layout oficial SEFAZ</li>
+                        <li>Sempre gratuito</li>
+                        <li>Download direto em PDF</li>
+                        <li>Compatível com todos XMLs</li>
+                    </ul>
+                    <a href="{{ url_for('meus_xmls') }}" class="btn btn-success btn-sm">Ver DANFEs</a>
                 </div>
             </div>
         </div>
