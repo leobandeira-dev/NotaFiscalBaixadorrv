@@ -943,14 +943,8 @@ def admin_user_detail(user_id):
         'total_spent': sum(
             usage.cost for usage in UsageRecord.query.filter_by(user_id=user_id).all()
         ),
-        'total_danfes': UsageRecord.query.filter_by(
-            user_id=user_id, 
-            service_type='danfe'
-        ).count(),
-        'total_labels': UsageRecord.query.filter_by(
-            user_id=user_id, 
-            service_type='label'
-        ).count()
+        'total_danfes': UsageRecord.query.filter_by(user_id=user_id).count(),
+        'total_labels': 0  # Será implementado quando houver dados de etiquetas
     }
     
     # Atividade recente
@@ -4784,6 +4778,184 @@ def generate_custom_labels(xml_id):
 #     init_admin_panel(app)
 # except ImportError:
 #     logger.warning("Admin panel not available")
+
+# ROTINAS REAIS PARA BOTÕES DE AÇÃO DA ADMINISTRAÇÃO DE USUÁRIOS
+
+# Rota VER - Detalhes completos do usuário
+@app.route('/admin/users/<int:user_id>/view')
+def admin_user_view(user_id):
+    """Ver detalhes completos de um usuário específico"""
+    from models import User, XMLFile, UsageRecord, Charge, UserActivity
+    from credit_system_fixed import get_user_xml_balance
+    
+    user = User.query.get_or_404(user_id)
+    
+    # Calcular estatísticas reais
+    xml_balance = get_user_xml_balance(user.id)
+    total_xmls = XMLFile.query.filter_by(user_id=user_id).count()
+    total_spent = db.session.query(db.func.sum(Charge.amount)).filter(
+        Charge.user_id == user_id,
+        Charge.status == 'RECEIVED'
+    ).scalar() or 0
+    
+    # XMLs recentes do usuário
+    recent_xmls = XMLFile.query.filter_by(user_id=user_id).order_by(
+        XMLFile.imported_at.desc()
+    ).limit(10).all()
+    
+    # Histórico de atividades
+    recent_activities = UserActivity.query.filter_by(user_id=user_id).order_by(
+        UserActivity.created_at.desc()
+    ).limit(15).all()
+    
+    # Histórico de cobranças
+    charges = Charge.query.filter_by(user_id=user_id).order_by(
+        Charge.created_at.desc()
+    ).limit(10).all()
+    
+    user_data = {
+        'user': user,
+        'xml_balance': xml_balance,
+        'total_xmls': total_xmls,
+        'total_spent': total_spent,
+        'recent_xmls': recent_xmls,
+        'recent_activities': recent_activities,
+        'charges': charges
+    }
+    
+    return render_template('admin_user_view.html', **user_data)
+
+# Rota EDITAR - Formulário de edição do usuário
+@app.route('/admin/users/<int:user_id>/edit', methods=['GET', 'POST'])
+def admin_user_edit(user_id):
+    """Editar dados de um usuário específico"""
+    from models import User
+    
+    user = User.query.get_or_404(user_id)
+    
+    if request.method == 'POST':
+        try:
+            # Atualizar dados básicos
+            user.email = request.form.get('email', user.email)
+            user.first_name = request.form.get('first_name', user.first_name)
+            user.last_name = request.form.get('last_name', user.last_name)
+            
+            # Atualizar configurações administrativas
+            if 'is_admin' in request.form:
+                user.is_admin = request.form.get('is_admin') == 'on'
+            
+            if 'is_active' in request.form:
+                user.is_active = request.form.get('is_active') == 'on'
+            else:
+                user.is_active = True  # Default ativo
+            
+            # Configurações de trial
+            trial_end_date = request.form.get('trial_end_date')
+            if trial_end_date:
+                from datetime import datetime
+                user.trial_end_date = datetime.strptime(trial_end_date, '%Y-%m-%d')
+            
+            db.session.commit()
+            flash(f'Usuário {user.email} atualizado com sucesso!', 'success')
+            return redirect(url_for('admin_users'))
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Erro ao atualizar usuário {user_id}: {e}")
+            flash('Erro ao atualizar usuário. Tente novamente.', 'error')
+    
+    return render_template('admin_user_edit.html', user=user)
+
+# Rota CRÉDITOS - Gerenciar créditos do usuário
+@app.route('/admin/users/<int:user_id>/credits', methods=['GET', 'POST'])
+def admin_user_credits(user_id):
+    """Gerenciar créditos XML de um usuário específico"""
+    from models import User, CreditBalance, Charge
+    from credit_system_fixed import get_user_xml_balance, add_xml_credits
+    
+    user = User.query.get_or_404(user_id)
+    current_balance = get_user_xml_balance(user.id)
+    
+    if request.method == 'POST':
+        try:
+            action = request.form.get('action')
+            amount = float(request.form.get('amount', 0))
+            description = request.form.get('description', '')
+            
+            if action == 'add_credits':
+                # Adicionar créditos XML
+                success = add_xml_credits(user.id, int(amount), description or f'Créditos adicionados pelo admin')
+                if success:
+                    flash(f'{int(amount)} créditos XML adicionados para {user.email}!', 'success')
+                else:
+                    flash('Erro ao adicionar créditos.', 'error')
+                    
+            elif action == 'create_charge':
+                # Criar cobrança manual
+                charge = Charge(
+                    user_id=user.id,
+                    amount=amount,
+                    description=description or f'Cobrança manual - Admin',
+                    status='PENDING',
+                    payment_method='PIX'
+                )
+                db.session.add(charge)
+                db.session.commit()
+                flash(f'Cobrança de R$ {amount:.2f} criada para {user.email}!', 'success')
+            
+            return redirect(url_for('admin_user_credits', user_id=user_id))
+            
+        except Exception as e:
+            db.session.rollback()
+            logger.error(f"Erro ao gerenciar créditos do usuário {user_id}: {e}")
+            flash('Erro ao processar operação. Tente novamente.', 'error')
+    
+    # Histórico de créditos e cobranças
+    credit_history = CreditBalance.query.filter_by(user_id=user_id).order_by(
+        CreditBalance.created_at.desc()
+    ).limit(20).all()
+    
+    charges_history = Charge.query.filter_by(user_id=user_id).order_by(
+        Charge.created_at.desc()
+    ).limit(10).all()
+    
+    return render_template('admin_user_credits.html', 
+                         user=user,
+                         current_balance=current_balance,
+                         credit_history=credit_history,
+                         charges_history=charges_history)
+
+# Rota DESATIVAR/ATIVAR - Toggle status do usuário
+@app.route('/admin/users/<int:user_id>/toggle-status', methods=['POST'])
+def admin_user_toggle_status(user_id):
+    """Ativar/Desativar usuário"""
+    from models import User
+    
+    user = User.query.get_or_404(user_id)
+    
+    try:
+        # Toggle status ativo
+        user.is_active = not getattr(user, 'is_active', True)
+        
+        # Log da ação
+        action = 'ativado' if user.is_active else 'desativado'
+        log_user_activity(
+            user_id=user.id,
+            activity_type='account_status_changed',
+            description=f'Conta {action} pelo administrador'
+        )
+        
+        db.session.commit()
+        
+        status_msg = 'ativado' if user.is_active else 'desativado'
+        flash(f'Usuário {user.email} foi {status_msg} com sucesso!', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"Erro ao alterar status do usuário {user_id}: {e}")
+        flash('Erro ao alterar status do usuário.', 'error')
+    
+    return redirect(url_for('admin_users'))
 
 # Import simple admin route
 try:

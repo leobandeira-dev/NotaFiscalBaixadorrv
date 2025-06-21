@@ -1,0 +1,251 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar já incluída via base.html -->
+        <div class="col-12" style="margin-left: 280px; padding: 2rem;">
+            
+            <!-- Cabeçalho -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-user-circle text-primary"></i> Detalhes do Usuário</h2>
+                    <p class="text-muted">Informações completas e histórico de atividades</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                    <a href="{{ url_for('admin_user_edit', user_id=user.id) }}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                </div>
+            </div>
+
+            <!-- Informações Básicas -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            {% if user.profile_image_url %}
+                                <img src="{{ user.profile_image_url }}" alt="Avatar" class="rounded-circle mb-3" width="100" height="100">
+                            {% else %}
+                                <div class="bg-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 100px; height: 100px;">
+                                    <i class="fas fa-user text-white fa-3x"></i>
+                                </div>
+                            {% endif %}
+                            <h4>{{ user.name or (user.first_name + ' ' + user.last_name) or 'Usuário' }}</h4>
+                            <p class="text-muted">{{ user.email }}</p>
+                            <span class="badge bg-{{ 'success' if user.is_active else 'danger' }} fs-6">
+                                {{ 'Ativo' if user.is_active else 'Inativo' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5><i class="fas fa-info-circle"></i> Informações da Conta</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>ID do Usuário:</strong> {{ user.id }}</p>
+                                    <p><strong>Email:</strong> {{ user.email }}</p>
+                                    <p><strong>Primeiro Nome:</strong> {{ user.first_name or 'Não informado' }}</p>
+                                    <p><strong>Último Nome:</strong> {{ user.last_name or 'Não informado' }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Administrador:</strong> 
+                                        <span class="badge bg-{{ 'warning' if user.is_admin else 'secondary' }}">
+                                            {{ 'Sim' if user.is_admin else 'Não' }}
+                                        </span>
+                                    </p>
+                                    <p><strong>Cadastro:</strong> {{ user.created_at.strftime('%d/%m/%Y às %H:%M') if user.created_at else 'Não informado' }}</p>
+                                    <p><strong>Último Acesso:</strong> {{ user.last_login.strftime('%d/%m/%Y às %H:%M') if user.last_login else 'Nunca' }}</p>
+                                    <p><strong>Status Trial:</strong> 
+                                        {% if user.trial_end_date and user.trial_end_date > moment().utcnow() %}
+                                            <span class="badge bg-info">Ativo até {{ user.trial_end_date.strftime('%d/%m/%Y') }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Não possui</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estatísticas -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h3>{{ xml_balance }}</h3>
+                                    <p>Créditos XML</p>
+                                </div>
+                                <i class="fas fa-credit-card fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h3>{{ total_xmls }}</h3>
+                                    <p>XMLs Baixados</p>
+                                </div>
+                                <i class="fas fa-download fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h3>R$ {{ "%.2f"|format(total_spent) }}</h3>
+                                    <p>Total Gasto</p>
+                                </div>
+                                <i class="fas fa-money-bill fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h3>{{ charges|length }}</h3>
+                                    <p>Cobranças</p>
+                                </div>
+                                <i class="fas fa-receipt fa-2x"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- XMLs Recentes -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-file-alt"></i> XMLs Recentes ({{ recent_xmls|length }})</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_xmls %}
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>NF</th>
+                                                <th>Emitente</th>
+                                                <th>Valor</th>
+                                                <th>Data</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for xml in recent_xmls %}
+                                            <tr>
+                                                <td>{{ xml.numero_nf or 'N/A' }}</td>
+                                                <td>{{ xml.nome_emitente[:20] + '...' if xml.nome_emitente and xml.nome_emitente|length > 20 else xml.nome_emitente or 'N/A' }}</td>
+                                                <td>R$ {{ "%.2f"|format(xml.valor_total or 0) }}</td>
+                                                <td>{{ xml.imported_at.strftime('%d/%m') if xml.imported_at else 'N/A' }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">Nenhum XML encontrado.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Atividades Recentes -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-history"></i> Atividades Recentes ({{ recent_activities|length }})</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if recent_activities %}
+                                {% for activity in recent_activities %}
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-{{ 'download' if activity.activity_type == 'xml_downloaded' else 'upload' if activity.activity_type == 'xml_uploaded' else 'tags' if activity.activity_type == 'label_generated' else 'file-pdf' if activity.activity_type == 'danfe_generated' else 'clock' }} text-muted me-2"></i>
+                                    <div class="flex-grow-1">
+                                        <small>{{ activity.description }}</small>
+                                        <br>
+                                        <small class="text-muted">{{ activity.created_at.strftime('%d/%m/%Y %H:%M') if activity.created_at else 'N/A' }}</small>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted">Nenhuma atividade registrada.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Histórico de Cobranças -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-receipt"></i> Histórico de Cobranças</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if charges %}
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Valor</th>
+                                                <th>Status</th>
+                                                <th>Método</th>
+                                                <th>Descrição</th>
+                                                <th>Data</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for charge in charges %}
+                                            <tr>
+                                                <td>{{ charge.id }}</td>
+                                                <td>R$ {{ "%.2f"|format(charge.amount) }}</td>
+                                                <td>
+                                                    <span class="badge bg-{{ 'success' if charge.status == 'RECEIVED' else 'warning' if charge.status == 'PENDING' else 'danger' }}">
+                                                        {{ charge.status }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ charge.payment_method or 'N/A' }}</td>
+                                                <td>{{ charge.description[:50] + '...' if charge.description and charge.description|length > 50 else charge.description or 'N/A' }}</td>
+                                                <td>{{ charge.created_at.strftime('%d/%m/%Y %H:%M') if charge.created_at else 'N/A' }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">Nenhuma cobrança encontrada.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
