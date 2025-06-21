@@ -22,19 +22,29 @@ class InvoiceDownloader:
         self.setup_driver()
     
     def setup_driver(self):
-        """Setup Chrome WebDriver with ULTRA performance for deploy"""
+        """Setup Chrome WebDriver with deploy-specific robot fixes"""
         try:
-            # Use new ultra-performance system
-            from ultra_performance_deploy import UltraPerformanceDeploy, ChromeDriverManager
+            from deploy_robot_fix import DeployRobotFix
             
-            # Apply ultra performance optimizations
-            performance_result = UltraPerformanceDeploy.apply_ultra_performance()
-            logger.info(f"🚀 ULTRA PERFORMANCE applied: {performance_result}")
+            # Apply deploy-specific fixes
+            DeployRobotFix.apply_deploy_fixes()
             
-            # Use optimized driver creation
-            self.driver = ChromeDriverManager.get_optimized_driver()
-            logger.info("✅ ULTRA-optimized Chrome driver created successfully")
-            return
+            # Check environment and use appropriate driver
+            if DeployRobotFix.is_deploy_environment():
+                logger.info("🔧 DEPLOY ENVIRONMENT - Creating deploy-specific robot")
+                self.driver = DeployRobotFix.create_deploy_driver()
+            else:
+                logger.info("🚀 DEVELOPMENT ENVIRONMENT - Using ultra performance")
+                from ultra_performance_deploy import UltraPerformanceDeploy, ChromeDriverManager
+                performance_result = UltraPerformanceDeploy.apply_ultra_performance()
+                self.driver = ChromeDriverManager.get_optimized_driver()
+            
+            if self.driver:
+                logger.info("✅ Chrome driver created successfully")
+                return True
+            else:
+                logger.error("❌ Failed to create Chrome driver")
+                return False
             
             # Download preferences
             prefs = {
@@ -85,10 +95,15 @@ class InvoiceDownloader:
             is_production = ProductionFix.is_production_environment()
             ProductionFix.apply_production_fixes()
             
-            # Use ultra-performance timeouts for maximum speed
-            from ultra_performance_deploy import UltraPerformanceDeploy
-            timeouts = UltraPerformanceDeploy.get_ultra_timeouts()
-            logger.info(f"⚡ [Job {job_id}] Ultra timeouts: {timeouts}")
+            # Use environment-appropriate timeouts
+            from deploy_robot_fix import DeployRobotFix
+            if DeployRobotFix.is_deploy_environment():
+                timeouts = DeployRobotFix.get_deploy_timeouts()
+                logger.info(f"🔧 [Job {job_id}] Deploy timeouts: {timeouts}")
+            else:
+                from ultra_performance_deploy import UltraPerformanceDeploy
+                timeouts = UltraPerformanceDeploy.get_ultra_timeouts()
+                logger.info(f"⚡ [Job {job_id}] Ultra timeouts: {timeouts}")
             
             logger.info(f"🚀 [Job {job_id}] ULTRA-SPEED XML download starting: {invoice_key}")
             
