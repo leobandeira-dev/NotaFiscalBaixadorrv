@@ -1126,21 +1126,14 @@ def submit_keys():
         app.logger.info(f"[DOMAIN DEBUG] Job ID: {job_id}, User ID: {current_user.id}, Keys: {len(valid_keys)}")
         app.logger.info(f"[DOMAIN DEBUG] Environment vars - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
         
-        # Start download process in background
-        # Use synchronous processing to prevent threading issues
-        from complete_current_job import process_job_synchronously
+        # Start download process using simplified system
+        from simple_download_fix import start_simple_download
         
         # Capture user_id before thread
         user_id = current_user.id
         
-        # Process in background thread for UI responsiveness
-        from threading import Thread
-        def run_job():
-            process_job_synchronously(job_id, user_id, valid_keys)
-        
-        thread = Thread(target=run_job)
-        thread.daemon = True
-        thread.start()
+        # Start simplified download process
+        start_simple_download(job_id, user_id, valid_keys)
         
         flash(f'Processo de download iniciado para {len(valid_keys)} chave(s).', 'success')
         return redirect(url_for('download_status', job_id=job_id))
@@ -2306,20 +2299,35 @@ def get_job_status_data(job_id, user_id):
 @app.route('/api/job_status/<job_id>')
 def api_job_status(job_id):
     """Public API endpoint for job status - no authentication required for AJAX calls"""
-    # For API calls, we need to identify the user somehow
-    # Check if there's a session with user_id
-    if 'user_id' in session:
-        user_id = session['user_id']
-        return get_job_status_data(job_id, user_id)
-    
-    # If no session, try to find job in any user (less secure but works for immediate testing)
-    from models import DownloadJob as DBDownloadJob
-    db_job = DBDownloadJob.query.filter_by(job_id=job_id).first()
-    
-    if db_job:
-        return get_job_status_data(job_id, db_job.user_id)
-    
-    return jsonify({'error': 'Job not found'}), 404
+    try:
+        # Use simplified status system
+        from simple_download_fix import get_simple_job_status
+        
+        # Try to get user_id from request parameters or session
+        user_id = request.args.get('user_id')
+        if not user_id and 'user_id' in session:
+            user_id = session['user_id']
+        
+        if user_id:
+            user_id = int(user_id)
+            status_data = get_simple_job_status(job_id, user_id)
+            if status_data and 'error' not in status_data:
+                return jsonify(status_data)
+        
+        # Fallback: search for job without user restriction
+        from models import DownloadJob as DBDownloadJob
+        db_job = DBDownloadJob.query.filter_by(job_id=job_id).first()
+        
+        if db_job:
+            status_data = get_simple_job_status(job_id, db_job.user_id)
+            if status_data and 'error' not in status_data:
+                return jsonify(status_data)
+        
+        return jsonify({'error': 'Job not found'}), 404
+        
+    except Exception as e:
+        logger.error(f"Erro na API job_status: {str(e)}")
+        return jsonify({'error': 'Internal error'}), 500
 
 # Configurar timezone de São Paulo
 SP_TZ = pytz.timezone('America/Sao_Paulo')
