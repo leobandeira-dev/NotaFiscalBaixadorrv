@@ -706,7 +706,14 @@ def reset_password(token):
 @app.route('/auth/google')
 def google_login():
     """Google OAuth login"""
-    redirect_uri = url_for('google_callback', _external=True)
+    # Detect environment and use appropriate URL
+    if 'REPLIT_DEV_DOMAIN' in os.environ:
+        # Production environment - use Replit domain
+        redirect_uri = f"https://{os.environ['REPLIT_DEV_DOMAIN']}/auth/google/callback"
+    else:
+        # Development environment - use localhost with HTTPS
+        redirect_uri = url_for('google_callback', _external=True, _scheme='https')
+    
     return google.authorize_redirect(redirect_uri)
 
 @app.route('/auth/google/callback')
