@@ -33,25 +33,13 @@ class InvoiceDownloader:
             os.makedirs(downloads_dir, exist_ok=True)
             logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Check environment and apply appropriate optimizations
-            import os
-            is_production = bool(os.environ.get('REPLIT_DEPLOYMENT'))
+            # Use production detection system for Chrome configuration
+            from production_fix import ProductionFix
+            is_production = ProductionFix.is_production_environment()
             
             if is_production:
                 # Production-specific Chrome configuration
-                chrome_options = webdriver.ChromeOptions()
-                chrome_options.add_argument('--headless=new')
-                chrome_options.add_argument('--no-sandbox')
-                chrome_options.add_argument('--disable-dev-shm-usage')
-                chrome_options.add_argument('--disable-gpu')
-                chrome_options.add_argument('--disable-extensions')
-                chrome_options.add_argument('--disable-plugins')
-                chrome_options.add_argument('--window-size=800,600')
-                chrome_options.add_argument('--disable-background-timer-throttling')
-                chrome_options.add_argument('--disable-backgrounding-occluded-windows')
-                chrome_options.add_argument('--disable-renderer-backgrounding')
-                chrome_options.add_argument('--memory-pressure-off')
-                chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+                chrome_options = ProductionFix.get_production_chrome_options()
                 logger.info("🔧 PRODUCTION Chrome configuration applied!")
             else:
                 # Development configuration
@@ -110,24 +98,16 @@ class InvoiceDownloader:
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
         """Download XML for a specific invoice key with ULTRA-SPEED optimizations"""
         try:
-            # Apply domain-specific fixes and force production timeouts
-            from domain_fix import DomainFix
-            import os
+            # Apply production-specific fixes
+            from production_fix import ProductionFix
             
-            # Check if running in deployment (production environment)
-            is_production = bool(os.environ.get('REPLIT_DEPLOYMENT'))
+            # Detect production environment with comprehensive checks
+            is_production = ProductionFix.is_production_environment()
+            ProductionFix.apply_production_fixes()
             
-            logger.info(f"🔍 [Job {job_id}] Environment: {'PRODUCTION' if is_production else 'DEVELOPMENT'}")
-            logger.info(f"🔍 [Job {job_id}] REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
-            
-            # Force production timeouts when in deployment environment
+            # Use appropriate timeouts based on environment
             if is_production:
-                timeouts = {
-                    'element_wait': 10,    # Extended timeout for production
-                    'xml_button': 8,       # More time for XML button
-                    'download_poll': 1.5,  # Slower polling for stability
-                    'max_attempts': 25     # More attempts
-                }
+                timeouts = ProductionFix.get_production_timeouts()
                 logger.info(f"🔧 [Job {job_id}] Using PRODUCTION timeouts: {timeouts}")
             else:
                 timeouts = UltraSpeedOptimizer.get_ultra_timeouts()
