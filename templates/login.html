@@ -270,27 +270,7 @@
             margin-right: 0.5rem;
         }
         
-        .demo-credentials {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-        }
-        
-        .demo-credentials h6 {
-            color: var(--primary-purple);
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-        
-        .demo-credentials code {
-            background: #e2e8f0;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Monaco', 'Consolas', monospace;
-        }
+
         
         @media (max-width: 768px) {
             .auth-container {
@@ -339,11 +319,7 @@
                     <p>Entre na sua conta para continuar automatizando sua gestão fiscal</p>
                 </div>
                 
-                <div class="demo-credentials">
-                    <h6><i class="fas fa-info-circle me-2"></i>Credenciais de teste</h6>
-                    <p class="mb-1">Email: <code>admin@xmldownloader.com</code></p>
-                    <p class="mb-0">Senha: <code>admin123</code></p>
-                </div>
+
                 
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
