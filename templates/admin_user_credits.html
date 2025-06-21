@@ -1,0 +1,342 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar já incluída via base.html -->
+        <div class="col-12" style="margin-left: 280px; padding: 2rem;">
+            
+            <!-- Cabeçalho -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2><i class="fas fa-credit-card text-success"></i> Gerenciar Créditos</h2>
+                    <p class="text-muted">Adicionar créditos e criar cobranças para {{ user.email }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                    <a href="{{ url_for('admin_user_view', user_id=user.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-eye"></i> Ver Detalhes
+                    </a>
+                </div>
+            </div>
+
+            <!-- Saldo Atual -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ current_balance }}</h3>
+                            <p class="mb-0">Créditos XML Disponíveis</p>
+                            <small>Equivale a R$ {{ "%.2f"|format(current_balance * 0.10) }}</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ credit_history|selectattr('change_type', 'equalto', 'addition')|list|length }}</h3>
+                            <p class="mb-0">Adições de Crédito</p>
+                            <small>Total de operações de adição</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h3>{{ charges_history|length }}</h3>
+                            <p class="mb-0">Cobranças Criadas</p>
+                            <small>Total de cobranças</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Formulários de Ação -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-success text-white">
+                            <h5><i class="fas fa-plus-circle"></i> Adicionar Créditos XML</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <input type="hidden" name="action" value="add_credits">
+                                
+                                <div class="mb-3">
+                                    <label for="amount" class="form-label">Quantidade de Créditos *</label>
+                                    <input type="number" class="form-control" id="amount" name="amount" 
+                                           min="1" max="10000" step="1" required>
+                                    <div class="form-text">Número de créditos XML a adicionar (1 crédito = 1 download)</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="description" class="form-label">Motivo da Adição</label>
+                                    <input type="text" class="form-control" id="description" name="description" 
+                                           placeholder="Ex: Bônus promocional, Correção de erro, etc.">
+                                    <div class="form-text">Descrição para histórico (opcional)</div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success" onclick="return confirm('Confirma a adição de créditos?')">
+                                        <i class="fas fa-plus"></i> Adicionar Créditos
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-warning text-dark">
+                            <h5><i class="fas fa-file-invoice-dollar"></i> Criar Cobrança Manual</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <input type="hidden" name="action" value="create_charge">
+                                
+                                <div class="mb-3">
+                                    <label for="charge_amount" class="form-label">Valor da Cobrança (R$) *</label>
+                                    <input type="number" class="form-control" id="charge_amount" name="amount" 
+                                           min="0.01" max="10000" step="0.01" required>
+                                    <div class="form-text">Valor em reais para cobrança</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="charge_description" class="form-label">Descrição da Cobrança *</label>
+                                    <input type="text" class="form-control" id="charge_description" name="description" 
+                                           placeholder="Ex: Taxa de serviço, Multa por atraso, etc." required>
+                                    <div class="form-text">Motivo da cobrança</div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-warning" onclick="return confirm('Confirma a criação da cobrança?')">
+                                        <i class="fas fa-file-invoice"></i> Criar Cobrança
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Histórico de Créditos -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-history"></i> Histórico de Créditos XML</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if credit_history %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Data</th>
+                                                <th>Tipo</th>
+                                                <th>Quantidade</th>
+                                                <th>Saldo Antes</th>
+                                                <th>Saldo Depois</th>
+                                                <th>Descrição</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for record in credit_history %}
+                                            <tr>
+                                                <td>{{ record.created_at.strftime('%d/%m/%Y %H:%M') if record.created_at else 'N/A' }}</td>
+                                                <td>
+                                                    {% if record.change_type == 'addition' %}
+                                                        <span class="badge bg-success">
+                                                            <i class="fas fa-plus"></i> Adição
+                                                        </span>
+                                                    {% elif record.change_type == 'usage' %}
+                                                        <span class="badge bg-primary">
+                                                            <i class="fas fa-download"></i> Uso
+                                                        </span>
+                                                    {% elif record.change_type == 'purchase' %}
+                                                        <span class="badge bg-info">
+                                                            <i class="fas fa-shopping-cart"></i> Compra
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ record.change_type }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="text-{{ 'success' if record.change_amount > 0 else 'danger' }}">
+                                                        {{ '+' if record.change_amount > 0 else '' }}{{ record.change_amount }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ record.balance_before or 0 }}</td>
+                                                <td>{{ record.balance_after or 0 }}</td>
+                                                <td>{{ record.description[:50] + '...' if record.description and record.description|length > 50 else record.description or 'N/A' }}</td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Nenhum histórico de créditos encontrado.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Histórico de Cobranças -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-receipt"></i> Histórico de Cobranças</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if charges_history %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Data</th>
+                                                <th>Valor</th>
+                                                <th>Status</th>
+                                                <th>Método</th>
+                                                <th>Descrição</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for charge in charges_history %}
+                                            <tr>
+                                                <td>{{ charge.id }}</td>
+                                                <td>{{ charge.created_at.strftime('%d/%m/%Y %H:%M') if charge.created_at else 'N/A' }}</td>
+                                                <td>R$ {{ "%.2f"|format(charge.amount) }}</td>
+                                                <td>
+                                                    {% if charge.status == 'RECEIVED' %}
+                                                        <span class="badge bg-success">Pago</span>
+                                                    {% elif charge.status == 'PENDING' %}
+                                                        <span class="badge bg-warning">Pendente</span>
+                                                    {% elif charge.status == 'CANCELLED' %}
+                                                        <span class="badge bg-danger">Cancelado</span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">{{ charge.status }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ charge.payment_method or 'N/A' }}</td>
+                                                <td>{{ charge.description[:40] + '...' if charge.description and charge.description|length > 40 else charge.description or 'N/A' }}</td>
+                                                <td>
+                                                    {% if charge.status == 'PENDING' %}
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button class="btn btn-outline-success btn-sm" 
+                                                                    onclick="markAsPaid({{ charge.id }})" 
+                                                                    title="Marcar como pago">
+                                                                <i class="fas fa-check"></i>
+                                                            </button>
+                                                            <button class="btn btn-outline-danger btn-sm" 
+                                                                    onclick="cancelCharge({{ charge.id }})" 
+                                                                    title="Cancelar cobrança">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Nenhuma cobrança encontrada.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// Calculadora de créditos em tempo real
+document.getElementById('amount').addEventListener('input', function() {
+    const credits = parseInt(this.value) || 0;
+    const valueInReais = credits * 0.10;
+    
+    const helpText = this.nextElementSibling;
+    if (credits > 0) {
+        helpText.innerHTML = `${credits} créditos equivalem a R$ ${valueInReais.toFixed(2)} em downloads`;
+    } else {
+        helpText.innerHTML = 'Número de créditos XML a adicionar (1 crédito = 1 download)';
+    }
+});
+
+// Calculadora de valor da cobrança
+document.getElementById('charge_amount').addEventListener('input', function() {
+    const amount = parseFloat(this.value) || 0;
+    const credits = Math.floor(amount / 0.10);
+    
+    const helpText = this.nextElementSibling;
+    if (amount > 0) {
+        helpText.innerHTML = `R$ ${amount.toFixed(2)} equivalem a aproximadamente ${credits} créditos XML`;
+    } else {
+        helpText.innerHTML = 'Valor em reais para cobrança';
+    }
+});
+
+// Funções para gerenciar cobranças
+function markAsPaid(chargeId) {
+    if (confirm('Marcar esta cobrança como paga?')) {
+        // Implementar via AJAX se necessário
+        window.location.href = `/admin/charges/${chargeId}/mark-paid`;
+    }
+}
+
+function cancelCharge(chargeId) {
+    if (confirm('Cancelar esta cobrança? Esta ação não pode ser desfeita.')) {
+        // Implementar via AJAX se necessário
+        window.location.href = `/admin/charges/${chargeId}/cancel`;
+    }
+}
+
+// Validação de formulários
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        const action = this.querySelector('input[name="action"]').value;
+        
+        if (action === 'add_credits') {
+            const amount = parseInt(this.querySelector('input[name="amount"]').value) || 0;
+            if (amount <= 0) {
+                e.preventDefault();
+                alert('Quantidade de créditos deve ser maior que zero');
+                return false;
+            }
+            if (amount > 10000) {
+                e.preventDefault();
+                alert('Quantidade máxima de créditos é 10.000');
+                return false;
+            }
+        }
+        
+        if (action === 'create_charge') {
+            const amount = parseFloat(this.querySelector('input[name="amount"]').value) || 0;
+            if (amount <= 0) {
+                e.preventDefault();
+                alert('Valor da cobrança deve ser maior que zero');
+                return false;
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
