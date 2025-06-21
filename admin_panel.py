@@ -115,7 +115,7 @@ def users():
         }
         users_with_data.append(user_data)
     
-    return render_template('admin/users.html', 
+    return render_template('admin_users.html', 
                          users=users_pagination, 
                          users_with_data=users_with_data,
                          search=search)
