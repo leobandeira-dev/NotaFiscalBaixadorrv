@@ -183,9 +183,32 @@ def check_emails_now():
         result = processor.process_user_emails(current_user)
         
         if result['success']:
+            # Construir mensagem detalhada baseada nos resultados
+            processed_count = result.get('processed_count', 0)
+            skipped_count = result.get('skipped_count', 0)
+            total_found = result.get('total_found', 0)
+            total_messages = result.get('total_messages', 0)
+            
+            if total_found == 0:
+                message = f"Verificação concluída: {total_messages} mensagens verificadas, nenhum XML encontrado."
+            elif processed_count == 0 and skipped_count > 0:
+                message = f"Verificação concluída: {total_found} XMLs encontrados, {skipped_count} já importados anteriormente."
+            elif processed_count > 0 and skipped_count == 0:
+                message = f"Verificação concluída: {processed_count} novos XMLs importados com sucesso."
+            else:
+                message = f"Verificação concluída: {processed_count} novos XMLs importados, {skipped_count} já existentes."
+            
             return jsonify({
                 'success': True, 
-                'message': f"Verificação concluída: {result.get('processed', 0)} emails processados"
+                'message': message,
+                'details': {
+                    'processed_count': processed_count,
+                    'skipped_count': skipped_count,
+                    'total_found': total_found,
+                    'total_messages': total_messages,
+                    'processed_xmls': result.get('processed_xmls', []),
+                    'skipped_xmls': result.get('skipped_xmls', [])
+                }
             })
         else:
             return jsonify({

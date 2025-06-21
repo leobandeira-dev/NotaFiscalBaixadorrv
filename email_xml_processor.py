@@ -343,6 +343,8 @@ class EmailXMLProcessor:
     def process_email_xmls(self, password):
         """Processo principal: busca emails e processa XMLs"""
         processed_xmls = []
+        skipped_xmls = []
+        total_xmls_found = 0
         pop3 = None
         
         try:
@@ -357,16 +359,34 @@ class EmailXMLProcessor:
             # Processar cada XML encontrado
             for message_info in messages_with_xml:
                 for xml_attachment in message_info['xml_attachments']:
+                    total_xmls_found += 1
                     try:
-                        # Verificar se XML já foi processado (evitar duplicatas)
+                        # Primeiro, extrair dados do XML para obter a chave da nota fiscal
+                        xml_data = self.process_xml_content(xml_attachment['content'].decode('utf-8'))
+                        if not xml_data:
+                            logger.warning(f"Não foi possível extrair dados do XML: {xml_attachment['filename']}")
+                            skipped_xmls.append({
+                                'filename': xml_attachment['filename'],
+                                'reason': 'Erro ao processar XML'
+                            })
+                            continue
+                        
+                        invoice_key = xml_data.get('chave_nf', '')
+                        
+                        # Verificar se XML já foi processado usando chave da nota fiscal (melhor método)
                         existing_xml = XMLFile.query.filter_by(
                             user_id=self.user.id,
-                            filename=xml_attachment['filename'],
-                            import_type='email'
+                            invoice_key=invoice_key
                         ).first()
                         
                         if existing_xml:
-                            logger.info(f"XML já processado: {xml_attachment['filename']}")
+                            logger.info(f"XML já processado (chave {invoice_key}): {xml_attachment['filename']}")
+                            skipped_xmls.append({
+                                'filename': xml_attachment['filename'],
+                                'reason': 'XML já importado',
+                                'invoice_key': invoice_key,
+                                'numero_nf': xml_data.get('numero_nf', 'N/A')
+                            })
                             continue
                         
                         # Processar novo XML
@@ -376,18 +396,27 @@ class EmailXMLProcessor:
                                 'filename': xml_attachment['filename'],
                                 'size': xml_attachment['size'],
                                 'numero_nf': xml_record.numero_nf,
+                                'invoice_key': xml_record.invoice_key,
                                 'email_subject': message_info['subject'],
                                 'email_from': message_info['from']
                             })
+                            logger.info(f"XML importado: {xml_attachment['filename']} - NF {xml_record.numero_nf}")
                             
                     except Exception as e:
                         logger.error(f"Erro ao processar XML {xml_attachment['filename']}: {e}")
+                        skipped_xmls.append({
+                            'filename': xml_attachment['filename'],
+                            'reason': f'Erro: {str(e)}'
+                        })
                         continue
                         
             return {
                 'success': True,
                 'processed_count': len(processed_xmls),
+                'skipped_count': len(skipped_xmls),
+                'total_found': total_xmls_found,
                 'processed_xmls': processed_xmls,
+                'skipped_xmls': skipped_xmls,
                 'total_messages': len(messages_with_xml)
             }
             
