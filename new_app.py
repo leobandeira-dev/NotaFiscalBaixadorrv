@@ -2057,7 +2057,25 @@ def job_status(job_id):
         if job.user_id != current_user.id:
             return jsonify({'error': 'Job not found'}), 404
         
-        return jsonify(job.to_dict())
+        # Check if job has to_dict method, if not create response manually
+        if hasattr(job, 'to_dict'):
+            return jsonify(job.to_dict())
+        else:
+            # Manual response for MemoryJob without to_dict method
+            return jsonify({
+                'job_id': job.job_id,
+                'total_keys': job.total_keys,
+                'processed': job.processed,
+                'successful': job.successful,
+                'failed': job.failed,
+                'status': job.status,
+                'downloaded_files': [os.path.basename(f) for f in getattr(job, 'downloaded_files', [])],
+                'files': [os.path.basename(f) for f in getattr(job, 'downloaded_files', [])],
+                'errors': getattr(job, 'errors', []),
+                'start_time': job.start_time.isoformat() if getattr(job, 'start_time', None) else None,
+                'end_time': job.end_time.isoformat() if getattr(job, 'end_time', None) else None,
+                'progress_percentage': round((job.processed / job.total_keys) * 100, 2) if job.total_keys > 0 else 0
+            })
     
     return jsonify({'error': 'Job not found'}), 404
 
