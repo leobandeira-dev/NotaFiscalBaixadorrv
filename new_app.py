@@ -29,6 +29,7 @@ from access_control import (
     require_feature, require_xml_credits, require_labels_subscription,
     require_admin, get_user_package_status, inject_package_status
 )
+from thread_job_processor import init_thread_processor, get_thread_processor
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
 from stripe_pricing_system import XMLPricingTiers, get_user_xml_credits, consume_xml_credit, get_pricing_recommendations, create_xml_credit_subscription
@@ -385,10 +386,20 @@ def process_download_job(job_id, user_id):
             from models import DownloadJob as DBDownloadJob
             import json
             
-            # Get job from database
-            db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
+            # Get job from database with retry mechanism
+            import time
+            db_job = None
+            for attempt in range(5):  # Try 5 times with increasing delays
+                db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
+                if db_job:
+                    logger.info(f"[DB DEBUG] Job {job_id} found in database on attempt {attempt + 1}")
+                    break
+                else:
+                    logger.warning(f"[DB DEBUG] Job {job_id} not found on attempt {attempt + 1}, retrying...")
+                    time.sleep(0.5 * (attempt + 1))  # Progressive delay: 0.5s, 1s, 1.5s, 2s, 2.5s
+            
             if not db_job:
-                logger.error(f"Job {job_id} not found in database")
+                logger.error(f"Job {job_id} not found in database after 5 attempts")
                 return
             
             # Get job from memory or recreate from database
@@ -1082,6 +1093,9 @@ def submit_keys():
         
         db.session.add(db_job)
         db.session.commit()
+        
+        # Verify job was created successfully
+        logger.info(f"[DB DEBUG] Job {job_id} created in database for user {current_user.id}")
         
         # Create in-memory job for compatibility with existing process_download_job
         class MemoryJob:
