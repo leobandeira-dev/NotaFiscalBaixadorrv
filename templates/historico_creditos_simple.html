@@ -129,12 +129,12 @@
     {% for transaction in stripe_transactions %}
     <div class="simple-item">
         <div>
-            <strong>Pacote de créditos</strong><br>
+            <strong>Pacote de {{ transaction.credits_added or 0 }} créditos</strong><br>
             <small>{{ transaction.created_at.strftime('%d/%m/%Y às %H:%M') if transaction.created_at else 'Data não disponível' }}</small>
         </div>
         <div style="text-align: right;">
-            <span style="color: #059669; font-weight: 600;">+R$ {{ "%.2f"|format(transaction.credits_purchased or 0) }}</span><br>
-            <small>{{ transaction.status or 'pendente' }}</small>
+            <span style="color: #059669; font-weight: 600;">+{{ transaction.credits_added or 0 }} créditos</span><br>
+            <small>R$ {{ "%.2f"|format(transaction.amount_paid or 0) }}</small>
         </div>
     </div>
     {% endfor %}
@@ -146,30 +146,60 @@
     {% endif %}
 </div>
 
-<!-- Histórico de Uso -->
+<!-- Extrato Bancário de Créditos -->
 <div class="section-card">
     <h3 class="section-title">
-        <i class="fas fa-history"></i>
-        Uso de Créditos (Últimos 30 dias)
+        <i class="fas fa-file-invoice"></i>
+        Extrato de Créditos (Últimos 30 dias)
     </h3>
     
-    {% if usage_history %}
-    {% for usage in usage_history %}
-    <div class="simple-item">
-        <div>
-            <strong>{{ usage.description or 'Download XML' }}</strong><br>
-            <small>{{ usage.date }}</small>
+    <!-- Cabeçalho do extrato -->
+    <div style="background: #f8f9fa; padding: 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem;">
+        <div style="display: flex; justify-content: space-between; font-weight: 600;">
+            <span>Data/Hora</span>
+            <span>Descrição</span>
+            <span>Débito</span>
+            <span>Crédito</span>
+            <span>Saldo</span>
         </div>
-        <div style="text-align: right;">
-            <span style="color: #dc2626; font-weight: 600;">-R$ {{ "%.2f"|format(usage.amount or 0) }}</span><br>
-            <small>{{ usage.service or 'xml_download' }}</small>
+    </div>
+    
+    {% if credit_statement %}
+    {% for entry in credit_statement %}
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6; font-size: 0.875rem;">
+        <div style="width: 18%; color: #6b7280;">
+            {{ entry.date.strftime('%d/%m/%Y') if entry.date else 'N/A' }}<br>
+            <small>{{ entry.date.strftime('%H:%M') if entry.date else '' }}</small>
+        </div>
+        <div style="width: 35%; font-weight: 500;">
+            {{ entry.description }}
+            {% if entry.reference %}
+            <br><small style="color: #6b7280;">{{ entry.reference }}</small>
+            {% endif %}
+        </div>
+        <div style="width: 12%; text-align: center;">
+            {% if entry.type == 'debit' %}
+            <span style="color: #dc2626; font-weight: 600;">-{{ entry.amount }}</span>
+            {% else %}
+            <span style="color: #6b7280;">-</span>
+            {% endif %}
+        </div>
+        <div style="width: 12%; text-align: center;">
+            {% if entry.type == 'credit' %}
+            <span style="color: #059669; font-weight: 600;">+{{ entry.amount }}</span>
+            {% else %}
+            <span style="color: #6b7280;">-</span>
+            {% endif %}
+        </div>
+        <div style="width: 15%; text-align: right; font-weight: 600;">
+            {{ entry.balance }} créditos
         </div>
     </div>
     {% endfor %}
     {% else %}
     <div class="empty-state">
-        <i class="fas fa-download"></i>
-        <p>Nenhum uso de créditos nos últimos 30 dias</p>
+        <i class="fas fa-receipt"></i>
+        <p>Nenhuma movimentação nos últimos 30 dias</p>
     </div>
     {% endif %}
 </div>

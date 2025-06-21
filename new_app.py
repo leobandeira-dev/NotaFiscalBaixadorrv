@@ -3461,6 +3461,104 @@ def creditos_xml():
                              purchase_history=purchase_history,
                              usage_history=usage_history,
                              monthly_summary=monthly_summary)
+    
+    except Exception as e:
+        logger.error(f"Erro ao carregar dashboard de créditos XML: {str(e)}")
+        flash('Erro ao carregar informações de créditos.', 'error')
+        return redirect(url_for('dashboard'))
+
+@app.route('/extrato-creditos')
+@login_required  
+@rate_limit_check(max_requests=60, window_minutes=15)
+def extrato_creditos():
+    """Página de histórico de créditos com extrato bancário detalhado"""
+    try:
+        from stripe_pricing_system import get_user_xml_credits
+        from package_models import StripeTransaction, CreditBalance
+        from datetime import datetime, timedelta
+        from sqlalchemy import desc, func, or_
+        
+        # Obter saldo atual
+        current_credits = get_user_xml_credits(current_user.id)
+        
+        # Obter transações Stripe (compras) dos últimos 30 dias
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        stripe_transactions = db.session.query(StripeTransaction)\
+            .filter(StripeTransaction.user_id == current_user.id)\
+            .filter(StripeTransaction.created_at >= thirty_days_ago)\
+            .filter(or_(
+                StripeTransaction.status == 'paid',
+                StripeTransaction.status == 'completed'
+            ))\
+            .order_by(desc(StripeTransaction.created_at))\
+            .all()
+        
+        # Obter histórico de uso dos últimos 30 dias
+        usage_history = db.session.query(XMLFile)\
+            .filter(XMLFile.user_id == current_user.id)\
+            .filter(XMLFile.import_type == 'SISTEMA')\
+            .filter(XMLFile.imported_at >= thirty_days_ago)\
+            .order_by(desc(XMLFile.imported_at))\
+            .all()
+        
+        # Criar extrato bancário unificado
+        credit_statement = []
+        
+        # Adicionar compras (créditos)
+        for transaction in stripe_transactions:
+            credit_statement.append({
+                'date': transaction.created_at,
+                'type': 'credit',
+                'description': f'Compra de {transaction.credits_added or 0} créditos XML',
+                'reference': f'Transação #{transaction.id}',
+                'amount': transaction.credits_added or 0,
+                'balance': 0  # Será calculado depois
+            })
+        
+        # Adicionar downloads (débitos)
+        for xml in usage_history:
+            credit_statement.append({
+                'date': xml.imported_at,
+                'type': 'debit', 
+                'description': f'Download XML - NF {xml.numero_nf or "N/A"}',
+                'reference': f'{xml.nome_emitente or "N/A"}' if xml.nome_emitente else '',
+                'amount': 1,  # 1 crédito por download
+                'balance': 0  # Será calculado depois
+            })
+        
+        # Ordenar por data (mais recente primeiro)
+        credit_statement.sort(key=lambda x: x['date'] or datetime.min, reverse=True)
+        
+        # Calcular saldos progressivos (do mais recente para o mais antigo)
+        running_balance = current_credits
+        for entry in credit_statement:
+            entry['balance'] = running_balance
+            if entry['type'] == 'credit':
+                # Subtrair porque estamos indo do presente para o passado
+                running_balance -= entry['amount']
+            else:
+                # Somar porque estamos indo do presente para o passado
+                running_balance += entry['amount']
+        
+        # Estatísticas do usuário
+        user_stats = {
+            'saldo_atual': current_credits,
+            'total_comprado': sum(t.credits_added or 0 for t in stripe_transactions),
+            'total_usado': len(usage_history),
+            'valor_gasto': sum(t.amount_paid or 0 for t in stripe_transactions)
+        }
+        
+        return render_template('historico_creditos_simple.html',
+                             user_stats=user_stats,
+                             stripe_transactions=stripe_transactions,
+                             usage_history=usage_history,
+                             credit_statement=credit_statement,
+                             current_user=current_user)
+    
+    except Exception as e:
+        logger.error(f"Erro ao carregar histórico de créditos: {str(e)}")
+        flash('Erro ao carregar histórico de créditos.', 'error')
+        return redirect(url_for('dashboard'))
         
     except Exception as e:
         logger.error(f"Erro no dashboard de créditos XML: {e}")
