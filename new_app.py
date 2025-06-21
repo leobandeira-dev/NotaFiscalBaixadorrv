@@ -386,7 +386,7 @@ def process_download_job(job_id, user_id):
                 
                 job.processed += 1
                 
-                if result.get('status') == 'success':
+                if result.get('success') == True:
                     job.successful += 1
                     if result.get('file_path'):
                         job.downloaded_files.append(result['file_path'])
@@ -395,7 +395,7 @@ def process_download_job(job_id, user_id):
                     job.failed += 1
                     job.errors.append({
                         'invoice_key': invoice_key,
-                        'error': result.get('message', 'Unknown error')
+                        'error': result.get('error', result.get('message', 'Unknown error'))
                     })
                     
             except Exception as e:
@@ -1783,85 +1783,7 @@ def asaas_webhook():
         return jsonify({'error': 'Internal error'}), 500
 
 # Background processing functions
-def process_download_job(job_id):
-    """Process download job in background with proper Flask context"""
-    with app.app_context():  # Essential: Flask context for database operations
-        from automation_fixed import InvoiceDownloader
-        
-        with jobs_lock:
-            job = download_jobs.get(job_id)
-        
-        if not job:
-            return
-        
-        try:
-            job.status = "running"
-            
-            for i, invoice_key in enumerate(job.invoice_keys):
-                downloader = None
-                try:
-                    # Create fresh downloader instance
-                    downloader = InvoiceDownloader()
-                    
-                    # Download XML with user_id for database saving and charging
-                    result = downloader.download_invoice_xml(invoice_key, job_id, 'xml', job.user_id)
-                    
-                    # Update job progress immediately
-                    with jobs_lock:
-                        job.processed += 1
-                        logger.info(f"[Job {job_id}] Processed {job.processed}/{len(job.invoice_keys)} keys")
-                    
-                    if result.get('success'):
-                        with jobs_lock:
-                            job.successful += 1
-                        
-                        # Track successful download (database save already handled by automation_fixed.py)
-                        if 'file_path' in result and os.path.exists(result['file_path']):
-                            filename = os.path.basename(result['file_path'])
-                            with jobs_lock:
-                                job.files.append(filename)
-                            logger.info(f"[Job {job_id}] Successfully downloaded: {filename}")
-                        else:
-                            logger.warning(f"[Job {job_id}] Success but no file_path in result")
-                    else:
-                        with jobs_lock:
-                            job.failed += 1
-                            error_msg = result.get('error', 'Unknown error')
-                            job.errors.append({
-                                'invoice_key': invoice_key,
-                                'error': error_msg
-                            })
-                        logger.error(f"[Job {job_id}] Failed to download {invoice_key}: {error_msg}")
-                            
-                except Exception as e:
-                    with jobs_lock:
-                        job.processed += 1
-                        job.failed += 1
-                        error_msg = str(e)
-                        job.errors.append({
-                            'invoice_key': invoice_key,
-                            'error': error_msg
-                        })
-                    logger.error(f"[Job {job_id}] Exception for {invoice_key}: {error_msg}")
-                finally:
-                    # Cleanup only after all attempts
-                    if downloader:
-                        try:
-                            downloader.cleanup()
-                        except:
-                            pass
-            
-            with jobs_lock:
-                job.status = "completed"
-                job.completed_at = datetime.now()
-            
-            logger.info(f"[Job {job_id}] Completed - Successful: {job.successful}, Failed: {job.failed}")
-            
-        except Exception as e:
-            logger.error(f"[Job {job_id}] Job error: {str(e)}")
-            with jobs_lock:
-                job.status = "failed"
-                job.completed_at = datetime.now()
+
 
 def process_danfe_generation(job_id):
     """Generate DANFE for downloaded XMLs"""
