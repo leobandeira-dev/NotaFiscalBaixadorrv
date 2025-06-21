@@ -885,8 +885,8 @@ def admin_dashboard():
     
     xml_stats = {row.import_type: row.count for row in xml_breakdown}
     
-    # Atividades recentes do sistema
-    recent_activities = UserActivity.query.order_by(UserActivity.created_at.desc()).limit(10).all()
+    # Atividades recentes do sistema com dados do usuário
+    recent_activities = UserActivity.query.join(User).order_by(UserActivity.created_at.desc()).limit(10).all()
     
     return render_template('admin_dashboard.html',
                          total_users=total_users,
