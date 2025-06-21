@@ -1,4 +1,3 @@
-from final_production_fix import is_production
 """
 Sistema completo de XML Downloader com autenticação e cobrança
 """
@@ -39,6 +38,11 @@ from improved_transport_label import ImprovedTransportLabelGenerator
 from transul_exact_layout_generator import generate_transul_exact_label_from_xml
 from xml_processor import extract_xml_data
 from email_encryption import encrypt_email_password, decrypt_email_password
+
+def is_production():
+    """Detecta se está em ambiente de produção"""
+    return (os.environ.get('REPLIT_DEPLOYMENT') is not None or 
+            'replit.dev' in os.environ.get('REPLIT_DEV_DOMAIN', ''))
 
 def log_user_activity(user_id, activity_type, description, details=None):
     """Registra uma atividade do usuário no sistema"""
