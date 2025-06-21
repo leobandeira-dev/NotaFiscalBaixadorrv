@@ -10,6 +10,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from typing import Dict, Any
 import re
+from optimization_deploy import DeployOptimizer
 
 logger = logging.getLogger(__name__)
 
@@ -19,66 +20,24 @@ class InvoiceDownloader:
         self.setup_driver()
     
     def setup_driver(self):
-        """Setup Chrome WebDriver with appropriate options"""
+        """Setup Chrome WebDriver with environment-optimized options"""
         try:
-            logger.info("Setting up Chrome WebDriver...")
+            # Log environment information for debugging
+            DeployOptimizer.log_environment_info()
             
             # Setup downloads directory
             downloads_dir = os.path.abspath('downloads')
             os.makedirs(downloads_dir, exist_ok=True)
             logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Chrome options ultra-optimized for maximum speed
-            chrome_options = Options()
-            chrome_options.add_argument('--headless')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
-            chrome_options.add_argument('--disable-gpu')
-            chrome_options.add_argument('--window-size=800,600')  # Minimal window size
+            # Get optimized Chrome options for current environment
+            chrome_options = DeployOptimizer.get_optimized_chrome_options()
+            
+            # Additional specific optimizations
             chrome_options.add_argument('--disable-web-security')
             chrome_options.add_argument('--allow-running-insecure-content')
-            chrome_options.add_argument('--disable-extensions')
-            chrome_options.add_argument('--disable-plugins')
-            chrome_options.add_argument('--disable-images')
-            # chrome_options.add_argument('--disable-javascript')  # Keep JS enabled for form interaction
-            chrome_options.add_argument('--disable-css-animations')
-            chrome_options.add_argument('--disable-transitions')
-            chrome_options.add_argument('--disable-background-networking')
-            chrome_options.add_argument('--disable-background-timer-throttling')
-            chrome_options.add_argument('--disable-renderer-backgrounding')
-            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
-            chrome_options.add_argument('--disable-client-side-phishing-detection')
-            chrome_options.add_argument('--disable-component-extensions-with-background-pages')
-            chrome_options.add_argument('--disable-default-apps')
-            chrome_options.add_argument('--disable-ipc-flooding-protection')
-            chrome_options.add_argument('--disable-sync')
-            chrome_options.add_argument('--no-first-run')
-            chrome_options.add_argument('--no-default-browser-check')
-            chrome_options.add_argument('--disable-hang-monitor')
-            chrome_options.add_argument('--disable-prompt-on-repost')
-            chrome_options.add_argument('--disable-domain-reliability')
-            chrome_options.add_argument('--disable-features=TranslateUI,BlinkGenPropertyTrees,VizDisplayCompositor')
-            chrome_options.add_argument('--aggressive-cache-discard')
-            chrome_options.add_argument('--memory-pressure-off')
-            chrome_options.add_argument('--max_old_space_size=4096')
-            chrome_options.add_argument('--disable-logging')
-            chrome_options.add_argument('--silent')
             chrome_options.add_argument('--disable-blink-features=AutomationControlled')
             chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36')
-            # Ultra-performance optimizations
-            chrome_options.add_argument('--disable-dev-tools')
-            chrome_options.add_argument('--disable-background-mode')
-            chrome_options.add_argument('--disable-features=VizDisplayCompositor,AudioServiceOutOfProcess')
-            chrome_options.add_argument('--disable-ipc-flooding-protection')
-            chrome_options.add_argument('--disable-renderer-backgrounding')
-            chrome_options.add_argument('--disable-background-timer-throttling')
-            chrome_options.add_argument('--disable-backgrounding-occluded-windows')
-            chrome_options.add_argument('--disable-component-update')
-            chrome_options.add_argument('--disable-default-apps')
-            chrome_options.add_argument('--disable-desktop-notifications')
-            chrome_options.add_argument('--no-pings')
-            chrome_options.add_argument('--no-zygote')
-            chrome_options.add_argument('--single-process')
             
             # Download preferences
             prefs = {
@@ -119,8 +78,11 @@ class InvoiceDownloader:
             raise
     
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
-        """Download XML for a specific invoice key with robust capture strategies"""
+        """Download XML for a specific invoice key with environment-optimized timeouts"""
         try:
+            # Get optimized timeouts for current environment
+            timeouts = DeployOptimizer.get_optimized_timeouts()
+            
             logger.info(f"[Job {job_id}] Starting XML download for invoice key: {invoice_key}")
             
             # Navigate to the website
@@ -128,9 +90,9 @@ class InvoiceDownloader:
             logger.info(f"[Job {job_id}] Navigating to invoice system...")
             self.driver.get(url)
             
-            # EXTREME SPEED: Minimal waits for maximum performance
+            # Environment-optimized waits
             logger.info(f"[Job {job_id}] Looking for input field...")
-            input_element = WebDriverWait(self.driver, 3).until(  # Reduced from 8s to 3s
+            input_element = WebDriverWait(self.driver, timeouts['element_wait']).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[placeholder="Digite a CHAVE DE ACESSO"]'))
             )
             logger.info(f"[Job {job_id}] Page loaded - URL: {self.driver.current_url}")
@@ -139,10 +101,10 @@ class InvoiceDownloader:
             input_element.clear()
             input_element.send_keys(invoice_key)
             
-            # EXTREME SPEED: Minimal submit button wait
+            # Environment-optimized submit button wait
             logger.info(f"[Job {job_id}] Looking for submit button...")
             try:
-                submit_button = WebDriverWait(self.driver, 2).until(  # Reduced from 3s to 2s
+                submit_button = WebDriverWait(self.driver, timeouts['element_wait']).until(
                     EC.element_to_be_clickable((By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]"))
                 )
             except:
@@ -151,17 +113,16 @@ class InvoiceDownloader:
             logger.info(f"[Job {job_id}] Clicking submit button...")
             submit_button.click()
             
-            # EXTREME SPEED: Minimal results wait
+            # Environment-optimized results wait
             logger.info(f"[Job {job_id}] Waiting for response page...")
-            time.sleep(0.8)  # Reduced from 1.5s to 0.8s
+            time.sleep(timeouts['download_wait'])
             
             logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
             
-            # Find XML download button with ultra-optimized xpath
+            # Find XML download button with environment-optimized timeout
             logger.info(f"[Job {job_id}] Looking for XML download button...")
             try:
-                # EXTREME SPEED: Minimal timeout for XML button
-                xml_button = WebDriverWait(self.driver, 2).until(  # Reduced from 4s to 2s
+                xml_button = WebDriverWait(self.driver, timeouts['xml_button']).until(
                     EC.element_to_be_clickable((By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"))
                 )
             except:
@@ -188,12 +149,12 @@ class InvoiceDownloader:
                 if result['success']:
                     return result
             
-            # Strategy 2: EXTREME SPEED polling for browser downloads
+            # Strategy 2: Environment-optimized polling for browser downloads
             logger.info(f"[Job {job_id}] Strategy 2: Checking for browser downloads...")
             
-            # EXTREME SPEED: check every 0.5 seconds for maximum speed
-            for attempt in range(10):  # Increased attempts to compensate for faster polling
-                time.sleep(0.5)  # Reduced from 0.8s to 0.5s
+            # Environment-optimized polling intervals and attempts
+            for attempt in range(timeouts['max_attempts']):
+                time.sleep(timeouts['download_poll'])
                 download_result = self.check_downloaded_file(invoice_key, job_id)
                 if download_result['success']:
                     logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - file downloaded and found")
