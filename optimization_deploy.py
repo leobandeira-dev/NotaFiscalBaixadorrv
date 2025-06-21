@@ -15,18 +15,10 @@ class DeployOptimizer:
     @staticmethod
     def is_deploy_environment():
         """Detecta se está rodando no ambiente deploy"""
-        # Check for custom domain usage (crossxml.com.br)
-        from flask import has_request_context, request
-        is_custom_domain = False
-        
-        if has_request_context():
-            is_custom_domain = 'crossxml.com.br' in request.host
-        
         return (
             os.environ.get('REPLIT_DEPLOYMENT') or 
             os.environ.get('REPL_ID') or 
-            '/home/runner' in os.getcwd() or
-            is_custom_domain  # Force deploy optimizations for custom domain
+            '/home/runner' in os.getcwd()
         )
     
     @staticmethod

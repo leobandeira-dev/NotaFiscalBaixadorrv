@@ -22,29 +22,35 @@ class InvoiceDownloader:
         self.setup_driver()
     
     def setup_driver(self):
-        """Setup Chrome WebDriver with deploy-specific robot fixes"""
+        """Setup Chrome WebDriver with enhanced environment-optimized options"""
         try:
-            from deploy_robot_fix import DeployRobotFix
+            # Apply comprehensive performance fixes for deploy environment
+            performance_result = PerformanceSolution.apply_deploy_performance_fixes()
+            logger.info(f"Performance optimizations applied: {performance_result['environment']}")
             
-            # Apply deploy-specific fixes
-            DeployRobotFix.apply_deploy_fixes()
+            # Setup downloads directory
+            downloads_dir = os.path.abspath('downloads')
+            os.makedirs(downloads_dir, exist_ok=True)
+            logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Check environment and use appropriate driver
-            if DeployRobotFix.is_deploy_environment():
-                logger.info("🔧 DEPLOY ENVIRONMENT - Creating deploy-specific robot")
-                self.driver = DeployRobotFix.create_deploy_driver()
-            else:
-                logger.info("🚀 DEVELOPMENT ENVIRONMENT - Using ultra performance")
-                from ultra_performance_deploy import UltraPerformanceDeploy, ChromeDriverManager
-                performance_result = UltraPerformanceDeploy.apply_ultra_performance()
-                self.driver = ChromeDriverManager.get_optimized_driver()
+            # Apply ULTRA-SPEED Chrome optimizations
+            chrome_options = UltraSpeedOptimizer.get_ultra_chrome_options()
             
-            if self.driver:
-                logger.info("✅ Chrome driver created successfully")
-                return True
-            else:
-                logger.error("❌ Failed to create Chrome driver")
-                return False
+            # Additional ultra-speed optimizations
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--allow-running-insecure-content')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+            
+            # ULTRA-SPEED: Aggressive performance flags
+            chrome_options.add_argument('--aggressive-cache-discard')
+            chrome_options.add_argument('--disable-background-networking')
+            chrome_options.add_argument('--disable-background-timer-throttling')
+            chrome_options.add_argument('--memory-pressure-off')
+            chrome_options.add_argument('--single-process')
+            chrome_options.add_argument('--disable-renderer-backgrounding')
+            
+            logger.info("🚀 ULTRA-SPEED Chrome optimizations applied!")
             
             # Download preferences
             prefs = {
@@ -88,39 +94,8 @@ class InvoiceDownloader:
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
         """Download XML for a specific invoice key with ULTRA-SPEED optimizations"""
         try:
-            # Verificar se está em ambiente de produção
-            from deploy_robot_fix import DeployRobotFix
-            is_deploy = DeployRobotFix.is_deploy_environment()
-            
-            # Se estiver em ambiente de produção, usar robô simplificado
-            if is_deploy:
-                logger.info(f"🚀 [Job {job_id}] Usando robô simplificado para produção...")
-                try:
-                    from simple_production_robot import SimpleProductionRobot
-                    result = SimpleProductionRobot.simple_download(invoice_key, job_id, user_id)
-                    logger.info(f"[Job {job_id}] Resultado do robô simplificado: {result}")
-                    return result
-                except Exception as e:
-                    logger.error(f"[Job {job_id}] Erro no robô simplificado: {e}")
-                    # Continuar com sistema original como fallback
-            
-            # Continue with original system for fallback
-            logger.info(f"[Job {job_id}] Continuando com sistema original...")
-            
-            # Detect production environment with comprehensive checks
-            is_production = is_deploy
-            if is_production:
-                logger.info(f"[Job {job_id}] Aplicando correções de produção...")
-            
-            # Use environment-appropriate timeouts
-            from deploy_robot_fix import DeployRobotFix
-            if DeployRobotFix.is_deploy_environment():
-                timeouts = DeployRobotFix.get_deploy_timeouts()
-                logger.info(f"🔧 [Job {job_id}] Deploy timeouts: {timeouts}")
-            else:
-                from ultra_performance_deploy import UltraPerformanceDeploy
-                timeouts = UltraPerformanceDeploy.get_ultra_timeouts()
-                logger.info(f"⚡ [Job {job_id}] Ultra timeouts: {timeouts}")
+            # Get ULTRA-SPEED timeouts for maximum performance
+            timeouts = UltraSpeedOptimizer.get_ultra_timeouts()
             
             logger.info(f"🚀 [Job {job_id}] ULTRA-SPEED XML download starting: {invoice_key}")
             
@@ -130,25 +105,24 @@ class InvoiceDownloader:
             self.driver.get(url)
             
             # ULTRA-SPEED waits with minimal timeouts
-            logger.info(f"⚡ [Job {job_id}] Domain-aware input search...")
+            logger.info(f"⚡ [Job {job_id}] Ultra-fast input search...")
             input_element = WebDriverWait(self.driver, timeouts['element_wait']).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[placeholder="Digite a CHAVE DE ACESSO"]'))
             )
             logger.info(f"⚡ [Job {job_id}] Page ready - URL: {self.driver.current_url}")
             
-            logger.info(f"⚡ [Job {job_id}] Domain-aware key entry...")
+            logger.info(f"⚡ [Job {job_id}] Ultra-fast key entry...")
             input_element.clear()
             input_element.send_keys(invoice_key)
             
-            # Domain-aware submit button with extended timeout for custom domain
-            logger.info(f"⚡ [Job {job_id}] Domain-aware submit search...")
+            # ULTRA-SPEED submit button
+            logger.info(f"⚡ [Job {job_id}] Ultra-fast submit search...")
             try:
                 submit_button = WebDriverWait(self.driver, timeouts['element_wait']).until(
                     EC.element_to_be_clickable((By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]"))
                 )
-            except Exception as e:
-                logger.error(f"[Job {job_id}] Submit button not found with timeout {timeouts['element_wait']}s: {e}")
-                raise Exception(f"Submit button not found (timeout: {timeouts['element_wait']}s)")
+            except:
+                raise Exception("Submit button not found")
             
             logger.info(f"⚡ [Job {job_id}] Ultra-fast submit click...")
             submit_button.click()
@@ -160,14 +134,13 @@ class InvoiceDownloader:
             logger.info(f"⚡ [Job {job_id}] Submit complete - URL: {self.driver.current_url}")
             
             # ULTRA-SPEED XML button detection
-            logger.info(f"⚡ [Job {job_id}] Domain-aware XML button search (timeout: {timeouts['xml_button']}s)...")
+            logger.info(f"⚡ [Job {job_id}] Ultra-fast XML button search...")
             try:
                 xml_button = WebDriverWait(self.driver, timeouts['xml_button']).until(
                     EC.element_to_be_clickable((By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"))
                 )
-            except Exception as e:
-                logger.error(f"[Job {job_id}] XML button search failed after {timeouts['xml_button']}s: {e}")
-                raise Exception(f"XML download button not found (timeout: {timeouts['xml_button']}s)")
+            except:
+                raise Exception("XML download button not found")
             
             logger.info(f"[Job {job_id}] Found XML button, clicking...")
             
@@ -196,17 +169,15 @@ class InvoiceDownloader:
                 if result['success']:
                     return result
             
-            # Strategy 2: Environment-aware polling for browser downloads
-            logger.info(f"⚡ [Job {job_id}] Environment-aware polling initiated...")
-            logger.info(f"🔧 [Job {job_id}] Using timeouts - max_attempts: {timeouts['max_attempts']}, poll_interval: {timeouts['download_poll']}s")
+            # Strategy 2: ULTRA-SPEED polling for browser downloads
+            logger.info(f"⚡ [Job {job_id}] Ultra-fast polling initiated...")
             
-            # Environment-aware polling with appropriate intervals
+            # ULTRA-SPEED polling with minimal intervals
             for attempt in range(timeouts['max_attempts']):
-                time.sleep(timeouts['download_poll'])
+                time.sleep(timeouts['download_poll'])  # Now only 0.2s instead of 0.5s+
                 download_result = self.check_downloaded_file(invoice_key, job_id)
                 if download_result['success']:
-                    total_time = attempt * timeouts['download_poll']
-                    logger.info(f"🚀 [Job {job_id}] SUCCESS - file captured in {total_time:.1f}s (attempt {attempt+1}/{timeouts['max_attempts']})")
+                    logger.info(f"🚀 [Job {job_id}] ULTRA-FAST SUCCESS - file captured in {attempt * timeouts['download_poll']:.1f}s")
                     
                     # Process file with user_id for charging and database saving
                     if user_id and 'file_path' in download_result:
