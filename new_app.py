@@ -1977,14 +1977,89 @@ def process_danfe_generation(job_id):
 @app.route('/job_status/<job_id>')
 @login_required
 def job_status(job_id):
-    """Get job status"""
+    """Get job status with database synchronization"""
+    # First try to get from memory
     with jobs_lock:
         job = download_jobs.get(job_id)
+    
+    # If not in memory, try to get from database
+    if not job:
+        from models import DownloadJob as DBDownloadJob
+        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=current_user.id).first()
         
-        if not job or job.user_id != current_user.id:
+        if db_job:
+            # Recreate memory job from database
+            import json
+            
+            class MemoryJob:
+                def __init__(self, db_job):
+                    self.job_id = db_job.job_id
+                    self.invoice_keys = json.loads(db_job.invoice_keys or '[]')
+                    self.user_id = db_job.user_id
+                    self.total_keys = db_job.total_keys
+                    self.processed = db_job.processed
+                    self.successful = db_job.successful
+                    self.failed = db_job.failed
+                    self.status = db_job.status
+                    self.download_type = db_job.download_type or 'xml'
+                    self.files = json.loads(db_job.downloaded_files or '[]')
+                    self.downloaded_files = json.loads(db_job.downloaded_files or '[]')
+                    self.errors = json.loads(db_job.errors or '[]')
+                    self.start_time = db_job.created_at
+                    self.end_time = db_job.completed_at
+                    
+                def to_dict(self):
+                    return {
+                        'job_id': self.job_id,
+                        'total_keys': self.total_keys,
+                        'processed': self.processed,
+                        'successful': self.successful,
+                        'failed': self.failed,
+                        'status': self.status,
+                        'downloaded_files': [os.path.basename(f) for f in self.downloaded_files],
+                        'files': [os.path.basename(f) for f in self.downloaded_files],
+                        'errors': self.errors,
+                        'start_time': self.start_time.isoformat() if self.start_time else None,
+                        'end_time': self.end_time.isoformat() if self.end_time else None,
+                        'progress_percentage': round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
+                    }
+                    
+                @property 
+                def progress_percentage(self):
+                    return round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
+            
+            job = MemoryJob(db_job)
+            
+            # Add back to memory for future access
+            with jobs_lock:
+                download_jobs[job_id] = job
+    
+    # Sync memory job with database if it exists
+    if job:
+        from models import DownloadJob as DBDownloadJob
+        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=current_user.id).first()
+        
+        if db_job:
+            # Update memory job with latest database values
+            job.processed = db_job.processed
+            job.successful = db_job.successful
+            job.failed = db_job.failed
+            job.status = db_job.status
+            job.end_time = db_job.completed_at
+            
+            # Update downloaded files
+            import json
+            db_files = json.loads(db_job.downloaded_files or '[]')
+            if db_files:
+                job.downloaded_files = db_files
+                job.files = [os.path.basename(f) for f in db_files]
+        
+        if job.user_id != current_user.id:
             return jsonify({'error': 'Job not found'}), 404
         
         return jsonify(job.to_dict())
+    
+    return jsonify({'error': 'Job not found'}), 404
 
 # Configurar timezone de São Paulo
 SP_TZ = pytz.timezone('America/Sao_Paulo')
