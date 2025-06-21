@@ -77,56 +77,70 @@ def users():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
     
-    # Buscar todos os usuários diretamente
-    all_users = User.query.order_by(User.created_at.desc()).all()
+    # Buscar todos os usuários
+    users = User.query.order_by(User.created_at.desc()).all()
     
     # Log para debug
-    logger.info(f"Total de usuários encontrados: {len(all_users)}")
-    for u in all_users:
-        logger.info(f"Usuário: {u.name} ({u.email}) - ID: {u.id}")
+    logger.info(f"Admin: Total de usuários encontrados: {len(users)}")
     
     # Aplicar filtro de busca se necessário
     if search:
-        all_users = [u for u in all_users if search.lower() in u.name.lower() or search.lower() in u.email.lower()]
+        users = [u for u in users if search.lower() in u.name.lower() or search.lower() in u.email.lower()]
     
-    # Criar paginação manual simples (mostrar todos por enquanto)
-    users_pagination = type('obj', (object,), {'items': all_users, 'total': len(all_users)})()
+    # Criar objeto de paginação simples primeiro
+    users_pagination = type('obj', (object,), {'items': users, 'total': len(users)})()
     
     # Enriquecer dados dos usuários com informações reais
     users_with_data = []
-    for user in all_users:
-        # Calcular saldo real de créditos XML
-        xml_balance = get_user_xml_balance(user.id)
-        
-        # Contar XMLs baixados pelo usuário
-        total_xmls = XMLFile.query.filter_by(user_id=user.id).count()
-        
-        # Calcular valor total gasto (cobranças recebidas)
-        total_spent = db.session.query(func.sum(Charge.amount)).filter(
-            Charge.user_id == user.id,
-            Charge.status == 'RECEIVED'
-        ).scalar() or 0
-        
-        # Status do usuário
-        status = 'Ativo'
-        if user.is_trial_active():
-            status = 'Trial'
-        elif xml_balance <= 0:
-            status = 'Sem Créditos'
-        
-        user_data = {
-            'user': user,
-            'xml_balance': xml_balance,
-            'total_xmls': total_xmls,
-            'total_spent': total_spent,
-            'status': status,
-            'status_badge': {
-                'Ativo': 'success',
-                'Trial': 'warning', 
-                'Sem Créditos': 'danger'
-            }.get(status, 'secondary')
-        }
-        users_with_data.append(user_data)
+    for user in users:
+        try:
+            # Calcular saldo real de créditos XML
+            xml_balance = get_user_xml_balance(user.id)
+            
+            # Contar XMLs baixados pelo usuário
+            total_xmls = XMLFile.query.filter_by(user_id=user.id).count()
+            
+            # Calcular valor total gasto (cobranças recebidas)
+            total_spent = db.session.query(func.sum(Charge.amount)).filter(
+                Charge.user_id == user.id,
+                Charge.status == 'RECEIVED'
+            ).scalar() or 0
+            
+            # Status do usuário
+            status = 'Ativo'
+            if hasattr(user, 'is_trial_active') and user.is_trial_active():
+                status = 'Trial'
+            elif xml_balance <= 0:
+                status = 'Sem Créditos'
+            
+            user_data = {
+                'user': user,
+                'xml_balance': xml_balance,
+                'total_xmls': total_xmls,
+                'total_spent': total_spent,
+                'status': status,
+                'status_badge': {
+                    'Ativo': 'success',
+                    'Trial': 'warning', 
+                    'Sem Créditos': 'danger'
+                }.get(status, 'secondary')
+            }
+            users_with_data.append(user_data)
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar usuário {user.id}: {e}")
+            # Adicionar dados básicos mesmo com erro
+            user_data = {
+                'user': user,
+                'xml_balance': 0,
+                'total_xmls': 0,
+                'total_spent': 0,
+                'status': 'Erro',
+                'status_badge': 'secondary'
+            }
+            users_with_data.append(user_data)
+    
+    logger.info(f"Admin: Enviando {len(users_with_data)} usuários para template")
     
     return render_template('admin_users.html', 
                          users=users_pagination, 
