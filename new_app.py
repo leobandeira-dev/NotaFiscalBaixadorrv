@@ -313,6 +313,9 @@ setup_security_headers(app)
 login_manager.login_message = 'Faça login para acessar esta página.'
 login_manager.login_message_category = 'info'
 
+# Initialize robust thread processor
+thread_processor = init_thread_processor(app)
+
 # Initialize password reset serializer
 serializer = URLSafeTimedSerializer(app.secret_key)
 
