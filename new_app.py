@@ -579,6 +579,14 @@ def dashboard():
     """User dashboard with data isolation"""
     from download_service import DownloadService
     
+    # Registrar atividade de acesso ao dashboard
+    log_user_activity(
+        user_id=current_user.id,
+        activity_type='dashboard_accessed',
+        description="Acesso ao painel principal",
+        details={'ip_address': request.environ.get('REMOTE_ADDR', 'unknown')}
+    )
+    
     # Get user XML statistics with isolation
     user_xmls_query = XMLFile.query.filter_by(user_id=current_user.id)
     user_xmls_query = DataIsolationManager.filter_user_xmls(user_xmls_query, current_user.id)

@@ -275,22 +275,36 @@
         <a href="{{ url_for('meus_xmls') }}" style="color: #8A05BE; text-decoration: none; font-size: 0.875rem;">Ver todas</a>
     </div>
     
-    {% if recent_xmls %}
-        {% for xml in recent_xmls %}
+    {% if recent_activities %}
+        {% for activity in recent_activities %}
         <div style="padding: 0.75rem 0; border-bottom: 1px solid #f3f4f6;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-weight: 500; color: #111827; font-size: 0.875rem;">{{ xml.invoice_key[:44] }}</div>
-                    <div style="color: #6b7280; font-size: 0.75rem;">{{ xml.import_date.strftime('%d/%m/%Y %H:%M') }}</div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 500; color: #111827; font-size: 0.875rem;">{{ activity.description }}</div>
+                    <div style="color: #6b7280; font-size: 0.75rem;">{{ activity.time_ago }}</div>
                 </div>
-                <div style="color: #059669; font-size: 0.75rem; font-weight: 500;">✓ Baixado</div>
+                <div style="color: #059669; font-size: 0.75rem; font-weight: 500;">
+                    {% if activity.type == 'xml_uploaded' %}
+                        📤 Upload
+                    {% elif activity.type == 'label_generated' %}
+                        🏷️ Etiqueta
+                    {% elif activity.type == 'dashboard_accessed' %}
+                        👁️ Acesso
+                    {% elif activity.type == 'email_imported' %}
+                        📧 Email
+                    {% elif activity.type == 'danfe_generated' %}
+                        📄 DANFE
+                    {% else %}
+                        ✓ Ação
+                    {% endif %}
+                </div>
             </div>
         </div>
         {% endfor %}
     {% else %}
         <div class="empty-state">
-            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📄</div>
-            <p>Nenhum XML baixado ainda</p>
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+            <p>Nenhuma atividade registrada ainda</p>
             <a href="{{ url_for('xml_download') }}" class="btn-purple" style="margin-top: 0.5rem;">Começar agora</a>
         </div>
     {% endif %}

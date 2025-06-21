@@ -323,6 +323,24 @@ class EmailXMLProcessor:
                     db.session.add(xml_file)
                     db.session.commit()
                     
+                    # Registrar atividade de importação via email
+                    try:
+                        from new_app import log_user_activity
+                        log_user_activity(
+                            user_id=self.user.id,
+                            activity_type='email_imported',
+                            description=f"XML importado via email: NF {xml_data.get('numero_nf', 'N/A')} - {xml_data.get('nome_emitente', 'N/A')[:50]}",
+                            details={
+                                'filename': xml_attachment['filename'],
+                                'invoice_key': xml_data.get('chave_nf'),
+                                'numero_nf': xml_data.get('numero_nf'),
+                                'emitente': xml_data.get('nome_emitente'),
+                                'is_duplicate': is_duplicate
+                            }
+                        )
+                    except Exception as e:
+                        logger.error(f"Erro ao registrar atividade de email: {e}")
+                    
                     logger.info(f"XML salvo no banco: {xml_attachment['filename']} - NF {xml_data.get('numero_nf', 'N/A')}")
                     
                     return xml_file
