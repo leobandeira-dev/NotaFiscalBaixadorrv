@@ -3483,7 +3483,10 @@ def extrato_creditos():
         
         # Obter transações Stripe (compras) dos últimos 90 dias
         ninety_days_ago = datetime.utcnow() - timedelta(days=90)
-        stripe_transactions = db.session.query(StripeTransaction)\
+        stripe_transactions = db.session.query(StripeTransaction.id, StripeTransaction.user_id, 
+                                             StripeTransaction.amount_brl, StripeTransaction.credits_purchased,
+                                             StripeTransaction.status, StripeTransaction.created_at,
+                                             StripeTransaction.completed_at)\
             .filter(StripeTransaction.user_id == current_user.id)\
             .filter(StripeTransaction.created_at >= ninety_days_ago)\
             .filter(or_(
@@ -3501,18 +3504,18 @@ def extrato_creditos():
             .order_by(desc(FeatureUsage.created_at))\
             .all()
         
-        # Calcular totais
-        total_purchased = sum([t.credits_purchased for t in stripe_transactions])
-        total_used = sum([u.credits_consumed for u in usage_transactions])
+        # Calcular totais (dados agora são tuplas)
+        total_purchased = sum([t[3] or 0 for t in stripe_transactions])  # credits_purchased é o 4º campo
+        total_used = sum([u.credits_consumed or 0 for u in usage_transactions])
         
         # Obter dados dos últimos 30 dias para resumo mensal
         thirty_days_ago = datetime.utcnow() - timedelta(days=30)
         monthly_purchased = sum([
-            t.credits_purchased for t in stripe_transactions 
-            if t.created_at >= thirty_days_ago
+            t[3] or 0 for t in stripe_transactions 
+            if t[5] >= thirty_days_ago  # created_at é o 6º campo
         ])
         monthly_used = sum([
-            u.credits_consumed for u in usage_transactions 
+            u.credits_consumed or 0 for u in usage_transactions 
             if u.created_at >= thirty_days_ago
         ])
         
