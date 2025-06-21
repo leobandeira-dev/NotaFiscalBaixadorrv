@@ -3,126 +3,40 @@
 {% block title %}Painel Administrativo - CROSS XML Downloader PRO{% endblock %}
 
 {% block content %}
-<div class="admin-wrapper">
-    <div class="admin-content" style="margin-left: 280px; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
-        
-        <!-- Header administrativo -->
-        <div class="admin-header bg-white rounded-lg shadow-sm mb-4" style="padding: 2rem; border-left: 4px solid #8A05BE;">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="mb-2" style="color: #1f2937; font-weight: 700;">
-                        <i class="fas fa-shield-alt text-primary me-3"></i>
-                        Painel Administrativo
-                    </h1>
-                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Central de controle e monitoramento do sistema CROSS XML Downloader PRO</p>
-                </div>
-                <div class="admin-status">
-                    <span class="badge bg-success px-3 py-2" style="font-size: 0.9rem;">
-                        <i class="fas fa-circle me-2"></i>Sistema Online
-                    </span>
-                </div>
-            </div>
+<div class="content-container">
+    <!-- Header da página -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1" style="color: #111827; font-weight: 700;">
+                <i class="fas fa-shield-alt text-primary me-2"></i>
+                Painel Administrativo
+            </h1>
+            <p class="text-muted mb-0">Central de controle e monitoramento do sistema CROSS XML Downloader PRO</p>
         </div>
-            
-            <!-- Cabeçalho -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h2><i class="fas fa-shield-alt text-primary"></i> Painel Administrativo</h2>
-                    <p class="text-muted">Central de controle e monitoramento do sistema</p>
-                </div>
-                <div>
-                    <span class="badge bg-success">Sistema Online</span>
-                </div>
-            </div>
+        <div>
+            <span class="badge bg-success px-3 py-2" style="font-size: 0.9rem;">
+                <i class="fas fa-circle me-1"></i>
+                Sistema Online
+            </span>
+        </div>
+    </div>
 
-        <!-- Estatísticas Gerais - Design Moderno -->
-        <div class="row mb-4">
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stat-card bg-white rounded-lg shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="stat-info text-white">
-                                <h2 class="mb-1 fw-bold" style="font-size: 2.5rem;">{{ total_users or 0 }}</h2>
-                                <p class="mb-0 opacity-75" style="font-size: 1rem;">Usuários Cadastrados</p>
-                                <div class="mt-2">
-                                    <small class="badge bg-white text-primary px-2 py-1">
-                                        <i class="fas fa-arrow-up me-1"></i>+{{ monthly_new_users or 0 }} este mês
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="stat-icon">
-                                <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle p-3">
-                                    <i class="fas fa-users text-white" style="font-size: 2rem;"></i>
-                                </div>
+    <!-- Estatísticas principais -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="p-3 rounded-circle" style="background: #f3f4f6;">
+                                <i class="fas fa-users" style="color: #8A05BE; font-size: 1.5rem;"></i>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stat-card bg-white rounded-lg shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="stat-info text-white">
-                                <h2 class="mb-1 fw-bold" style="font-size: 2.5rem;">{{ total_xmls or 0 }}</h2>
-                                <p class="mb-0 opacity-75" style="font-size: 1rem;">XMLs Processados</p>
-                                <div class="mt-2">
-                                    <small class="badge bg-white text-success px-2 py-1">
-                                        <i class="fas fa-download me-1"></i>{{ monthly_xmls or 0 }} este mês
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="stat-icon">
-                                <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle p-3">
-                                    <i class="fas fa-file-alt text-white" style="font-size: 2rem;"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stat-card bg-white rounded-lg shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="stat-info text-white">
-                                <h2 class="mb-1 fw-bold" style="font-size: 2.5rem;">R$ {{ "%.0f"|format(total_revenue or 0) }}</h2>
-                                <p class="mb-0 opacity-75" style="font-size: 1rem;">Receita Total</p>
-                                <div class="mt-2">
-                                    <small class="badge bg-white text-warning px-2 py-1">
-                                        <i class="fas fa-chart-line me-1"></i>R$ {{ "%.0f"|format(monthly_revenue or 0) }} mensal
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="stat-icon">
-                                <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle p-3">
-                                    <i class="fas fa-dollar-sign text-white" style="font-size: 2rem;"></i>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="stat-card bg-white rounded-lg shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-                    <div class="card-body p-4">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="stat-info text-white">
-                                <h2 class="mb-1 fw-bold" style="font-size: 2.5rem;">{{ active_users or 0 }}</h2>
-                                <p class="mb-0 opacity-75" style="font-size: 1rem;">Usuários Ativos</p>
-                                <div class="mt-2">
-                                    <small class="badge bg-white text-info px-2 py-1">
-                                        <i class="fas fa-tags me-1"></i>{{ monthly_labels or 0 }} etiquetas
-                                    </small>
-                                </div>
-                            </div>
-                            <div class="stat-icon">
-                                <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle p-3">
-                                    <i class="fas fa-user-check text-white" style="font-size: 2rem;"></i>
-                                </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fw-bold h4 mb-0" style="color: #111827;">{{ total_users or 0 }}</div>
+                            <div class="small text-muted">Usuários Cadastrados</div>
+                            <div class="small text-success mt-1">
+                                <i class="fas fa-arrow-up me-1"></i>+{{ monthly_new_users or 0 }} este mês
                             </div>
                         </div>
                     </div>
@@ -130,395 +44,269 @@
             </div>
         </div>
 
-        <!-- Acesso Rápido - Design Aprimorado -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="quick-access-card bg-white rounded-lg shadow-sm border-0" style="padding: 2rem;">
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="icon-wrapper bg-primary bg-opacity-10 rounded-circle p-3 me-3">
-                            <i class="fas fa-bolt text-primary" style="font-size: 1.5rem;"></i>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="p-3 rounded-circle" style="background: #f3f4f6;">
+                                <i class="fas fa-file-code" style="color: #059669; font-size: 1.5rem;"></i>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="mb-1 fw-bold" style="color: #1f2937;">Acesso Rápido</h3>
-                            <p class="text-muted mb-0">Funções administrativas essenciais</p>
-                        </div>
-                    </div>
-                    
-                    <div class="row g-4">
-                        <div class="col-lg-3 col-md-6">
-                            <a href="{{ url_for('admin_users') }}" class="quick-action-card text-decoration-none">
-                                <div class="action-card bg-light bg-opacity-50 rounded-lg p-4 h-100 border-0 hover-shadow">
-                                    <div class="text-center">
-                                        <div class="icon-wrapper bg-primary bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fas fa-users text-primary" style="font-size: 1.8rem;"></i>
-                                        </div>
-                                        <h5 class="mb-2 fw-bold" style="color: #1f2937;">Gerenciar Usuários</h5>
-                                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Visualizar, editar e administrar contas de usuários</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                        
-                        <div class="col-lg-3 col-md-6">
-                            <a href="/admin/charges" class="quick-action-card text-decoration-none">
-                                <div class="action-card bg-light bg-opacity-50 rounded-lg p-4 h-100 border-0 hover-shadow">
-                                    <div class="text-center">
-                                        <div class="icon-wrapper bg-success bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fas fa-receipt text-success" style="font-size: 1.8rem;"></i>
-                                        </div>
-                                        <h5 class="mb-2 fw-bold" style="color: #1f2937;">Cobranças</h5>
-                                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Monitorar pagamentos e transações financeiras</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                        
-                        <div class="col-lg-3 col-md-6">
-                            <a href="/admin/packages" class="quick-action-card text-decoration-none">
-                                <div class="action-card bg-light bg-opacity-50 rounded-lg p-4 h-100 border-0 hover-shadow">
-                                    <div class="text-center">
-                                        <div class="icon-wrapper bg-warning bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fas fa-box text-warning" style="font-size: 1.8rem;"></i>
-                                        </div>
-                                        <h5 class="mb-2 fw-bold" style="color: #1f2937;">Pacotes Stripe</h5>
-                                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Administrar produtos e assinaturas</p>
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
-                        
-                        <div class="col-lg-3 col-md-6">
-                            <a href="/admin/settings" class="quick-action-card text-decoration-none">
-                                <div class="action-card bg-light bg-opacity-50 rounded-lg p-4 h-100 border-0 hover-shadow">
-                                    <div class="text-center">
-                                        <div class="icon-wrapper bg-info bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
-                                            <i class="fas fa-cog text-info" style="font-size: 1.8rem;"></i>
-                                        </div>
-                                        <h5 class="mb-2 fw-bold" style="color: #1f2937;">Configurações</h5>
-                                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Ajustar parâmetros do sistema</p>
-                                    </div>
-                                </div>
-                            </a>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fw-bold h4 mb-0" style="color: #111827;">{{ total_xmls or 0 }}</div>
+                            <div class="small text-muted">XMLs Processados</div>
+                            <div class="small text-success mt-1">
+                                <i class="fas fa-arrow-up me-1"></i>+{{ monthly_xmls or 0 }} este mês
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-            <!-- Atividade Recente -->
-            <div class="row mb-4">
-                <div class="col-md-8">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5><i class="fas fa-history"></i> Atividades Recentes do Sistema</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if recent_activities %}
-                                {% for activity in recent_activities %}
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar me-3">
-                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                            <i class="fas fa-user text-white"></i>
-                                        </div>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div><strong>{{ activity.description }}</strong></div>
-                                        <small class="text-muted">{{ activity.created_at.strftime('%d/%m/%Y %H:%M') if activity.created_at else 'N/A' }}</small>
-                                    </div>
-                                    <div>
-                                        <span class="badge bg-secondary">{{ activity.activity_type }}</span>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <p class="text-muted">Nenhuma atividade registrada.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Usuários Recentes -->
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5><i class="fas fa-user-plus"></i> Usuários Recentes</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if recent_users %}
-                                {% for user in recent_users %}
-                                <div class="d-flex align-items-center mb-3">
-                                    <div class="avatar me-3">
-                                        {% if user.profile_image_url %}
-                                            <img src="{{ user.profile_image_url }}" alt="Avatar" class="rounded-circle" width="35" height="35">
-                                        {% else %}
-                                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
-                                                <i class="fas fa-user text-white"></i>
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div><strong>{{ user.email }}</strong></div>
-                                        <small class="text-muted">{{ user.created_at.strftime('%d/%m') if user.created_at else 'N/A' }}</small>
-                                    </div>
-                                    <div>
-                                        <a href="{{ url_for('admin_user_view', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            {% else %}
-                                <p class="text-muted">Nenhum usuário recente.</p>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Sistema e Performance -->
-            <div class="row">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5><i class="fas fa-server"></i> Status do Sistema</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-6">
-                                    <div class="text-center">
-                                        <i class="fas fa-database fa-2x text-success mb-2"></i>
-                                        <p class="mb-0"><strong>Database</strong></p>
-                                        <span class="badge bg-success">Online</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="text-center">
-                                        <i class="fas fa-credit-card fa-2x text-success mb-2"></i>
-                                        <p class="mb-0"><strong>Stripe</strong></p>
-                                        <span class="badge bg-success">Conectado</span>
-                                    </div>
-                                </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="p-3 rounded-circle" style="background: #f3f4f6;">
+                                <i class="fas fa-dollar-sign" style="color: #dc2626; font-size: 1.5rem;"></i>
                             </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5><i class="fas fa-chart-line"></i> Resumo Mensal</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-6">
-                                    <p><strong>Novos Usuários:</strong> {{ monthly_new_users }}</p>
-                                    <p><strong>XMLs Processados:</strong> {{ monthly_xmls }}</p>
-                                </div>
-                                <div class="col-6">
-                                    <p><strong>Receita:</strong> R$ {{ "%.2f"|format(monthly_revenue) }}</p>
-                                    <p><strong>Etiquetas Geradas:</strong> {{ monthly_labels }}</p>
-                                </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fw-bold h4 mb-0" style="color: #111827;">R$ {{ "%.2f"|format(total_revenue or 0) }}</div>
+                            <div class="small text-muted">Receita Total</div>
+                            <div class="small text-success mt-1">
+                                <i class="fas fa-arrow-up me-1"></i>R$ {{ "%.2f"|format(monthly_revenue or 0) }} este mês
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-        <!-- Breakdown detalhado dos XMLs por tipo -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="xml-breakdown-card bg-white rounded-lg shadow-sm border-0" style="padding: 2rem;">
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="icon-wrapper bg-info bg-opacity-10 rounded-circle p-3 me-3">
-                            <i class="fas fa-chart-pie text-info" style="font-size: 1.5rem;"></i>
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="p-3 rounded-circle" style="background: #f3f4f6;">
+                                <i class="fas fa-tags" style="color: #f59e0b; font-size: 1.5rem;"></i>
+                            </div>
                         </div>
-                        <div>
-                            <h3 class="mb-1 fw-bold" style="color: #1f2937;">Análise Detalhada dos XMLs</h3>
-                            <p class="text-muted mb-0">Distribuição dos {{ total_xmls }} XMLs processados no sistema</p>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="fw-bold h4 mb-0" style="color: #111827;">{{ monthly_labels or 0 }}</div>
+                            <div class="small text-muted">Etiquetas Geradas</div>
+                            <div class="small text-success mt-1">
+                                <i class="fas fa-arrow-up me-1"></i>Este mês
+                            </div>
                         </div>
                     </div>
-                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análise detalhada dos XMLs -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="p-2 rounded-circle" style="background: #f3f4f6;">
+                                <i class="fas fa-chart-pie" style="color: #8A05BE; font-size: 1.2rem;"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="card-title mb-1" style="color: #111827; font-weight: 600;">Análise Detalhada dos XMLs</h5>
+                            <p class="text-muted mb-0 small">Distribuição dos {{ total_xmls }} XMLs processados no sistema</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
                     <div class="row g-4">
                         <div class="col-lg-4">
-                            <div class="breakdown-item bg-light bg-opacity-50 rounded-lg p-4 text-center">
-                                <div class="breakdown-icon bg-primary bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-download text-primary" style="font-size: 1.8rem;"></i>
+                            <div class="text-center p-4 rounded" style="background: #f8f9ff; border: 1px solid #e5e7ff;">
+                                <div class="mb-3">
+                                    <i class="fas fa-download" style="color: #8A05BE; font-size: 2rem;"></i>
                                 </div>
-                                <h4 class="mb-2 fw-bold text-primary">{{ xml_stats.get('SISTEMA', 0) }}</h4>
-                                <p class="mb-1 fw-semibold">XMLs via Sistema</p>
-                                <small class="text-muted">Baixados automaticamente via robô</small>
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 8px;">
-                                        <div class="progress-bar bg-primary" role="progressbar" 
-                                             style="width: {{ (xml_stats.get('SISTEMA', 0) / total_xmls * 100) if total_xmls > 0 else 0 }}%">
-                                        </div>
-                                    </div>
-                                    <small class="text-muted">{{ "%.1f"|format((xml_stats.get('SISTEMA', 0) / total_xmls * 100) if total_xmls > 0 else 0) }}% do total</small>
+                                <h4 class="fw-bold mb-1" style="color: #8A05BE;">{{ xml_stats.get('SISTEMA', 0) }}</h4>
+                                <div class="fw-semibold mb-1">XMLs via Sistema</div>
+                                <div class="small text-muted mb-3">Baixados automaticamente via robô</div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar" style="background: #8A05BE; width: {{ (xml_stats.get('SISTEMA', 0) / total_xmls * 100) if total_xmls > 0 else 0 }}%;"></div>
                                 </div>
+                                <div class="small text-muted mt-2">{{ "%.1f"|format((xml_stats.get('SISTEMA', 0) / total_xmls * 100) if total_xmls > 0 else 0) }}% do total</div>
                             </div>
                         </div>
                         
                         <div class="col-lg-4">
-                            <div class="breakdown-item bg-light bg-opacity-50 rounded-lg p-4 text-center">
-                                <div class="breakdown-icon bg-success bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-envelope text-success" style="font-size: 1.8rem;"></i>
+                            <div class="text-center p-4 rounded" style="background: #f0f9f4; border: 1px solid #d1fae5;">
+                                <div class="mb-3">
+                                    <i class="fas fa-envelope" style="color: #059669; font-size: 2rem;"></i>
                                 </div>
-                                <h4 class="mb-2 fw-bold text-success">{{ xml_stats.get('email', 0) }}</h4>
-                                <p class="mb-1 fw-semibold">XMLs via Email</p>
-                                <small class="text-muted">Importados automaticamente do email</small>
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 8px;">
-                                        <div class="progress-bar bg-success" role="progressbar" 
-                                             style="width: {{ (xml_stats.get('email', 0) / total_xmls * 100) if total_xmls > 0 else 0 }}%">
-                                        </div>
-                                    </div>
-                                    <small class="text-muted">{{ "%.1f"|format((xml_stats.get('email', 0) / total_xmls * 100) if total_xmls > 0 else 0) }}% do total</small>
+                                <h4 class="fw-bold mb-1" style="color: #059669;">{{ xml_stats.get('email', 0) }}</h4>
+                                <div class="fw-semibold mb-1">XMLs via Email</div>
+                                <div class="small text-muted mb-3">Importados automaticamente do email</div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-success" style="width: {{ (xml_stats.get('email', 0) / total_xmls * 100) if total_xmls > 0 else 0 }}%;"></div>
                                 </div>
+                                <div class="small text-muted mt-2">{{ "%.1f"|format((xml_stats.get('email', 0) / total_xmls * 100) if total_xmls > 0 else 0) }}% do total</div>
                             </div>
                         </div>
                         
                         <div class="col-lg-4">
-                            <div class="breakdown-item bg-light bg-opacity-50 rounded-lg p-4 text-center">
-                                <div class="breakdown-icon bg-warning bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
-                                    <i class="fas fa-upload text-warning" style="font-size: 1.8rem;"></i>
+                            <div class="text-center p-4 rounded" style="background: #fffbeb; border: 1px solid #fed7aa;">
+                                <div class="mb-3">
+                                    <i class="fas fa-upload" style="color: #f59e0b; font-size: 2rem;"></i>
                                 </div>
-                                <h4 class="mb-2 fw-bold text-warning">{{ xml_stats.get('upload', 0) }}</h4>
-                                <p class="mb-1 fw-semibold">XMLs via Upload</p>
-                                <small class="text-muted">Enviados manualmente pelos usuários</small>
-                                <div class="mt-2">
-                                    <div class="progress" style="height: 8px;">
-                                        <div class="progress-bar bg-warning" role="progressbar" 
-                                             style="width: {{ (xml_stats.get('upload', 0) / total_xmls * 100) if total_xmls > 0 else 0 }}%">
-                                        </div>
-                                    </div>
-                                    <small class="text-muted">{{ "%.1f"|format((xml_stats.get('upload', 0) / total_xmls * 100) if total_xmls > 0 else 0) }}% do total</small>
+                                <h4 class="fw-bold mb-1" style="color: #f59e0b;">{{ xml_stats.get('upload', 0) }}</h4>
+                                <div class="fw-semibold mb-1">XMLs via Upload</div>
+                                <div class="small text-muted mb-3">Enviados manualmente pelos usuários</div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" style="width: {{ (xml_stats.get('upload', 0) / total_xmls * 100) if total_xmls > 0 else 0 }}%;"></div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Confirmação dos dados reais -->
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <div class="alert alert-success border-0" style="background: linear-gradient(135deg, #d4edda, #c3e6cb); border-left: 4px solid #28a745 !important;">
-                                <div class="d-flex align-items-center">
-                                    <i class="fas fa-check-circle text-success me-3" style="font-size: 1.5rem;"></i>
-                                    <div>
-                                        <h5 class="mb-1 text-success fw-bold">Verificação de Dados Realizada</h5>
-                                        <p class="mb-0 text-success">
-                                            <strong>✓ Venda confirmada:</strong> R$ 10,00 por Usuario Teste (teste@xmldownloader.com)
-                                            <br>
-                                            <strong>✓ Transação Stripe:</strong> pi_test_20250620_100credits (100 créditos)
-                                            <br>
-                                            <strong>✓ Total de XMLs:</strong> {{ total_xmls }} registros verificados no banco
-                                            <br>
-                                            <strong>✓ Distribuição:</strong> {{ xml_stats.get('SISTEMA', 0) }} sistema, {{ xml_stats.get('email', 0) }} email, {{ xml_stats.get('upload', 0) }} upload
-                                            <br>
-                                            <small><i class="fas fa-user me-1"></i>Cliente identificado: Usuario Teste (ID: 4) | <i class="fas fa-database me-1"></i>Dados em tempo real</small>
-                                        </p>
-                                    </div>
-                                </div>
+                                <div class="small text-muted mt-2">{{ "%.1f"|format((xml_stats.get('upload', 0) / total_xmls * 100) if total_xmls > 0 else 0) }}% do total</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
+    <!-- Confirmação de transação -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="alert alert-success border-0 shadow-sm" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0); border-left: 4px solid #059669 !important;">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle" style="color: #059669; font-size: 1.5rem;"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="alert-heading mb-2" style="color: #059669; font-weight: 600;">Verificação de Dados Realizada</h5>
+                        <div style="color: #047857;">
+                            <div class="mb-1"><strong>✓ Venda confirmada:</strong> R$ 10,00 por Usuario Teste (teste@xmldownloader.com)</div>
+                            <div class="mb-1"><strong>✓ Transação Stripe:</strong> pi_test_20250620_100credits (100 créditos)</div>
+                            <div class="mb-1"><strong>✓ Total de XMLs:</strong> {{ total_xmls }} registros verificados no banco</div>
+                            <div class="mb-1"><strong>✓ Distribuição:</strong> {{ xml_stats.get('SISTEMA', 0) }} sistema, {{ xml_stats.get('email', 0) }} email, {{ xml_stats.get('upload', 0) }} upload</div>
+                            <div class="small mt-2">
+                                <i class="fas fa-user me-1"></i>Cliente identificado: Usuario Teste (ID: 4) | 
+                                <i class="fas fa-database me-1"></i>Dados em tempo real
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        
-        <!-- CSS personalizado para o módulo administrativo -->
-        <style>
-        .admin-content {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        }
-        
-        .hover-shadow {
-            transition: all 0.3s ease;
-        }
-        
-        .hover-shadow:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
-        }
-        
-        .quick-action-card:hover {
-            text-decoration: none !important;
-        }
-        
-        .action-card:hover {
-            background: rgba(138, 5, 190, 0.05) !important;
-            border: 1px solid rgba(138, 5, 190, 0.2) !important;
-        }
-        
-        .stat-card {
-            transition: all 0.3s ease;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-        }
-        
-        .icon-wrapper {
-            transition: all 0.3s ease;
-        }
-        
-        .action-card:hover .icon-wrapper {
-            transform: scale(1.1);
-        }
-        
-        .rounded-lg {
-            border-radius: 12px !important;
-        }
-        
-        .admin-header {
-            border-radius: 12px !important;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
-        }
-        
-        .quick-access-card {
-            border-radius: 12px !important;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
-        }
-        
-        .recent-activity-card {
-            border-radius: 12px !important;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
-        }
-        
-        .bg-opacity-10 {
-            background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
-        }
-        
-        .bg-opacity-20 {
-            background-color: rgba(255, 255, 255, 0.2) !important;
-        }
-        
-        .bg-opacity-50 {
-            background-color: rgba(248, 249, 250, 0.5) !important;
-        }
-        
-        .opacity-75 {
-            opacity: 0.75 !important;
-        }
-        
-        @media (max-width: 768px) {
-            .admin-content {
-                margin-left: 0 !important;
-                padding: 1rem !important;
-            }
-            
-            .stat-card h2 {
-                font-size: 2rem !important;
-            }
-            
-            .action-card {
-                margin-bottom: 1rem;
-            }
-        }
-        </style>
+    </div>
+
+    <!-- Atividades recentes e administração -->
+    <div class="row g-4">
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0" style="color: #111827; font-weight: 600;">
+                        <i class="fas fa-clock me-2 text-primary"></i>
+                        Atividades Recentes do Sistema
+                    </h5>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                    {% if recent_activities %}
+                        {% for activity in recent_activities %}
+                        <div class="d-flex align-items-center py-3{% if not loop.last %} border-bottom{% endif %}">
+                            <div class="flex-shrink-0">
+                                <div class="p-2 rounded-circle bg-primary bg-opacity-10">
+                                    {% if activity.activity_type == 'label_generated' %}
+                                        <i class="fas fa-tags text-primary"></i>
+                                    {% elif activity.activity_type == 'dashboard_accessed' %}
+                                        <i class="fas fa-tachometer-alt text-success"></i>
+                                    {% elif activity.activity_type == 'xml_uploaded' %}
+                                        <i class="fas fa-upload text-warning"></i>
+                                    {% elif activity.activity_type == 'danfe_generated' %}
+                                        <i class="fas fa-file-pdf text-danger"></i>
+                                    {% elif activity.activity_type == 'email_imported' %}
+                                        <i class="fas fa-envelope text-info"></i>
+                                    {% else %}
+                                        <i class="fas fa-info-circle text-muted"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <div class="fw-semibold text-dark">{{ activity.description }}</div>
+                                <div class="small text-muted">{{ activity.created_at.strftime('%d/%m/%Y %H:%M') }}</div>
+                            </div>
+                            <div class="flex-shrink-0">
+                                {% if activity.activity_type == 'label_generated' %}
+                                    <span class="badge bg-primary">label_generated</span>
+                                {% elif activity.activity_type == 'dashboard_accessed' %}
+                                    <span class="badge bg-success">dashboard_accessed</span>
+                                {% elif activity.activity_type == 'xml_uploaded' %}
+                                    <span class="badge bg-warning">xml_uploaded</span>
+                                {% elif activity.activity_type == 'danfe_generated' %}
+                                    <span class="badge bg-danger">danfe_generated</span>
+                                {% elif activity.activity_type == 'email_imported' %}
+                                    <span class="badge bg-info">email_imported</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ activity.activity_type }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-clock fa-2x mb-3"></i>
+                            <div>Nenhuma atividade recente encontrada</div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0" style="color: #111827; font-weight: 600;">
+                        <i class="fas fa-cog me-2 text-primary"></i>
+                        Ferramentas Administrativas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <a href="/admin/users" class="btn btn-outline-primary w-100 py-3 text-decoration-none">
+                                <i class="fas fa-users d-block mb-2" style="font-size: 1.5rem;"></i>
+                                <div class="fw-semibold">Gerenciar Usuários</div>
+                                <div class="small text-muted">{{ total_users }} usuários</div>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="/admin/charges" class="btn btn-outline-success w-100 py-3 text-decoration-none">
+                                <i class="fas fa-dollar-sign d-block mb-2" style="font-size: 1.5rem;"></i>
+                                <div class="fw-semibold">Cobranças</div>
+                                <div class="small text-muted">R$ {{ "%.2f"|format(total_revenue or 0) }}</div>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="/admin/usage" class="btn btn-outline-info w-100 py-3 text-decoration-none">
+                                <i class="fas fa-chart-bar d-block mb-2" style="font-size: 1.5rem;"></i>
+                                <div class="fw-semibold">Relatórios</div>
+                                <div class="small text-muted">{{ total_usage }} registros</div>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="/admin/settings" class="btn btn-outline-warning w-100 py-3 text-decoration-none">
+                                <i class="fas fa-cogs d-block mb-2" style="font-size: 1.5rem;"></i>
+                                <div class="fw-semibold">Configurações</div>
+                                <div class="small text-muted">Sistema</div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
