@@ -359,63 +359,143 @@ class DownloadJob:
         }
 
 def process_download_job(job_id, user_id):
-    """Process download job in background"""
+    """Process download job in background with database persistence"""
     try:
-        from automation_fixed import InvoiceDownloader
-        
-        with jobs_lock:
-            job = download_jobs.get(job_id)
-        
-        if not job:
-            logger.error(f"Job {job_id} not found for processing")
-            return
-        
-        job.status = "running"
-        downloader = InvoiceDownloader()
-        
-        for i, invoice_key in enumerate(job.invoice_keys):
-            try:
-                logger.info(f"[Job {job_id}] Processing key {i+1}/{job.total_keys}: {invoice_key}")
+        with app.app_context():
+            from automation_fixed import InvoiceDownloader
+            from models import DownloadJob as DBDownloadJob
+            import json
+            
+            # Get job from database
+            db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
+            if not db_job:
+                logger.error(f"Job {job_id} not found in database")
+                return
+            
+            # Get job from memory or recreate from database
+            with jobs_lock:
+                job = download_jobs.get(job_id)
+            
+            if not job:
+                # Recreate memory job from database
+                class MemoryJob:
+                    def __init__(self, db_job):
+                        self.job_id = db_job.job_id
+                        self.invoice_keys = json.loads(db_job.invoice_keys or '[]')
+                        self.user_id = db_job.user_id
+                        self.total_keys = db_job.total_keys
+                        self.processed = db_job.processed
+                        self.successful = db_job.successful
+                        self.failed = db_job.failed
+                        self.status = db_job.status
+                        self.download_type = db_job.download_type or 'xml'
+                        self.files = []
+                        self.downloaded_files = json.loads(db_job.downloaded_files or '[]')
+                        self.errors = json.loads(db_job.errors or '[]')
+                        self.start_time = db_job.created_at
+                        self.end_time = db_job.completed_at
+                        
+                    @property
+                    def progress_percentage(self):
+                        return round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
                 
-                result = downloader.download_invoice_xml(
-                    invoice_key=invoice_key,
-                    job_id=job_id,
-                    download_type=job.download_type,
-                    user_id=user_id
-                )
+                job = MemoryJob(db_job)
                 
-                job.processed += 1
-                
-                if result.get('success') == True:
-                    job.successful += 1
-                    if result.get('file_path'):
-                        job.downloaded_files.append(result['file_path'])
-                        job.files.append(os.path.basename(result['file_path']))
-                else:
+                with jobs_lock:
+                    download_jobs[job_id] = job
+            
+            # Update status in both memory and database
+            job.status = "running"
+            db_job.status = "running"
+            db_job.started_at = datetime.utcnow()
+            db.session.commit()
+            
+            downloader = InvoiceDownloader()
+            
+            for i, invoice_key in enumerate(job.invoice_keys):
+                try:
+                    logger.info(f"[Job {job_id}] Processing key {i+1}/{job.total_keys}: {invoice_key}")
+                    
+                    result = downloader.download_invoice_xml(
+                        invoice_key=invoice_key,
+                        job_id=job_id,
+                        download_type=job.download_type,
+                        user_id=user_id
+                    )
+                    
+                    # Update both memory and database
+                    job.processed += 1
+                    db_job.processed += 1
+                    
+                    if result.get('success') == True:
+                        job.successful += 1
+                        db_job.successful += 1
+                        
+                        if result.get('file_path'):
+                            job.downloaded_files.append(result['file_path'])
+                            job.files.append(os.path.basename(result['file_path']))
+                            db_job.add_downloaded_file(result['file_path'])
+                    else:
+                        job.failed += 1
+                        db_job.failed += 1
+                        
+                        error_msg = result.get('error', result.get('message', 'Unknown error'))
+                        job.errors.append({
+                            'invoice_key': invoice_key,
+                            'error': error_msg
+                        })
+                        db_job.add_error(invoice_key, error_msg)
+                    
+                    # Save progress to database every download
+                    db.session.commit()
+                        
+                except Exception as e:
+                    logger.error(f"[Job {job_id}] Error processing {invoice_key}: {str(e)}")
+                    
+                    # Update both memory and database
                     job.failed += 1
+                    job.processed += 1
+                    db_job.failed += 1
+                    db_job.processed += 1
+                    
+                    error_msg = str(e)
                     job.errors.append({
                         'invoice_key': invoice_key,
-                        'error': result.get('error', result.get('message', 'Unknown error'))
+                        'error': error_msg
                     })
+                    db_job.add_error(invoice_key, error_msg)
                     
-            except Exception as e:
-                logger.error(f"[Job {job_id}] Error processing {invoice_key}: {str(e)}")
-                job.failed += 1
-                job.processed += 1
-                job.errors.append({
-                    'invoice_key': invoice_key,
-                    'error': str(e)
-                })
-        
-        # Mark job as completed
-        job.status = "completed" if job.successful > 0 else "failed"
-        job.end_time = datetime.now()
-        
-        downloader.cleanup()
-        logger.info(f"[Job {job_id}] Completed: {job.successful} successful, {job.failed} failed")
-        
+                    # Save error to database
+                    db.session.commit()
+            
+            # Mark job as completed in both memory and database
+            final_status = "completed" if job.successful > 0 else "failed"
+            job.status = final_status
+            job.end_time = datetime.utcnow()
+            
+            db_job.status = final_status
+            db_job.completed_at = datetime.utcnow()
+            db.session.commit()
+            
+            downloader.cleanup()
+            logger.info(f"[Job {job_id}] Completed: {job.successful} successful, {job.failed} failed")
+            
     except Exception as e:
         logger.error(f"[Job {job_id}] Critical error: {str(e)}")
+        
+        # Update database status on critical error
+        try:
+            with app.app_context():
+                from models import DownloadJob as DBDownloadJob
+                db_job = DBDownloadJob.query.filter_by(job_id=job_id).first()
+                if db_job:
+                    db_job.status = "failed"
+                    db_job.completed_at = datetime.utcnow()
+                    db.session.commit()
+        except:
+            pass
+        
+        # Update memory job if exists
         if job_id in download_jobs:
             download_jobs[job_id].status = "failed"
 
