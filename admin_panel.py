@@ -67,21 +67,24 @@ def users():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
     
-    query = User.query
+    # Buscar todos os usuários diretamente
+    all_users = User.query.order_by(User.created_at.desc()).all()
     
+    # Log para debug
+    logger.info(f"Total de usuários encontrados: {len(all_users)}")
+    for u in all_users:
+        logger.info(f"Usuário: {u.name} ({u.email}) - ID: {u.id}")
+    
+    # Aplicar filtro de busca se necessário
     if search:
-        query = query.filter(
-            User.name.contains(search) | 
-            User.email.contains(search)
-        )
+        all_users = [u for u in all_users if search.lower() in u.name.lower() or search.lower() in u.email.lower()]
     
-    users_pagination = query.order_by(User.created_at.desc()).paginate(
-        page=page, per_page=20, error_out=False
-    )
+    # Criar paginação manual simples (mostrar todos por enquanto)
+    users_pagination = type('obj', (object,), {'items': all_users, 'total': len(all_users)})()
     
     # Enriquecer dados dos usuários com informações reais
     users_with_data = []
-    for user in users_pagination.items:
+    for user in all_users:
         # Calcular saldo real de créditos XML
         xml_balance = get_user_xml_balance(user.id)
         
