@@ -285,17 +285,16 @@ db.init_app(app)
 # Initialize Flask-Mail
 mail = Mail(app)
 
-# Initialize OAuth
+# Initialize OAuth with improved configuration
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
     client_id=app.config['GOOGLE_CLIENT_ID'],
     client_secret=app.config['GOOGLE_CLIENT_SECRET'],
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-    access_token_url='https://oauth2.googleapis.com/token',
-    userinfo_endpoint='https://openidconnect.googleapis.com/v1/userinfo',
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
     client_kwargs={
-        'scope': 'openid email profile'
+        'scope': 'openid email profile',
+        'prompt': 'select_account'
     }
 )
 
@@ -721,33 +720,62 @@ def google_callback():
     """Google OAuth callback"""
     try:
         token = google.authorize_access_token()
-        user_info = token.get('userinfo')
         
-        if user_info:
+        # Parse the ID token to get user info
+        user_info = None
+        if 'id_token' in token:
+            try:
+                import jwt
+                user_info = jwt.decode(token['id_token'], options={"verify_signature": False})
+            except Exception as e:
+                app.logger.error(f"Erro ao decodificar ID token: {e}")
+        
+        # Fallback: get user info from userinfo endpoint
+        if not user_info or not user_info.get('email'):
+            try:
+                resp = google.get('userinfo', token=token)
+                user_info = resp.json() if resp else {}
+            except Exception as e:
+                app.logger.error(f"Erro ao obter userinfo: {e}")
+                user_info = {}
+        
+        if user_info and user_info.get('email'):
             email = user_info.get('email')
-            name = user_info.get('name', email.split('@')[0])
+            name = user_info.get('name') or user_info.get('given_name', email.split('@')[0])
             
             # Check if user exists
             user = User.query.filter_by(email=email).first()
             
             if not user:
-                # Create new user
+                # Create new user with trial period
                 user = User(
-                    name=name, 
+                    username=name, 
                     email=email,
-                    password_hash=generate_password_hash(secrets.token_urlsafe(32))
+                    password_hash=generate_password_hash(secrets.token_urlsafe(32)),
+                    is_active=True,
+                    trial_end_date=datetime.utcnow() + timedelta(days=7)
                 )
                 db.session.add(user)
                 db.session.commit()
-                flash('Conta criada com sucesso via Google!', 'success')
+                
+                # Log activity
+                log_user_activity(user.id, 'account_created', 'Conta criada via Google OAuth')
+                flash('Conta criada com sucesso via Google! Trial de 7 dias ativado.', 'success')
+            else:
+                flash('Login realizado com sucesso via Google!', 'success')
             
+            # Log user in
             login_user(user)
+            
+            # Log activity
+            log_user_activity(user.id, 'login', 'Login realizado via Google OAuth')
+            
             return redirect(url_for('dashboard'))
         else:
-            flash('Erro ao obter informações do Google.', 'error')
+            flash('Erro ao obter informações do Google. Tente novamente.', 'error')
             
     except Exception as e:
-        logger.error(f"Erro no login Google: {e}")
+        app.logger.error(f"Erro no login Google: {e}")
         flash('Erro no login com Google. Tente novamente.', 'error')
     
     return redirect(url_for('login'))
