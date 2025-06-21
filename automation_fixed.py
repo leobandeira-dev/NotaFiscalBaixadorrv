@@ -151,8 +151,14 @@ class InvoiceDownloader:
             logger.info(f"[Job {job_id}] XML button href: {xml_url}")
             logger.info(f"[Job {job_id}] XML button onclick: {onclick}")
             
-            # Click the XML button
-            xml_button.click()
+            # ULTRA-SPEED: Use JavaScript click to avoid visual interference
+            try:
+                self.driver.execute_script("arguments[0].click();", xml_button)
+                logger.info(f"⚡ [Job {job_id}] JavaScript click executed")
+            except:
+                # Fallback to regular click
+                xml_button.click()
+                logger.info(f"⚡ [Job {job_id}] Regular click executed")
             
             logger.info(f"[Job {job_id}] XML button clicked, starting comprehensive capture...")
             
@@ -163,15 +169,15 @@ class InvoiceDownloader:
                 if result['success']:
                     return result
             
-            # Strategy 2: Environment-optimized polling for browser downloads
-            logger.info(f"[Job {job_id}] Strategy 2: Checking for browser downloads...")
+            # Strategy 2: ULTRA-SPEED polling for browser downloads
+            logger.info(f"⚡ [Job {job_id}] Ultra-fast polling initiated...")
             
-            # Environment-optimized polling intervals and attempts
+            # ULTRA-SPEED polling with minimal intervals
             for attempt in range(timeouts['max_attempts']):
-                time.sleep(timeouts['download_poll'])
+                time.sleep(timeouts['download_poll'])  # Now only 0.2s instead of 0.5s+
                 download_result = self.check_downloaded_file(invoice_key, job_id)
                 if download_result['success']:
-                    logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - file downloaded and found")
+                    logger.info(f"🚀 [Job {job_id}] ULTRA-FAST SUCCESS - file captured in {attempt * timeouts['download_poll']:.1f}s")
                     
                     # Process file with user_id for charging and database saving
                     if user_id and 'file_path' in download_result:
