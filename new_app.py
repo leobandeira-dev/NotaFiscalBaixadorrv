@@ -5718,15 +5718,39 @@ def readiness_check():
         return jsonify({
             'status': 'ready',
             'database': 'connected',
-            'timestamp': datetime.now().isoformat()
-        })
+            'timestamp': datetime.now().isoformat(),
+            'domain': request.host,
+            'version': '2.1-deploy-fix'
+        }), 200, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
     except Exception as e:
         return jsonify({
             'status': 'not_ready',
             'database': 'disconnected',
             'error': str(e),
-            'timestamp': datetime.now().isoformat()
-        }), 503
+            'timestamp': datetime.now().isoformat(),
+            'domain': request.host
+        }), 503, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
+
+# Temporary endpoint to force cache refresh on custom domain
+@app.route('/deployment-status')
+def deployment_status():
+    """Temporary endpoint to verify deployment status across domains"""
+    import time
+    return jsonify({
+        'deployment': 'active',
+        'health_endpoint': '/health',
+        'ready_endpoint': '/ready',
+        'custom_domain_compatible': True,
+        'timestamp': datetime.now().isoformat(),
+        'domain': request.host,
+        'version': '2.1-deploy-fix',
+        'cache_buster': int(time.time()),
+        'message': 'This endpoint confirms the latest version is deployed'
+    }), 200, {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+    }
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

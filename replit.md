@@ -204,6 +204,8 @@ This is a Python Flask web application that automates the bulk download of XML i
 - June 21, 2025: **GOOGLE OAUTH FULLY OPERATIONAL WITH CUSTOM DOMAIN** - Successfully resolved all OAuth issues, system now uses crossxml.com.br domain consistently for authentication, user login working correctly with 7-day trial activation, production-ready OAuth implementation complete
 - June 21, 2025: **DUAL DOMAIN OAUTH SUPPORT IMPLEMENTED** - System now automatically detects current request domain (crossxml.com.br or Replit subdomain) and uses matching redirect URI for OAuth, supports seamless authentication on both domains without manual configuration
 - June 21, 2025: **SPECIFIC REDIRECT URI CONFIGURATION** - Configured OAuth to use only two specific authorized redirect URIs: https://crossxml.com.br/auth/google/callback and https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback, system automatically selects correct URI based on request domain
+- June 21, 2025: **DEPLOYMENT HEALTH MONITORING IMPLEMENTED** - Added comprehensive health check endpoints (/health, /ready, /deployment-status) with cache-busting headers, version tracking (2.1-deploy-fix), and deployment monitoring capabilities to resolve Replit panel "failed" status
+- June 21, 2025: **CUSTOM DOMAIN CACHE PROPAGATION ISSUE IDENTIFIED** - Diagnosed that crossxml.com.br serves outdated application version while Replit domain has latest updates, causing health endpoints to return 404 on custom domain, implemented cache invalidation strategies and comprehensive deployment diagnostics
 
 ## User Preferences
 
