@@ -94,20 +94,20 @@ class InvoiceDownloader:
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
         """Download XML for a specific invoice key with ULTRA-SPEED optimizations"""
         try:
-            # Log environment detection for domain debugging
-            import os
-            from flask import request, has_request_context
+            # Apply domain-specific fixes
+            from domain_fix import DomainFix
+            domain_fixed = DomainFix.apply_domain_fixes()
             
-            current_domain = "Unknown"
-            if has_request_context():
-                current_domain = request.host
+            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Custom domain: {DomainFix.is_custom_domain()}")
+            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Domain fixes applied: {domain_fixed}")
             
-            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Current domain: {current_domain}")
-            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
-            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - REPLIT_DEV_DOMAIN: {os.environ.get('REPLIT_DEV_DOMAIN', 'Not set')}")
-            
-            # Get ULTRA-SPEED timeouts for maximum performance
-            timeouts = UltraSpeedOptimizer.get_ultra_timeouts()
+            # Get domain-specific timeouts
+            if DomainFix.is_custom_domain():
+                timeouts = DomainFix.get_domain_specific_timeouts()
+                logger.info(f"🔧 [Job {job_id}] Using custom domain timeouts: {timeouts}")
+            else:
+                timeouts = UltraSpeedOptimizer.get_ultra_timeouts()
+                logger.info(f"🚀 [Job {job_id}] Using ultra-speed timeouts: {timeouts}")
             
             logger.info(f"🚀 [Job {job_id}] ULTRA-SPEED XML download starting: {invoice_key}")
             
@@ -117,24 +117,25 @@ class InvoiceDownloader:
             self.driver.get(url)
             
             # ULTRA-SPEED waits with minimal timeouts
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast input search...")
+            logger.info(f"⚡ [Job {job_id}] Domain-aware input search...")
             input_element = WebDriverWait(self.driver, timeouts['element_wait']).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[placeholder="Digite a CHAVE DE ACESSO"]'))
             )
             logger.info(f"⚡ [Job {job_id}] Page ready - URL: {self.driver.current_url}")
             
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast key entry...")
+            logger.info(f"⚡ [Job {job_id}] Domain-aware key entry...")
             input_element.clear()
             input_element.send_keys(invoice_key)
             
-            # ULTRA-SPEED submit button
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast submit search...")
+            # Domain-aware submit button with extended timeout for custom domain
+            logger.info(f"⚡ [Job {job_id}] Domain-aware submit search...")
             try:
                 submit_button = WebDriverWait(self.driver, timeouts['element_wait']).until(
                     EC.element_to_be_clickable((By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]"))
                 )
-            except:
-                raise Exception("Submit button not found")
+            except Exception as e:
+                logger.error(f"[Job {job_id}] Submit button not found with timeout {timeouts['element_wait']}s: {e}")
+                raise Exception(f"Submit button not found (timeout: {timeouts['element_wait']}s)")
             
             logger.info(f"⚡ [Job {job_id}] Ultra-fast submit click...")
             submit_button.click()
@@ -146,13 +147,14 @@ class InvoiceDownloader:
             logger.info(f"⚡ [Job {job_id}] Submit complete - URL: {self.driver.current_url}")
             
             # ULTRA-SPEED XML button detection
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast XML button search...")
+            logger.info(f"⚡ [Job {job_id}] Domain-aware XML button search (timeout: {timeouts['xml_button']}s)...")
             try:
                 xml_button = WebDriverWait(self.driver, timeouts['xml_button']).until(
                     EC.element_to_be_clickable((By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"))
                 )
-            except:
-                raise Exception("XML download button not found")
+            except Exception as e:
+                logger.error(f"[Job {job_id}] XML button search failed after {timeouts['xml_button']}s: {e}")
+                raise Exception(f"XML download button not found (timeout: {timeouts['xml_button']}s)")
             
             logger.info(f"[Job {job_id}] Found XML button, clicking...")
             
