@@ -328,6 +328,161 @@
             color: white;
             text-decoration: none;
         }
+        
+        /* Import Methods Styling */
+        .import-method-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .import-method-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            border-color: #8A05BE;
+        }
+        
+        .import-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .import-method-card h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.75rem;
+        }
+        
+        .import-method-card p {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .import-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-tag {
+            background: #f3f4f6;
+            color: #374151;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        /* Feature Highlights */
+        .feature-highlight {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-highlight:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        
+        .feature-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+        
+        .feature-content h4 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.75rem;
+        }
+        
+        .feature-content p {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 1.5rem;
+        }
+        
+        .feature-list li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        /* Feature Items */
+        .feature-item {
+            text-align: center;
+            padding: 1rem;
+        }
+        
+        .feature-icon-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.75rem;
+            font-size: 1rem;
+            color: #8A05BE;
+        }
+        
+        .feature-item h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-item p {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin: 0;
+        }
 </style>
 
 <div class="dashboard-header">
@@ -364,6 +519,138 @@
         <div class="stat-title">Tempo economizado</div>
         <div class="stat-value">{{ "%.0f"|format(total_usage * 0.85) }}h</div>
         <div class="stat-change positive">↗ 85% de economia</div>
+    </div>
+</div>
+
+<!-- Import Methods Guide -->
+<div class="workflow-section">
+    <div class="workflow-header">
+        <h2 class="workflow-title">💡 Formas de Importar XMLs</h2>
+        <p class="workflow-subtitle">Conheça todas as maneiras de importar suas notas fiscais para o sistema</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="import-method-card">
+                <div class="import-icon">
+                    <i class="fas fa-key" style="color: #8A05BE;"></i>
+                </div>
+                <h3>Por Chave da NF</h3>
+                <p>Digite ou cole as chaves de 44 dígitos das notas fiscais. O sistema baixa automaticamente os XMLs oficiais.</p>
+                <div class="import-features">
+                    <span class="feature-tag">Automático</span>
+                    <span class="feature-tag">Múltiplas chaves</span>
+                    <span class="feature-tag">R$ 0,06-0,10/XML</span>
+                </div>
+                <a href="{{ url_for('xml_download') }}" class="btn btn-purple btn-sm">Acessar</a>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="import-method-card">
+                <div class="import-icon">
+                    <i class="fas fa-envelope" style="color: #28a745;"></i>
+                </div>
+                <h3>Via E-mail</h3>
+                <p>Configure seu e-mail para importação automática. XMLs em anexo são processados automaticamente.</p>
+                <div class="import-features">
+                    <span class="feature-tag">Gratuito</span>
+                    <span class="feature-tag">Automático</span>
+                    <span class="feature-tag">POP3/IMAP</span>
+                </div>
+                <a href="{{ url_for('email_import') }}" class="btn btn-success btn-sm">Configurar</a>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="import-method-card">
+                <div class="import-icon">
+                    <i class="fas fa-upload" style="color: #ffc107;"></i>
+                </div>
+                <h3>Upload Manual</h3>
+                <p>Faça upload direto dos arquivos XML do seu computador. Suporte a múltiplos arquivos.</p>
+                <div class="import-features">
+                    <span class="feature-tag">Gratuito</span>
+                    <span class="feature-tag">Instantâneo</span>
+                    <span class="feature-tag">Múltiplos arquivos</span>
+                </div>
+                <a href="{{ url_for('upload_xml') }}" class="btn btn-warning btn-sm">Upload</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Features -->
+<div class="workflow-section">
+    <div class="workflow-header">
+        <h2 class="workflow-title">🚀 Principais Funcionalidades</h2>
+        <p class="workflow-subtitle">Todas as ferramentas que você precisa para gerenciar XMLs e etiquetas</p>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="feature-highlight">
+                <div class="feature-icon">
+                    <i class="fas fa-tags" style="color: #8A05BE;"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>Etiquetas de Transporte</h4>
+                    <p>Gere etiquetas profissionais com QR Code, múltiplos layouts e configurações personalizáveis.</p>
+                    <ul class="feature-list">
+                        <li>Configuração de volumes e pesos</li>
+                        <li>Logo da empresa personalizada</li>
+                        <li>Múltiplos tamanhos de papel</li>
+                        <li>QR Code com ID único</li>
+                    </ul>
+                    <a href="{{ url_for('labels_module') }}" class="btn btn-purple btn-sm">Acessar Etiquetas</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="feature-highlight">
+                <div class="feature-icon">
+                    <i class="fas fa-code" style="color: #17a2b8;"></i>
+                </div>
+                <div class="feature-content">
+                    <h4>API Completa</h4>
+                    <p>Integre o sistema com suas aplicações usando nossa API REST completa.</p>
+                    <ul class="feature-list">
+                        <li>Autenticação via API Key</li>
+                        <li>Download em lote de XMLs</li>
+                        <li>Webhook para notificações</li>
+                        <li>Documentação completa</li>
+                    </ul>
+                    <a href="{{ url_for('api_docs') }}" class="btn btn-info btn-sm">Ver Documentação</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-lg-4">
+            <div class="feature-item">
+                <i class="fas fa-file-pdf feature-icon-small"></i>
+                <h5>DANFE Automática</h5>
+                <p>Geração gratuita de DANFE em PDF com layout oficial SEFAZ.</p>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="feature-item">
+                <i class="fas fa-history feature-icon-small"></i>
+                <h5>Histórico Completo</h5>
+                <p>Controle total de créditos, transações e atividades do sistema.</p>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="feature-item">
+                <i class="fas fa-shield-alt feature-icon-small"></i>
+                <h5>Segurança Total</h5>
+                <p>Dados isolados por usuário com criptografia e backup automático.</p>
+            </div>
+        </div>
     </div>
 </div>
 
