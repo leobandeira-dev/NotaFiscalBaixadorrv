@@ -805,7 +805,7 @@ def submit_keys():
             db.session.commit()
         
         # Start download process in background
-        thread = Thread(target=process_download_job, args=(job_id,))
+        thread = Thread(target=process_download_job, args=(job_id, current_user.id))
         thread.daemon = True
         thread.start()
         
