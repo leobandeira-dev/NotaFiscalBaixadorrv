@@ -5697,13 +5697,15 @@ except ImportError:
 @app.route('/health')
 def health_check():
     """Health check endpoint for deployment monitoring"""
+    import time
     return jsonify({
         'status': 'healthy',
         'service': 'CROSS XML Downloader',
         'timestamp': datetime.now().isoformat(),
-        'version': '2.0',
-        'domain': request.host
-    })
+        'version': '2.1-deploy-fix',
+        'domain': request.host,
+        'cache_buster': int(time.time())
+    }), 200, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
 
 # Readiness check for Replit deployments
 @app.route('/ready')
