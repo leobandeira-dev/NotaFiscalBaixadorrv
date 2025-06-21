@@ -1,10 +1,28 @@
 {% extends "base.html" %}
 
+{% block title %}Painel Administrativo - CROSS XML Downloader PRO{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <div class="row">
-        <!-- Sidebar já incluída via base.html -->
-        <div class="col-12" style="margin-left: 280px; padding: 2rem;">
+<div class="admin-wrapper">
+    <div class="admin-content" style="margin-left: 280px; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
+        
+        <!-- Header administrativo -->
+        <div class="admin-header bg-white rounded-lg shadow-sm mb-4" style="padding: 2rem; border-left: 4px solid #8A05BE;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2" style="color: #1f2937; font-weight: 700;">
+                        <i class="fas fa-shield-alt text-primary me-3"></i>
+                        Painel Administrativo
+                    </h1>
+                    <p class="text-muted mb-0" style="font-size: 1.1rem;">Central de controle e monitoramento do sistema CROSS XML Downloader PRO</p>
+                </div>
+                <div class="admin-status">
+                    <span class="badge bg-success px-3 py-2" style="font-size: 0.9rem;">
+                        <i class="fas fa-circle me-2"></i>Sistema Online
+                    </span>
+                </div>
+            </div>
+        </div>
             
             <!-- Cabeçalho -->
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -17,100 +35,175 @@
                 </div>
             </div>
 
-            <!-- Estatísticas Gerais -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card bg-primary text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h3>{{ total_users }}</h3>
-                                    <p>Usuários Cadastrados</p>
+        <!-- Estatísticas Gerais - Design Moderno -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-card bg-white rounded-lg shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="stat-info text-white">
+                                <h2 class="mb-1 fw-bold" style="font-size: 2.5rem;">{{ total_users or 0 }}</h2>
+                                <p class="mb-0 opacity-75" style="font-size: 1rem;">Usuários Cadastrados</p>
+                                <div class="mt-2">
+                                    <small class="badge bg-white text-primary px-2 py-1">
+                                        <i class="fas fa-arrow-up me-1"></i>+{{ monthly_new_users or 0 }} este mês
+                                    </small>
                                 </div>
-                                <i class="fas fa-users fa-2x"></i>
+                            </div>
+                            <div class="stat-icon">
+                                <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle p-3">
+                                    <i class="fas fa-users text-white" style="font-size: 2rem;"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-3">
-                    <div class="card bg-success text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h3>{{ total_xmls }}</h3>
-                                    <p>XMLs Processados</p>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-card bg-white rounded-lg shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="stat-info text-white">
+                                <h2 class="mb-1 fw-bold" style="font-size: 2.5rem;">{{ total_xmls or 0 }}</h2>
+                                <p class="mb-0 opacity-75" style="font-size: 1rem;">XMLs Processados</p>
+                                <div class="mt-2">
+                                    <small class="badge bg-white text-success px-2 py-1">
+                                        <i class="fas fa-download me-1"></i>{{ monthly_xmls or 0 }} este mês
+                                    </small>
                                 </div>
-                                <i class="fas fa-file-alt fa-2x"></i>
                             </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-warning text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h3>R$ {{ "%.2f"|format(total_revenue) }}</h3>
-                                    <p>Receita Total</p>
+                            <div class="stat-icon">
+                                <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle p-3">
+                                    <i class="fas fa-file-alt text-white" style="font-size: 2rem;"></i>
                                 </div>
-                                <i class="fas fa-dollar-sign fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card bg-info text-white">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h3>{{ active_users }}</h3>
-                                    <p>Usuários Ativos</p>
-                                </div>
-                                <i class="fas fa-user-check fa-2x"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Acesso Rápido -->
-            <div class="row mb-4">
-                <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5><i class="fas fa-bolt"></i> Acesso Rápido</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary w-100 mb-2">
-                                        <i class="fas fa-users"></i><br>
-                                        Gerenciar Usuários
-                                    </a>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-card bg-white rounded-lg shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #ff6b6b 0%, #ffa500 100%);">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="stat-info text-white">
+                                <h2 class="mb-1 fw-bold" style="font-size: 2.5rem;">R$ {{ "%.0f"|format(total_revenue or 0) }}</h2>
+                                <p class="mb-0 opacity-75" style="font-size: 1rem;">Receita Total</p>
+                                <div class="mt-2">
+                                    <small class="badge bg-white text-warning px-2 py-1">
+                                        <i class="fas fa-chart-line me-1"></i>R$ {{ "%.0f"|format(monthly_revenue or 0) }} mensal
+                                    </small>
                                 </div>
-                                <div class="col-md-3">
-                                    <a href="/admin/charges" class="btn btn-outline-success w-100 mb-2">
-                                        <i class="fas fa-receipt"></i><br>
-                                        Cobranças
-                                    </a>
-                                </div>
-                                <div class="col-md-3">
-                                    <a href="/admin/packages" class="btn btn-outline-warning w-100 mb-2">
-                                        <i class="fas fa-box"></i><br>
-                                        Pacotes Stripe
-                                    </a>
-                                </div>
-                                <div class="col-md-3">
-                                    <a href="/admin/settings" class="btn btn-outline-info w-100 mb-2">
-                                        <i class="fas fa-cog"></i><br>
-                                        Configurações
-                                    </a>
+                            </div>
+                            <div class="stat-icon">
+                                <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle p-3">
+                                    <i class="fas fa-dollar-sign text-white" style="font-size: 2rem;"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-card bg-white rounded-lg shadow-sm border-0 h-100" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                    <div class="card-body p-4">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="stat-info text-white">
+                                <h2 class="mb-1 fw-bold" style="font-size: 2.5rem;">{{ active_users or 0 }}</h2>
+                                <p class="mb-0 opacity-75" style="font-size: 1rem;">Usuários Ativos</p>
+                                <div class="mt-2">
+                                    <small class="badge bg-white text-info px-2 py-1">
+                                        <i class="fas fa-tags me-1"></i>{{ monthly_labels or 0 }} etiquetas
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="stat-icon">
+                                <div class="icon-wrapper bg-white bg-opacity-20 rounded-circle p-3">
+                                    <i class="fas fa-user-check text-white" style="font-size: 2rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acesso Rápido - Design Aprimorado -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="quick-access-card bg-white rounded-lg shadow-sm border-0" style="padding: 2rem;">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="icon-wrapper bg-primary bg-opacity-10 rounded-circle p-3 me-3">
+                            <i class="fas fa-bolt text-primary" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-1 fw-bold" style="color: #1f2937;">Acesso Rápido</h3>
+                            <p class="text-muted mb-0">Funções administrativas essenciais</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row g-4">
+                        <div class="col-lg-3 col-md-6">
+                            <a href="{{ url_for('admin_users') }}" class="quick-action-card text-decoration-none">
+                                <div class="action-card bg-light bg-opacity-50 rounded-lg p-4 h-100 border-0 hover-shadow">
+                                    <div class="text-center">
+                                        <div class="icon-wrapper bg-primary bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-users text-primary" style="font-size: 1.8rem;"></i>
+                                        </div>
+                                        <h5 class="mb-2 fw-bold" style="color: #1f2937;">Gerenciar Usuários</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Visualizar, editar e administrar contas de usuários</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6">
+                            <a href="/admin/charges" class="quick-action-card text-decoration-none">
+                                <div class="action-card bg-light bg-opacity-50 rounded-lg p-4 h-100 border-0 hover-shadow">
+                                    <div class="text-center">
+                                        <div class="icon-wrapper bg-success bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-receipt text-success" style="font-size: 1.8rem;"></i>
+                                        </div>
+                                        <h5 class="mb-2 fw-bold" style="color: #1f2937;">Cobranças</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Monitorar pagamentos e transações financeiras</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6">
+                            <a href="/admin/packages" class="quick-action-card text-decoration-none">
+                                <div class="action-card bg-light bg-opacity-50 rounded-lg p-4 h-100 border-0 hover-shadow">
+                                    <div class="text-center">
+                                        <div class="icon-wrapper bg-warning bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-box text-warning" style="font-size: 1.8rem;"></i>
+                                        </div>
+                                        <h5 class="mb-2 fw-bold" style="color: #1f2937;">Pacotes Stripe</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Administrar produtos e assinaturas</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-lg-3 col-md-6">
+                            <a href="/admin/settings" class="quick-action-card text-decoration-none">
+                                <div class="action-card bg-light bg-opacity-50 rounded-lg p-4 h-100 border-0 hover-shadow">
+                                    <div class="text-center">
+                                        <div class="icon-wrapper bg-info bg-opacity-10 rounded-circle p-3 mb-3 mx-auto" style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="fas fa-cog text-info" style="font-size: 1.8rem;"></i>
+                                        </div>
+                                        <h5 class="mb-2 fw-bold" style="color: #1f2937;">Configurações</h5>
+                                        <p class="text-muted mb-0" style="font-size: 0.9rem;">Ajustar parâmetros do sistema</p>
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
             <!-- Atividade Recente -->
             <div class="row mb-4">
@@ -232,6 +325,99 @@
             </div>
 
         </div>
+        
+        <!-- CSS personalizado para o módulo administrativo -->
+        <style>
+        .admin-content {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        .hover-shadow {
+            transition: all 0.3s ease;
+        }
+        
+        .hover-shadow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1) !important;
+        }
+        
+        .quick-action-card:hover {
+            text-decoration: none !important;
+        }
+        
+        .action-card:hover {
+            background: rgba(138, 5, 190, 0.05) !important;
+            border: 1px solid rgba(138, 5, 190, 0.2) !important;
+        }
+        
+        .stat-card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        
+        .icon-wrapper {
+            transition: all 0.3s ease;
+        }
+        
+        .action-card:hover .icon-wrapper {
+            transform: scale(1.1);
+        }
+        
+        .rounded-lg {
+            border-radius: 12px !important;
+        }
+        
+        .admin-header {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+        }
+        
+        .quick-access-card {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+        }
+        
+        .recent-activity-card {
+            border-radius: 12px !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+        }
+        
+        .bg-opacity-10 {
+            background-color: rgba(var(--bs-primary-rgb), 0.1) !important;
+        }
+        
+        .bg-opacity-20 {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        
+        .bg-opacity-50 {
+            background-color: rgba(248, 249, 250, 0.5) !important;
+        }
+        
+        .opacity-75 {
+            opacity: 0.75 !important;
+        }
+        
+        @media (max-width: 768px) {
+            .admin-content {
+                margin-left: 0 !important;
+                padding: 1rem !important;
+            }
+            
+            .stat-card h2 {
+                font-size: 2rem !important;
+            }
+            
+            .action-card {
+                margin-bottom: 1rem;
+            }
+        }
+        </style>
     </div>
 </div>
 {% endblock %}
