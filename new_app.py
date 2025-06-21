@@ -5693,7 +5693,38 @@ try:
 except ImportError:
     logger.warning("Simple admin not available")
 
+# Health check endpoint for deployment monitoring
+@app.route('/health')
+def health_check():
+    """Health check endpoint for deployment monitoring"""
+    return jsonify({
+        'status': 'healthy',
+        'service': 'CROSS XML Downloader',
+        'timestamp': datetime.now().isoformat(),
+        'version': '2.0',
+        'domain': request.host
+    })
 
+# Readiness check for Replit deployments
+@app.route('/ready')
+def readiness_check():
+    """Readiness check endpoint"""
+    try:
+        # Test database connection
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
+        return jsonify({
+            'status': 'ready',
+            'database': 'connected',
+            'timestamp': datetime.now().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'status': 'not_ready',
+            'database': 'disconnected',
+            'error': str(e),
+            'timestamp': datetime.now().isoformat()
+        }), 503
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
