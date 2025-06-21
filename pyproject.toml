@@ -32,4 +32,5 @@ dependencies = [
     "trafilatura>=2.0.0",
     "pypdf2>=3.0.1",
     "cryptography>=45.0.4",
+    "psutil>=7.0.0",
 ]

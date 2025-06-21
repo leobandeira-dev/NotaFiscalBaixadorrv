@@ -11,6 +11,7 @@ from selenium.common.exceptions import TimeoutException, WebDriverException
 from typing import Dict, Any
 import re
 from optimization_deploy import DeployOptimizer
+from performance_analysis import PerformanceAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +23,8 @@ class InvoiceDownloader:
     def setup_driver(self):
         """Setup Chrome WebDriver with environment-optimized options"""
         try:
-            # Log environment information for debugging
-            DeployOptimizer.log_environment_info()
+            # Comprehensive performance analysis for debugging
+            PerformanceAnalyzer.log_performance_analysis()
             
             # Setup downloads directory
             downloads_dir = os.path.abspath('downloads')
