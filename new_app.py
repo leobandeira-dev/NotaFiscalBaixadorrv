@@ -4731,5 +4731,12 @@ try:
 except ImportError:
     logger.warning("Admin panel not available")
 
+# Import simple admin route
+try:
+    import simple_admin
+    logger.info("Simple admin route loaded")
+except ImportError:
+    logger.warning("Simple admin not available")
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

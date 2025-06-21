@@ -20,8 +20,18 @@ def admin_required(f):
     """Decorator para verificar se usuário é admin"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        # TODO: Implementar verificação real de admin
-        # Por enquanto, simular admin logado
+        from flask_login import current_user
+        # Verificar se usuário está logado e é admin
+        if not current_user.is_authenticated:
+            flash('Acesso negado. Faça login como administrador.', 'error')
+            return redirect(url_for('login'))
+        
+        # Verificar se é admin (email específico ou campo admin)
+        if not (current_user.email == 'admin@xmldownloader.com' or 
+                getattr(current_user, 'is_admin', False)):
+            flash('Acesso negado. Apenas administradores podem acessar esta área.', 'error')
+            return redirect(url_for('dashboard'))
+            
         return f(*args, **kwargs)
     return decorated_function
 
