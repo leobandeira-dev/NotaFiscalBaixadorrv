@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% block title %}Comprar Créditos XML - CROSS XML Downloader PRO{% endblock %}
+
+{% block content %}
+<style>
+    .purchase-header {
+        background: linear-gradient(135deg, #8A05BE 0%, #6b0495 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 12px;
+    }
+    
+    .balance-display {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .product-card {
+        border: 2px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 2rem;
+        height: 100%;
+        transition: all 0.3s ease;
+        background: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+        border-color: #8A05BE;
+        box-shadow: 0 20px 40px rgba(138, 5, 190, 0.1);
+    }
+    
+    .product-card.recommended {
+        border-color: #8A05BE;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f4ff 100%);
+    }
+    
+    .product-card.recommended::before {
+        content: 'RECOMENDADO';
+        position: absolute;
+        top: 1rem;
+        right: -2rem;
+        background: #8A05BE;
+        color: white;
+        padding: 0.25rem 3rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transform: rotate(45deg);
+        letter-spacing: 0.5px;
+    }
+    
+    .product-name {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 0.5rem;
+    }
+    
+    .product-description {
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+        font-size: 0.95rem;
+    }
+    
+    .product-price {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #8A05BE;
+        margin-bottom: 0.5rem;
+    }
+    
+    .product-currency {
+        font-size: 1rem;
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-purchase {
+        background: linear-gradient(135deg, #8A05BE 0%, #6b0495 100%);
+        border: none;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+    }
+    
+    .btn-purchase:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(138, 5, 190, 0.3);
+        color: white;
+    }
+    
+    .features-list {
+        list-style: none;
+        padding: 0;
+        margin: 1.5rem 0;
+    }
+    
+    .features-list li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        font-size: 0.95rem;
+        color: #374151;
+    }
+    
+    .features-list li i {
+        color: #10b981;
+        margin-right: 0.75rem;
+        font-size: 1rem;
+    }
+    
+    .info-section {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-top: 3rem;
+    }
+    
+    .info-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+    
+    .info-text {
+        color: #6b7280;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+    }
+    
+    .security-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #f0fdf4;
+        color: #166534;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        margin-top: 1rem;
+    }
+    
+    .security-badge i {
+        margin-right: 0.5rem;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="purchase-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-3" style="font-size: 2.5rem; font-weight: 700;">
+                        Comprar Créditos XML
+                    </h1>
+                    <p class="mb-0" style="font-size: 1.2rem; opacity: 0.9;">
+                        Escolha o pacote ideal para suas necessidades de download de XMLs
+                    </p>
+                </div>
+                <div class="col-md-4">
+                    <div class="balance-display">
+                        <div style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 0.5rem;">
+                            Saldo Atual
+                        </div>
+                        <div style="font-size: 2rem; font-weight: 700;">
+                            {{ xml_balance }} créditos
+                        </div>
+                        <div style="font-size: 0.85rem; opacity: 0.7;">
+                            Disponível para download
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Produtos -->
+    <div class="container">
+        <div class="row">
+            {% for product in xml_products %}
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="product-card {% if loop.index == 2 %}recommended{% endif %}">
+                    <div class="product-name">{{ product.name }}</div>
+                    <div class="product-description">{{ product.description }}</div>
+                    
+                    <div class="text-center">
+                        <div class="product-price">
+                            R$ {{ "%.2f"|format(product.amount) }}
+                        </div>
+                        <div class="product-currency">{{ product.currency }}</div>
+                    </div>
+                    
+                    <ul class="features-list">
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            {% if product.credits %}
+                                {{ product.credits }} downloads XML
+                            {% elif 'starter' in product.id.lower() %}
+                                100 downloads XML
+                            {% elif 'professional' in product.id.lower() %}
+                                500 downloads XML
+                            {% elif 'enterprise' in product.id.lower() %}
+                                1500 downloads XML
+                            {% else %}
+                                Downloads XML inclusos
+                            {% endif %}
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            DANFE ilimitado grátis
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            Válido por 12 meses
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            Suporte técnico incluído
+                        </li>
+                    </ul>
+                    
+                    <form method="POST" action="{{ url_for('create_xml_checkout_session') }}">
+                        {% if product.price_id %}
+                            <input type="hidden" name="price_id" value="{{ product.price_id }}">
+                        {% endif %}
+                        <input type="hidden" name="product_type" value="xml_credits">
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <input type="hidden" name="amount" value="{{ product.amount }}">
+                        {% if product.credits %}
+                            <input type="hidden" name="credits" value="{{ product.credits }}">
+                        {% elif 'starter' in product.id.lower() %}
+                            <input type="hidden" name="credits" value="100">
+                        {% elif 'professional' in product.id.lower() %}
+                            <input type="hidden" name="credits" value="500">
+                        {% elif 'enterprise' in product.id.lower() %}
+                            <input type="hidden" name="credits" value="1500">
+                        {% endif %}
+                        
+                        <button type="submit" class="btn-purchase">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Comprar Agora
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Informações Adicionais -->
+        <div class="info-section">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Como funciona?
+                    </div>
+                    <div class="info-text">
+                        Cada crédito XML permite o download de 1 arquivo XML completo. Os créditos são debitados automaticamente quando você faz download via chave da nota fiscal.
+                    </div>
+                    <div class="info-text">
+                        <strong>Métodos gratuitos:</strong> Upload manual e importação via e-mail não consomem créditos.
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-title">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Pagamento Seguro
+                    </div>
+                    <div class="info-text">
+                        Processamento seguro via Stripe com criptografia SSL. Seus dados de pagamento estão protegidos e nunca são armazenados em nossos servidores.
+                    </div>
+                    <div class="security-badge">
+                        <i class="fas fa-lock"></i>
+                        Pagamento 100% seguro
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Links Rápidos -->
+        <div class="text-center mt-4">
+            <a href="{{ url_for('historico_creditos_simple') }}" class="btn btn-outline-secondary me-3">
+                <i class="fas fa-history me-2"></i>
+                Ver Histórico
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left me-2"></i>
+                Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Adicionar efeitos de hover suaves
+    const productCards = document.querySelectorAll('.product-card');
+    
+    productCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+    
+    // Animar botões de compra
+    const purchaseButtons = document.querySelectorAll('.btn-purchase');
+    
+    purchaseButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            // Adicionar feedback visual
+            this.style.transform = 'scale(0.98)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 150);
+        });
+    });
+});
+</script>
+{% endblock %}

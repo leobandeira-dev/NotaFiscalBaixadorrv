@@ -3626,28 +3626,237 @@ def extrato_creditos():
 @app.route('/comprar-creditos-xml')
 @login_required
 def comprar_creditos_xml():
-    """Página para compra de créditos XML com preços dinâmicos"""
+    """Página para compra de créditos XML com integração Stripe"""
     try:
-        from stripe_pricing_system import get_user_xml_credits, XMLPricingTiers, get_pricing_recommendations
+        import stripe
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
         
-        # Obter créditos atuais do usuário
-        current_credits = get_user_xml_credits(current_user.id)
+        # Obter saldo atual do usuário
+        from credit_system_fixed import get_user_xml_balance
+        xml_balance = get_user_xml_balance(current_user.id)
         
-        # Obter tiers de preços
-        pricing_tiers = XMLPricingTiers.get_all_tiers()
+        # Buscar produtos XML do Stripe
+        try:
+            stripe_products = stripe.Product.list(active=True, limit=20)
+            xml_products = []
+            
+            for product in stripe_products.data:
+                if 'xml' in product.name.lower() or 'credito' in product.name.lower():
+                    # Buscar preços para este produto
+                    prices = stripe.Price.list(product=product.id, active=True)
+                    if prices.data:
+                        price = prices.data[0]  # Pegar o primeiro preço ativo
+                        xml_products.append({
+                            'id': product.id,
+                            'name': product.name,
+                            'description': product.description,
+                            'price_id': price.id,
+                            'amount': price.unit_amount / 100,  # Converter de centavos para reais
+                            'currency': price.currency.upper(),
+                            'metadata': product.metadata
+                        })
+            
+            # Se não encontrou produtos, usar produtos padrão
+            if not xml_products:
+                xml_products = [
+                    {
+                        'id': 'starter',
+                        'name': 'Pacote Starter',
+                        'description': '100 créditos XML',
+                        'amount': 10.00,
+                        'currency': 'BRL',
+                        'credits': 100
+                    },
+                    {
+                        'id': 'professional', 
+                        'name': 'Pacote Professional',
+                        'description': '500 créditos XML',
+                        'amount': 40.00,
+                        'currency': 'BRL',
+                        'credits': 500
+                    },
+                    {
+                        'id': 'enterprise',
+                        'name': 'Pacote Enterprise', 
+                        'description': '1500 créditos XML',
+                        'amount': 120.00,
+                        'currency': 'BRL',
+                        'credits': 1500
+                    }
+                ]
+                        
+        except stripe.error.StripeError as e:
+            logger.error(f"Erro ao buscar produtos Stripe: {e}")
+            # Usar produtos padrão em caso de erro
+            xml_products = [
+                {
+                    'id': 'starter',
+                    'name': 'Pacote Starter',
+                    'description': '100 créditos XML',
+                    'amount': 10.00,
+                    'currency': 'BRL',
+                    'credits': 100
+                },
+                {
+                    'id': 'professional', 
+                    'name': 'Pacote Professional',
+                    'description': '500 créditos XML',
+                    'amount': 40.00,
+                    'currency': 'BRL',
+                    'credits': 500
+                },
+                {
+                    'id': 'enterprise',
+                    'name': 'Pacote Enterprise', 
+                    'description': '1500 créditos XML',
+                    'amount': 120.00,
+                    'currency': 'BRL',
+                    'credits': 1500
+                }
+            ]
         
-        # Obter recomendações personalizadas
-        recommendations = get_pricing_recommendations(current_user.id)
-        
-        return render_template('comprar_creditos.html',
-                             current_credits=current_credits,
-                             pricing_tiers=pricing_tiers,
-                             recommendations=recommendations)
+        return render_template('comprar_creditos_xml.html',
+                             xml_balance=xml_balance,
+                             xml_products=xml_products)
         
     except Exception as e:
         logger.error(f"Erro na página de compra de créditos: {e}")
         flash('Erro ao carregar página de compra de créditos', 'error')
         return redirect(url_for('dashboard'))
+
+@app.route('/create-xml-checkout-session', methods=['POST'])
+@login_required
+@rate_limit_check(max_requests=10, window_minutes=5)
+def create_xml_checkout_session():
+    """Criar sessão de checkout Stripe para compra de créditos XML"""
+    try:
+        import stripe
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+        
+        # Obter dados do formulário
+        product_type = request.form.get('product_type', 'xml_credits')
+        product_id = request.form.get('product_id')
+        amount = float(request.form.get('amount', 0))
+        credits = int(request.form.get('credits', 0))
+        price_id = request.form.get('price_id')
+        
+        if amount <= 0 or credits <= 0:
+            flash('Dados inválidos para compra', 'error')
+            return redirect(url_for('comprar_creditos_xml'))
+        
+        # Criar sessão de checkout
+        if price_id:
+            # Usar price_id existente do Stripe
+            line_items = [{
+                'price': price_id,
+                'quantity': 1,
+            }]
+        else:
+            # Criar price dinâmico
+            line_items = [{
+                'price_data': {
+                    'currency': 'brl',
+                    'product_data': {
+                        'name': f'Pacote {credits} Créditos XML',
+                        'description': f'{credits} downloads XML para CROSS XML Downloader PRO',
+                    },
+                    'unit_amount': int(amount * 100),  # Converter para centavos
+                },
+                'quantity': 1,
+            }]
+        
+        session = stripe.checkout.Session.create(
+            customer_email=current_user.email,
+            payment_method_types=['card'],
+            mode='payment',
+            line_items=line_items,
+            success_url=url_for('purchase_success', _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=url_for('comprar_creditos_xml', _external=True),
+            metadata={
+                'user_id': str(current_user.id),
+                'product_type': product_type,
+                'product_id': product_id,
+                'credits': str(credits),
+                'amount': str(amount)
+            }
+        )
+        
+        logger.info(f"Sessão de checkout criada para usuário {current_user.id}: {session.id}")
+        return redirect(session.url)
+        
+    except stripe.error.StripeError as e:
+        logger.error(f"Erro do Stripe: {e}")
+        flash('Erro ao processar pagamento. Tente novamente.', 'error')
+        return redirect(url_for('comprar_creditos_xml'))
+    except Exception as e:
+        logger.error(f"Erro ao criar checkout: {e}")
+        flash('Erro interno. Tente novamente.', 'error')
+        return redirect(url_for('comprar_creditos_xml'))
+
+@app.route('/purchase-success')
+@login_required
+def purchase_success():
+    """Página de sucesso após compra"""
+    session_id = request.args.get('session_id')
+    if not session_id:
+        flash('Sessão inválida', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        import stripe
+        stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+        
+        # Recuperar sessão do Stripe
+        session = stripe.checkout.Session.retrieve(session_id)
+        
+        if session.payment_status == 'paid':
+            credits = int(session.metadata.get('credits', 0))
+            amount = float(session.metadata.get('amount', 0))
+            
+            # Adicionar créditos ao usuário
+            from credit_system_fixed import get_user_xml_balance
+            
+            # Criar registro de crédito manualmente
+            from models import CreditBalance
+            try:
+                credit_record = CreditBalance(
+                    user_id=current_user.id,
+                    amount=credits,
+                    transaction_type='purchase',
+                    description=f'Compra via Stripe - {credits} créditos XML',
+                    transaction_id=session_id
+                )
+                db.session.add(credit_record)
+                db.session.commit()
+                success = True
+            except Exception as e:
+                logger.error(f"Erro ao adicionar créditos: {e}")
+                success = False
+            
+            if success:
+                flash(f'Compra realizada com sucesso! {credits} créditos XML adicionados à sua conta.', 'success')
+                
+                # Log da atividade
+                log_user_activity(
+                    user_id=current_user.id,
+                    activity_type='credits_purchased',
+                    description=f'Compra de {credits} créditos XML - R$ {amount:.2f}'
+                )
+                
+                return render_template('purchase_success.html', 
+                                     credits=credits, 
+                                     amount=amount,
+                                     session_id=session_id)
+            else:
+                flash('Erro ao processar créditos. Entre em contato com o suporte.', 'error')
+        else:
+            flash('Pagamento não confirmado', 'warning')
+            
+    except Exception as e:
+        logger.error(f"Erro ao processar sucesso da compra: {e}")
+        flash('Erro ao confirmar compra. Entre em contato com o suporte.', 'error')
+    
+    return redirect(url_for('dashboard'))
 
 @app.route('/create-labels-subscription', methods=['POST'])
 @login_required

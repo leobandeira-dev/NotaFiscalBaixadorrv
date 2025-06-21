@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% block title %}Compra Realizada com Sucesso - CROSS XML Downloader PRO{% endblock %}
+
+{% block content %}
+<style>
+    .success-container {
+        max-width: 600px;
+        margin: 4rem auto;
+        padding: 2rem;
+    }
+    
+    .success-card {
+        background: white;
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        border: 2px solid #e5e7eb;
+    }
+    
+    .success-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #10b981, #059669);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 2rem;
+        animation: pulse 2s infinite;
+    }
+    
+    .success-icon i {
+        font-size: 2.5rem;
+        color: white;
+    }
+    
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .success-title {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 1rem;
+    }
+    
+    .success-message {
+        font-size: 1.1rem;
+        color: #6b7280;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+    
+    .purchase-details {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 2rem 0;
+        border-left: 4px solid #10b981;
+    }
+    
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .detail-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .detail-label {
+        font-weight: 600;
+        color: #374151;
+    }
+    
+    .detail-value {
+        font-weight: 700;
+        color: #111827;
+    }
+    
+    .credits-highlight {
+        font-size: 1.5rem;
+        color: #8A05BE;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 2rem;
+    }
+    
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #8A05BE 0%, #6b0495 100%);
+        border: none;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(138, 5, 190, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+    
+    .btn-secondary-custom {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #6b7280;
+        padding: 0.75rem 2rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary-custom:hover {
+        border-color: #8A05BE;
+        color: #8A05BE;
+        text-decoration: none;
+    }
+    
+    .next-steps {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-top: 2rem;
+        text-align: left;
+    }
+    
+    .next-steps h4 {
+        color: #0369a1;
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    
+    .next-steps ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .next-steps li {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.75rem;
+        color: #374151;
+    }
+    
+    .next-steps li i {
+        color: #0369a1;
+        margin-right: 0.75rem;
+        width: 16px;
+    }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="success-container">
+        <div class="success-card">
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            
+            <h1 class="success-title">Compra Realizada com Sucesso!</h1>
+            
+            <p class="success-message">
+                Seu pagamento foi processado e os créditos XML foram adicionados à sua conta. 
+                Agora você pode fazer download de XMLs usando as chaves das notas fiscais.
+            </p>
+            
+            <div class="purchase-details">
+                <div class="detail-item">
+                    <span class="detail-label">Créditos Adicionados:</span>
+                    <span class="detail-value credits-highlight">{{ credits }} créditos XML</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Valor Pago:</span>
+                    <span class="detail-value">R$ {{ "%.2f"|format(amount) }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">ID da Transação:</span>
+                    <span class="detail-value" style="font-size: 0.9rem; font-family: monospace;">{{ session_id[:20] }}...</span>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{{ url_for('xml_download') }}" class="btn-primary-custom">
+                    <i class="fas fa-download me-2"></i>
+                    Baixar XMLs Agora
+                </a>
+                <a href="{{ url_for('historico_creditos_simple') }}" class="btn-secondary-custom">
+                    <i class="fas fa-history me-2"></i>
+                    Ver Histórico
+                </a>
+            </div>
+            
+            <div class="next-steps">
+                <h4>
+                    <i class="fas fa-lightbulb me-2"></i>
+                    Próximos Passos
+                </h4>
+                <ul>
+                    <li>
+                        <i class="fas fa-key"></i>
+                        Acesse XMLs usando chaves de 44 dígitos das notas fiscais
+                    </li>
+                    <li>
+                        <i class="fas fa-file-pdf"></i>
+                        Gere DANFEs em PDF gratuitamente para todos os XMLs
+                    </li>
+                    <li>
+                        <i class="fas fa-tags"></i>
+                        Considere o módulo de etiquetas para identificação de volumes
+                    </li>
+                    <li>
+                        <i class="fas fa-envelope"></i>
+                        Configure importação via e-mail para XMLs gratuitos
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="text-center mt-3">
+                <a href="{{ url_for('dashboard') }}" class="text-muted" style="font-size: 0.9rem;">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Voltar ao Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animar entrada da página
+    const successCard = document.querySelector('.success-card');
+    successCard.style.opacity = '0';
+    successCard.style.transform = 'translateY(30px)';
+    
+    setTimeout(() => {
+        successCard.style.transition = 'all 0.6s ease';
+        successCard.style.opacity = '1';
+        successCard.style.transform = 'translateY(0)';
+    }, 100);
+    
+    // Animar ícone de sucesso
+    const successIcon = document.querySelector('.success-icon');
+    setTimeout(() => {
+        successIcon.style.animation = 'pulse 2s infinite';
+    }, 600);
+});
+</script>
+{% endblock %}
