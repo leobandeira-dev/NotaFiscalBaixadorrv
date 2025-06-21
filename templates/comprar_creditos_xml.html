@@ -155,6 +155,63 @@
     .security-badge i {
         margin-right: 0.5rem;
     }
+    
+    /* Estilos específicos para módulo de etiquetas */
+    .labels-module-card {
+        border: 2px solid #FFD700;
+        background: linear-gradient(135deg, #fffbf0 0%, #fff8e1 100%);
+        position: relative;
+        box-shadow: 0 8px 25px rgba(255, 215, 0, 0.15);
+    }
+    
+    .labels-module-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(255, 215, 0, 0.25);
+        border-color: #FFC700;
+    }
+    
+    .labels-btn {
+        background: linear-gradient(135deg, #FFD700 0%, #FFC700 100%);
+        color: #000;
+        font-weight: bold;
+        border: 1px solid #FFA000;
+    }
+    
+    .labels-btn:hover {
+        background: linear-gradient(135deg, #FFC700 0%, #FFB300 100%);
+        color: #000;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(255, 215, 0, 0.4);
+    }
+    
+    .section-divider {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding: 1.5rem 0;
+        border-bottom: 2px solid #e5e7eb;
+    }
+    
+    .section-title {
+        color: #8A05BE;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .section-subtitle {
+        color: #6b7280;
+        font-size: 1.1rem;
+        margin: 0;
+    }
+    
+    .subscription-info {
+        margin-top: 1rem;
+        text-align: center;
+        padding: 0.75rem;
+        background: rgba(255, 215, 0, 0.1);
+        border-radius: 8px;
+        border: 1px solid rgba(255, 215, 0, 0.3);
+    }
 </style>
 
 <div class="container-fluid py-4">
@@ -257,6 +314,92 @@
                 </div>
             </div>
             {% endfor %}
+        </div>
+        
+        <!-- Módulo de Etiquetas -->
+        <div class="row mt-5">
+            <div class="col-12">
+                <div class="section-divider">
+                    <h3 class="section-title">
+                        <i class="fas fa-tags me-2"></i>
+                        Módulo Premium
+                    </h3>
+                    <p class="section-subtitle">Funcionalidades avançadas para identificação de volumes</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-4 col-md-6">
+                <div class="product-card labels-module-card">
+                    <div class="product-badge">
+                        <span class="badge text-dark" style="background-color: #FFD700; color: #000; font-weight: bold; border: 1px solid #FFC700;">PREMIUM</span>
+                    </div>
+                    
+                    <div class="product-header">
+                        <h3 class="product-title">
+                            <i class="fas fa-tags me-2"></i>
+                            Etiquetas de Transporte
+                        </h3>
+                        <p class="product-subtitle">Módulo completo para geração de etiquetas profissionais</p>
+                    </div>
+                    
+                    <div class="product-pricing">
+                        <div class="product-price">
+                            R$ 49,90
+                        </div>
+                        <div class="product-currency">BRL/mês</div>
+                    </div>
+                    
+                    <ul class="features-list">
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            Etiquetas ilimitadas por mês
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            Logo personalizada da empresa
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            Múltiplos layouts profissionais
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            QR Code com ID único
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            Configuração de volumes e pesos
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            Suporte a múltiplos tamanhos
+                        </li>
+                        <li>
+                            <i class="fas fa-check-circle"></i>
+                            Renovação automática mensal
+                        </li>
+                    </ul>
+                    
+                    <form method="POST" action="{{ url_for('create_labels_subscription') }}">
+                        <input type="hidden" name="product_type" value="labels_subscription">
+                        <input type="hidden" name="amount" value="49.90">
+                        
+                        <button type="submit" class="btn-purchase labels-btn">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            Assinar Agora
+                        </button>
+                    </form>
+                    
+                    <div class="subscription-info">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Assinatura mensal com renovação automática
+                        </small>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <!-- Informações Adicionais -->
