@@ -1149,18 +1149,19 @@ def submit_keys():
         app.logger.info(f"[DOMAIN DEBUG] Job ID: {job_id}, User ID: {current_user.id}, Keys: {len(valid_keys)}")
         app.logger.info(f"[DOMAIN DEBUG] Environment vars - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
         
-        # Start download process in background with enhanced logging
-        logger.info(f"[THREAD DEBUG] Creating thread for job {job_id}, user {current_user.id}")
+        # Process job immediately - elimina problemas de threading
+        logger.info(f"[IMMEDIATE PROCESSOR] Starting immediate processing for job {job_id}")
         
-        try:
-            thread = Thread(target=process_download_job, args=(job_id, current_user.id))
-            thread.daemon = True
-            thread.start()
-            logger.info(f"[THREAD DEBUG] Thread started successfully for job {job_id}")
-        except Exception as thread_error:
-            logger.error(f"[THREAD DEBUG] Failed to start thread for job {job_id}: {thread_error}")
-            flash('Erro ao iniciar processamento. Tente novamente.', 'error')
-            return redirect(url_for('xml_download'))
+        from job_processor_fix import process_job_immediately
+        
+        # Processar imediatamente no contexto da requisição
+        success = process_job_immediately(job_id, current_user.id)
+        
+        if success:
+            logger.info(f"[IMMEDIATE PROCESSOR] Job {job_id} processed successfully")
+        else:
+            logger.error(f"[IMMEDIATE PROCESSOR] Job {job_id} failed to process")
+            flash('Erro durante o processamento. Verifique o status do job.', 'warning')
         
         flash(f'Processo de download iniciado para {len(valid_keys)} chave(s).', 'success')
         return redirect(url_for('download_status', job_id=job_id))
