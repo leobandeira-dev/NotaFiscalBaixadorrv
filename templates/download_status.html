@@ -587,17 +587,42 @@
         }
 
         function updateProgress(data) {
+            console.log('Updating progress with data:', data);
+            
             // Update progress bar
             const progressFill = document.getElementById('progress-fill');
             const progressText = document.getElementById('progress-text');
             const statusBadge = document.getElementById('status-badge');
+            const successCount = document.querySelector('.text-success');
+            const errorCount = document.querySelector('.text-danger');
             
-            if (progressFill) {
+            if (progressFill && data.progress_percentage !== undefined) {
                 progressFill.style.width = data.progress_percentage + '%';
+                progressFill.setAttribute('aria-valuenow', data.progress_percentage);
             }
             
-            if (progressText) {
+            if (progressText && data.processed !== undefined && data.total_keys !== undefined) {
                 progressText.textContent = `${data.processed}/${data.total_keys} arquivos (${data.progress_percentage.toFixed(1)}%)`;
+            }
+            
+            // Update success/error counts
+            if (successCount && data.successful !== undefined) {
+                successCount.textContent = `${data.successful} sucessos`;
+            }
+            
+            if (errorCount && data.failed !== undefined) {
+                errorCount.textContent = `${data.failed} falhas`;
+            }
+            
+            // Update status badge
+            if (statusBadge && data.status) {
+                statusBadge.textContent = data.status === 'running' ? 'Processando' : 
+                                         data.status === 'completed' ? 'Concluído' : 
+                                         data.status === 'failed' ? 'Falhou' : data.status;
+                                         
+                statusBadge.className = 'badge ' + (data.status === 'running' ? 'bg-warning' : 
+                                                   data.status === 'completed' ? 'bg-success' : 
+                                                   data.status === 'failed' ? 'bg-danger' : 'bg-secondary');
             }
             
             // Update statistics
