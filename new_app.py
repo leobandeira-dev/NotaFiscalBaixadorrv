@@ -842,11 +842,16 @@ def admin_dashboard():
         flash('Acesso negado.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get statistics
+    # Get statistics com dados reais
     total_users = User.query.count()
     active_users = User.query.filter_by(active=True).count()
     total_usage = UsageRecord.query.count()
-    total_revenue = db.session.query(db.func.sum(UsageRecord.cost)).scalar() or 0
+    
+    # Receita real do Stripe - usar StripeTransaction ao invés de UsageRecord
+    from models import StripeTransaction
+    total_revenue = db.session.query(db.func.sum(StripeTransaction.amount_brl)).filter(
+        StripeTransaction.status == 'completed'
+    ).scalar() or 0
     
     # Recent users
     recent_users = User.query.order_by(User.created_at.desc()).limit(10).all()
@@ -859,18 +864,26 @@ def admin_dashboard():
     current_month_start = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     
     monthly_new_users = User.query.filter(User.created_at >= current_month_start).count()
-    monthly_xmls = XMLFile.query.filter(XMLFile.imported_at >= current_month_start).count()
-    monthly_revenue = db.session.query(db.func.sum(Charge.amount)).filter(
-        Charge.created_at >= current_month_start,
-        Charge.status == 'RECEIVED'
+    monthly_xmls = XMLFile.query.filter(XMLFile.created_at >= current_month_start).count()
+    monthly_revenue = db.session.query(db.func.sum(StripeTransaction.amount_brl)).filter(
+        StripeTransaction.created_at >= current_month_start,
+        StripeTransaction.status == 'completed'
     ).scalar() or 0
     monthly_labels = XMLFile.query.filter(
-        XMLFile.imported_at >= current_month_start,
+        XMLFile.created_at >= current_month_start,
         XMLFile.label_generated == True
     ).count()
     
-    # Total de XMLs processados
+    # Total de XMLs processados (dados reais)
     total_xmls = XMLFile.query.count()
+    
+    # Breakdown de XMLs por tipo para demonstrar dados corretos
+    xml_breakdown = db.session.query(
+        XMLFile.import_type,
+        db.func.count(XMLFile.id).label('count')
+    ).group_by(XMLFile.import_type).all()
+    
+    xml_stats = {row.import_type: row.count for row in xml_breakdown}
     
     # Atividades recentes do sistema
     recent_activities = UserActivity.query.order_by(UserActivity.created_at.desc()).limit(10).all()
@@ -887,7 +900,8 @@ def admin_dashboard():
                          monthly_new_users=monthly_new_users,
                          monthly_xmls=monthly_xmls,
                          monthly_revenue=monthly_revenue,
-                         monthly_labels=monthly_labels)
+                         monthly_labels=monthly_labels,
+                         xml_stats=xml_stats)
 
 @app.route('/admin/users')
 def admin_users():
