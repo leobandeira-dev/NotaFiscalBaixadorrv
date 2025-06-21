@@ -251,6 +251,10 @@ app.config['SERVER_NAME'] = None  # Allow any domain
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # Add middleware to handle custom domain
+def get_base_url():
+    """Get the correct base URL for the application"""
+    return 'https://crossxml.com.br'
+
 @app.before_request
 def handle_custom_domain():
     """Handle requests from custom domain"""
@@ -709,8 +713,8 @@ def google_login():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(hours=2)
     
-    # Use custom domain for OAuth
-    custom_domain = '9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev'
+    # Use registered custom domain for OAuth
+    custom_domain = 'crossxml.com.br'
     redirect_uri = f"https://{custom_domain}/auth/google/callback"
     
     # Store redirect URI in session for callback validation
@@ -752,14 +756,11 @@ def google_callback():
                     flash('Código de autorização não encontrado.', 'error')
                     return redirect(url_for('login'))
                 
-                # Manual token exchange with custom domain support
+                # Manual token exchange with registered domain
                 token_url = 'https://oauth2.googleapis.com/token'
                 
-                # Determine correct redirect URI based on domain
-                custom_domain = '9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev'
-                replit_domain = os.environ.get('REPLIT_DEV_DOMAIN', 'localhost')
-                
-                # Use custom domain if available, otherwise fallback to Replit domain
+                # Use registered custom domain
+                custom_domain = 'crossxml.com.br'
                 redirect_uri = f"https://{custom_domain}/auth/google/callback"
                 
                 token_data = {
