@@ -705,8 +705,9 @@ def reset_password(token):
 @app.route('/auth/google')
 def google_login():
     """Google OAuth login"""
-    # Ensure session persistence for CSRF state
+    # Configure session for maximum persistence
     session.permanent = True
+    app.permanent_session_lifetime = timedelta(hours=2)
     
     # Detect environment and use appropriate URL
     if 'REPLIT_DEV_DOMAIN' in os.environ:
@@ -716,39 +717,19 @@ def google_login():
         # Development environment - use localhost with HTTPS
         redirect_uri = url_for('google_callback', _external=True, _scheme='https')
     
-    # Clear any existing OAuth state and generate new one
-    import secrets
-    oauth_state = secrets.token_urlsafe(32)
-    session['oauth_state'] = oauth_state
+    # Store redirect URI in session for callback validation
+    session['oauth_redirect_uri'] = redirect_uri
     session.modified = True
     
-    return google.authorize_redirect(redirect_uri, state=oauth_state)
+    # Use simplified OAuth without custom state (let Authlib handle it)
+    return google.authorize_redirect(redirect_uri)
 
 @app.route('/auth/google/callback')
 def google_callback():
     """Google OAuth callback"""
     try:
-        # Validate CSRF state first
-        received_state = request.args.get('state')
-        session_state = session.get('oauth_state')
-        
-        if not received_state or not session_state or received_state != session_state:
-            app.logger.warning(f"CSRF state mismatch: received={received_state}, session={session_state}")
-            # On first failure, clear state and allow retry automatically
-            session.pop('oauth_state', None)
-            session.modified = True
-            
-            # If we have a valid authorization code, proceed anyway (graceful degradation)
-            if request.args.get('code'):
-                app.logger.info("Valid authorization code present, proceeding despite state mismatch")
-            else:
-                flash('Erro de validação. Tente fazer login novamente.', 'warning')
-                return redirect(url_for('login'))
-        
-        # Clear the used state only if validation passed
-        if received_state and session_state and received_state == session_state:
-            session.pop('oauth_state', None)
-        
+        # Directly process the OAuth token without state validation
+        # Authlib handles the security internally
         token = google.authorize_access_token()
         
         # Parse the ID token to get user info
