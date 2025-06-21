@@ -715,9 +715,9 @@ def google_login():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(hours=2)
     
-    # Use custom domain now that it's configured in Google Cloud Console
-    custom_domain = 'crossxml.com.br'
-    redirect_uri = f"https://{custom_domain}/auth/google/callback"
+    # Use Replit domain for OAuth (more reliable for Google Cloud Console)
+    domain = os.environ.get('REPLIT_DEV_DOMAIN', 'crossxml.com.br')
+    redirect_uri = f"https://{domain}/auth/google/callback"
     
     # Store redirect URI in session for callback validation
     session['oauth_redirect_uri'] = redirect_uri
