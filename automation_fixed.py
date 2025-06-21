@@ -88,12 +88,29 @@ class InvoiceDownloader:
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
         """Download XML for a specific invoice key with ULTRA-SPEED optimizations"""
         try:
-            # Apply production-specific fixes
-            from production_fix import ProductionFix
+            # Verificar se está em ambiente de produção
+            from deploy_robot_fix import DeployRobotFix
+            is_deploy = DeployRobotFix.is_deploy_environment()
+            
+            # Se estiver em ambiente de produção, usar sistema ultra-robusto
+            if is_deploy:
+                logger.info(f"🚀 [Job {job_id}] Usando sistema ultra-robusto para produção...")
+                try:
+                    from production_fix import ProductionRobotFix
+                    result = ProductionRobotFix.ultra_robust_download(invoice_key, job_id, user_id)
+                    logger.info(f"[Job {job_id}] Resultado do sistema ultra-robusto: {result}")
+                    return result
+                except Exception as e:
+                    logger.error(f"[Job {job_id}] Erro no sistema ultra-robusto: {e}")
+                    # Continuar com sistema original como fallback
+            
+            # Continue with original system for fallback
+            logger.info(f"[Job {job_id}] Continuando com sistema original...")
             
             # Detect production environment with comprehensive checks
-            is_production = ProductionFix.is_production_environment()
-            ProductionFix.apply_production_fixes()
+            is_production = is_deploy
+            if is_production:
+                logger.info(f"[Job {job_id}] Aplicando correções de produção...")
             
             # Use environment-appropriate timeouts
             from deploy_robot_fix import DeployRobotFix
