@@ -4150,28 +4150,7 @@ def check_labels_subscription_status(user_id):
             'auto_renew': False
         }
 
-@app.route('/historico-creditos')
-@login_required
-def historico_creditos():
-    """Histórico de uso de créditos"""
-    from credit_system_fixed import get_credit_history, get_user_stats
-    
-    # Buscar histórico de créditos
-    credit_history = get_credit_history(current_user.id, limit=30)
-    
-    # Buscar estatísticas do usuário
-    user_stats = get_user_stats(current_user.id)
-    
-    # Buscar transações Stripe
-    stripe_transactions = StripeTransaction.query.filter_by(
-        user_id=current_user.id
-    ).order_by(StripeTransaction.created_at.desc()).limit(20).all()
-    
-    return render_template('historico_creditos_simple.html',
-                         credit_history=credit_history,
-                         user_stats=user_stats,
-                         stripe_transactions=stripe_transactions,
-                         current_user=current_user)
+# Função removida - substituída por extrato_creditos
 
 @app.route('/api/user/balance')
 @login_required
