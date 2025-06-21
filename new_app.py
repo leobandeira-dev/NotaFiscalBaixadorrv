@@ -1122,9 +1122,9 @@ def submit_keys():
         app.logger.info(f"[DOMAIN DEBUG] Environment vars - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
         
         # Start download process in background
-        thread = Thread(target=process_download_job, args=(job_id, current_user.id))
-        thread.daemon = True
-        thread.start()
+        # Use ultra-simple threading system to prevent hang-ups
+        from threading_fix import start_ultra_simple_download
+        start_ultra_simple_download(job_id, current_user.id)
         
         flash(f'Processo de download iniciado para {len(valid_keys)} chave(s).', 'success')
         return redirect(url_for('download_status', job_id=job_id))
