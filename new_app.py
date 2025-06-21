@@ -3849,19 +3849,33 @@ def create_labels_subscription():
                 type='service'
             )
         
-        # Criar preço para assinatura mensal
+        # Buscar preços existentes para o produto oficial
         try:
-            # Criar novo preço para assinatura
-            price = stripe.Price.create(
-                product=product.id,
-                unit_amount=4990,  # R$ 49,90 em centavos
-                currency='brl',
-                recurring={'interval': 'month'},
-                nickname='Etiquetas Mensais'
+            prices = stripe.Price.list(
+                product='prod_SSVViDPzXYZHhO',
+                active=True,
+                type='recurring'
             )
-            price_id = price.id
-        except stripe.error.InvalidRequestError:
-            # Se erro, usar preço existente válido
+            
+            if prices.data:
+                # Usar o primeiro preço ativo encontrado
+                price_id = prices.data[0].id
+                logger.info(f"Usando preço existente para produto oficial: {price_id}")
+            else:
+                # Criar novo preço se não existir
+                price = stripe.Price.create(
+                    product='prod_SSVViDPzXYZHhO',
+                    unit_amount=4990,  # R$ 49,90 em centavos
+                    currency='brl',
+                    recurring={'interval': 'month'},
+                    nickname='Etiquetas de Transporte - Mensal'
+                )
+                price_id = price.id
+                logger.info(f"Novo preço criado para produto oficial: {price_id}")
+                
+        except stripe.error.StripeError as e:
+            logger.error(f"Erro ao buscar/criar preço: {e}")
+            # Usar preço padrão como fallback
             price_id = 'price_1RcCXgKpjVGFiyHCHKZY8Uth'
         
         # Criar sessão de checkout Stripe para assinatura
