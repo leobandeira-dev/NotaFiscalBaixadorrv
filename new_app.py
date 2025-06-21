@@ -408,29 +408,31 @@ def process_download_job(job_id, user_id):
         logger.error(f"[Job {job_id}] Critical error: {str(e)}")
         if job_id in download_jobs:
             download_jobs[job_id].status = "failed"
-        self.end_time = None
 
-    @property
-    def progress_percentage(self):
-        """Calculate progress percentage"""
-        if self.total_keys == 0:
-            return 0
-        return round((self.processed / self.total_keys) * 100, 2)
+# Initialize Flask app with proper configuration
+app = Flask(__name__)
+app.secret_key = os.environ.get("SESSION_SECRET", "dev_secret_key_12345")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-    def to_dict(self):
-        return {
-            'job_id': self.job_id,
-            'total_keys': self.total_keys,
-            'processed': self.processed,
-            'successful': self.successful,
-            'failed': self.failed,
-            'status': self.status,
-            'files': self.files,
-            'errors': self.errors,
-            'start_time': self.start_time.isoformat() if self.start_time else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None,
-            'progress_percentage': self.progress_percentage
-        }
+# Database configuration  
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+    'pool_pre_ping': True,
+    "pool_recycle": 300,
+}
+
+# Initialize Flask extensions
+db.init_app(app)
+
+# Flask-Login setup
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 # Create tables and initialize data
 with app.app_context():
