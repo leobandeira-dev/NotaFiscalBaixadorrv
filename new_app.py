@@ -319,9 +319,10 @@ download_jobs = {}
 jobs_lock = Lock()
 
 class DownloadJob:
-    def __init__(self, job_id, invoice_keys):
+    def __init__(self, job_id, invoice_keys, user_id):
         self.job_id = job_id
         self.invoice_keys = invoice_keys
+        self.user_id = user_id
         self.total_keys = len(invoice_keys)
         self.processed = 0
         self.successful = 0
