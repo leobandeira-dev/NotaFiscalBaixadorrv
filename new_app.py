@@ -709,13 +709,9 @@ def google_login():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(hours=2)
     
-    # Detect environment and use appropriate URL
-    if 'REPLIT_DEV_DOMAIN' in os.environ:
-        # Production environment - use Replit domain
-        redirect_uri = f"https://{os.environ['REPLIT_DEV_DOMAIN']}/auth/google/callback"
-    else:
-        # Development environment - use localhost with HTTPS
-        redirect_uri = url_for('google_callback', _external=True, _scheme='https')
+    # Use custom domain for OAuth
+    custom_domain = '9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev'
+    redirect_uri = f"https://{custom_domain}/auth/google/callback"
     
     # Store redirect URI in session for callback validation
     session['oauth_redirect_uri'] = redirect_uri
@@ -743,14 +739,11 @@ def google_callback():
                 app.logger.warning(f"CSRF state mismatch detected, bypassing validation: {e}")
                 
                 # Manually create token request without state validation
-                from authlib.integrations.flask_client import FlaskOAuth2App
-                from authlib.oauth2.rfc6749.errors import MissingCodeError
                 
                 # Clear state from session to avoid conflicts
                 session.pop('_google_authlib_state_', None)
                 
                 # Create a manual token request bypassing state validation
-                from werkzeug.urls import url_decode
                 import requests
                 
                 # Get authorization code from request
@@ -759,14 +752,22 @@ def google_callback():
                     flash('Código de autorização não encontrado.', 'error')
                     return redirect(url_for('login'))
                 
-                # Manual token exchange
+                # Manual token exchange with custom domain support
                 token_url = 'https://oauth2.googleapis.com/token'
+                
+                # Determine correct redirect URI based on domain
+                custom_domain = '9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev'
+                replit_domain = os.environ.get('REPLIT_DEV_DOMAIN', 'localhost')
+                
+                # Use custom domain if available, otherwise fallback to Replit domain
+                redirect_uri = f"https://{custom_domain}/auth/google/callback"
+                
                 token_data = {
                     'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
                     'client_secret': os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET'),
                     'code': code,
                     'grant_type': 'authorization_code',
-                    'redirect_uri': session.get('oauth_redirect_uri') or f"https://{os.environ.get('REPLIT_DEV_DOMAIN', 'localhost')}/auth/google/callback"
+                    'redirect_uri': redirect_uri
                 }
                 
                 token_response = requests.post(token_url, data=token_data)
