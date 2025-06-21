@@ -460,24 +460,35 @@ def process_download_job(job_id, user_id):
                     job.processed += 1
                     db_job.processed += 1
                     
-                    if result.get('success') == True:
+                    # CRITICAL FIX: Check both success formats
+                    is_success = (result.get('success') == True or 
+                                 result.get('status') == 'success' or
+                                 result.get('success') is True)
+                    
+                    logger.info(f"[Job {job_id}] Result for {invoice_key}: {result}")
+                    logger.info(f"[Job {job_id}] Success check: {is_success}")
+                    
+                    if is_success:
                         job.successful += 1
                         db_job.successful += 1
                         
-                        if result.get('file_path'):
-                            job.downloaded_files.append(result['file_path'])
-                            job.files.append(os.path.basename(result['file_path']))
-                            db_job.add_downloaded_file(result['file_path'])
+                        file_path = result.get('file_path') or result.get('filename')
+                        if file_path:
+                            job.downloaded_files.append(file_path)
+                            job.files.append(os.path.basename(file_path))
+                            db_job.add_downloaded_file(file_path)
+                            logger.info(f"[Job {job_id}] SUCCESS: {invoice_key} -> {file_path}")
                     else:
                         job.failed += 1
                         db_job.failed += 1
                         
-                        error_msg = result.get('error', result.get('message', 'Unknown error'))
+                        error_msg = result.get('error', result.get('message', f'Download failed: {result}'))
                         job.errors.append({
                             'invoice_key': invoice_key,
                             'error': error_msg
                         })
                         db_job.add_error(invoice_key, error_msg)
+                        logger.warning(f"[Job {job_id}] FAILED: {invoice_key} -> {error_msg}")
                     
                     # Save progress to database every download
                     db.session.commit()
@@ -2282,121 +2293,56 @@ def job_status(job_id):
     return get_job_status_data(job_id, current_user.id)
 
 def get_job_status_data(job_id, user_id):
-    """Get job status data with complete database synchronization"""
-    # First try to get from memory
-    with jobs_lock:
-        job = download_jobs.get(job_id)
-    
-    # If not in memory, try to get from database
-    if not job:
+    """Get job status data directly from database - SIMPLIFIED APPROACH"""
+    try:
         from models import DownloadJob as DBDownloadJob
+        import json
+        
+        # Get job directly from database - no memory complications
         db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
         
-        if db_job:
-            # Recreate memory job from database
-            import json
-            
-            class MemoryJob:
-                def __init__(self, db_job):
-                    self.job_id = db_job.job_id
-                    self.invoice_keys = json.loads(db_job.invoice_keys or '[]')
-                    self.user_id = db_job.user_id
-                    self.total_keys = db_job.total_keys
-                    self.processed = db_job.processed
-                    self.successful = db_job.successful
-                    self.failed = db_job.failed
-                    self.status = db_job.status
-                    self.download_type = db_job.download_type or 'xml'
-                    self.files = json.loads(db_job.downloaded_files or '[]')
-                    self.downloaded_files = json.loads(db_job.downloaded_files or '[]')
-                    self.errors = json.loads(db_job.errors or '[]')
-                    self.start_time = db_job.created_at
-                    self.end_time = db_job.completed_at
-                    
-                def to_dict(self):
-                    return {
-                        'job_id': self.job_id,
-                        'total_keys': self.total_keys,
-                        'processed': self.processed,
-                        'successful': self.successful,
-                        'failed': self.failed,
-                        'status': self.status,
-                        'downloaded_files': [os.path.basename(f) for f in self.downloaded_files],
-                        'files': [os.path.basename(f) for f in self.downloaded_files],
-                        'errors': self.errors,
-                        'start_time': self.start_time.isoformat() if self.start_time else None,
-                        'end_time': self.end_time.isoformat() if self.end_time else None,
-                        'progress_percentage': round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
-                    }
-                    
-                @property 
-                def progress_percentage(self):
-                    return round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
-            
-            job = MemoryJob(db_job)
-            
-            # Add back to memory for future access
-            with jobs_lock:
-                download_jobs[job_id] = job
-    
-    # CRITICAL DATABASE SYNC - Force complete synchronization with database
-    from models import DownloadJob as DBDownloadJob
-    db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
-    
-    if db_job:
-        logger.info(f"[DB SYNC] Found database job {job_id}: {db_job.processed}/{db_job.total_keys} processed, status: {db_job.status}")
+        if not db_job:
+            logger.warning(f"[DB DIRECT] Job {job_id} not found for user {user_id}")
+            return jsonify({'error': 'Job not found'}), 404
         
-        # Return data DIRECTLY from database - bypass memory inconsistencies
-        import json
-        db_files = json.loads(db_job.downloaded_files or '[]')
-        db_errors = json.loads(db_job.errors or '[]')
+        logger.info(f"[DB DIRECT] Job {job_id}: {db_job.processed}/{db_job.total_keys} processed, {db_job.successful} successful, status: {db_job.status}")
         
+        # Parse database fields safely
+        try:
+            db_files = json.loads(db_job.downloaded_files or '[]')
+        except:
+            db_files = []
+            
+        try:
+            db_errors = json.loads(db_job.errors or '[]')
+        except:
+            db_errors = []
+        
+        # Calculate progress
         progress_percentage = round((db_job.processed / db_job.total_keys) * 100, 2) if db_job.total_keys > 0 else 0
         
+        # Build response with safe field access
         response_data = {
             'job_id': db_job.job_id,
-            'total_keys': db_job.total_keys,
-            'processed': db_job.processed,
-            'successful': db_job.successful,
-            'failed': db_job.failed,
-            'status': db_job.status,
-            'downloaded_files': [os.path.basename(f.get('filename', '')) if isinstance(f, dict) else os.path.basename(f) for f in db_files],
-            'files': [os.path.basename(f.get('filename', '')) if isinstance(f, dict) else os.path.basename(f) for f in db_files],
+            'total_keys': db_job.total_keys or 0,
+            'processed': db_job.processed or 0,
+            'successful': db_job.successful or 0,
+            'failed': db_job.failed or 0,
+            'status': db_job.status or 'unknown',
+            'downloaded_files': [f.get('filename', '') if isinstance(f, dict) else str(f) for f in db_files],
+            'files': [f.get('filename', '') if isinstance(f, dict) else str(f) for f in db_files],
             'errors': db_errors,
             'start_time': db_job.created_at.isoformat() if db_job.created_at else None,
             'end_time': db_job.completed_at.isoformat() if db_job.completed_at else None,
             'progress_percentage': progress_percentage
         }
         
-        logger.info(f"[DB SYNC] Returning DIRECT database data: {db_job.processed}/{db_job.total_keys} processed, {db_job.successful} successful")
+        logger.info(f"[DB DIRECT] Returning clean response: {response_data['processed']}/{response_data['total_keys']} ({response_data['progress_percentage']}%)")
         return jsonify(response_data)
-    
-    # Fallback to memory job if no database record exists
-    if job:
-        if job.user_id != user_id:
-            return jsonify({'error': 'Job not found'}), 404
         
-        # Check if job has to_dict method, if not create response manually
-        if hasattr(job, 'to_dict'):
-            return jsonify(job.to_dict())
-        else:
-            # Manual response for MemoryJob without to_dict method
-            return jsonify({
-                'job_id': job.job_id,
-                'total_keys': job.total_keys,
-                'processed': job.processed,
-                'successful': job.successful,
-                'failed': job.failed,
-                'status': job.status,
-                'downloaded_files': [os.path.basename(f) for f in getattr(job, 'downloaded_files', [])],
-                'files': [os.path.basename(f) for f in getattr(job, 'downloaded_files', [])],
-                'errors': getattr(job, 'errors', []),
-                'start_time': job.start_time.isoformat() if getattr(job, 'start_time', None) else None,
-                'end_time': job.end_time.isoformat() if getattr(job, 'end_time', None) else None,
-                'progress_percentage': round((job.processed / job.total_keys) * 100, 2) if job.total_keys > 0 else 0
-            })
-    
-    return jsonify({'error': 'Job not found'}), 404
+    except Exception as e:
+        logger.error(f"[DB DIRECT] Error getting job status for {job_id}: {e}")
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
 
 @app.route('/api/job_status/<job_id>')
 def api_job_status(job_id):
