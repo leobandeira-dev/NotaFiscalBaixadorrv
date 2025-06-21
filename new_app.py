@@ -367,6 +367,15 @@ def process_download_job(job_id, user_id):
     """Process download job in background with database persistence"""
     try:
         with app.app_context():
+            # Domain debugging logs
+            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Starting download job processing")
+            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - User ID: {user_id}")
+            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Working directory: {os.getcwd()}")
+            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Environment variables:")
+            logger.info(f"    - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
+            logger.info(f"    - REPLIT_DEV_DOMAIN: {os.environ.get('REPLIT_DEV_DOMAIN', 'Not set')}")
+            logger.info(f"    - REPL_ID: {os.environ.get('REPL_ID', 'Not set')}")
+            
             from automation_fixed import InvoiceDownloader
             from models import DownloadJob as DBDownloadJob
             import json
@@ -707,6 +716,45 @@ def reset_password(token):
             return redirect(url_for('login'))
     
     return render_template('reset_password.html', token=token)
+
+@app.route('/domain-debug')
+def domain_debug():
+    """Debug route to analyze domain differences"""
+    import os
+    current_host = request.host
+    
+    # Check environment variables
+    replit_deployment = os.environ.get('REPLIT_DEPLOYMENT', 'Not set')
+    replit_dev_domain = os.environ.get('REPLIT_DEV_DOMAIN', 'Not set')
+    replit_domains = os.environ.get('REPLIT_DOMAINS', 'Not set')
+    
+    # Check if custom domain
+    is_custom_domain = 'crossxml.com.br' in current_host
+    is_replit_domain = 'replit.dev' in current_host
+    
+    # Check automation environment detection
+    from automation_fixed import InvoiceDownloader
+    downloader = InvoiceDownloader()
+    
+    return f"""
+    <h2>Domain Debug Information</h2>
+    <p><strong>Current Host:</strong> {current_host}</p>
+    <p><strong>Is Custom Domain:</strong> {is_custom_domain}</p>
+    <p><strong>Is Replit Domain:</strong> {is_replit_domain}</p>
+    
+    <h3>Environment Variables:</h3>
+    <p><strong>REPLIT_DEPLOYMENT:</strong> {replit_deployment}</p>
+    <p><strong>REPLIT_DEV_DOMAIN:</strong> {replit_dev_domain}</p>
+    <p><strong>REPLIT_DOMAINS:</strong> {replit_domains}</p>
+    
+    <h3>Request Headers:</h3>
+    <ul>
+    {''.join([f'<li><strong>{k}:</strong> {v}</li>' for k, v in request.headers.items()])}
+    </ul>
+    
+    <h3>Automation Environment Detection:</h3>
+    <p>Check the logs for automation environment settings when accessing from different domains.</p>
+    """
 
 @app.route('/oauth-debug')
 def oauth_debug():
@@ -1067,6 +1115,11 @@ def submit_keys():
             )
             db.session.add(usage)
             db.session.commit()
+        
+        # Log domain information for debugging
+        app.logger.info(f"[DOMAIN DEBUG] Processing download from host: {request.host}")
+        app.logger.info(f"[DOMAIN DEBUG] Job ID: {job_id}, User ID: {current_user.id}, Keys: {len(valid_keys)}")
+        app.logger.info(f"[DOMAIN DEBUG] Environment vars - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
         
         # Start download process in background
         thread = Thread(target=process_download_job, args=(job_id, current_user.id))

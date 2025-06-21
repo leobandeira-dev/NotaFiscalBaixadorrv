@@ -94,6 +94,18 @@ class InvoiceDownloader:
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
         """Download XML for a specific invoice key with ULTRA-SPEED optimizations"""
         try:
+            # Log environment detection for domain debugging
+            import os
+            from flask import request, has_request_context
+            
+            current_domain = "Unknown"
+            if has_request_context():
+                current_domain = request.host
+            
+            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Current domain: {current_domain}")
+            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
+            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - REPLIT_DEV_DOMAIN: {os.environ.get('REPLIT_DEV_DOMAIN', 'Not set')}")
+            
             # Get ULTRA-SPEED timeouts for maximum performance
             timeouts = UltraSpeedOptimizer.get_ultra_timeouts()
             
