@@ -275,9 +275,9 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'noreply@xmldownloader.com')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'noreply@crossxml.com.br')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
-app.config['MAIL_DEFAULT_SENDER'] = 'XMLDownloader <noreply@xmldownloader.com>'
+app.config['MAIL_DEFAULT_SENDER'] = 'CROSS XML <noreply@crossxml.com.br>'
 
 # OAuth configuration
 app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '')
@@ -646,12 +646,13 @@ def forgot_password():
             # Send email (simplified - in production, use proper email template)
             try:
                 msg = Message(
-                    'Redefinição de Senha - XMLDownloader',
+                    'Redefinição de Senha - CROSS XML',
+                    sender='CROSS XML <noreply@crossxml.com.br>',
                     recipients=[email],
                     body=f'''
 Olá {user.name},
 
-Você solicitou a redefinição de sua senha. Clique no link abaixo para definir uma nova senha:
+Você solicitou a redefinição de sua senha no CROSS XML Downloader PRO. Clique no link abaixo para definir uma nova senha:
 
 {reset_url}
 
@@ -659,8 +660,9 @@ Este link expira em 1 hora.
 
 Se você não solicitou esta redefinição, ignore este email.
 
-Atenciosamente,
-Equipe XMLDownloader
+--
+Equipe CROSS XML
+crossxml.com.br
 '''
                 )
                 mail.send(msg)
