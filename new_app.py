@@ -2290,7 +2290,51 @@ def process_danfe_generation(job_id):
 @login_required
 def job_status(job_id):
     """Get job status with database synchronization"""
-    return get_job_status_data(job_id, current_user.id)
+    try:
+        from models import DownloadJob as DBDownloadJob
+        import json
+        
+        # Get job directly from database
+        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=current_user.id).first()
+        
+        if not db_job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        # Parse database fields safely
+        try:
+            db_files = json.loads(db_job.downloaded_files or '[]')
+        except:
+            db_files = []
+            
+        try:
+            db_errors = json.loads(db_job.errors or '[]')
+        except:
+            db_errors = []
+        
+        # Calculate progress
+        progress_percentage = round((db_job.processed / db_job.total_keys) * 100, 2) if db_job.total_keys > 0 else 0
+        
+        # Build response
+        response_data = {
+            'job_id': db_job.job_id,
+            'total_keys': db_job.total_keys or 0,
+            'processed': db_job.processed or 0,
+            'successful': db_job.successful or 0,
+            'failed': db_job.failed or 0,
+            'status': db_job.status or 'unknown',
+            'downloaded_files': [f.get('filename', '') if isinstance(f, dict) else str(f) for f in db_files],
+            'files': [f.get('filename', '') if isinstance(f, dict) else str(f) for f in db_files],
+            'errors': db_errors,
+            'start_time': db_job.created_at.isoformat() if db_job.created_at else None,
+            'end_time': db_job.completed_at.isoformat() if db_job.completed_at else None,
+            'progress_percentage': progress_percentage
+        }
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        logger.error(f"Error getting job status for {job_id}: {e}")
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
 
 def get_job_status_data(job_id, user_id):
     """Get job status data directly from database - SIMPLIFIED APPROACH"""
