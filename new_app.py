@@ -365,8 +365,13 @@ class DownloadJob:
 
 def process_download_job(job_id, user_id):
     """Process download job in background with database persistence"""
+    print(f"[THREAD ENTRY] Function process_download_job called with job_id={job_id}, user_id={user_id}")
+    logger.info(f"[THREAD ENTRY] Function process_download_job called with job_id={job_id}, user_id={user_id}")
+    
     try:
+        print(f"[THREAD DEBUG] Entering app context for job {job_id}")
         with app.app_context():
+            print(f"[THREAD DEBUG] Inside app context for job {job_id}")
             # Domain debugging logs
             logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Starting download job processing")
             logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - User ID: {user_id}")
@@ -1127,10 +1132,18 @@ def submit_keys():
         app.logger.info(f"[DOMAIN DEBUG] Job ID: {job_id}, User ID: {current_user.id}, Keys: {len(valid_keys)}")
         app.logger.info(f"[DOMAIN DEBUG] Environment vars - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
         
-        # Start download process in background
-        thread = Thread(target=process_download_job, args=(job_id, current_user.id))
-        thread.daemon = True
-        thread.start()
+        # Start download process in background with enhanced logging
+        logger.info(f"[THREAD DEBUG] Creating thread for job {job_id}, user {current_user.id}")
+        
+        try:
+            thread = Thread(target=process_download_job, args=(job_id, current_user.id))
+            thread.daemon = True
+            thread.start()
+            logger.info(f"[THREAD DEBUG] Thread started successfully for job {job_id}")
+        except Exception as thread_error:
+            logger.error(f"[THREAD DEBUG] Failed to start thread for job {job_id}: {thread_error}")
+            flash('Erro ao iniciar processamento. Tente novamente.', 'error')
+            return redirect(url_for('xml_download'))
         
         flash(f'Processo de download iniciado para {len(valid_keys)} chave(s).', 'success')
         return redirect(url_for('download_status', job_id=job_id))
