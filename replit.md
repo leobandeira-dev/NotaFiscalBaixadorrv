@@ -202,6 +202,7 @@ This is a Python Flask web application that automates the bulk download of XML i
 - June 21, 2025: **GOOGLE OAUTH USER AGENT ERROR RESOLUTION** - Fixed "disallowed_useragent" error by implementing manual OAuth URL construction instead of relying on Authlib redirects, created proper OAuth flow with URL encoding and Google's standard authorization endpoint to avoid user agent policy violations
 - June 21, 2025: **CUSTOM DOMAIN OAUTH FINAL CONFIGURATION** - Configured OAuth to use crossxml.com.br domain exclusively for professional branding, system now generates OAuth URLs with custom domain callback: https://crossxml.com.br/auth/google/callback
 - June 21, 2025: **GOOGLE OAUTH FULLY OPERATIONAL WITH CUSTOM DOMAIN** - Successfully resolved all OAuth issues, system now uses crossxml.com.br domain consistently for authentication, user login working correctly with 7-day trial activation, production-ready OAuth implementation complete
+- June 21, 2025: **DUAL DOMAIN OAUTH SUPPORT IMPLEMENTED** - System now automatically detects current request domain (crossxml.com.br or Replit subdomain) and uses matching redirect URI for OAuth, supports seamless authentication on both domains without manual configuration
 
 ## User Preferences
 

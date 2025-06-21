@@ -715,10 +715,10 @@ def google_login():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(hours=2)
     
-    # Use crossxml.com.br as primary domain for OAuth
-    domain = 'crossxml.com.br'
-    redirect_uri = f"https://{domain}/auth/google/callback"
-    app.logger.info(f"OAuth redirect URI: {redirect_uri}")
+    # Use current request host for OAuth to support both domains
+    current_host = request.host
+    redirect_uri = f"https://{current_host}/auth/google/callback"
+    app.logger.info(f"OAuth redirect URI for {current_host}: {redirect_uri}")
     
     # Store redirect URI in session for callback validation
     session['oauth_redirect_uri'] = redirect_uri
@@ -776,9 +776,10 @@ def google_callback():
                 # Manual token exchange with custom domain
                 token_url = 'https://oauth2.googleapis.com/token'
                 
-                # Use crossxml.com.br domain for token exchange
-                redirect_uri = "https://crossxml.com.br/auth/google/callback"
-                app.logger.info(f"Using crossxml.com.br redirect URI: {redirect_uri}")
+                # Use same domain as original request for token exchange
+                current_host = request.host
+                redirect_uri = f"https://{current_host}/auth/google/callback"
+                app.logger.info(f"Using dynamic redirect URI for {current_host}: {redirect_uri}")
                 
                 token_data = {
                     'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
