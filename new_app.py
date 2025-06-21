@@ -827,6 +827,12 @@ def api_credentials():
     """API credentials page"""
     return render_template('api_credentials.html')
 
+@app.route('/download-demo')
+@login_required
+def download_demo():
+    """Demonstração da interface de download melhorada"""
+    return render_template('download_demo.html')
+
 @app.route('/regenerate_api', methods=['POST'])
 @login_required
 def regenerate_api():

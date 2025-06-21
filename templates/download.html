@@ -31,18 +31,22 @@
                         <!-- Progress Bar -->
                         <div class="mb-4">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <span class="fw-bold">Progresso Geral</span>
-                                <span id="progressText">0%</span>
+                                <span class="fw-bold">Progresso do Download</span>
+                                <span id="progressText" class="badge bg-primary fs-6">0%</span>
                             </div>
-                            <div class="progress" style="height: 20px;">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                            <div class="progress" style="height: 25px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
                                      role="progressbar" 
                                      id="progressBar"
                                      style="width: 0%"
                                      aria-valuenow="0" 
                                      aria-valuemin="0" 
                                      aria-valuemax="100">
+                                    <span id="progressBarText" class="fw-bold">0%</span>
                                 </div>
+                            </div>
+                            <div class="mt-2">
+                                <small id="estimatedTime" class="text-muted">Calculando tempo estimado...</small>
                             </div>
                         </div>
 
@@ -167,9 +171,16 @@
                     // Update progress bar
                     const progressBar = document.getElementById('progressBar');
                     const progressText = document.getElementById('progressText');
-                    progressBar.style.width = data.progress_percentage + '%';
-                    progressBar.setAttribute('aria-valuenow', data.progress_percentage);
-                    progressText.textContent = data.progress_percentage.toFixed(1) + '%';
+                    const progressBarText = document.getElementById('progressBarText');
+                    const percentage = data.progress_percentage.toFixed(1);
+                    
+                    progressBar.style.width = percentage + '%';
+                    progressBar.setAttribute('aria-valuenow', percentage);
+                    progressText.textContent = percentage + '%';
+                    progressBarText.textContent = percentage + '%';
+                    
+                    // Calculate and show estimated time
+                    updateEstimatedTime(data);
                     
                     // Update counters
                     document.getElementById('totalKeys').textContent = data.total_keys;
@@ -187,9 +198,28 @@
                             statusAlert.className = 'alert alert-info';
                             break;
                         case 'running':
-                            statusMessage.textContent = `Processando chave ${data.processed} de ${data.total_keys}...`;
-                            statusAlert.className = 'alert alert-warning';
+                            const percentage = data.progress_percentage.toFixed(1);
+                            const currentXML = data.processed + 1; // Próximo XML sendo processado
+                            statusMessage.innerHTML = `
+                                <div class="d-flex align-items-center">
+                                    <div class="spinner-border spinner-border-sm text-primary me-3" role="status">
+                                        <span class="visually-hidden">Baixando...</span>
+                                    </div>
+                                    <div>
+                                        <strong class="text-primary">Baixando XML ${currentXML} de ${data.total_keys}</strong>
+                                        <br>
+                                        <small class="text-muted">
+                                            <i class="fas fa-server me-1"></i>Sistema otimizado para ambiente deploy
+                                            <span class="ms-2">
+                                                <i class="fas fa-check-circle me-1 text-success"></i>${data.successful} concluídos
+                                            </span>
+                                        </small>
+                                    </div>
+                                </div>
+                            `;
+                            statusAlert.className = 'alert alert-primary border-primary';
                             progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+                            progressBar.style.background = 'linear-gradient(45deg, #0d6efd, #6610f2)';
                             break;
                         case 'completed':
                             statusMessage.textContent = 'Processo concluído com sucesso!';
@@ -239,6 +269,69 @@
                 .catch(error => {
                     console.error('Error updating job status:', error);
                 });
+        }
+        
+        let startTime = null;
+        let lastUpdateTime = null;
+        
+        function updateEstimatedTime(data) {
+            const estimatedTimeElement = document.getElementById('estimatedTime');
+            
+            if (!startTime) {
+                startTime = new Date();
+                lastUpdateTime = startTime;
+                estimatedTimeElement.textContent = 'Calculando tempo estimado...';
+                return;
+            }
+            
+            const currentTime = new Date();
+            const elapsedTime = (currentTime - startTime) / 1000; // segundos
+            const progress = data.progress_percentage / 100;
+            
+            if (progress > 0 && data.status === 'running') {
+                // Calcular velocidade média
+                const avgTimePerXML = elapsedTime / data.processed;
+                const remainingXMLs = data.total_keys - data.processed;
+                const estimatedRemainingTime = remainingXMLs * avgTimePerXML;
+                
+                // Formato de tempo
+                let timeText = '';
+                if (estimatedRemainingTime < 60) {
+                    timeText = `${Math.ceil(estimatedRemainingTime)} segundos restantes`;
+                } else if (estimatedRemainingTime < 3600) {
+                    const minutes = Math.ceil(estimatedRemainingTime / 60);
+                    timeText = `${minutes} minuto${minutes > 1 ? 's' : ''} restantes`;
+                } else {
+                    const hours = Math.floor(estimatedRemainingTime / 3600);
+                    const minutes = Math.ceil((estimatedRemainingTime % 3600) / 60);
+                    timeText = `${hours}h ${minutes}min restantes`;
+                }
+                
+                // Velocidade atual
+                const currentSpeed = data.processed > 0 ? (elapsedTime / data.processed).toFixed(1) : 0;
+                
+                estimatedTimeElement.innerHTML = `
+                    <i class="fas fa-clock me-1"></i>${timeText}
+                    <span class="ms-3">
+                        <i class="fas fa-tachometer-alt me-1"></i>
+                        Velocidade: ${currentSpeed}s por XML
+                    </span>
+                `;
+            } else if (data.status === 'completed') {
+                const totalTime = (currentTime - startTime) / 1000;
+                const avgTime = data.successful > 0 ? (totalTime / data.successful).toFixed(1) : 0;
+                
+                estimatedTimeElement.innerHTML = `
+                    <i class="fas fa-check-circle me-1 text-success"></i>
+                    Concluído em ${Math.ceil(totalTime)} segundos
+                    <span class="ms-3">
+                        <i class="fas fa-chart-line me-1"></i>
+                        Média: ${avgTime}s por XML
+                    </span>
+                `;
+            }
+            
+            lastUpdateTime = currentTime;
         }
         
         function populateFilesList(downloadedFiles) {
