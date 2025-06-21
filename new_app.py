@@ -19,7 +19,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
 from authlib.integrations.flask_client import OAuth
-from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, init_default_data
+from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, init_default_data
 from package_models import (
     StripeProduct, PackageFeature, UserSubscription, FeatureUsage,
     init_stripe_products, get_user_active_subscriptions, 
@@ -38,6 +38,56 @@ from improved_transport_label import ImprovedTransportLabelGenerator
 from transul_exact_layout_generator import generate_transul_exact_label_from_xml
 from xml_processor import extract_xml_data
 from email_encryption import encrypt_email_password, decrypt_email_password
+
+def log_user_activity(user_id, activity_type, description, details=None):
+    """Registra uma atividade do usuário no sistema"""
+    try:
+        activity = UserActivity(
+            user_id=user_id,
+            activity_type=activity_type,
+            description=description,
+            details=json.dumps(details) if details else None
+        )
+        db.session.add(activity)
+        db.session.commit()
+        logger.info(f"Atividade registrada para usuário {user_id}: {activity_type} - {description}")
+    except Exception as e:
+        logger.error(f"Erro ao registrar atividade: {e}")
+        db.session.rollback()
+
+def get_user_recent_activities(user_id, limit=5):
+    """Obter atividades recentes do usuário"""
+    try:
+        activities = UserActivity.query.filter_by(
+            user_id=user_id
+        ).order_by(UserActivity.created_at.desc()).limit(limit).all()
+        
+        return [{
+            'type': activity.activity_type,
+            'description': activity.description,
+            'details': json.loads(activity.details) if activity.details else {},
+            'created_at': activity.created_at,
+            'time_ago': get_time_ago(activity.created_at)
+        } for activity in activities]
+    except Exception as e:
+        logger.error(f"Erro ao buscar atividades: {e}")
+        return []
+
+def get_time_ago(dt):
+    """Calcular tempo decorrido em português"""
+    now = datetime.utcnow()
+    diff = now - dt
+    
+    if diff.days > 0:
+        return f"{diff.days} dia{'s' if diff.days > 1 else ''} atrás"
+    elif diff.seconds > 3600:
+        hours = diff.seconds // 3600
+        return f"{hours} hora{'s' if hours > 1 else ''} atrás"
+    elif diff.seconds > 60:
+        minutes = diff.seconds // 60
+        return f"{minutes} minuto{'s' if minutes > 1 else ''} atrás"
+    else:
+        return "Agora mesmo"
 
 def generate_improved_label_with_guaranteed_borders(xml_id, user, paper_config, layout_style='layout1'):
     """Função de integração que usa o novo sistema com bordas garantidas"""
@@ -559,17 +609,8 @@ def dashboard():
         db.session.rollback()
         this_month_usage = 0
     
-    # Get recent activities with data isolation
-    try:
-        recent_activities = UsageRecord.query.filter(
-            UsageRecord.user_id == current_user.id,
-            UsageRecord.created_at >= datetime.now() - timedelta(days=7)
-        ).order_by(UsageRecord.created_at.desc()).limit(10).all()
-    except Exception as e:
-        logger.error(f"Error getting recent activities: {e}")
-        SecurityManager.log_security_event("DATA_ACCESS_ERROR", current_user.id, f"Activities error: {e}")
-        db.session.rollback()
-        recent_activities = []
+    # Get recent activities using new UserActivity system
+    recent_activities = get_user_recent_activities(current_user.id, limit=5)
     
     # Get pending charges
     pending_charges = Charge.query.filter_by(
@@ -2308,6 +2349,19 @@ def process_and_save_uploaded_xml(user_id, xml_content, filename):
             if existing_xml:
                 is_duplicate = True
                 logger.info(f"XML duplicado detectado - será gravado como duplicata: {xml_data['chave_nf']}")
+        
+        # Registrar atividade de upload
+        log_user_activity(
+            user_id=user_id,
+            activity_type='xml_uploaded',
+            description=f"XML uploadado: {xml_data.get('numero_nf', 'N/A')} - {xml_data.get('nome_emitente', 'N/A')[:50]}",
+            details={
+                'filename': xml_data['filename'],
+                'invoice_key': xml_data['chave_nf'],
+                'numero_nf': xml_data.get('numero_nf'),
+                'is_duplicate': is_duplicate
+            }
+        )
         
         # Criar novo registro no banco usando os nomes corretos dos campos do modelo XMLFile
         xml_file = XMLFile(
@@ -4585,6 +4639,20 @@ def generate_custom_labels(xml_id):
             response.headers['Content-Type'] = 'application/pdf'
             response.headers['Content-Disposition'] = f'inline; filename="etiquetas_nf_{nf_number}_multipaginas.pdf"'
             response.headers['X-Frame-Options'] = 'ALLOWALL'
+        
+        # Registrar atividade de geração de etiqueta
+        log_user_activity(
+            user_id=current_user.id,
+            activity_type='label_generated',
+            description=f"Etiqueta gerada: NF {xml_data.numero_nf or xml_id} - {len(labels)} volume{'s' if len(labels) > 1 else ''}",
+            details={
+                'xml_id': xml_id,
+                'numero_nf': xml_data.numero_nf,
+                'empresa': xml_data.nome_emitente[:50] if xml_data.nome_emitente else 'N/A',
+                'volumes': len(labels),
+                'layout_style': request.args.get('layout', 'transul')
+            }
+        )
         
         # Marcar etiqueta como gerada e salvar o caminho do arquivo
         xml_data.label_generated = True

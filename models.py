@@ -600,3 +600,21 @@ class XMLFile(db.Model):
     
     def __repr__(self):
         return f'<XMLFile {self.filename}>'
+
+
+class UserActivity(db.Model):
+    """Modelo para rastrear atividades recentes do usuário"""
+    __tablename__ = 'user_activities'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    activity_type = db.Column(db.String(50), nullable=False)  # 'xml_download', 'label_generated', 'danfe_generated', 'xml_uploaded', 'email_imported'
+    description = db.Column(db.String(500), nullable=False)
+    details = db.Column(db.Text)  # JSON string com detalhes extras
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relacionamento com usuário
+    user = db.relationship('User', backref=db.backref('activities', lazy=True, order_by='UserActivity.created_at.desc()'))
+    
+    def __repr__(self):
+        return f'<UserActivity {self.activity_type}: {self.description}>'
