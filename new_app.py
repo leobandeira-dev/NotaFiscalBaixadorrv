@@ -2297,7 +2297,8 @@ def process_and_save_uploaded_xml(user_id, xml_content, filename):
                 xml_data['peso_bruto'] = peso_bruto_total
                 xml_data['peso_liquido'] = peso_liquido_total
         
-        # Verificar se XML já existe usando a chave da NFe
+        # Verificar se já existe um XML com a mesma chave para marcar como duplicata
+        is_duplicate = False
         if xml_data['chave_nf'] != 'N/A':
             existing_xml = XMLFile.query.filter_by(
                 user_id=user_id,
@@ -2305,13 +2306,8 @@ def process_and_save_uploaded_xml(user_id, xml_content, filename):
             ).first()
             
             if existing_xml:
-                logger.warning(f"XML já existe no banco: {xml_data['chave_nf']}")
-                return {
-                    'success': True,
-                    'is_new': False,
-                    'xml_file': existing_xml,
-                    'message': 'XML já existe no sistema'
-                }
+                is_duplicate = True
+                logger.info(f"XML duplicado detectado - será gravado como duplicata: {xml_data['chave_nf']}")
         
         # Criar novo registro no banco
         xml_file = XMLFile(

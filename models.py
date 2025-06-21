@@ -557,6 +557,7 @@ class XMLFile(db.Model):
     danfe_generated = db.Column(db.Boolean, default=False)
     label_generated = db.Column(db.Boolean, default=False)
     label_file_path = db.Column(db.String(500), nullable=True)  # Caminho do arquivo de etiqueta gerado
+    is_duplicate = db.Column(db.Boolean, default=False)  # Marca se é uma duplicata
     
     # Timestamps
     imported_at = db.Column(db.DateTime, default=datetime.utcnow)
