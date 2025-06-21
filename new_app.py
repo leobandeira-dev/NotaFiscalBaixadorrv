@@ -8,6 +8,7 @@ import uuid
 import logging
 import secrets
 import pytz
+import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from threading import Thread, Lock
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, send_file, make_response
@@ -2081,8 +2082,6 @@ def upload_xml():
         return render_template('upload_xml_redesigned.html', recent_uploads=recent_uploads)
     
     try:
-        from xml_processor import save_xml_to_database
-        
         # Verificar se arquivos foram enviados
         if 'xml_files' not in request.files:
             flash('Nenhum arquivo foi selecionado.', 'error')
@@ -2109,16 +2108,19 @@ def upload_xml():
                     # Ler conteúdo do arquivo
                     xml_content = file.read().decode('utf-8')
                     
-                    # Salvar no banco de dados
-                    xml_file = save_xml_to_database(
+                    # Processar e salvar XML usando a mesma função do email processor
+                    xml_file = process_and_save_uploaded_xml(
                         user_id=current_user.id,
                         xml_content=xml_content,
-                        filename=file.filename,
-                        import_type='UPLOAD'
+                        filename=file.filename
                     )
                     
-                    uploaded_count += 1
-                    logger.info(f"XML uploadado com sucesso: {file.filename} - Chave: {xml_file.invoice_key}")
+                    if xml_file:
+                        uploaded_count += 1
+                        logger.info(f"XML uploadado com sucesso: {file.filename} - Chave: {xml_file.invoice_key}")
+                    else:
+                        errors.append(f"{file.filename}: Erro ao processar XML")
+                        error_count += 1
                     
                 except Exception as e:
                     logger.error(f"Erro ao processar {file.filename}: {e}")
@@ -2138,6 +2140,216 @@ def upload_xml():
         logger.error(f"Erro no upload de XMLs: {e}")
         flash('Erro interno do servidor.', 'error')
         return redirect(url_for('upload_xml'))
+
+def process_and_save_uploaded_xml(user_id, xml_content, filename):
+    """
+    Processa e salva XML uploadado no banco de dados
+    Usa a mesma lógica de parsing do EmailXMLProcessor
+    """
+    try:
+        # Parse do XML
+        root = ET.fromstring(xml_content)
+        
+        # Namespaces da NFe
+        namespaces = {
+            'nfe': 'http://www.portalfiscal.inf.br/nfe'
+        }
+        
+        # Inicializar dados extraídos
+        xml_data = {
+            'filename': filename,
+            'numero_nf': 'N/A',
+            'serie_nf': 'N/A',
+            'chave_nf': 'N/A',
+            'data_emissao': None,
+            'valor_total': 0.0,
+            'peso_bruto': 0.0,
+            'peso_liquido': 0.0,
+            'quantidade_volumes': 1,
+            'nome_emitente': 'N/A',
+            'cnpj_emitente': 'N/A',
+            'cidade_emitente': 'N/A',
+            'uf_emitente': 'N/A',
+            'cep_emitente': 'N/A',
+            'endereco_emitente': 'N/A',
+            'nome_destinatario': 'N/A',
+            'destinatario_cnpj_cpf': 'N/A',
+            'cidade_destinatario': 'N/A',
+            'uf_destinatario': 'N/A',
+            'cep_destinatario': 'N/A',
+            'endereco_destinatario': 'N/A',
+            'nome_transportadora': 'N/A',
+            'transportadora_cnpj': 'N/A'
+        }
+        
+        # Buscar elemento principal da NFe
+        inf_nfe = root.find('.//nfe:infNFe', namespaces)
+        if inf_nfe is None:
+            # Tentar sem namespace
+            inf_nfe = root.find('.//infNFe')
+        
+        if inf_nfe is not None:
+            # Chave da NFe
+            chave = inf_nfe.get('Id', '')
+            if chave.startswith('NFe'):
+                xml_data['chave_nf'] = chave[3:]  # Remove 'NFe' do início
+            else:
+                xml_data['chave_nf'] = chave
+            
+            # Dados da identificação
+            ide = inf_nfe.find('nfe:ide', namespaces) or inf_nfe.find('ide')
+            if ide is not None:
+                xml_data['numero_nf'] = ide.findtext('nfe:nNF', xml_data['numero_nf'], namespaces) or ide.findtext('nNF', xml_data['numero_nf'])
+                xml_data['serie_nf'] = ide.findtext('nfe:serie', xml_data['serie_nf'], namespaces) or ide.findtext('serie', xml_data['serie_nf'])
+                
+                # Data de emissão
+                data_emissao = ide.findtext('nfe:dhEmi', '', namespaces) or ide.findtext('dhEmi', '') or ide.findtext('nfe:dEmi', '', namespaces) or ide.findtext('dEmi', '')
+                if data_emissao:
+                    try:
+                        if 'T' in data_emissao:
+                            xml_data['data_emissao'] = datetime.fromisoformat(data_emissao.replace('Z', '+00:00'))
+                        else:
+                            xml_data['data_emissao'] = datetime.strptime(data_emissao, '%Y-%m-%d')
+                    except:
+                        pass
+            
+            # Dados do emitente
+            emit = inf_nfe.find('nfe:emit', namespaces) or inf_nfe.find('emit')
+            if emit is not None:
+                xml_data['nome_emitente'] = emit.findtext('nfe:xNome', xml_data['nome_emitente'], namespaces) or emit.findtext('xNome', xml_data['nome_emitente'])
+                xml_data['cnpj_emitente'] = emit.findtext('nfe:CNPJ', xml_data['cnpj_emitente'], namespaces) or emit.findtext('CNPJ', xml_data['cnpj_emitente'])
+                
+                # Endereço do emitente
+                enderemit = emit.find('nfe:enderEmit', namespaces) or emit.find('enderEmit')
+                if enderemit is not None:
+                    xml_data['cidade_emitente'] = enderemit.findtext('nfe:xMun', xml_data['cidade_emitente'], namespaces) or enderemit.findtext('xMun', xml_data['cidade_emitente'])
+                    xml_data['uf_emitente'] = enderemit.findtext('nfe:UF', xml_data['uf_emitente'], namespaces) or enderemit.findtext('UF', xml_data['uf_emitente'])
+                    xml_data['cep_emitente'] = enderemit.findtext('nfe:CEP', xml_data['cep_emitente'], namespaces) or enderemit.findtext('CEP', xml_data['cep_emitente'])
+                    
+                    # Endereço completo
+                    logradouro = enderemit.findtext('nfe:xLgr', '', namespaces) or enderemit.findtext('xLgr', '')
+                    numero = enderemit.findtext('nfe:nro', '', namespaces) or enderemit.findtext('nro', '')
+                    bairro = enderemit.findtext('nfe:xBairro', '', namespaces) or enderemit.findtext('xBairro', '')
+                    xml_data['endereco_emitente'] = f"{logradouro}, {numero}, {bairro}".strip(', ')
+            
+            # Dados do destinatário
+            dest = inf_nfe.find('nfe:dest', namespaces) or inf_nfe.find('dest')
+            if dest is not None:
+                xml_data['nome_destinatario'] = dest.findtext('nfe:xNome', xml_data['nome_destinatario'], namespaces) or dest.findtext('xNome', xml_data['nome_destinatario'])
+                
+                # CNPJ ou CPF do destinatário
+                cnpj_dest = dest.findtext('nfe:CNPJ', None, namespaces) or dest.findtext('CNPJ')
+                cpf_dest = dest.findtext('nfe:CPF', None, namespaces) or dest.findtext('CPF')
+                xml_data['destinatario_cnpj_cpf'] = cnpj_dest if cnpj_dest else (cpf_dest if cpf_dest else xml_data['destinatario_cnpj_cpf'])
+                
+                # Endereço do destinatário
+                enderdest = dest.find('nfe:enderDest', namespaces) or dest.find('enderDest')
+                if enderdest is not None:
+                    xml_data['cidade_destinatario'] = enderdest.findtext('nfe:xMun', xml_data['cidade_destinatario'], namespaces) or enderdest.findtext('xMun', xml_data['cidade_destinatario'])
+                    xml_data['uf_destinatario'] = enderdest.findtext('nfe:UF', xml_data['uf_destinatario'], namespaces) or enderdest.findtext('UF', xml_data['uf_destinatario'])
+                    xml_data['cep_destinatario'] = enderdest.findtext('nfe:CEP', xml_data['cep_destinatario'], namespaces) or enderdest.findtext('CEP', xml_data['cep_destinatario'])
+                    
+                    # Endereço completo
+                    logradouro = enderdest.findtext('nfe:xLgr', '', namespaces) or enderdest.findtext('xLgr', '')
+                    numero = enderdest.findtext('nfe:nro', '', namespaces) or enderdest.findtext('nro', '')
+                    bairro = enderdest.findtext('nfe:xBairro', '', namespaces) or enderdest.findtext('xBairro', '')
+                    xml_data['endereco_destinatario'] = f"{logradouro}, {numero}, {bairro}".strip(', ')
+            
+            # Dados da transportadora
+            transp = inf_nfe.find('nfe:transp', namespaces) or inf_nfe.find('transp')
+            if transp is not None:
+                transporta = transp.find('nfe:transporta', namespaces) or transp.find('transporta')
+                if transporta is not None:
+                    xml_data['nome_transportadora'] = transporta.findtext('nfe:xNome', xml_data['nome_transportadora'], namespaces) or transporta.findtext('xNome', xml_data['nome_transportadora'])
+                    xml_data['transportadora_cnpj'] = transporta.findtext('nfe:CNPJ', xml_data['transportadora_cnpj'], namespaces) or transporta.findtext('CNPJ', xml_data['transportadora_cnpj'])
+            
+            # Totais da NFe
+            total = inf_nfe.find('nfe:total/nfe:ICMSTot', namespaces) or inf_nfe.find('total/ICMSTot')
+            if total is not None:
+                valor_total_str = total.findtext('nfe:vNF', '0', namespaces) or total.findtext('vNF', '0')
+                try:
+                    xml_data['valor_total'] = float(valor_total_str.replace(',', '.'))
+                except:
+                    xml_data['valor_total'] = 0.0
+            
+            # Dados de transporte - volumes
+            vol_elements = inf_nfe.findall('.//nfe:vol', namespaces) or inf_nfe.findall('.//vol')
+            if vol_elements:
+                xml_data['quantidade_volumes'] = len(vol_elements)
+                
+                # Peso dos volumes
+                peso_bruto_total = 0.0
+                peso_liquido_total = 0.0
+                
+                for vol in vol_elements:
+                    try:
+                        peso_bruto = vol.findtext('nfe:pesoB', '0', namespaces) or vol.findtext('pesoB', '0')
+                        peso_liquido = vol.findtext('nfe:pesoL', '0', namespaces) or vol.findtext('pesoL', '0')
+                        peso_bruto_total += float(peso_bruto.replace(',', '.'))
+                        peso_liquido_total += float(peso_liquido.replace(',', '.'))
+                    except:
+                        pass
+                
+                xml_data['peso_bruto'] = peso_bruto_total
+                xml_data['peso_liquido'] = peso_liquido_total
+        
+        # Verificar se XML já existe usando a chave da NFe
+        if xml_data['chave_nf'] != 'N/A':
+            existing_xml = XMLFile.query.filter_by(
+                user_id=user_id,
+                invoice_key=xml_data['chave_nf']
+            ).first()
+            
+            if existing_xml:
+                logger.warning(f"XML já existe no banco: {xml_data['chave_nf']}")
+                return existing_xml
+        
+        # Criar novo registro no banco
+        xml_file = XMLFile(
+            user_id=user_id,
+            filename=xml_data['filename'],
+            invoice_key=xml_data['chave_nf'],
+            numero_nf=xml_data['numero_nf'],
+            serie_nf=xml_data['serie_nf'],
+            data_emissao=xml_data['data_emissao'],
+            valor_total=xml_data['valor_total'],
+            peso_bruto=xml_data['peso_bruto'],
+            peso_liquido=xml_data['peso_liquido'],
+            quantidade_volumes=xml_data['quantidade_volumes'],
+            nome_emitente=xml_data['nome_emitente'][:255] if xml_data['nome_emitente'] != 'N/A' else 'N/A',
+            cnpj_emitente=xml_data['cnpj_emitente'][:20] if xml_data['cnpj_emitente'] != 'N/A' else 'N/A',
+            cidade_emitente=xml_data['cidade_emitente'][:100] if xml_data['cidade_emitente'] != 'N/A' else 'N/A',
+            uf_emitente=xml_data['uf_emitente'][:2] if xml_data['uf_emitente'] != 'N/A' else 'N/A',
+            cep_emitente=xml_data['cep_emitente'][:10] if xml_data['cep_emitente'] != 'N/A' else 'N/A',
+            endereco_emitente=xml_data['endereco_emitente'][:255] if xml_data['endereco_emitente'] != 'N/A' else 'N/A',
+            nome_destinatario=xml_data['nome_destinatario'][:255] if xml_data['nome_destinatario'] != 'N/A' else 'N/A',
+            destinatario_cnpj_cpf=xml_data['destinatario_cnpj_cpf'][:20] if xml_data['destinatario_cnpj_cpf'] != 'N/A' else 'N/A',
+            cidade_destinatario=xml_data['cidade_destinatario'][:100] if xml_data['cidade_destinatario'] != 'N/A' else 'N/A',
+            uf_destinatario=xml_data['uf_destinatario'][:2] if xml_data['uf_destinatario'] != 'N/A' else 'N/A',
+            cep_destinatario=xml_data['cep_destinatario'][:10] if xml_data['cep_destinatario'] != 'N/A' else 'N/A',
+            endereco_destinatario=xml_data['endereco_destinatario'][:255] if xml_data['endereco_destinatario'] != 'N/A' else 'N/A',
+            nome_transportadora=xml_data['nome_transportadora'][:255] if xml_data['nome_transportadora'] != 'N/A' else 'N/A',
+            transportadora_cnpj=xml_data['transportadora_cnpj'][:20] if xml_data['transportadora_cnpj'] != 'N/A' else 'N/A',
+            xml_content=xml_content,
+            import_type='upload',
+            created_at=datetime.utcnow()
+        )
+        
+        # Campos extras para compatibilidade (usando dados do emitente)
+        xml_file.remetente_nome = xml_data['nome_emitente'][:255] if xml_data['nome_emitente'] != 'N/A' else 'N/A'
+        xml_file.remetente_cidade = xml_data['cidade_emitente'][:100] if xml_data['cidade_emitente'] != 'N/A' else 'N/A'
+        xml_file.remetente_uf = xml_data['uf_emitente'][:2] if xml_data['uf_emitente'] != 'N/A' else 'N/A'
+        xml_file.remetente_endereco = xml_data['endereco_emitente'][:255] if xml_data['endereco_emitente'] != 'N/A' else 'N/A'
+        
+        db.session.add(xml_file)
+        db.session.commit()
+        
+        return xml_file
+        
+    except Exception as e:
+        logger.error(f"Erro ao processar XML {filename}: {e}")
+        db.session.rollback()
+        return None
 
 @app.route('/email-import')
 @login_required
