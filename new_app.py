@@ -708,6 +708,28 @@ def reset_password(token):
     
     return render_template('reset_password.html', token=token)
 
+@app.route('/oauth-debug')
+def oauth_debug():
+    """Debug route to show exact OAuth URLs"""
+    current_host = request.host
+    
+    if 'crossxml.com.br' in current_host:
+        redirect_uri = "https://crossxml.com.br/auth/google/callback"
+    else:
+        redirect_uri = "https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback"
+    
+    return f"""
+    <h2>OAuth Debug Information</h2>
+    <p><strong>Current Host:</strong> {current_host}</p>
+    <p><strong>Redirect URI being used:</strong> {redirect_uri}</p>
+    <p><strong>Add this EXACT URL to Google Cloud Console:</strong></p>
+    <code style="background: #f0f0f0; padding: 10px; display: block;">{redirect_uri}</code>
+    
+    <h3>Both URLs to add to Google Console:</h3>
+    <code style="background: #f0f0f0; padding: 5px; display: block;">https://crossxml.com.br/auth/google/callback</code>
+    <code style="background: #f0f0f0; padding: 5px; display: block;">https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback</code>
+    """
+
 @app.route('/auth/google')
 def google_login():
     """Google OAuth login with proper user agent handling"""
