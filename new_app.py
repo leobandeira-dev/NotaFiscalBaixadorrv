@@ -314,23 +314,100 @@ serializer = URLSafeTimedSerializer(app.secret_key)
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# Job management (similar to previous system)
+# Job management system
 download_jobs = {}
 jobs_lock = Lock()
 
 class DownloadJob:
-    def __init__(self, job_id, invoice_keys, user_id):
+    def __init__(self, job_id, invoice_keys):
         self.job_id = job_id
         self.invoice_keys = invoice_keys
-        self.user_id = user_id
         self.total_keys = len(invoice_keys)
         self.processed = 0
         self.successful = 0
         self.failed = 0
-        self.status = "starting"
-        self.files = []  # Changed from downloaded_files to files for template compatibility
+        self.status = "starting"  # starting, running, completed, failed
+        self.downloaded_files = []
         self.errors = []
         self.start_time = datetime.now()
+        self.end_time = None
+        self.callback_url = None
+        self.download_type = 'xml'
+
+    def to_dict(self):
+        return {
+            'job_id': self.job_id,
+            'total_keys': self.total_keys,
+            'processed': self.processed,
+            'successful': self.successful,
+            'failed': self.failed,
+            'status': self.status,
+            'progress_percentage': (self.processed / self.total_keys * 100) if self.total_keys > 0 else 0,
+            'downloaded_files': self.downloaded_files,
+            'errors': self.errors,
+            'start_time': self.start_time.isoformat() if self.start_time else None,
+            'end_time': self.end_time.isoformat() if self.end_time else None
+        }
+
+def process_download_job(job_id, user_id):
+    """Process download job in background"""
+    try:
+        from automation_fixed import InvoiceDownloader
+        
+        with jobs_lock:
+            job = download_jobs.get(job_id)
+        
+        if not job:
+            logger.error(f"Job {job_id} not found for processing")
+            return
+        
+        job.status = "running"
+        downloader = InvoiceDownloader()
+        
+        for i, invoice_key in enumerate(job.invoice_keys):
+            try:
+                logger.info(f"[Job {job_id}] Processing key {i+1}/{job.total_keys}: {invoice_key}")
+                
+                result = downloader.download_invoice_xml(
+                    invoice_key=invoice_key,
+                    job_id=job_id,
+                    download_type=job.download_type,
+                    user_id=user_id
+                )
+                
+                job.processed += 1
+                
+                if result.get('status') == 'success':
+                    job.successful += 1
+                    if result.get('file_path'):
+                        job.downloaded_files.append(result['file_path'])
+                else:
+                    job.failed += 1
+                    job.errors.append({
+                        'invoice_key': invoice_key,
+                        'error': result.get('message', 'Unknown error')
+                    })
+                    
+            except Exception as e:
+                logger.error(f"[Job {job_id}] Error processing {invoice_key}: {str(e)}")
+                job.failed += 1
+                job.processed += 1
+                job.errors.append({
+                    'invoice_key': invoice_key,
+                    'error': str(e)
+                })
+        
+        # Mark job as completed
+        job.status = "completed" if job.successful > 0 else "failed"
+        job.end_time = datetime.now()
+        
+        downloader.cleanup()
+        logger.info(f"[Job {job_id}] Completed: {job.successful} successful, {job.failed} failed")
+        
+    except Exception as e:
+        logger.error(f"[Job {job_id}] Critical error: {str(e)}")
+        if job_id in download_jobs:
+            download_jobs[job_id].status = "failed"
         self.end_time = None
 
     @property
@@ -832,6 +909,8 @@ def api_credentials():
 def download_demo():
     """Demonstração da interface de download melhorada"""
     return render_template('download_demo.html')
+
+
 
 @app.route('/regenerate_api', methods=['POST'])
 @login_required
