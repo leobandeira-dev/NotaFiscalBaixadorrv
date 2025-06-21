@@ -715,10 +715,13 @@ def google_login():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(hours=2)
     
-    # Use current request host for OAuth to support both domains
-    current_host = request.host
-    redirect_uri = f"https://{current_host}/auth/google/callback"
-    app.logger.info(f"OAuth redirect URI for {current_host}: {redirect_uri}")
+    # Use specific authorized redirect URIs for OAuth
+    if 'crossxml.com.br' in request.host:
+        redirect_uri = "https://crossxml.com.br/auth/google/callback"
+    else:
+        redirect_uri = "https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback"
+    
+    app.logger.info(f"OAuth redirect URI: {redirect_uri}")
     
     # Store redirect URI in session for callback validation
     session['oauth_redirect_uri'] = redirect_uri
@@ -776,10 +779,13 @@ def google_callback():
                 # Manual token exchange with custom domain
                 token_url = 'https://oauth2.googleapis.com/token'
                 
-                # Use same domain as original request for token exchange
-                current_host = request.host
-                redirect_uri = f"https://{current_host}/auth/google/callback"
-                app.logger.info(f"Using dynamic redirect URI for {current_host}: {redirect_uri}")
+                # Use same specific redirect URI as initial request
+                if 'crossxml.com.br' in request.host:
+                    redirect_uri = "https://crossxml.com.br/auth/google/callback"
+                else:
+                    redirect_uri = "https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback"
+                
+                app.logger.info(f"Using matching redirect URI: {redirect_uri}")
                 
                 token_data = {
                     'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
