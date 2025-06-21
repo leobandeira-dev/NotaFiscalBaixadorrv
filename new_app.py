@@ -715,15 +715,9 @@ def google_login():
     session.permanent = True
     app.permanent_session_lifetime = timedelta(hours=2)
     
-    # Use domain that is configured in Google OAuth (fallback to Replit domain while configuring custom domain)
-    if 'REPLIT_DEV_DOMAIN' in os.environ:
-        # Use Replit domain until custom domain is configured in Google Cloud Console
-        domain = os.environ['REPLIT_DEV_DOMAIN']
-    else:
-        # Fallback for development
-        domain = 'localhost:5000'
-    
-    redirect_uri = f"https://{domain}/auth/google/callback"
+    # Use custom domain now that it's configured in Google Cloud Console
+    custom_domain = 'crossxml.com.br'
+    redirect_uri = f"https://{custom_domain}/auth/google/callback"
     
     # Store redirect URI in session for callback validation
     session['oauth_redirect_uri'] = redirect_uri
@@ -764,16 +758,12 @@ def google_callback():
                     flash('Código de autorização não encontrado.', 'error')
                     return redirect(url_for('login'))
                 
-                # Manual token exchange with domain fallback
+                # Manual token exchange with custom domain
                 token_url = 'https://oauth2.googleapis.com/token'
                 
-                # Use same domain logic as initial request
-                if 'REPLIT_DEV_DOMAIN' in os.environ:
-                    domain = os.environ['REPLIT_DEV_DOMAIN']
-                else:
-                    domain = 'localhost:5000'
-                
-                redirect_uri = f"https://{domain}/auth/google/callback"
+                # Use custom domain for token exchange
+                custom_domain = 'crossxml.com.br'
+                redirect_uri = f"https://{custom_domain}/auth/google/callback"
                 
                 token_data = {
                     'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
