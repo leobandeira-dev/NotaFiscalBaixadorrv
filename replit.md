@@ -206,6 +206,7 @@ This is a Python Flask web application that automates the bulk download of XML i
 - June 21, 2025: **SPECIFIC REDIRECT URI CONFIGURATION** - Configured OAuth to use only two specific authorized redirect URIs: https://crossxml.com.br/auth/google/callback and https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback, system automatically selects correct URI based on request domain
 - June 21, 2025: **DEPLOYMENT HEALTH MONITORING IMPLEMENTED** - Added comprehensive health check endpoints (/health, /ready, /deployment-status) with cache-busting headers, version tracking (2.1-deploy-fix), and deployment monitoring capabilities to resolve Replit panel "failed" status
 - June 21, 2025: **CUSTOM DOMAIN CACHE PROPAGATION ISSUE IDENTIFIED** - Diagnosed that crossxml.com.br serves outdated application version while Replit domain has latest updates, causing health endpoints to return 404 on custom domain, implemented cache invalidation strategies and comprehensive deployment diagnostics
+- June 21, 2025: **CROSSXML.COM.BR DOWNLOAD SYSTEM FULLY OPERATIONAL** - Resolved critical issue where ultra-performance optimization was incorrectly disabling JavaScript on custom domain, created /download route redirect to /xml-download for URL compatibility, confirmed authentication and submit functionality working correctly, system now processes XMLs successfully on both domains with identical behavior, complete diagnosis tools implemented for ongoing monitoring
 
 ## User Preferences
 
