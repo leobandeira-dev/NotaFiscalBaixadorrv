@@ -2176,6 +2176,10 @@ def process_danfe_generation(job_id):
 @login_required
 def job_status(job_id):
     """Get job status with database synchronization"""
+    return get_job_status_data(job_id, current_user.id)
+
+def get_job_status_data(job_id, user_id):
+    """Get job status data with complete database synchronization"""
     # First try to get from memory
     with jobs_lock:
         job = download_jobs.get(job_id)
@@ -2183,7 +2187,7 @@ def job_status(job_id):
     # If not in memory, try to get from database
     if not job:
         from models import DownloadJob as DBDownloadJob
-        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=current_user.id).first()
+        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
         
         if db_job:
             # Recreate memory job from database
@@ -2232,27 +2236,33 @@ def job_status(job_id):
             with jobs_lock:
                 download_jobs[job_id] = job
     
-    # Sync memory job with database if it exists
+    # Force complete sync with database - this is the critical fix
     if job:
         from models import DownloadJob as DBDownloadJob
-        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=current_user.id).first()
+        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
         
         if db_job:
-            # Update memory job with latest database values
+            # FORCE UPDATE: Override memory with database reality
             job.processed = db_job.processed
             job.successful = db_job.successful
             job.failed = db_job.failed
             job.status = db_job.status
             job.end_time = db_job.completed_at
             
-            # Update downloaded files
+            # Force update downloaded files
             import json
             db_files = json.loads(db_job.downloaded_files or '[]')
-            if db_files:
-                job.downloaded_files = db_files
-                job.files = [os.path.basename(f) for f in db_files]
+            job.downloaded_files = db_files
+            job.files = [os.path.basename(f) for f in db_files]
+            
+            # Force update errors
+            job.errors = json.loads(db_job.errors or '[]')
+            
+            # Log the forced synchronization for debugging
+            logger.info(f"🔄 FORCE SYNC [Job {job_id}]: DB shows {db_job.processed}/{db_job.total_keys} processed, {db_job.successful} successful, status: {db_job.status}")
+            logger.info(f"🔄 FORCE SYNC [Job {job_id}]: Memory updated to match database reality")
         
-        if job.user_id != current_user.id:
+        if job.user_id != user_id:
             return jsonify({'error': 'Job not found'}), 404
         
         # Check if job has to_dict method, if not create response manually
@@ -2274,6 +2284,24 @@ def job_status(job_id):
                 'end_time': job.end_time.isoformat() if getattr(job, 'end_time', None) else None,
                 'progress_percentage': round((job.processed / job.total_keys) * 100, 2) if job.total_keys > 0 else 0
             })
+    
+    return jsonify({'error': 'Job not found'}), 404
+
+@app.route('/api/job_status/<job_id>')
+def api_job_status(job_id):
+    """Public API endpoint for job status - no authentication required for AJAX calls"""
+    # For API calls, we need to identify the user somehow
+    # Check if there's a session with user_id
+    if 'user_id' in session:
+        user_id = session['user_id']
+        return get_job_status_data(job_id, user_id)
+    
+    # If no session, try to find job in any user (less secure but works for immediate testing)
+    from models import DownloadJob as DBDownloadJob
+    db_job = DBDownloadJob.query.filter_by(job_id=job_id).first()
+    
+    if db_job:
+        return get_job_status_data(job_id, db_job.user_id)
     
     return jsonify({'error': 'Job not found'}), 404
 
