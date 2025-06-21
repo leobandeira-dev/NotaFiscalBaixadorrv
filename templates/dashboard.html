@@ -208,6 +208,126 @@
             padding: 2rem;
             color: #6b7280;
         }
+        
+        /* Workflow Section */
+        .workflow-section {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .workflow-header {
+            margin-bottom: 1.5rem;
+        }
+        
+        .workflow-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .workflow-subtitle {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin: 0;
+        }
+        
+        .workflow-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .workflow-step {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .workflow-step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: #8A05BE;
+        }
+        
+        .step-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: white;
+            margin: 0 auto 1rem auto;
+        }
+        
+        .step-1 .step-number {
+            background: #3b82f6;
+        }
+        
+        .step-2 .step-number {
+            background: #f97316;
+        }
+        
+        .step-3 .step-number {
+            background: #8A05BE;
+        }
+        
+        .step-4 .step-number {
+            background: #10b981;
+        }
+        
+        .step-icon {
+            width: 32px;
+            height: 32px;
+            color: #9ca3af;
+            margin: 0 auto 1rem auto;
+        }
+        
+        .step-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin: 0 0 0.5rem 0;
+        }
+        
+        .step-description {
+            color: #6b7280;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+        
+        .step-button {
+            background: #8A05BE;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        
+        .step-button:hover {
+            background: #7c2d92;
+            color: white;
+            text-decoration: none;
+        }
 </style>
 
 <div class="dashboard-header">
@@ -244,6 +364,56 @@
         <div class="stat-title">Tempo economizado</div>
         <div class="stat-value">{{ "%.0f"|format(total_usage * 0.85) }}h</div>
         <div class="stat-change positive">↗ 85% de economia</div>
+    </div>
+</div>
+
+<!-- Workflow Section -->
+<div class="workflow-section">
+    <div class="workflow-header">
+        <h2 class="workflow-title">Fluxo de Trabalho</h2>
+        <p class="workflow-subtitle">Gerencie todas as etapas do processo de XMLs e etiquetas de transporte</p>
+    </div>
+    
+    <div class="workflow-steps">
+        <!-- Step 1: Download XMLs -->
+        <div class="workflow-step step-1">
+            <div class="step-number">1</div>
+            <h3 class="step-title">Download XML</h3>
+            <p class="step-description">Obtenha XMLs automaticamente usando chaves de nota fiscal ou importe via email</p>
+            <a href="{{ url_for('xml_download') }}" class="step-button">
+                Acessar <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Step 2: Verification -->
+        <div class="workflow-step step-2">
+            <div class="step-number">2</div>
+            <h3 class="step-title">Verificação</h3>
+            <p class="step-description">Validação e visualização dos dados extraídos dos XMLs importados</p>
+            <a href="{{ url_for('meus_xmls') }}" class="step-button">
+                Acessar <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Step 3: Label Generation -->
+        <div class="workflow-step step-3">
+            <div class="step-number">3</div>
+            <h3 class="step-title">Etiquetas</h3>
+            <p class="step-description">Geração de etiquetas de transporte personalizadas com layout profissional</p>
+            <a href="{{ url_for('configurar_etiquetas') }}" class="step-button">
+                Acessar <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+        
+        <!-- Step 4: Final Checklist -->
+        <div class="workflow-step step-4">
+            <div class="step-number">4</div>
+            <h3 class="step-title">Controle Final</h3>
+            <p class="step-description">Verificação final e liberação do carregamento com documentos completos</p>
+            <a href="{{ url_for('historico_creditos') }}" class="step-button">
+                Acessar <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
     </div>
 </div>
 
