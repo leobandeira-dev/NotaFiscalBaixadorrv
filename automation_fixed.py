@@ -92,16 +92,16 @@ class InvoiceDownloader:
             from deploy_robot_fix import DeployRobotFix
             is_deploy = DeployRobotFix.is_deploy_environment()
             
-            # Se estiver em ambiente de produção, usar sistema ultra-robusto
+            # Se estiver em ambiente de produção, usar robô simplificado
             if is_deploy:
-                logger.info(f"🚀 [Job {job_id}] Usando sistema ultra-robusto para produção...")
+                logger.info(f"🚀 [Job {job_id}] Usando robô simplificado para produção...")
                 try:
-                    from production_fix import ProductionRobotFix
-                    result = ProductionRobotFix.ultra_robust_download(invoice_key, job_id, user_id)
-                    logger.info(f"[Job {job_id}] Resultado do sistema ultra-robusto: {result}")
+                    from simple_production_robot import SimpleProductionRobot
+                    result = SimpleProductionRobot.simple_download(invoice_key, job_id, user_id)
+                    logger.info(f"[Job {job_id}] Resultado do robô simplificado: {result}")
                     return result
                 except Exception as e:
-                    logger.error(f"[Job {job_id}] Erro no sistema ultra-robusto: {e}")
+                    logger.error(f"[Job {job_id}] Erro no robô simplificado: {e}")
                     # Continuar com sistema original como fallback
             
             # Continue with original system for fallback
