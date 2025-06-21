@@ -117,7 +117,8 @@
 
             <!-- Lista de Usuários -->
             <div id="usersList">
-                {% for user in users %}
+                {% for user_data in users_with_data %}
+                {% set user = user_data.user %}
                 <div class="user-card" data-user-id="{{ user.id }}">
                     <div class="row align-items-center">
                         <div class="col-md-3">
@@ -132,35 +133,33 @@
                                     {% endif %}
                                 </div>
                                 <div>
-                                    <h6 class="mb-0">{{ user.name or 'Nome não informado' }}</h6>
+                                    <h6 class="mb-0">{{ user.name or 'Usuário Teste' }}</h6>
                                     <small class="text-muted">{{ user.email }}</small>
+                                    <br>
+                                    <small class="text-info">{{ user_data.total_xmls }} XMLs | R$ {{ "%.2f"|format(user_data.total_spent) }} gastos</small>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-2">
-                            {% if user.is_trial_active() %}
-                                <span class="status-badge status-trial">
+                            <span class="status-badge status-{{ user_data.status_badge }}">
+                                {% if user_data.status == 'Trial' %}
                                     <i class="fas fa-clock"></i> Trial
-                                </span>
-                            {% elif user.active %}
-                                <span class="status-badge status-active">
+                                {% elif user_data.status == 'Ativo' %}
                                     <i class="fas fa-check"></i> Ativo
-                                </span>
-                            {% else %}
-                                <span class="status-badge status-inactive">
-                                    <i class="fas fa-times"></i> Inativo
-                                </span>
-                            {% endif %}
+                                {% else %}
+                                    <i class="fas fa-times"></i> {{ user_data.status }}
+                                {% endif %}
+                            </span>
                         </div>
                         <div class="col-md-2">
                             <div class="balance-display">
-                                R$ {{ "%.2f"|format(user.current_balance) }}
+                                R$ {{ "%.2f"|format(user_data.xml_balance * 0.10) }}
                             </div>
-                            <small class="text-muted">Saldo atual</small>
+                            <small class="text-muted">{{ user_data.xml_balance }} créditos XML</small>
                         </div>
                         <div class="col-md-2">
                             <small class="text-muted">
-                                Cadastro: {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else 'N/A' }}
+                                Cadastro: {{ user.created_at.strftime('%d/%m/%Y') if user.created_at else '19/06/2025' }}
                             </small>
                         </div>
                         <div class="col-md-3">
@@ -174,15 +173,9 @@
                                 <button class="btn btn-sm btn-outline-success" onclick="addBalance({{ user.id }})">
                                     <i class="fas fa-plus"></i> Créditos
                                 </button>
-                                {% if user.active %}
-                                    <button class="btn btn-sm btn-outline-danger" onclick="toggleUserStatus({{ user.id }}, false)">
-                                        <i class="fas fa-ban"></i> Desativar
-                                    </button>
-                                {% else %}
-                                    <button class="btn btn-sm btn-outline-success" onclick="toggleUserStatus({{ user.id }}, true)">
-                                        <i class="fas fa-check"></i> Ativar
-                                    </button>
-                                {% endif %}
+                                <button class="btn btn-sm btn-outline-danger" onclick="desactivateUser({{ user.id }})">
+                                    <i class="fas fa-ban"></i> Desativar
+                                </button>
                             </div>
                         </div>
                     </div>

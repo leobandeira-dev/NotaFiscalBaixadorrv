@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from typing import Dict, Any, List, Optional
 import logging
 from functools import wraps
+from new_app import db
+from sqlalchemy import func
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +61,8 @@ def dashboard():
 @admin_required
 def users():
     """Gerenciar usuários"""
-    from models import User
+    from models import User, CreditBalance, Charge, XMLFile
+    from credit_system_fixed import get_user_xml_balance
     
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
@@ -72,11 +75,50 @@ def users():
             User.email.contains(search)
         )
     
-    users = query.order_by(User.created_at.desc()).paginate(
+    users_pagination = query.order_by(User.created_at.desc()).paginate(
         page=page, per_page=20, error_out=False
     )
     
-    return render_template('admin/users.html', users=users, search=search)
+    # Enriquecer dados dos usuários com informações reais
+    users_with_data = []
+    for user in users_pagination.items:
+        # Calcular saldo real de créditos XML
+        xml_balance = get_user_xml_balance(user.id)
+        
+        # Contar XMLs baixados pelo usuário
+        total_xmls = XMLFile.query.filter_by(user_id=user.id).count()
+        
+        # Calcular valor total gasto (cobranças recebidas)
+        total_spent = db.session.query(func.sum(Charge.amount)).filter(
+            Charge.user_id == user.id,
+            Charge.status == 'RECEIVED'
+        ).scalar() or 0
+        
+        # Status do usuário
+        status = 'Ativo'
+        if user.is_trial_active():
+            status = 'Trial'
+        elif xml_balance <= 0:
+            status = 'Sem Créditos'
+        
+        user_data = {
+            'user': user,
+            'xml_balance': xml_balance,
+            'total_xmls': total_xmls,
+            'total_spent': total_spent,
+            'status': status,
+            'status_badge': {
+                'Ativo': 'success',
+                'Trial': 'warning', 
+                'Sem Créditos': 'danger'
+            }.get(status, 'secondary')
+        }
+        users_with_data.append(user_data)
+    
+    return render_template('admin/users.html', 
+                         users=users_pagination, 
+                         users_with_data=users_with_data,
+                         search=search)
 
 @admin_bp.route('/users/<int:user_id>')
 @admin_required
