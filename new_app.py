@@ -2339,32 +2339,40 @@ def get_job_status_data(job_id, user_id):
             with jobs_lock:
                 download_jobs[job_id] = job
     
-    # Force complete sync with database - this is the critical fix
+    # CRITICAL DATABASE SYNC - Force complete synchronization with database
+    from models import DownloadJob as DBDownloadJob
+    db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
+    
+    if db_job:
+        logger.info(f"[DB SYNC] Found database job {job_id}: {db_job.processed}/{db_job.total_keys} processed, status: {db_job.status}")
+        
+        # Return data DIRECTLY from database - bypass memory inconsistencies
+        import json
+        db_files = json.loads(db_job.downloaded_files or '[]')
+        db_errors = json.loads(db_job.errors or '[]')
+        
+        progress_percentage = round((db_job.processed / db_job.total_keys) * 100, 2) if db_job.total_keys > 0 else 0
+        
+        response_data = {
+            'job_id': db_job.job_id,
+            'total_keys': db_job.total_keys,
+            'processed': db_job.processed,
+            'successful': db_job.successful,
+            'failed': db_job.failed,
+            'status': db_job.status,
+            'downloaded_files': [os.path.basename(f.get('filename', '')) if isinstance(f, dict) else os.path.basename(f) for f in db_files],
+            'files': [os.path.basename(f.get('filename', '')) if isinstance(f, dict) else os.path.basename(f) for f in db_files],
+            'errors': db_errors,
+            'start_time': db_job.created_at.isoformat() if db_job.created_at else None,
+            'end_time': db_job.completed_at.isoformat() if db_job.completed_at else None,
+            'progress_percentage': progress_percentage
+        }
+        
+        logger.info(f"[DB SYNC] Returning DIRECT database data: {db_job.processed}/{db_job.total_keys} processed, {db_job.successful} successful")
+        return jsonify(response_data)
+    
+    # Fallback to memory job if no database record exists
     if job:
-        from models import DownloadJob as DBDownloadJob
-        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
-        
-        if db_job:
-            # FORCE UPDATE: Override memory with database reality
-            job.processed = db_job.processed
-            job.successful = db_job.successful
-            job.failed = db_job.failed
-            job.status = db_job.status
-            job.end_time = db_job.completed_at
-            
-            # Force update downloaded files
-            import json
-            db_files = json.loads(db_job.downloaded_files or '[]')
-            job.downloaded_files = db_files
-            job.files = [os.path.basename(f) for f in db_files]
-            
-            # Force update errors
-            job.errors = json.loads(db_job.errors or '[]')
-            
-            # Log the forced synchronization for debugging
-            logger.info(f"🔄 FORCE SYNC [Job {job_id}]: DB shows {db_job.processed}/{db_job.total_keys} processed, {db_job.successful} successful, status: {db_job.status}")
-            logger.info(f"🔄 FORCE SYNC [Job {job_id}]: Memory updated to match database reality")
-        
         if job.user_id != user_id:
             return jsonify({'error': 'Job not found'}), 404
         
