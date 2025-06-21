@@ -780,9 +780,48 @@ def submit_keys():
             flash(f'Créditos XML insuficientes. Você possui {available_credits} créditos, mas precisa de {len(valid_keys)} para processar estas chaves.', 'warning')
             return redirect(url_for('comprar_creditos_xml'))
         
-        # Create download job
+        # Create download job in database
         job_id = str(uuid.uuid4())
-        job = DownloadJob(job_id, valid_keys, current_user.id)
+        
+        # Create persistent job record
+        import json
+        from models import DownloadJob as DBDownloadJob
+        
+        db_job = DBDownloadJob(
+            job_id=job_id,
+            user_id=current_user.id,
+            total_keys=len(valid_keys),
+            download_type='xml',
+            invoice_keys=json.dumps(valid_keys),
+            status='starting'
+        )
+        
+        db.session.add(db_job)
+        db.session.commit()
+        
+        # Create in-memory job for compatibility with existing process_download_job
+        class MemoryJob:
+            def __init__(self, db_job, keys):
+                self.job_id = db_job.job_id
+                self.invoice_keys = keys
+                self.user_id = db_job.user_id
+                self.total_keys = db_job.total_keys
+                self.processed = db_job.processed
+                self.successful = db_job.successful
+                self.failed = db_job.failed
+                self.status = db_job.status
+                self.download_type = 'xml'
+                self.files = []
+                self.downloaded_files = []
+                self.errors = []
+                self.start_time = db_job.created_at
+                self.end_time = db_job.completed_at
+                
+            @property
+            def progress_percentage(self):
+                return round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
+        
+        job = MemoryJob(db_job, valid_keys)
         
         with jobs_lock:
             download_jobs[job_id] = job
@@ -821,8 +860,45 @@ def submit_keys():
 @login_required
 def download_status(job_id):
     """Display download progress and options"""
+    # First try to get from memory
     with jobs_lock:
         job = download_jobs.get(job_id)
+    
+    # If not in memory, try to get from database
+    if not job:
+        from models import DownloadJob as DBDownloadJob
+        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=current_user.id).first()
+        
+        if db_job:
+            # Recreate memory job from database
+            import json
+            
+            class MemoryJob:
+                def __init__(self, db_job):
+                    self.job_id = db_job.job_id
+                    self.invoice_keys = json.loads(db_job.invoice_keys or '[]')
+                    self.user_id = db_job.user_id
+                    self.total_keys = db_job.total_keys
+                    self.processed = db_job.processed
+                    self.successful = db_job.successful
+                    self.failed = db_job.failed
+                    self.status = db_job.status
+                    self.download_type = db_job.download_type or 'xml'
+                    self.files = json.loads(db_job.downloaded_files or '[]')
+                    self.downloaded_files = json.loads(db_job.downloaded_files or '[]')
+                    self.errors = json.loads(db_job.errors or '[]')
+                    self.start_time = db_job.created_at
+                    self.end_time = db_job.completed_at
+                    
+                @property
+                def progress_percentage(self):
+                    return round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
+            
+            job = MemoryJob(db_job)
+            
+            # Add back to memory for future access
+            with jobs_lock:
+                download_jobs[job_id] = job
     
     if not job or job.user_id != current_user.id:
         flash('Job de download não encontrado.', 'error')
