@@ -37,20 +37,35 @@ def process_download_job_ultra_simple(job_id, user_id):
             db_job.started_at = datetime.utcnow()
             db.session.commit()
             
-            # Processar cada XML individualmente
+            # Processar cada XML individualmente com múltiplas tentativas
             for i, invoice_key in enumerate(invoice_keys):
                 try:
                     logger.info(f"🔄 [ULTRA-SIMPLE] Processando {i+1}/{len(invoice_keys)}: {invoice_key}")
                     
-                    # Usar robô simplificado
+                    # Tentar download com robô simplificado
                     result = SimpleProductionRobot.simple_download(
                         invoice_key=invoice_key,
                         job_id=job_id,
                         user_id=user_id
                     )
                     
+                    # Se falhar, tentar com robô principal
+                    if not result.get('success'):
+                        logger.warning(f"⚠️ [ULTRA-SIMPLE] Robô simples falhou, tentando robô principal...")
+                        from automation_fixed import InvoiceDownloader
+                        downloader = InvoiceDownloader()
+                        try:
+                            result = downloader.download_invoice_xml(
+                                invoice_key=invoice_key,
+                                job_id=job_id,
+                                download_type='xml',
+                                user_id=user_id
+                            )
+                        finally:
+                            downloader.cleanup()
+                    
                     # Atualizar progresso no banco
-                    db_job.processed += 1
+                    db_job.processed = i + 1
                     
                     if result.get('success'):
                         db_job.successful += 1
@@ -75,8 +90,10 @@ def process_download_job_ultra_simple(job_id, user_id):
                             memory_job.failed = db_job.failed
                             memory_job.status = "running"
                     
-                    # Pequena pausa entre downloads
-                    time.sleep(1)
+                    logger.info(f"📊 [ULTRA-SIMPLE] Progresso: {db_job.processed}/{len(invoice_keys)} - Sucessos: {db_job.successful} - Falhas: {db_job.failed}")
+                    
+                    # Pausa entre downloads
+                    time.sleep(2)
                     
                 except Exception as e:
                     logger.error(f"💥 [ULTRA-SIMPLE] Erro processando {invoice_key}: {str(e)}")

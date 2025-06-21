@@ -1,3 +1,4 @@
+from final_production_fix import is_production
 """
 Sistema completo de XML Downloader com autenticação e cobrança
 """
@@ -1122,9 +1123,13 @@ def submit_keys():
         app.logger.info(f"[DOMAIN DEBUG] Environment vars - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
         
         # Start download process in background
-        # Use ultra-simple threading system to prevent hang-ups
-        from threading_fix import start_ultra_simple_download
-        start_ultra_simple_download(job_id, current_user.id)
+        # Use direct processing in production to prevent threading issues
+        if is_production():
+            from final_production_fix import direct_download_without_threading
+            direct_download_without_threading(job_id, current_user.id, valid_keys)
+        else:
+            from threading_fix import start_ultra_simple_download
+            start_ultra_simple_download(job_id, current_user.id)
         
         flash(f'Processo de download iniciado para {len(valid_keys)} chave(s).', 'success')
         return redirect(url_for('download_status', job_id=job_id))
