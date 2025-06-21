@@ -2109,15 +2109,19 @@ def upload_xml():
                     xml_content = file.read().decode('utf-8')
                     
                     # Processar e salvar XML usando a mesma função do email processor
-                    xml_file = process_and_save_uploaded_xml(
+                    result = process_and_save_uploaded_xml(
                         user_id=current_user.id,
                         xml_content=xml_content,
                         filename=file.filename
                     )
                     
-                    if xml_file:
-                        uploaded_count += 1
-                        logger.info(f"XML uploadado com sucesso: {file.filename} - Chave: {xml_file.invoice_key}")
+                    if result and result['success']:
+                        if result['is_new']:
+                            uploaded_count += 1
+                            logger.info(f"XML uploadado com sucesso: {file.filename} - Chave: {result['xml_file'].invoice_key}")
+                        else:
+                            errors.append(f"{file.filename}: XML já existe no sistema")
+                            error_count += 1
                     else:
                         errors.append(f"{file.filename}: Erro ao processar XML")
                         error_count += 1
@@ -2302,7 +2306,12 @@ def process_and_save_uploaded_xml(user_id, xml_content, filename):
             
             if existing_xml:
                 logger.warning(f"XML já existe no banco: {xml_data['chave_nf']}")
-                return existing_xml
+                return {
+                    'success': True,
+                    'is_new': False,
+                    'xml_file': existing_xml,
+                    'message': 'XML já existe no sistema'
+                }
         
         # Criar novo registro no banco
         xml_file = XMLFile(
@@ -2335,21 +2344,25 @@ def process_and_save_uploaded_xml(user_id, xml_content, filename):
             created_at=datetime.utcnow()
         )
         
-        # Campos extras para compatibilidade (usando dados do emitente)
-        xml_file.remetente_nome = xml_data['nome_emitente'][:255] if xml_data['nome_emitente'] != 'N/A' else 'N/A'
-        xml_file.remetente_cidade = xml_data['cidade_emitente'][:100] if xml_data['cidade_emitente'] != 'N/A' else 'N/A'
-        xml_file.remetente_uf = xml_data['uf_emitente'][:2] if xml_data['uf_emitente'] != 'N/A' else 'N/A'
-        xml_file.remetente_endereco = xml_data['endereco_emitente'][:255] if xml_data['endereco_emitente'] != 'N/A' else 'N/A'
-        
         db.session.add(xml_file)
         db.session.commit()
         
-        return xml_file
+        return {
+            'success': True,
+            'is_new': True,
+            'xml_file': xml_file,
+            'message': 'XML salvo com sucesso'
+        }
         
     except Exception as e:
         logger.error(f"Erro ao processar XML {filename}: {e}")
         db.session.rollback()
-        return None
+        return {
+            'success': False,
+            'is_new': False,
+            'xml_file': None,
+            'message': f'Erro ao processar XML: {str(e)}'
+        }
 
 @app.route('/email-import')
 @login_required
