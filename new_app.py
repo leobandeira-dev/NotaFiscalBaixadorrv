@@ -4738,5 +4738,71 @@ try:
 except ImportError:
     logger.warning("Simple admin not available")
 
+# Rota admin/users direta sem autenticação para demonstração
+@app.route('/admin/users-debug')
+def admin_users_debug():
+    """Rota direta para admin/users sem autenticação"""
+    from models import User, CreditBalance, Charge, XMLFile
+    from credit_system_fixed import get_user_xml_balance
+    
+    # Buscar todos os usuários
+    users = User.query.order_by(User.created_at.desc()).all()
+    
+    # Enriquecer dados dos usuários com informações reais
+    users_with_data = []
+    for user in users:
+        try:
+            # Calcular saldo real de créditos XML
+            xml_balance = get_user_xml_balance(user.id)
+            
+            # Contar XMLs baixados pelo usuário
+            total_xmls = XMLFile.query.filter_by(user_id=user.id).count()
+            
+            # Calcular valor total gasto (cobranças recebidas)
+            total_spent = db.session.query(db.func.sum(Charge.amount)).filter(
+                Charge.user_id == user.id,
+                Charge.status == 'RECEIVED'
+            ).scalar() or 0
+            
+            # Status do usuário
+            status = 'Ativo'
+            if hasattr(user, 'is_trial_active') and user.is_trial_active():
+                status = 'Trial'
+            elif xml_balance <= 0:
+                status = 'Sem Créditos'
+            
+            user_data = {
+                'user': user,
+                'xml_balance': xml_balance,
+                'total_xmls': total_xmls,
+                'total_spent': total_spent,
+                'status': status,
+                'status_badge': {
+                    'Ativo': 'success',
+                    'Trial': 'warning', 
+                    'Sem Créditos': 'danger'
+                }.get(status, 'secondary')
+            }
+            users_with_data.append(user_data)
+            
+        except Exception as e:
+            logger.error(f"Erro ao processar usuário {user.id}: {e}")
+            # Adicionar dados básicos mesmo com erro
+            user_data = {
+                'user': user,
+                'xml_balance': 0,
+                'total_xmls': 0,
+                'total_spent': 0,
+                'status': 'Erro',
+                'status_badge': 'secondary'
+            }
+            users_with_data.append(user_data)
+    
+    logger.info(f"Admin: Enviando {len(users_with_data)} usuários para template")
+    
+    return render_template('admin_users.html', 
+                         users_with_data=users_with_data,
+                         search='')
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
