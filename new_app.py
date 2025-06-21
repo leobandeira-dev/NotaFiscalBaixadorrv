@@ -4724,12 +4724,12 @@ def generate_custom_labels(xml_id):
         return redirect(url_for('label_generator', xml_id=xml_id))
 
 
-# Importar admin panel
-try:
-    from admin_panel import init_admin_panel
-    init_admin_panel(app)
-except ImportError:
-    logger.warning("Admin panel not available")
+# Comentar admin panel temporariamente para evitar conflito de rotas
+# try:
+#     from admin_panel import init_admin_panel
+#     init_admin_panel(app)
+# except ImportError:
+#     logger.warning("Admin panel not available")
 
 # Import simple admin route
 try:
@@ -4738,10 +4738,10 @@ try:
 except ImportError:
     logger.warning("Simple admin not available")
 
-# Rota admin/users direta sem autenticação para demonstração
-@app.route('/admin/users-debug')
-def admin_users_debug():
-    """Rota direta para admin/users sem autenticação"""
+# Rota admin/users direta sobrescrevendo blueprint
+@app.route('/admin/users')
+def admin_users_override():
+    """Rota direta para admin/users substituindo blueprint"""
     from models import User, CreditBalance, Charge, XMLFile
     from credit_system_fixed import get_user_xml_balance
     

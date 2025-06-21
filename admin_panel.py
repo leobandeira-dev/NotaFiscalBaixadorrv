@@ -104,7 +104,6 @@ def users_debug():
     return debug_info
 
 @admin_bp.route('/users')
-# @admin_required  # Temporarily disabled for testing
 def users():
     """Gerenciar usuários"""
     from models import User, CreditBalance, Charge, XMLFile
