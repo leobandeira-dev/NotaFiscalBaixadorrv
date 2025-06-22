@@ -18,8 +18,6 @@ from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
-from authlib.integrations.flask_client import OAuth
-
 # Import Google OAuth blueprint
 from google_auth import google_auth
 from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, init_default_data
@@ -278,27 +276,11 @@ app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'noreply@xmldownlo
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
 app.config['MAIL_DEFAULT_SENDER'] = 'XMLDownloader <noreply@xmldownloader.com>'
 
-# OAuth configuration
-app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '')
-app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '')
-
 # Initialize database
 db.init_app(app)
 
 # Initialize Flask-Mail
 mail = Mail(app)
-
-# Initialize OAuth
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id=app.config['GOOGLE_CLIENT_ID'],
-    client_secret=app.config['GOOGLE_CLIENT_SECRET'],
-    server_metadata_url='https://accounts.google.com/.well-known/openid_configuration',
-    client_kwargs={
-        'scope': 'openid email profile'
-    }
-)
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -627,45 +609,7 @@ def reset_password(token):
     
     return render_template('reset_password.html', token=token)
 
-@app.route('/auth/google')
-def google_login():
-    """Google OAuth login"""
-    redirect_uri = url_for('google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
 
-@app.route('/auth/google/callback')
-def google_callback():
-    """Google OAuth callback"""
-    try:
-        token = google.authorize_access_token()
-        user_info = token.get('userinfo')
-        
-        if user_info:
-            email = user_info.get('email')
-            name = user_info.get('name', email.split('@')[0])
-            
-            # Check if user exists
-            user = User.query.filter_by(email=email).first()
-            
-            if not user:
-                # Create new user
-                user = User(name=name, email=email)
-                # Set a random password for OAuth users
-                user.set_password(secrets.token_urlsafe(32))
-                db.session.add(user)
-                db.session.commit()
-                flash('Conta criada com sucesso via Google!', 'success')
-            
-            login_user(user)
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Erro ao obter informações do Google.', 'error')
-            
-    except Exception as e:
-        logger.error(f"Erro no login Google: {e}")
-        flash('Erro no login com Google. Tente novamente.', 'error')
-    
-    return redirect(url_for('login'))
 
 @app.route('/dashboard')
 @login_required
