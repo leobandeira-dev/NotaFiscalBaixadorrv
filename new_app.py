@@ -288,7 +288,7 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # Register Google OAuth blueprint
-app.register_blueprint(google_auth, url_prefix='/auth')
+app.register_blueprint(google_auth)
 
 # Setup security headers
 setup_security_headers(app)

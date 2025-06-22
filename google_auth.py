@@ -4,9 +4,10 @@ import json
 import os
 
 import requests
-from flask import Blueprint, redirect, request, url_for, current_app
+from flask import Blueprint, redirect, request, url_for, current_app, flash
 from flask_login import login_required, login_user, logout_user
 from oauthlib.oauth2 import WebApplicationClient
+from datetime import datetime, timedelta
 
 from models import User, db
 
@@ -102,16 +103,16 @@ def callback():
     user = User.query.filter_by(email=users_email).first()
     if not user:
         # Create new user with trial period
-        from datetime import datetime, timedelta
-        user = User(
-            email=users_email,
-            name=users_name,
-            provider='google',
-            trial_start_date=datetime.now(),
-            trial_end_date=datetime.now() + timedelta(days=7),
-            is_trial_active=True,
-            profile_picture=users_picture
-        )
+        user = User()
+        user.email = users_email
+        user.name = users_name
+        user.provider = 'google'
+        user.trial_start_date = datetime.utcnow()
+        user.trial_end_date = datetime.utcnow() + timedelta(days=7)
+        user.is_trial_active = True
+        user.profile_picture = users_picture
+        user.active = True
+        
         db.session.add(user)
         db.session.commit()
         current_app.logger.info(f"New Google user created: {users_email}")
