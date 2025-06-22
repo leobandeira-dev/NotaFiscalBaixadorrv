@@ -5006,6 +5006,15 @@ def generate_custom_labels(xml_id):
             xml_data.label_file_path = f"etiquetas/nf_{xml_data.numero_nf or xml_id}_{labels[0]['filename']}"
         else:
             xml_data.label_file_path = f"etiquetas/nf_{xml_data.numero_nf or xml_id}_multipaginas.pdf"
+        
+        # Atualizar banco de dados compartilhado LabelGeneration
+        label_generation = LabelGeneration.get_or_create(current_user.id, xml_id)
+        label_generation.mark_generated(
+            label_file_path=xml_data.label_file_path,
+            volumes_count=len(labels),
+            layout=layout_style
+        )
+        
         db.session.commit()
         
         flash(f'{len(labels)} etiquetas geradas com sucesso!', 'success')
@@ -5038,16 +5047,6 @@ def generate_quick_label():
         if not check_labels_subscription_status(current_user.id):
             flash('Acesso ao módulo de etiquetas necessário. Assine por R$ 49,90/mês.', 'warning')
             return redirect(url_for('labels_purchase'))
-        
-        # Verificar ou criar registro de geração de etiqueta no banco compartilhado
-        label_generation = LabelGeneration.get_or_create(current_user.id, xml_data.id)
-        
-        # Marcar como gerada no banco de dados compartilhado
-        label_generation.mark_generated(
-            volumes_count=xml_data.quantidade_volumes or 1,
-            layout='transul'
-        )
-        db.session.commit()
         
         # Usar a mesma função de geração já existente e testada
         return redirect(url_for('generate_label_route', xml_id=xml_data.id))
