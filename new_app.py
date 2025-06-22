@@ -305,6 +305,136 @@ def get_google_redirect_url():
     else:
         return 'http://localhost:5000/google_login/callback'
 
+# Display Google OAuth setup instructions
+if GOOGLE_CLIENT_ID:
+    replit_redirect = f'https://{os.environ.get("REPLIT_DEV_DOMAIN", "your-repl")}/google_login/callback'
+    custom_redirect = 'https://crossxml.com.br/google_login/callback'
+    
+    print(f"""Google OAuth configured. Redirect URIs:
+    - {replit_redirect} (for Replit domain)
+    - {custom_redirect} (for custom domain)
+    """)
+else:
+    print("Google OAuth not configured - GOOGLE_OAUTH_CLIENT_ID missing")
+
+# Google OAuth Routes
+@app.route("/google_login")
+def google_login():
+    """Initiate Google OAuth login"""
+    if not client:
+        flash("Google OAuth não está configurado.", "error")
+        return redirect(url_for("login"))
+    
+    try:
+        google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
+        authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+        
+        redirect_uri = get_google_redirect_url()
+        
+        request_uri = client.prepare_request_uri(
+            authorization_endpoint,
+            redirect_uri=redirect_uri,
+            scope=["openid", "email", "profile"],
+        )
+        return redirect(request_uri)
+    except Exception as e:
+        flash(f"Erro ao iniciar login com Google: {str(e)}", "error")
+        return redirect(url_for("login"))
+
+@app.route("/google_login/callback")
+def google_callback():
+    """Handle Google OAuth callback"""
+    if not client:
+        flash("Google OAuth não está configurado.", "error")
+        return redirect(url_for("login"))
+    
+    try:
+        code = request.args.get("code")
+        if not code:
+            flash("Código de autorização não recebido do Google.", "error")
+            return redirect(url_for("login"))
+        
+        google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()
+        token_endpoint = google_provider_cfg["token_endpoint"]
+        
+        redirect_uri = get_google_redirect_url()
+        
+        token_url, headers, body = client.prepare_token_request(
+            token_endpoint,
+            authorization_response=request.url.replace("http://", "https://"),
+            redirect_url=redirect_uri,
+            code=code,
+        )
+        
+        token_response = requests.post(
+            token_url,
+            headers=headers,
+            data=body,
+            auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
+        )
+        
+        client.parse_request_body_response(json.dumps(token_response.json()))
+        
+        userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
+        uri, headers, body = client.add_token(userinfo_endpoint)
+        userinfo_response = requests.get(uri, headers=headers, data=body)
+        
+        userinfo = userinfo_response.json()
+        
+        if userinfo.get("email_verified"):
+            users_email = userinfo["email"]
+            users_name = userinfo.get("given_name", "User")
+            users_picture = userinfo.get("picture")
+        else:
+            flash("Email não verificado pelo Google. Tente novamente.", "error")
+            return redirect(url_for("login"))
+        
+        # Find or create user
+        user = User.query.filter_by(email=users_email).first()
+        if not user:
+            # Create new user with trial period
+            user = User()
+            user.email = users_email
+            user.name = users_name
+            user.provider = 'google'
+            user.trial_start_date = datetime.utcnow()
+            user.trial_end_date = datetime.utcnow() + timedelta(days=7)
+            user.is_trial_active = True
+            user.profile_picture = users_picture
+            user.active = True
+            
+            db.session.add(user)
+            db.session.commit()
+            
+            flash(f"Bem-vindo ao CROSS XML, {users_name}! Você tem 7 dias de teste grátis.", "success")
+            log_user_activity(user.id, 'registration', f'Novo usuário registrado via Google OAuth ({request.host})')
+        else:
+            # Update user info if needed
+            if not user.name or user.name != users_name:
+                user.name = users_name
+            if users_picture and (not user.profile_picture or user.profile_picture != users_picture):
+                user.profile_picture = users_picture
+            db.session.commit()
+            
+            flash(f"Bem-vindo de volta, {user.name}!", "success")
+        
+        login_user(user)
+        log_user_activity(user.id, 'login', f'Login via Google OAuth ({request.host})')
+        
+        return redirect(url_for("dashboard"))
+        
+    except Exception as e:
+        flash(f"Erro durante autenticação com Google: {str(e)}", "error")
+        return redirect(url_for("login"))
+
+@app.route("/google_logout")
+@login_required
+def google_logout():
+    """Google OAuth logout"""
+    logout_user()
+    flash("Logout realizado com sucesso.", "success")
+    return redirect(url_for("index"))
+
 # Setup security headers
 setup_security_headers(app)
 login_manager.login_message = 'Faça login para acessar esta página.'
