@@ -473,7 +473,7 @@ class LabelGeneration(db.Model):
     def mark_generated(self, label_file_path=None, volumes_count=1, layout='transul'):
         """Marcar como gerada"""
         self.is_generated = True
-        self.generation_count += 1
+        self.generation_count = (self.generation_count or 0) + 1
         self.last_generated_at = datetime.utcnow()
         self.updated_at = datetime.utcnow()
         if label_file_path:
