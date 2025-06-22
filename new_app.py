@@ -5214,6 +5214,9 @@ def google_login():
             authorization_endpoint,
             redirect_uri=redirect_uri,
             scope=["openid", "email", "profile"],
+            prompt="select_account consent",
+            access_type="offline",
+            include_granted_scopes="true"
         )
         return redirect(request_uri)
     except Exception as e:
