@@ -18,8 +18,10 @@ from flask_mail import Mail, Message
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
-# Import Google OAuth blueprint
-from google_auth import google_auth
+# Import Google OAuth components
+import json
+import requests
+from oauthlib.oauth2 import WebApplicationClient
 from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, init_default_data
 from package_models import (
     StripeProduct, PackageFeature, UserSubscription, FeatureUsage,
@@ -287,8 +289,21 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-# Register Google OAuth blueprint
-app.register_blueprint(google_auth)
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_OAUTH_CLIENT_SECRET")
+GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configuration"
+
+client = WebApplicationClient(GOOGLE_CLIENT_ID) if GOOGLE_CLIENT_ID else None
+
+def get_google_redirect_url():
+    """Get the appropriate redirect URL based on current domain"""
+    if 'crossxml.com.br' in request.host:
+        return 'https://crossxml.com.br/google_login/callback'
+    elif os.environ.get("REPLIT_DEV_DOMAIN"):
+        return f'https://{os.environ["REPLIT_DEV_DOMAIN"]}/google_login/callback'
+    else:
+        return 'http://localhost:5000/google_login/callback'
 
 # Setup security headers
 setup_security_headers(app)
