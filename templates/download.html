@@ -160,12 +160,7 @@
         const jobId = '{{ job.job_id }}';
         
         function updateJobStatus() {
-            fetch(`/job_status/${jobId}`, {
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
+            fetch(`/api/job_status/${jobId}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.error) {
