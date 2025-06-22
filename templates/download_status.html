@@ -479,17 +479,35 @@
                                         <i class="fas fa-file-code me-2"></i>
                                         {{ file }}
                                     </h6>
-                                    <div class="btn-group w-100">
-                                        <a href="/downloads/{{ file }}" download="{{ file }}" 
-                                           class="btn btn-success">
-                                            <i class="fas fa-download me-2"></i>
-                                            Baixar XML
-                                        </a>
-                                        <a href="/generate-danfe/{{ file }}" 
-                                           class="btn btn-primary">
-                                            <i class="fas fa-file-pdf me-2"></i>
-                                            Gerar DANFE SEFAZ (Grátis)
-                                        </a>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <a href="/downloads/{{ file }}" download="{{ file }}" 
+                                               class="btn btn-success w-100">
+                                                <i class="fas fa-download me-2"></i>
+                                                Baixar XML
+                                            </a>
+                                        </div>
+                                        <div class="col-6">
+                                            <a href="/generate-danfe/{{ file }}" 
+                                               class="btn btn-primary w-100">
+                                                <i class="fas fa-file-pdf me-2"></i>
+                                                Gerar DANFE SEFAZ (Grátis)
+                                            </a>
+                                        </div>
+                                        <div class="col-6">
+                                            <button onclick="generateQuickLabel('{{ file }}')" 
+                                                    class="btn btn-warning w-100">
+                                                <i class="fas fa-tags me-2"></i>
+                                                Gerar Etiqueta
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <button onclick="editVolumeWeight('{{ file }}')" 
+                                                    class="btn btn-outline-secondary w-100">
+                                                <i class="fas fa-edit me-2"></i>
+                                                Editar Volume/Peso
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -570,6 +588,32 @@
                 button.disabled = false;
                 document.body.removeChild(form);
             }, 2000);
+        }
+
+        function generateQuickLabel(filename) {
+            const xmlKey = filename.replace('.xml', '');
+            
+            // Show loading state
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Gerando...';
+            button.disabled = true;
+            
+            // Generate label directly from downloaded XML
+            window.open(`/generate-danfe-simple/${filename}?type=label`, '_blank');
+            
+            // Restore button after short delay
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }, 2000);
+        }
+        
+        function editVolumeWeight(filename) {
+            const xmlKey = filename.replace('.xml', '');
+            
+            // Redirect to label generator with volume/weight editing
+            window.location.href = `/label-generator-from-file/${filename}`;
         }
 
         function updateProgress(data) {
