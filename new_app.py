@@ -3301,7 +3301,7 @@ def generate_danfe_route(xml_id):
 @login_required
 @rate_limit_check(max_requests=50, window_minutes=15)
 def generate_label_route(xml_id):
-    """Gera e baixa etiqueta de transporte para um XML específico com isolamento de dados"""
+    """Gera e baixa etiqueta de transporte para um XML específico com isolamento de dados - UNIFICADO com labels-module"""
     try:
         # Validar acesso ao XML com isolamento de dados
         xml_query = XMLFile.query.filter_by(id=xml_id, user_id=current_user.id)
@@ -3335,106 +3335,73 @@ def generate_label_route(xml_id):
             flash('Módulo de etiquetas não disponível.', 'error')
             return redirect(url_for('meus_xmls'))
         
-        # Usar o mesmo sistema profissional do módulo de etiquetas
-        from responsive_label_generator import ResponsiveTransportLabelGenerator
+        # USAR EXATAMENTE O MESMO SISTEMA DO MÓDULO DE ETIQUETAS
+        # Configurações de empresa do usuário (mesmo padrão do labels-module)
+        company_name = current_user.company_name or xml_record.nome_emitente or 'SUA EMPRESA'
+        company_subtitle = current_user.company_subtitle or 'OPERADOR LOGÍSTICO'
+        company_logo_path = current_user.company_logo_path
+        area_code = current_user.default_area_code or '01'
         
-        # Configurações de empresa do usuário
-        company_config = {
-            'name': current_user.company_name or xml_record.nome_emitente or 'SUA EMPRESA',
-            'subtitle': current_user.company_subtitle or 'OPERADOR LOGÍSTICO',
-            'logo_path': current_user.company_logo_path,
-            'area_code': current_user.default_area_code or '01'
-        }
+        # Configurações de papel (mesmo padrão: 10x15cm)
+        paper_width_mm = getattr(current_user, 'paper_width_mm', 100)
+        paper_height_mm = getattr(current_user, 'paper_height_mm', 150)
         
-        # Configurações de papel (padrão do módulo: 10x15cm)
-        paper_config = {
-            'width_mm': getattr(current_user, 'paper_width_mm', 100),
-            'height_mm': getattr(current_user, 'paper_height_mm', 150)
-        }
-        
-        # Usar layout padrão do módulo (Transul Exato)
+        # Layout padrão (mesmo do módulo: Transul Exato)
         layout_style = getattr(current_user, 'preferred_layout', 'transul')
         
         # Obter volumes e peso do XML
         volumes_qty = xml_record.quantidade_volumes or 1
         peso_total = xml_record.peso_bruto or 0.0
         
-        # Configuração de volumes com peso distribuído
+        # Configuração de volumes com peso distribuído (mesmo formato do labels-module)
         volumes_config = []
         peso_por_volume = peso_total / volumes_qty if volumes_qty > 0 else 0.0
         
         for i in range(1, volumes_qty + 1):
             volumes_config.append({
-                'number': i,
-                'weight_kg': peso_por_volume,
-                'description': f'Volume {i} de {volumes_qty}'
+                'peso': peso_por_volume,
+                'pedido': f'PED{xml_record.numero_nf or xml_record.id}-{i}'
             })
         
-        # Gerar etiquetas usando os métodos corretos do ResponsiveTransportLabelGenerator
-        generator = ResponsiveTransportLabelGenerator(
-            company_name=company_config['name'],
-            company_subtitle=company_config['subtitle'],
-            paper_width_mm=paper_config['width_mm'],
-            paper_height_mm=paper_config['height_mm'],
+        # USAR A MESMA FUNÇÃO DO LABELS-MODULE: generate_improved_labels_with_guaranteed_borders
+        labels = generate_improved_labels_with_guaranteed_borders(
+            xml_record=xml_record,
+            volumes_config=volumes_config,
+            company_name=company_name,
+            company_logo_path=company_logo_path,
+            paper_width_mm=paper_width_mm,
+            paper_height_mm=paper_height_mm,
+            area_code=area_code,
+            company_subtitle=company_subtitle,
             layout_style=layout_style
         )
         
-        # Obter conteúdo XML do registro
-        xml_content = xml_record.xml_content
-        if not xml_content:
-            raise Exception("Conteúdo XML não encontrado no registro")
+        if not labels:
+            raise Exception("Nenhuma etiqueta válida gerada")
         
-        if volumes_qty > 1:
-            # Múltiplas etiquetas usando generate_transport_label_with_volume_info
-            labels = []
-            for i, volume_config in enumerate(volumes_config):
-                volume_number = volume_config['number']
-                pedido_number = f"{xml_record.numero_nf or xml_record.id}-{volume_number}"
-                volume_info = f"{volume_number}/{volumes_qty}"
-                
-                try:
-                    pdf_buffer = generator.generate_transport_label_with_volume_info(
-                        xml_content=xml_content,
-                        pedido_number=pedido_number,
-                        area_code=company_config['area_code'],
-                        company_logo_path=company_config['logo_path'],
-                        volume_info=volume_info,
-                        current_volume=volume_number,
-                        total_volumes=volumes_qty
-                    )
-                    
-                    labels.append({
-                        'pdf_buffer': pdf_buffer,
-                        'filename': f'etiqueta_vol_{volume_number}.pdf',
-                        'volume': volume_number
-                    })
-                    
-                except Exception as e:
-                    logger.error(f"Erro ao gerar etiqueta volume {volume_number}: {e}")
-                    continue
+        # Mesclar etiquetas em PDF único (mesmo processo do labels-module)
+        if len(labels) > 1:
+            # Múltiplas etiquetas - mesclar
+            from io import BytesIO
+            from PyPDF2 import PdfMerger
             
-            if not labels:
-                raise Exception(f"Nenhuma etiqueta válida gerada para {volumes_qty} volumes")
+            merger = PdfMerger()
+            for label in labels:
+                pdf_buffer = label['pdf_buffer']
+                if pdf_buffer and hasattr(pdf_buffer, 'getvalue'):
+                    pdf_buffer.seek(0)
+                    merger.append(pdf_buffer)
             
-            # Mesclar em PDF único
-            from responsive_label_generator import merge_labels_into_single_pdf
-            label_buffer = merge_labels_into_single_pdf(labels)
+            merged_pdf = BytesIO()
+            merger.write(merged_pdf)
+            merger.close()
+            merged_pdf.seek(0)
+            
+            label_buffer = merged_pdf
             filename = f"etiquetas_nf_{xml_record.numero_nf or xml_record.id}_{volumes_qty}volumes.pdf"
-            
         else:
-            # Etiqueta única usando generate_transport_label
-            pedido_number = f"{xml_record.numero_nf or xml_record.id}-1"
-            
-            label_buffer = generator.generate_transport_label(
-                xml_content=xml_content,
-                pedido_number=pedido_number,
-                area_code=company_config['area_code'],
-                company_logo_path=company_config['logo_path']
-            )
-            
-            if not label_buffer:
-                raise Exception("Falha na geração da etiqueta")
-            
+            # Etiqueta única
+            label_buffer = labels[0]['pdf_buffer']
             filename = f"etiqueta_nf_{xml_record.numero_nf or xml_record.id}.pdf"
         
         # Registrar uso do módulo de etiquetas (sem cobrança adicional - incluído na assinatura)
