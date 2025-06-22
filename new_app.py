@@ -4995,99 +4995,34 @@ def generate_custom_labels(xml_id):
         return redirect(url_for('label_generator', xml_id=xml_id))
 
 
-@app.route('/generate-danfe-simple/<filename>')
+@app.route('/generate-quick-label', methods=['POST'])
 @login_required
-def generate_quick_label(filename):
+def generate_quick_label():
     """Geração rápida de etiqueta diretamente do arquivo baixado"""
     try:
+        # Obter filename do POST request
+        filename = request.form.get('filename')
+        if not filename:
+            flash('Arquivo não especificado.', 'error')
+            return redirect(url_for('dashboard'))
+        
         # Buscar XML no banco de dados pelo filename
         xml_data = XMLFile.query.filter_by(user_id=current_user.id, filename=filename).first()
         if not xml_data:
             flash('XML não encontrado.', 'error')
             return redirect(url_for('dashboard'))
         
-        # Verificar se é solicitação de etiqueta
-        if request.args.get('type') == 'label':
-            # Verificar se usuário tem acesso ao módulo de etiquetas
-            if not check_labels_subscription_status(current_user.id):
-                flash('Acesso ao módulo de etiquetas necessário. Assine por R$ 49,90/mês.', 'warning')
-                return redirect(url_for('labels_purchase'))
-            
-            # Usar configuração padrão do usuário para etiquetas
-            user_config = LabelConfig.query.filter_by(user_id=current_user.id).first()
-            if not user_config:
-                # Criar configuração padrão se não existir
-                user_config = LabelConfig(
-                    user_id=current_user.id,
-                    company_name="CROSS XML",
-                    company_subtitle="OPERADOR LOGÍSTICO",
-                    layout_style="transul",
-                    paper_size="10x15cm"
-                )
-                db.session.add(user_config)
-                db.session.commit()
-            
-            # Gerar etiqueta com configuração padrão
-            from responsive_label_generator import ResponsiveTransportLabelGenerator
-            
-            generator = ResponsiveTransportLabelGenerator(
-                company_name=user_config.company_name,
-                company_subtitle=user_config.company_subtitle,
-                company_logo_path=user_config.logo_path,
-                layout_style=user_config.layout_style,
-                paper_size=user_config.paper_size,
-                area_code=user_config.area_code or "01"
-            )
-            
-            # Usar dados do XML
-            volumes = xml_data.quantidade_volumes or 1
-            peso_total = float(xml_data.peso_bruto or 0)
-            
-            # Gerar etiquetas para todos os volumes
-            labels = []
-            for i in range(volumes):
-                label_data = {
-                    'nf_numero': xml_data.numero_nf,
-                    'nf_serie': xml_data.serie_nf,
-                    'pedido': xml_data.numero_nf,  # Usar NF como pedido
-                    'remetente': xml_data.nome_emitente[:20] if xml_data.nome_emitente else 'N/A',
-                    'destinatario': xml_data.nome_destinatario[:30] if xml_data.nome_destinatario else 'N/A',
-                    'cidade_uf': f"{xml_data.destinatario_cidade}/{xml_data.destinatario_uf}" if xml_data.destinatario_cidade else 'N/A',
-                    'peso': f"{peso_total/volumes:.1f}kg" if volumes > 1 else f"{peso_total:.1f}kg",
-                    'volume': f"{i+1}/{volumes}",
-                    'area': user_config.area_code or "01"
-                }
-                
-                pdf_buffer, filename = generator.generate_label(label_data, i+1)
-                labels.append({
-                    'buffer': pdf_buffer,
-                    'filename': filename
-                })
-            
-            if len(labels) == 1:
-                # Única etiqueta
-                response = make_response(labels[0]['buffer'].getvalue())
-                response.headers['Content-Type'] = 'application/pdf'
-                response.headers['Content-Disposition'] = f'inline; filename="{labels[0]["filename"]}"'
-                response.headers['X-Frame-Options'] = 'ALLOWALL'
-                return response
-            else:
-                # Múltiplas etiquetas
-                from responsive_label_generator import merge_labels_into_single_pdf
-                merged_pdf = merge_labels_into_single_pdf(labels)
-                
-                response = make_response(merged_pdf.getvalue())
-                response.headers['Content-Type'] = 'application/pdf'
-                response.headers['Content-Disposition'] = f'inline; filename="etiquetas_nf_{xml_data.numero_nf}_multiplas.pdf"'
-                response.headers['X-Frame-Options'] = 'ALLOWALL'
-                return response
+        # Verificar se usuário tem acesso ao módulo de etiquetas
+        if not check_labels_subscription_status(current_user.id):
+            flash('Acesso ao módulo de etiquetas necessário. Assine por R$ 49,90/mês.', 'warning')
+            return redirect(url_for('labels_purchase'))
         
-        # Se não for etiqueta, gerar DANFE normal
-        return redirect(url_for('generate_danfe_route', xml_id=xml_data.id))
-        
+        # Usar a mesma função de geração já existente e testada
+        return redirect(url_for('generate_label_route', xml_id=xml_data.id))
+    
     except Exception as e:
-        logger.error(f"Erro na geração rápida: {e}")
-        flash('Erro ao gerar etiqueta.', 'error')
+        print(f"Erro na geração rápida de etiqueta: {str(e)}")
+        flash('Erro ao gerar etiqueta. Tente novamente.', 'error')
         return redirect(url_for('dashboard'))
 
 @app.route('/label-generator-from-file/<filename>')

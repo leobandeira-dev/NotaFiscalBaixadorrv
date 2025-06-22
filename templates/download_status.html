@@ -599,13 +599,27 @@
             button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Gerando...';
             button.disabled = true;
             
-            // Generate label directly from downloaded XML
-            window.open(`/generate-danfe-simple/${filename}?type=label`, '_blank');
+            // Create form to generate label
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/generate-quick-label';
+            form.target = '_blank';
+            form.style.display = 'none';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'filename';
+            input.value = filename;
+            
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
             
             // Restore button after short delay
             setTimeout(() => {
                 button.innerHTML = originalText;
                 button.disabled = false;
+                document.body.removeChild(form);
             }, 2000);
         }
         
