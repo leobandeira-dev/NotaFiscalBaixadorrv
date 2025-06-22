@@ -5252,30 +5252,92 @@ def google_callback():
             auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
         )
         
-        client.parse_request_body_response(json.dumps(token_response.json()))
+        # Verificar se a resposta do token é válida
+        if token_response.status_code != 200:
+            flash("Erro na autenticação com Google. Tente novamente.", "error")
+            return redirect(url_for("login"))
+        
+        token_data = token_response.json()
+        if 'error' in token_data:
+            flash(f"Erro de autenticação: {token_data.get('error_description', 'Token inválido')}", "error")
+            return redirect(url_for("login"))
+        
+        client.parse_request_body_response(json.dumps(token_data))
         
         userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
         uri, headers, body = client.add_token(userinfo_endpoint)
         userinfo_response = requests.get(uri, headers=headers, data=body)
         
-        userinfo = userinfo_response.json()
-        
-        if userinfo.get("email_verified"):
-            users_email = userinfo["email"]
-            users_name = userinfo.get("given_name", "User")
-            users_picture = userinfo.get("picture")
-        else:
-            flash("Email não verificado pelo Google. Tente novamente.", "error")
+        # Verificar se a resposta do userinfo é válida
+        if userinfo_response.status_code != 200:
+            flash("Erro ao obter informações do usuário Google.", "error")
             return redirect(url_for("login"))
         
-        # Find or create user
-        user = User.query.filter_by(email=users_email).first()
-        if not user:
-            # Create new user with trial period
+        userinfo = userinfo_response.json()
+        
+        # Validações de segurança rigorosas
+        if not userinfo.get("email_verified", False):
+            flash("Email não verificado pelo Google. Verifique seu email e tente novamente.", "error")
+            return redirect(url_for("login"))
+        
+        if not userinfo.get("email"):
+            flash("Email não fornecido pelo Google. Tente novamente.", "error")
+            return redirect(url_for("login"))
+        
+        # Verificar se o sub (user ID) está presente
+        if not userinfo.get("sub"):
+            flash("Identificação de usuário inválida. Tente novamente.", "error")
+            return redirect(url_for("login"))
+        
+        users_email = userinfo["email"]
+        users_name = userinfo.get("given_name", "User")
+        users_picture = userinfo.get("picture")
+        google_user_id = userinfo["sub"]
+        
+        # Logs de segurança para auditoria OAuth
+        logger.info(f"OAUTH_ATTEMPT: Google ID: {google_user_id[:8]}..., Email: {users_email}, Host: {request.host}")
+        
+        # Verificações de segurança rigorosas para encontrar/criar usuário
+        # Primeiro verificar se já existe usuário com este Google ID
+        user_by_google_id = User.query.filter_by(google_user_id=google_user_id).first()
+        user_by_email = User.query.filter_by(email=users_email).first()
+        
+        # Verificar inconsistências de segurança
+        if user_by_google_id and user_by_email and user_by_google_id.id != user_by_email.id:
+            logger.warning(f"SECURITY_VIOLATION: Conflito de identificação - Google ID vinculado ao usuário {user_by_google_id.id}, mas email {users_email} pertence ao usuário {user_by_email.id}")
+            flash("Erro de segurança: Conflito de identificação detectado. Entre em contato com o suporte.", "error")
+            return redirect(url_for("login"))
+        
+        # Se existe usuário por Google ID, usar ele
+        if user_by_google_id:
+            user = user_by_google_id
+            logger.info(f"OAUTH_EXISTING_GOOGLE: Usuário {user.id} encontrado pelo Google ID")
+            # Verificar se o email mudou no Google
+            if user.email != users_email:
+                logger.warning(f"SECURITY_VIOLATION: Email mudou no Google - Usuário {user.id}, email anterior: {user.email}, novo email: {users_email}")
+                flash("Erro de segurança: Email inconsistente com conta registrada. Entre em contato com o suporte.", "error")
+                return redirect(url_for("login"))
+        # Se existe usuário por email mas sem Google ID, vincular
+        elif user_by_email:
+            user = user_by_email
+            logger.info(f"OAUTH_LINKING: Vinculando Google ID ao usuário existente {user.id}")
+            # Verificar se não é conta local com senha
+            if user.provider == 'local' and user.password_hash:
+                logger.warning(f"OAUTH_CONFLICT: Tentativa de vincular Google a conta local com senha - Usuário {user.id}")
+                flash("Este email já está registrado com senha. Use o login tradicional ou redefina sua senha.", "error")
+                return redirect(url_for("login"))
+            # Vincular conta Google
+            user.google_user_id = google_user_id
+            user.provider = 'google'
+            logger.info(f"OAUTH_LINKED: Google ID vinculado com sucesso ao usuário {user.id}")
+        # Criar novo usuário
+        else:
+            logger.info(f"OAUTH_NEW_USER: Criando novo usuário para email {users_email}")
             user = User()
             user.email = users_email
             user.name = users_name
             user.provider = 'google'
+            user.google_user_id = google_user_id
             user.trial_start_date = datetime.utcnow()
             user.trial_end_date = datetime.utcnow() + timedelta(days=7)
             user.is_trial_active = True
@@ -5285,17 +5347,27 @@ def google_callback():
             db.session.add(user)
             db.session.commit()
             
+            logger.info(f"OAUTH_USER_CREATED: Novo usuário {user.id} criado via Google OAuth")
             flash(f"Bem-vindo ao CROSS XML, {users_name}! Você tem 7 dias de teste grátis.", "success")
             log_user_activity(user.id, 'registration', f'Novo usuário registrado via Google OAuth ({request.host})')
-        else:
-            # Update user info if needed
-            if not user.name or user.name != users_name:
-                user.name = users_name
-            if users_picture and (not user.profile_picture or user.profile_picture != users_picture):
-                user.profile_picture = users_picture
-            db.session.commit()
             
-            flash(f"Bem-vindo de volta, {user.name}!", "success")
+            login_user(user)
+            log_user_activity(user.id, 'login', f'Login via Google OAuth ({request.host})')
+            return redirect(url_for("dashboard"))
+        
+        # Atualizar informações do usuário existente
+        if not user.name or user.name != users_name:
+            user.name = users_name
+        if users_picture and (not user.profile_picture or user.profile_picture != users_picture):
+            user.profile_picture = users_picture
+        
+        # Verificar se conta está ativa
+        if not user.active:
+            flash("Sua conta está desativada. Entre em contato com o suporte.", "error")
+            return redirect(url_for("login"))
+        
+        db.session.commit()
+        flash(f"Bem-vindo de volta, {user.name}!", "success")
         
         login_user(user)
         log_user_activity(user.id, 'login', f'Login via Google OAuth ({request.host})')

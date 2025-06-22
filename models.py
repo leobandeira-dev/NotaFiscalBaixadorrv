@@ -27,6 +27,7 @@ class User(UserMixin, db.Model):
     # OAuth fields
     provider = db.Column(db.String(50), nullable=True)  # 'local', 'google', etc.
     profile_picture = db.Column(db.String(500), nullable=True)  # URL from OAuth provider
+    google_user_id = db.Column(db.String(100), nullable=True, unique=True)  # Google sub field
     
     # Trial system
     trial_start_date = db.Column(db.DateTime, nullable=True)
