@@ -5025,6 +5025,30 @@ def generate_quick_label():
         flash('Erro ao gerar etiqueta. Tente novamente.', 'error')
         return redirect(url_for('dashboard'))
 
+@app.route('/generate-label-route-by-filename/<filename>')
+@login_required
+def generate_label_route_by_filename(filename):
+    """Gerar etiqueta diretamente pelo filename (para botão de impressão)"""
+    try:
+        # Buscar XML no banco de dados pelo filename
+        xml_data = XMLFile.query.filter_by(user_id=current_user.id, filename=filename).first()
+        if not xml_data:
+            flash('XML não encontrado.', 'error')
+            return redirect(url_for('dashboard'))
+        
+        # Verificar se usuário tem acesso ao módulo de etiquetas
+        if not check_labels_subscription_status(current_user.id):
+            flash('Acesso ao módulo de etiquetas necessário. Assine por R$ 49,90/mês.', 'warning')
+            return redirect(url_for('labels_purchase'))
+        
+        # Redirecionar para geração de etiqueta usando o ID do XML
+        return redirect(url_for('generate_label_route', xml_id=xml_data.id))
+    
+    except Exception as e:
+        print(f"Erro na geração de etiqueta por filename: {str(e)}")
+        flash('Erro ao gerar etiqueta. Tente novamente.', 'error')
+        return redirect(url_for('dashboard'))
+
 @app.route('/label-generator-from-file/<filename>')
 @login_required
 def edit_volume_weight_from_file(filename):

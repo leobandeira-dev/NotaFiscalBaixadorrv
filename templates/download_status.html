@@ -495,8 +495,11 @@
                                             </a>
                                         </div>
                                         <div class="col-6">
-                                            <button onclick="generateQuickLabel('{{ file }}')" 
-                                                    class="btn btn-warning w-100">
+                                            <button id="label-btn-{{ loop.index }}" 
+                                                    onclick="generateQuickLabel('{{ file }}', {{ loop.index }})" 
+                                                    class="btn btn-warning w-100"
+                                                    data-filename="{{ file }}"
+                                                    data-state="generate">
                                                 <i class="fas fa-tags me-2"></i>
                                                 Gerar Etiqueta
                                             </button>
@@ -590,11 +593,19 @@
             }, 2000);
         }
 
-        function generateQuickLabel(filename) {
-            const xmlKey = filename.replace('.xml', '');
+        function generateQuickLabel(filename, buttonIndex) {
+            const button = document.getElementById(`label-btn-${buttonIndex}`);
+            const currentState = button.getAttribute('data-state');
+            
+            if (currentState === 'print') {
+                // If already generated, just open the label
+                const xmlKey = filename.replace('.xml', '');
+                // Find corresponding XML ID and redirect to existing label route
+                window.open(`/generate-label-route-by-filename/${filename}`, '_blank');
+                return;
+            }
             
             // Show loading state
-            const button = event.target;
             const originalText = button.innerHTML;
             button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Gerando...';
             button.disabled = true;
@@ -615,12 +626,14 @@
             document.body.appendChild(form);
             form.submit();
             
-            // Restore button after short delay
+            // Change button state to "print" after generation
             setTimeout(() => {
-                button.innerHTML = originalText;
+                button.innerHTML = '<i class="fas fa-print me-2"></i>Imprimir Etiqueta';
+                button.className = 'btn btn-success w-100';
+                button.setAttribute('data-state', 'print');
                 button.disabled = false;
                 document.body.removeChild(form);
-            }, 2000);
+            }, 3000);
         }
         
         function editVolumeWeight(filename) {
