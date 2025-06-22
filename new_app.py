@@ -806,6 +806,20 @@ def download_status(job_id):
         flash('Job de download não encontrado.', 'error')
         return redirect(url_for('xml_download'))
     
+    # Buscar dados dos XMLs com informações de geração de etiquetas
+    xml_files_data = {}
+    if job.files:
+        for filename in job.files:
+            xml_data = XMLFile.query.filter_by(
+                user_id=current_user.id, 
+                filename=filename
+            ).first()
+            if xml_data:
+                xml_files_data[filename] = xml_data
+    
+    # Adicionar informações de geração ao job para o template
+    job.xml_files_data = xml_files_data
+    
     return render_template('download_status.html', job=job)
 
 @app.route('/generate_danfe/<job_id>')
@@ -2133,6 +2147,14 @@ def labels_module():
     start = (page - 1) * per_page
     end = start + per_page
     xmls = all_xmls_list[start:end]
+    
+    # Adicionar informações de geração de etiqueta do banco compartilhado para cada XML
+    for xml in xmls:
+        label_generation = LabelGeneration.query.filter_by(
+            user_id=current_user.id, 
+            xml_file_id=xml.id
+        ).first()
+        xml.label_generation_status = label_generation
     
     # Obter listas para filtros
     ufs = db.session.query(XMLFile.remetente_uf).filter(XMLFile.user_id == current_user.id, XMLFile.remetente_uf.isnot(None)).distinct().all()
