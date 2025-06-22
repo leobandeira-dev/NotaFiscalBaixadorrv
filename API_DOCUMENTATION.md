@@ -1,336 +1,447 @@
-# XML Downloader API
+# CROSS XML Downloader PRO - API Documentation
 
-## Visão Geral
+## Overview
 
-A API REST do XML Downloader permite integração automatizada para download em lote de arquivos XML de notas fiscais. A API oferece endpoints para criar jobs de download, monitorar progresso e baixar arquivos XML individualmente.
+The CROSS XML API provides programmatic access to all platform features including XML downloads, DANFE generation, transport labels, and user management.
 
-**Base URL:** `https://sua-aplicacao.replit.app/api/v1`
+**Base URL**: `https://crossxml.com.br/api/v1`
+**Authentication**: API Key + Secret
+**Format**: JSON
 
-## Autenticação
+## Authentication
 
-Atualmente a API não requer autenticação. Para uso em produção, recomenda-se implementar autenticação por API key.
+### Generate API Credentials
+
+```http
+POST /api/generate-credentials
+Authorization: Bearer {session_token}
+```
+
+**Response:**
+```json
+{
+  "api_key": "ck_test_1234567890abcdef",
+  "api_secret": "cs_test_abcdef1234567890",
+  "created_at": "2025-06-22T00:00:00Z"
+}
+```
+
+### Using API Credentials
+
+Include in all requests:
+```http
+X-API-Key: ck_test_1234567890abcdef
+X-API-Secret: cs_test_abcdef1234567890
+```
 
 ## Endpoints
 
-### 1. Health Check
+### Health Check
 
-Verifica se a API está funcionando.
+```http
+GET /api/health
+```
 
-**Endpoint:** `GET /api/v1/health`
-
-**Resposta:**
+**Response:**
 ```json
 {
-    "status": "healthy",
-    "version": "1.0",
-    "service": "XML Downloader API",
-    "timestamp": "2025-06-19T04:00:00.000000"
+  "status": "ok",
+  "timestamp": "2025-06-22T00:00:00Z",
+  "version": "1.0.0"
 }
 ```
 
-### 2. Criar Job de Download
+### XML Download Jobs
 
-Cria um novo job para download de XMLs de notas fiscais.
+#### Create Download Job
 
-**Endpoint:** `POST /api/v1/jobs`
+```http
+POST /api/v1/jobs
+Content-Type: application/json
+```
 
-**Body:**
+**Request Body:**
 ```json
 {
-    "invoice_keys": [
-        "35250162954987000130550020001854371034511150",
-        "35250162954987000130550020001854371034511151"
-    ],
-    "callback_url": "https://seu-webhook.com/callback" // opcional
+  "invoice_keys": [
+    "42250485179240000239550020004175341622314954",
+    "35250513516247000107550010000113401146202508"
+  ],
+  "callback_url": "https://webhook.example.com/xml-complete",
+  "metadata": {
+    "customer_id": "12345",
+    "batch_name": "Weekly Download"
+  }
 }
 ```
 
-**Resposta de Sucesso (201):**
+**Response:**
 ```json
 {
-    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
-    "status": "created",
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "created",
+  "total_keys": 2,
+  "created_at": "2025-06-22T00:00:00Z",
+  "estimated_cost": 0.20
+}
+```
+
+#### Get Job Status
+
+```http
+GET /api/v1/jobs/{job_id}
+```
+
+**Response:**
+```json
+{
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "progress": {
     "total_keys": 2,
-    "created_at": "2025-06-19T04:00:00.000000"
+    "processed": 2,
+    "successful": 2,
+    "failed": 0,
+    "percentage": 100.0
+  },
+  "files": [
+    {
+      "filename": "42250485179240000239550020004175341622314954.xml",
+      "size": 4750,
+      "download_url": "/api/v1/jobs/550e8400/files/42250485179240000239550020004175341622314954.xml"
+    }
+  ],
+  "created_at": "2025-06-22T00:00:00Z",
+  "completed_at": "2025-06-22T00:05:00Z",
+  "total_cost": 0.20
 }
 ```
 
-**Resposta de Erro (400):**
+#### List Jobs
+
+```http
+GET /api/v1/jobs?status=completed&limit=10&offset=0
+```
+
+**Response:**
 ```json
 {
-    "error": "Invalid invoice key format. Must be 44 digits.",
-    "code": "INVALID_KEY_FORMAT",
-    "invalid_keys": ["123456"]
+  "jobs": [
+    {
+      "job_id": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "completed",
+      "total_keys": 2,
+      "successful": 2,
+      "created_at": "2025-06-22T00:00:00Z"
+    }
+  ],
+  "total": 25,
+  "limit": 10,
+  "offset": 0
 }
 ```
 
-### 3. Obter Status do Job
+#### Download File
 
-Consulta o status e progresso de um job específico.
+```http
+GET /api/v1/jobs/{job_id}/files/{filename}
+```
 
-**Endpoint:** `GET /api/v1/jobs/{job_id}`
+**Response:** XML file content with appropriate headers
 
-**Resposta:**
+### DANFE Generation
+
+#### Generate DANFE
+
+```http
+POST /api/v1/danfe
+Content-Type: application/json
+```
+
+**Request Body:**
 ```json
 {
-    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
-    "status": "completed",
-    "progress": {
-        "total_keys": 2,
-        "processed": 2,
-        "successful": 2,
-        "failed": 0,
-        "percentage": 100.0
+  "xml_id": "123",
+  "format": "pdf"
+}
+```
+
+**Response:**
+```json
+{
+  "danfe_url": "/api/v1/danfe/download/550e8400-e29b-41d4-a716-446655440000.pdf",
+  "generated_at": "2025-06-22T00:00:00Z",
+  "expires_at": "2025-06-22T24:00:00Z"
+}
+```
+
+### Transport Labels
+
+#### Generate Labels
+
+```http
+POST /api/v1/labels
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "xml_id": "123",
+  "layout": "transul",
+  "paper_size": "10x15cm",
+  "volumes": [
+    {"number": 1, "weight": 8.1},
+    {"number": 2, "weight": 8.1}
+  ],
+  "company_config": {
+    "name": "TRANSPORTADORA XYZ",
+    "subtitle": "OPERADOR LOGÍSTICO",
+    "area_code": "15"
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "label_url": "/api/v1/labels/download/550e8400-e29b-41d4-a716-446655440000.pdf",
+  "volumes_generated": 2,
+  "total_size_bytes": 295742,
+  "generated_at": "2025-06-22T00:00:00Z"
+}
+```
+
+### User Management
+
+#### Get User Info
+
+```http
+GET /api/v1/user
+```
+
+**Response:**
+```json
+{
+  "user_id": 7,
+  "email": "joao@crossxml.com.br",
+  "credits_balance": 150,
+  "trial_expires_at": null,
+  "subscriptions": [
+    {
+      "feature": "labels_module",
+      "status": "active",
+      "expires_at": "2025-07-22T00:00:00Z"
+    }
+  ],
+  "usage_stats": {
+    "xmls_downloaded": 1250,
+    "danfes_generated": 850,
+    "labels_generated": 420
+  }
+}
+```
+
+#### Get Credit History
+
+```http
+GET /api/v1/user/credits?limit=20&offset=0
+```
+
+**Response:**
+```json
+{
+  "transactions": [
+    {
+      "id": 456,
+      "type": "purchase",
+      "amount": 100,
+      "description": "Pacote Professional - 500 créditos",
+      "created_at": "2025-06-22T00:00:00Z"
     },
-    "files": [
-        "35250162954987000130550020001854371034511150.xml",
-        "35250162954987000130550020001854371034511151.xml"
-    ],
-    "errors": [],
-    "created_at": "2025-06-19T04:00:00.000000",
-    "completed_at": "2025-06-19T04:05:00.000000"
+    {
+      "id": 457,
+      "type": "usage",
+      "amount": -1,
+      "description": "Download XML: NF 417536",
+      "created_at": "2025-06-22T00:05:00Z"
+    }
+  ],
+  "current_balance": 149,
+  "total": 50
 }
 ```
 
-### 4. Listar Jobs
+## Webhooks
 
-Lista todos os jobs com filtros opcionais.
+### XML Download Complete
 
-**Endpoint:** `GET /api/v1/jobs`
+When a download job completes, we'll POST to your callback_url:
 
-**Parâmetros de Query:**
-- `status` (opcional): Filtrar por status (`running`, `completed`, `failed`)
-- `limit` (opcional): Máximo de jobs por página (padrão: 50)
-- `offset` (opcional): Número de jobs a pular (padrão: 0)
-
-**Exemplo:** `GET /api/v1/jobs?status=completed&limit=10&offset=0`
-
-**Resposta:**
 ```json
 {
-    "jobs": [
-        {
-            "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
-            "status": "completed",
-            "total_keys": 2,
-            "processed": 2,
-            "successful": 2,
-            "failed": 0,
-            "created_at": "2025-06-19T04:00:00.000000",
-            "completed_at": "2025-06-19T04:05:00.000000"
-        }
-    ],
-    "total": 1,
-    "limit": 10,
-    "offset": 0
+  "event": "job.completed",
+  "job_id": "550e8400-e29b-41d4-a716-446655440000",
+  "status": "completed",
+  "total_keys": 2,
+  "successful": 2,
+  "failed": 0,
+  "files": [
+    {
+      "filename": "42250485179240000239550020004175341622314954.xml",
+      "download_url": "/api/v1/jobs/550e8400/files/42250485179240000239550020004175341622314954.xml"
+    }
+  ],
+  "metadata": {
+    "customer_id": "12345"
+  },
+  "completed_at": "2025-06-22T00:05:00Z"
 }
 ```
 
-### 5. Listar Arquivos do Job
+## Error Handling
 
-Lista todos os arquivos XML baixados por um job específico.
+### Error Response Format
 
-**Endpoint:** `GET /api/v1/jobs/{job_id}/files`
-
-**Resposta:**
 ```json
 {
-    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
-    "files": [
-        {
-            "filename": "35250162954987000130550020001854371034511150.xml",
-            "size": 4590,
-            "download_url": "/api/v1/jobs/cc9fc653-7b99-45fe-bafb-9cb0c7f2784f/files/35250162954987000130550020001854371034511150.xml"
-        }
-    ]
-}
-```
-
-### 6. Baixar Arquivo XML
-
-Baixa um arquivo XML específico de um job.
-
-**Endpoint:** `GET /api/v1/jobs/{job_id}/files/{filename}`
-
-**Resposta:** Arquivo XML como attachment para download.
-
-### 7. Testar Conexão
-
-Testa a conectividade do sistema de automação.
-
-**Endpoint:** `POST /api/v1/test`
-
-**Resposta:**
-```json
-{
-    "status": "success",
-    "message": "Connection test completed",
+  "error": {
+    "code": "insufficient_credits",
+    "message": "Insufficient credits for this operation",
     "details": {
-        "success": true,
-        "response_time": "2.5s"
-    },
-    "timestamp": "2025-06-19T04:00:00.000000"
+      "required": 2,
+      "available": 1
+    }
+  },
+  "timestamp": "2025-06-22T00:00:00Z"
 }
 ```
 
-## Status de Jobs
+### Error Codes
 
-Os jobs podem ter os seguintes status:
+| Code | Description |
+|------|-------------|
+| `invalid_api_key` | API key is invalid or missing |
+| `insufficient_credits` | Not enough credits for operation |
+| `invalid_invoice_key` | Invoice key format is invalid |
+| `rate_limit_exceeded` | Too many requests |
+| `job_not_found` | Job ID doesn't exist |
+| `file_not_found` | Requested file doesn't exist |
+| `subscription_required` | Feature requires active subscription |
 
-- **`starting`**: Job criado, aguardando início do processamento
-- **`running`**: Job em execução, baixando XMLs
-- **`completed`**: Job finalizado com sucesso
-- **`failed`**: Job falhou devido a erro crítico
+## Rate Limits
 
-## Códigos de Erro
+- **API Calls**: 1000 per hour per API key
+- **File Downloads**: 10,000 per day per API key
+- **Job Creation**: 100 per hour per API key
 
-### Códigos HTTP
-- **200**: Sucesso
-- **201**: Recurso criado com sucesso
-- **400**: Erro na requisição (dados inválidos)
-- **404**: Recurso não encontrado
-- **500**: Erro interno do servidor
-
-### Códigos de Erro da API
-- **`MISSING_INVOICE_KEYS`**: Campo invoice_keys ausente
-- **`INVALID_INVOICE_KEYS`**: Lista de chaves inválida
-- **`INVALID_KEY_FORMAT`**: Formato de chave inválido (deve ter 44 dígitos)
-- **`JOB_NOT_FOUND`**: Job não encontrado
-- **`FILE_NOT_FOUND`**: Arquivo não encontrado
-- **`INTERNAL_ERROR`**: Erro interno do servidor
-
-## Exemplos de Uso
+## SDKs and Examples
 
 ### Python
 
 ```python
 import requests
-import time
 
-# Criar job
-response = requests.post('https://sua-app.replit.app/api/v1/jobs', json={
-    'invoice_keys': ['35250162954987000130550020001854371034511150']
-})
-
-job_data = response.json()
-job_id = job_data['job_id']
-
-# Monitorar progresso
-while True:
-    status_response = requests.get(f'https://sua-app.replit.app/api/v1/jobs/{job_id}')
-    status = status_response.json()
-    
-    print(f"Status: {status['status']}, Progresso: {status['progress']['percentage']}%")
-    
-    if status['status'] in ['completed', 'failed']:
-        break
-    
-    time.sleep(5)
-
-# Baixar arquivos
-if status['status'] == 'completed':
-    files_response = requests.get(f'https://sua-app.replit.app/api/v1/jobs/{job_id}/files')
-    files = files_response.json()['files']
-    
-    for file_info in files:
-        file_response = requests.get(f"https://sua-app.replit.app{file_info['download_url']}")
+class CrossXMLAPI:
+    def __init__(self, api_key, api_secret, base_url="https://crossxml.com.br"):
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.base_url = base_url
         
-        with open(file_info['filename'], 'wb') as f:
-            f.write(file_response.content)
+    def create_job(self, invoice_keys, callback_url=None):
+        headers = {
+            'X-API-Key': self.api_key,
+            'X-API-Secret': self.api_secret,
+            'Content-Type': 'application/json'
+        }
         
-        print(f"Arquivo baixado: {file_info['filename']}")
+        payload = {
+            'invoice_keys': invoice_keys,
+            'callback_url': callback_url
+        }
+        
+        response = requests.post(
+            f"{self.base_url}/api/v1/jobs",
+            json=payload,
+            headers=headers
+        )
+        
+        return response.json()
+
+# Usage
+api = CrossXMLAPI('your_api_key', 'your_api_secret')
+job = api.create_job(['42250485179240000239550020004175341622314954'])
+print(f"Job created: {job['job_id']}")
+```
+
+### JavaScript
+
+```javascript
+class CrossXMLAPI {
+    constructor(apiKey, apiSecret, baseUrl = 'https://crossxml.com.br') {
+        this.apiKey = apiKey;
+        this.apiSecret = apiSecret;
+        this.baseUrl = baseUrl;
+    }
+    
+    async createJob(invoiceKeys, callbackUrl = null) {
+        const response = await fetch(`${this.baseUrl}/api/v1/jobs`, {
+            method: 'POST',
+            headers: {
+                'X-API-Key': this.apiKey,
+                'X-API-Secret': this.apiSecret,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                invoice_keys: invoiceKeys,
+                callback_url: callbackUrl
+            })
+        });
+        
+        return await response.json();
+    }
+}
+
+// Usage
+const api = new CrossXMLAPI('your_api_key', 'your_api_secret');
+const job = await api.createJob(['42250485179240000239550020004175341622314954']);
+console.log(`Job created: ${job.job_id}`);
 ```
 
 ### cURL
 
 ```bash
-# Criar job
-curl -X POST https://sua-app.replit.app/api/v1/jobs \
+# Create download job
+curl -X POST https://crossxml.com.br/api/v1/jobs \
+  -H "X-API-Key: your_api_key" \
+  -H "X-API-Secret: your_api_secret" \
   -H "Content-Type: application/json" \
   -d '{
-    "invoice_keys": ["35250162954987000130550020001854371034511150"]
+    "invoice_keys": ["42250485179240000239550020004175341622314954"],
+    "callback_url": "https://webhook.example.com"
   }'
 
-# Verificar status
-curl https://sua-app.replit.app/api/v1/jobs/JOB_ID
+# Check job status
+curl https://crossxml.com.br/api/v1/jobs/550e8400-e29b-41d4-a716-446655440000 \
+  -H "X-API-Key: your_api_key" \
+  -H "X-API-Secret: your_api_secret"
 
-# Listar arquivos
-curl https://sua-app.replit.app/api/v1/jobs/JOB_ID/files
-
-# Baixar arquivo
-curl -O https://sua-app.replit.app/api/v1/jobs/JOB_ID/files/FILENAME.xml
+# Download file
+curl https://crossxml.com.br/api/v1/jobs/550e8400/files/invoice.xml \
+  -H "X-API-Key: your_api_key" \
+  -H "X-API-Secret: your_api_secret" \
+  -o invoice.xml
 ```
 
-### JavaScript/Node.js
+## Pricing
 
-```javascript
-const axios = require('axios');
+- **XML Download**: R$ 0.06 - 0.10 per file (volume-based)
+- **DANFE**: Free
+- **Labels Module**: R$ 49.90/month subscription
+- **API Access**: Included in all plans
 
-async function downloadInvoices(invoiceKeys) {
-    const baseUrl = 'https://sua-app.replit.app/api/v1';
-    
-    // Criar job
-    const jobResponse = await axios.post(`${baseUrl}/jobs`, {
-        invoice_keys: invoiceKeys
-    });
-    
-    const jobId = jobResponse.data.job_id;
-    console.log(`Job criado: ${jobId}`);
-    
-    // Monitorar progresso
-    let status;
-    do {
-        await new Promise(resolve => setTimeout(resolve, 5000));
-        
-        const statusResponse = await axios.get(`${baseUrl}/jobs/${jobId}`);
-        status = statusResponse.data;
-        
-        console.log(`Progresso: ${status.progress.percentage}%`);
-    } while (status.status === 'running');
-    
-    // Baixar arquivos
-    if (status.status === 'completed') {
-        const filesResponse = await axios.get(`${baseUrl}/jobs/${jobId}/files`);
-        
-        for (const file of filesResponse.data.files) {
-            const fileResponse = await axios.get(`${baseUrl}${file.download_url}`, {
-                responseType: 'stream'
-            });
-            
-            const writer = fs.createWriteStream(file.filename);
-            fileResponse.data.pipe(writer);
-            
-            console.log(`Arquivo baixado: ${file.filename}`);
-        }
-    }
-}
+## Support
 
-// Uso
-downloadInvoices(['35250162954987000130550020001854371034511150']);
-```
-
-## Webhooks (Futuro)
-
-Em versões futuras, será possível configurar webhooks para receber notificações quando jobs forem concluídos:
-
-```json
-{
-    "job_id": "cc9fc653-7b99-45fe-bafb-9cb0c7f2784f",
-    "status": "completed",
-    "total_files": 2,
-    "successful": 2,
-    "failed": 0,
-    "completed_at": "2025-06-19T04:05:00.000000"
-}
-```
-
-## Rate Limits
-
-Para evitar sobrecarga do servidor, recomenda-se:
-- Máximo de 100 chaves por job
-- Máximo de 10 jobs simultâneos por IP
-- Intervalo mínimo de 1 segundo entre requests
-
-## Suporte
-
-Para dúvidas sobre a API, consulte a documentação ou entre em contato através dos canais de suporte.
+- **Documentation**: [docs.crossxml.com.br](https://docs.crossxml.com.br)
+- **Support Email**: api@crossxml.com.br
+- **Status Page**: [status.crossxml.com.br](https://status.crossxml.com.br)
