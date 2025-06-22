@@ -444,6 +444,60 @@ class CreditBalance(db.Model):
             'created_at': self.created_at.isoformat()
         }
 
+class LabelGeneration(db.Model):
+    """Controle de geração de etiquetas"""
+    __tablename__ = 'label_generations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    xml_file_id = db.Column(db.Integer, db.ForeignKey('xml_files.id'), nullable=False)
+    
+    # Status da geração
+    is_generated = db.Column(db.Boolean, default=False, nullable=False)
+    generation_count = db.Column(db.Integer, default=0)  # Quantas vezes foi gerada
+    
+    # Detalhes da última geração
+    last_generated_at = db.Column(db.DateTime)
+    label_file_path = db.Column(db.String(500))  # Caminho do arquivo gerado
+    volumes_count = db.Column(db.Integer, default=1)
+    layout_used = db.Column(db.String(50), default='transul')
+    
+    # Metadados
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relacionamentos
+    user = db.relationship('User', backref='label_generations')
+    xml_file = db.relationship('XMLFile', backref='label_generations')
+    
+    def mark_generated(self, label_file_path=None, volumes_count=1, layout='transul'):
+        """Marcar como gerada"""
+        self.is_generated = True
+        self.generation_count += 1
+        self.last_generated_at = datetime.utcnow()
+        self.updated_at = datetime.utcnow()
+        if label_file_path:
+            self.label_file_path = label_file_path
+        self.volumes_count = volumes_count
+        self.layout_used = layout
+        
+    @staticmethod
+    def get_or_create(user_id, xml_file_id):
+        """Buscar ou criar registro de geração"""
+        record = LabelGeneration.query.filter_by(
+            user_id=user_id,
+            xml_file_id=xml_file_id
+        ).first()
+        
+        if not record:
+            record = LabelGeneration(
+                user_id=user_id,
+                xml_file_id=xml_file_id
+            )
+            db.session.add(record)
+            
+        return record
+
 class SystemSettings(db.Model):
     """Configurações do sistema"""
     __tablename__ = 'system_settings'

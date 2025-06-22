@@ -21,7 +21,7 @@ from itsdangerous import URLSafeTimedSerializer
 # Import Google OAuth components
 import requests
 from oauthlib.oauth2 import WebApplicationClient
-from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, init_default_data
+from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, LabelGeneration, init_default_data
 from package_models import (
     StripeProduct, PackageFeature, UserSubscription, FeatureUsage,
     init_stripe_products, get_user_active_subscriptions, 
@@ -5016,6 +5016,16 @@ def generate_quick_label():
         if not check_labels_subscription_status(current_user.id):
             flash('Acesso ao módulo de etiquetas necessário. Assine por R$ 49,90/mês.', 'warning')
             return redirect(url_for('labels_purchase'))
+        
+        # Verificar ou criar registro de geração de etiqueta no banco compartilhado
+        label_generation = LabelGeneration.get_or_create(current_user.id, xml_data.id)
+        
+        # Marcar como gerada no banco de dados compartilhado
+        label_generation.mark_generated(
+            volumes_count=xml_data.quantidade_volumes or 1,
+            layout='transul'
+        )
+        db.session.commit()
         
         # Usar a mesma função de geração já existente e testada
         return redirect(url_for('generate_label_route', xml_id=xml_data.id))

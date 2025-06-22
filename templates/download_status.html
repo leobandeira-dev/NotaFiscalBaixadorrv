@@ -495,13 +495,20 @@
                                             </a>
                                         </div>
                                         <div class="col-6">
+                                            {% set xml_data = job.xml_files_data.get(file) %}
+                                            {% set label_generated = xml_data and xml_data.label_generations and xml_data.label_generations[0].is_generated %}
                                             <button id="label-btn-{{ loop.index }}" 
                                                     onclick="generateQuickLabel('{{ file }}', {{ loop.index }})" 
-                                                    class="btn btn-warning w-100"
+                                                    class="btn {% if label_generated %}btn-success{% else %}btn-warning{% endif %} w-100"
                                                     data-filename="{{ file }}"
-                                                    data-state="generate">
-                                                <i class="fas fa-tags me-2"></i>
-                                                Gerar Etiqueta
+                                                    data-state="{% if label_generated %}print{% else %}generate{% endif %}">
+                                                {% if label_generated %}
+                                                    <i class="fas fa-print me-2"></i>
+                                                    Imprimir Etiqueta
+                                                {% else %}
+                                                    <i class="fas fa-tags me-2"></i>
+                                                    Gerar Etiqueta
+                                                {% endif %}
                                             </button>
                                         </div>
                                         <div class="col-6">
