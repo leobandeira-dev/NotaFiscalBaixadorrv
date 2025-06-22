@@ -12,7 +12,6 @@ from typing import Dict, Any
 import re
 from optimization_deploy import DeployOptimizer
 from performance_solution import PerformanceSolution, EnhancedDeployOptimizer, DeployPerformanceMonitor
-from ultra_speed_optimizer import UltraSpeedOptimizer, UltraSpeedMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -33,24 +32,14 @@ class InvoiceDownloader:
             os.makedirs(downloads_dir, exist_ok=True)
             logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Apply ULTRA-SPEED Chrome optimizations
-            chrome_options = UltraSpeedOptimizer.get_ultra_chrome_options()
+            # Get enhanced Chrome options with deploy-specific optimizations
+            chrome_options = EnhancedDeployOptimizer.get_enhanced_chrome_options()
             
-            # Additional ultra-speed optimizations
+            # Additional specific optimizations
             chrome_options.add_argument('--disable-web-security')
             chrome_options.add_argument('--allow-running-insecure-content')
             chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-            chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-            
-            # ULTRA-SPEED: Aggressive performance flags
-            chrome_options.add_argument('--aggressive-cache-discard')
-            chrome_options.add_argument('--disable-background-networking')
-            chrome_options.add_argument('--disable-background-timer-throttling')
-            chrome_options.add_argument('--memory-pressure-off')
-            chrome_options.add_argument('--single-process')
-            chrome_options.add_argument('--disable-renderer-backgrounding')
-            
-            logger.info("🚀 ULTRA-SPEED Chrome optimizations applied!")
+            chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36')
             
             # Download preferences
             prefs = {
@@ -90,33 +79,33 @@ class InvoiceDownloader:
             logger.error(f"Failed to setup Chrome WebDriver: {str(e)}")
             raise
     
-    @UltraSpeedMonitor.measure_ultra_speed
+    @DeployPerformanceMonitor.measure_operation("xml_download")
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
-        """Download XML for a specific invoice key with ULTRA-SPEED optimizations"""
+        """Download XML for a specific invoice key with enhanced environment-optimized timeouts"""
         try:
-            # Get ULTRA-SPEED timeouts for maximum performance
-            timeouts = UltraSpeedOptimizer.get_ultra_timeouts()
+            # Get enhanced optimized timeouts for current environment
+            timeouts = EnhancedDeployOptimizer.get_enhanced_timeouts()
             
-            logger.info(f"🚀 [Job {job_id}] ULTRA-SPEED XML download starting: {invoice_key}")
+            logger.info(f"[Job {job_id}] Starting XML download for invoice key: {invoice_key}")
             
             # Navigate to the website
             url = "https://meudanfe.com.br/"
             logger.info(f"[Job {job_id}] Navigating to invoice system...")
             self.driver.get(url)
             
-            # ULTRA-SPEED waits with minimal timeouts
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast input search...")
+            # Environment-optimized waits
+            logger.info(f"[Job {job_id}] Looking for input field...")
             input_element = WebDriverWait(self.driver, timeouts['element_wait']).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[placeholder="Digite a CHAVE DE ACESSO"]'))
             )
-            logger.info(f"⚡ [Job {job_id}] Page ready - URL: {self.driver.current_url}")
+            logger.info(f"[Job {job_id}] Page loaded - URL: {self.driver.current_url}")
             
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast key entry...")
+            logger.info(f"[Job {job_id}] Entering invoice key...")
             input_element.clear()
             input_element.send_keys(invoice_key)
             
-            # ULTRA-SPEED submit button
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast submit search...")
+            # Environment-optimized submit button wait
+            logger.info(f"[Job {job_id}] Looking for submit button...")
             try:
                 submit_button = WebDriverWait(self.driver, timeouts['element_wait']).until(
                     EC.element_to_be_clickable((By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]"))
@@ -124,17 +113,17 @@ class InvoiceDownloader:
             except:
                 raise Exception("Submit button not found")
             
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast submit click...")
+            logger.info(f"[Job {job_id}] Clicking submit button...")
             submit_button.click()
             
-            # ULTRA-SPEED results wait (reduced from default)
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast response wait...")
-            time.sleep(0.3)  # Drastically reduced from previous timeouts
+            # Environment-optimized results wait
+            logger.info(f"[Job {job_id}] Waiting for response page...")
+            time.sleep(timeouts['download_wait'])
             
-            logger.info(f"⚡ [Job {job_id}] Submit complete - URL: {self.driver.current_url}")
+            logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
             
-            # ULTRA-SPEED XML button detection
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast XML button search...")
+            # Find XML download button with environment-optimized timeout
+            logger.info(f"[Job {job_id}] Looking for XML download button...")
             try:
                 xml_button = WebDriverWait(self.driver, timeouts['xml_button']).until(
                     EC.element_to_be_clickable((By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"))
