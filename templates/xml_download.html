@@ -514,11 +514,11 @@
                                 <textarea class="form-control" 
                                          id="invoice_keys" 
                                          name="invoice_keys" 
-                                         placeholder="Cole as chaves das notas fiscais aqui, uma por linha..."
+                                         placeholder="Digite ou cole as chaves aqui. Ao completar 44 dígitos, o sistema avança automaticamente para a próxima linha..."
                                          required></textarea>
                                 <div class="input-help">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Cada chave deve ter 44 dígitos. Máximo 50 chaves por vez.
+                                    <i class="fas fa-magic me-1"></i>
+                                    <strong>Auto-avanço ativado:</strong> Digite 44 dígitos e o sistema pula automaticamente para a próxima linha. Perfeito para leitores de código de barras!
                                 </div>
                             </div>
                             
@@ -640,8 +640,140 @@
             }
         }
         
-        // Real-time validation
-        document.getElementById('invoice_keys').addEventListener('input', updateCostCalculator);
+        // Auto-format and auto-advance for 44-digit keys
+        function handleAutoAdvance() {
+            const textarea = document.getElementById('invoice_keys');
+            const text = textarea.value;
+            const cursorPos = textarea.selectionStart;
+            
+            // Get the current line the cursor is on
+            const beforeCursor = text.substring(0, cursorPos);
+            const lines = beforeCursor.split('\n');
+            const currentLine = lines[lines.length - 1];
+            
+            // Remove non-digit characters from current line
+            const digitsOnly = currentLine.replace(/\D/g, '');
+            
+            // If we have exactly 44 digits, auto-advance to next line
+            if (digitsOnly.length === 44 && !currentLine.includes('\n')) {
+                // Check if we're at the end of the current line
+                const afterCursor = text.substring(cursorPos);
+                const nextNewlinePos = afterCursor.indexOf('\n');
+                
+                // If cursor is at end of line or there's no content after cursor on this line
+                if (nextNewlinePos === -1 || nextNewlinePos === afterCursor.length - afterCursor.trimStart().length) {
+                    // Replace current line with clean 44 digits and add newline
+                    const textBeforeCurrentLine = beforeCursor.substring(0, beforeCursor.lastIndexOf('\n') + 1);
+                    const textAfterCurrentLine = text.substring(cursorPos);
+                    
+                    const newText = textBeforeCurrentLine + digitsOnly + '\n' + textAfterCurrentLine;
+                    textarea.value = newText;
+                    
+                    // Position cursor at start of new line
+                    const newCursorPos = textBeforeCurrentLine.length + digitsOnly.length + 1;
+                    textarea.setSelectionRange(newCursorPos, newCursorPos);
+                    
+                    // Update calculator
+                    updateCostCalculator();
+                }
+            }
+        }
+        
+        // Auto-clean and format input
+        function handleInputCleaning() {
+            const textarea = document.getElementById('invoice_keys');
+            const text = textarea.value;
+            const cursorPos = textarea.selectionStart;
+            
+            // Split into lines and clean each line
+            const lines = text.split('\n');
+            let newLines = [];
+            let totalCharsAdded = 0;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const digitsOnly = line.replace(/\D/g, '');
+                
+                // If line has digits but is not complete (less than 44), keep only digits
+                if (digitsOnly.length > 0 && digitsOnly.length <= 44) {
+                    newLines.push(digitsOnly);
+                    totalCharsAdded += digitsOnly.length - line.length;
+                } else if (digitsOnly.length > 44) {
+                    // If more than 44 digits, split into multiple lines
+                    for (let j = 0; j < digitsOnly.length; j += 44) {
+                        const chunk = digitsOnly.substring(j, j + 44);
+                        if (chunk.length > 0) {
+                            newLines.push(chunk);
+                        }
+                    }
+                } else {
+                    // Empty line or no digits
+                    newLines.push(line);
+                }
+            }
+            
+            const newText = newLines.join('\n');
+            if (newText !== text) {
+                textarea.value = newText;
+                // Adjust cursor position
+                const newCursorPos = Math.min(cursorPos + totalCharsAdded, newText.length);
+                textarea.setSelectionRange(newCursorPos, newCursorPos);
+            }
+        }
+        
+        // Enhanced input handler
+        document.getElementById('invoice_keys').addEventListener('input', function(e) {
+            // Clean and format input
+            handleInputCleaning();
+            
+            // Handle auto-advance for complete keys
+            setTimeout(() => {
+                handleAutoAdvance();
+            }, 10);
+            
+            // Update cost calculator
+            updateCostCalculator();
+        });
+        
+        // Handle paste events specially
+        document.getElementById('invoice_keys').addEventListener('paste', function(e) {
+            setTimeout(() => {
+                handleInputCleaning();
+                updateCostCalculator();
+            }, 50);
+        });
+        
+        // Handle Enter key for manual line breaks
+        document.getElementById('invoice_keys').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const textarea = e.target;
+                const cursorPos = textarea.selectionStart;
+                const text = textarea.value;
+                const beforeCursor = text.substring(0, cursorPos);
+                const lines = beforeCursor.split('\n');
+                const currentLine = lines[lines.length - 1];
+                const digitsOnly = currentLine.replace(/\D/g, '');
+                
+                // If current line has exactly 44 digits, allow normal enter
+                // If current line has less than 44 digits but more than 0, clean it first
+                if (digitsOnly.length > 0 && digitsOnly.length < 44) {
+                    e.preventDefault();
+                    
+                    // Replace current line with clean digits and add newline
+                    const textBeforeCurrentLine = beforeCursor.substring(0, beforeCursor.lastIndexOf('\n') + 1);
+                    const textAfterCursor = text.substring(cursorPos);
+                    
+                    const newText = textBeforeCurrentLine + digitsOnly + '\n' + textAfterCursor;
+                    textarea.value = newText;
+                    
+                    // Position cursor at start of new line
+                    const newCursorPos = textBeforeCurrentLine.length + digitsOnly.length + 1;
+                    textarea.setSelectionRange(newCursorPos, newCursorPos);
+                    
+                    updateCostCalculator();
+                }
+            }
+        });
         
         // Form submission
         document.getElementById('uploadForm').addEventListener('submit', function(e) {

@@ -1,265 +1,259 @@
-# CROSS XML Downloader PRO
+# XML Downloader
 
-![CROSS XML](https://img.shields.io/badge/CROSS_XML-Downloader_PRO-8A05BE?style=for-the-badge)
-![Python](https://img.shields.io/badge/Python-3.11+-blue?style=for-the-badge&logo=python)
-![Flask](https://img.shields.io/badge/Flask-2.3+-green?style=for-the-badge&logo=flask)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-blue?style=for-the-badge&logo=postgresql)
+Sistema completo para download automático em lote de arquivos XML de notas fiscais, com interface web e API REST.
 
-## 🎯 Sobre o Projeto
+## Funcionalidades
 
-**CROSS XML Downloader PRO** é uma plataforma SaaS completa para automação de download de XMLs de notas fiscais brasileiras e geração de etiquetas de transporte. Desenvolvida especificamente para transportadoras e embarcadores que precisam acessar XMLs usando chaves de nota fiscal.
+### Interface Web
+- **Interface intuitiva** com tema escuro Bootstrap
+- **Upload em lote** de chaves de notas fiscais
+- **Progresso em tempo real** com barra de progresso animada
+- **Download individual** de arquivos XML
+- **Validação automática** do formato das chaves (44 dígitos)
+- **Logs detalhados** para monitoramento
 
-### 📊 Funcionalidades Principais
-
-- **Download Automatizado de XMLs** - Acesse qualquer XML usando a chave da nota fiscal (44 dígitos)
-- **Geração de DANFE** - Sempre gratuita, layout oficial SEFAZ
-- **Etiquetas de Transporte Integrada** - Sistema multi-layout com QR codes e logos personalizadas
-- **Importação via Email** - Processamento automático de XMLs recebidos por email
-- **API REST Completa** - Integração com sistemas externos
-- **Sistema de Créditos** - Cobrança por uso com pacotes flexíveis
-
-### 💰 Pricing
-
-- **XML Download**: R$ 0,06 - 0,10 por arquivo (volume-based)
-- **DANFE**: Sempre gratuito
-- **Etiquetas de Transporte**: R$ 49,90/mês
-- **Período de Teste**: 7 dias grátis para novos usuários
-
-## 🚀 Tecnologias Utilizadas
-
-### Backend
-- **Python 3.11** - Linguagem principal
-- **Flask** - Framework web
-- **SQLAlchemy** - ORM para banco de dados
-- **PostgreSQL** - Banco de dados principal
-- **Selenium** - Automação web para download de XMLs
-- **Gunicorn** - Servidor WSGI para produção
-
-### Frontend
-- **HTML5/CSS3** - Interface responsiva
-- **Bootstrap 5** - Framework CSS
-- **JavaScript** - Interatividade e AJAX
-- **Font Awesome** - Ícones
-
-### Integrações
-- **Stripe** - Processamento de pagamentos
-- **Google OAuth** - Autenticação social
-- **SendGrid** - Envio de emails
+### API REST
+- **Endpoints RESTful** para integração com sistemas externos
+- **Processamento assíncrono** com jobs em background
+- **Monitoramento de progresso** via polling
+- **Download programático** de arquivos
+- **Suporte a CORS** para aplicações web
 
 ### Automação
-- **Chrome WebDriver** - Navegação automatizada
-- **ReportLab** - Geração de PDFs
-- **BrazilFiscalReport** - DANFE oficial SEFAZ
+- **Selenium WebDriver** para automação completa do navegador
+- **Chrome headless** otimizado para performance
+- **Detecção inteligente** de elementos da página
+- **Extração robusta** de conteúdo XML
+- **Tratamento de erros** abrangente
 
-## 📋 Pré-requisitos
+## Instalação e Configuração
 
-- Python 3.11+
-- PostgreSQL 15+
-- Chrome/Chromium
-- Node.js (para alguns recursos)
-
-## 🛠️ Instalação e Configuração
-
-### 1. Clone o repositório
+O sistema está configurado para execução no Replit com todas as dependências já instaladas:
 
 ```bash
-git clone https://github.com/seu-usuario/cross-xml-downloader.git
-cd cross-xml-downloader
-```
-
-### 2. Configuração do ambiente
-
-```bash
-# Criar ambiente virtual
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# ou
-venv\Scripts\activate  # Windows
-
-# Instalar dependências
-pip install -r requirements.txt
-```
-
-### 3. Variáveis de ambiente
-
-Crie um arquivo `.env` na raiz do projeto:
-
-```env
-# Database
-DATABASE_URL=postgresql://usuario:senha@localhost:5432/crossxml
-
-# Flask
-SESSION_SECRET=sua_chave_secreta_aqui
-
-# Google OAuth
-GOOGLE_OAUTH_CLIENT_ID=seu_client_id
-GOOGLE_OAUTH_CLIENT_SECRET=seu_client_secret
-
-# Stripe
-STRIPE_SECRET_KEY=sk_test_...
-
-# Email (opcional)
-MAIL_SERVER=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=seu_email@gmail.com
-MAIL_PASSWORD=sua_senha
-```
-
-### 4. Configuração do banco
-
-```bash
-# Criar banco de dados
-createdb crossxml
-
-# Executar migrações (se disponível)
-python -c "from new_app import app, db; app.app_context().push(); db.create_all()"
-```
-
-### 5. Executar a aplicação
-
-```bash
-# Desenvolvimento
-python main.py
-
-# Produção
-gunicorn --bind 0.0.0.0:5000 --workers 4 main:app
-```
-
-A aplicação estará disponível em `http://localhost:5000`
-
-## 📊 Estrutura do Projeto
-
-```
-cross-xml-downloader/
-├── 📁 static/              # Arquivos estáticos (CSS, JS, images)
-├── 📁 templates/           # Templates HTML
-├── 📁 downloads/           # XMLs baixados
-├── 📁 attached_assets/     # Assets anexados
-├── 📄 new_app.py          # Aplicação principal
-├── 📄 models.py           # Modelos do banco de dados
-├── 📄 automation_fixed.py # Sistema de automação
-├── 📄 stripe_integration.py # Integração Stripe
-├── 📄 email_processor.py  # Processamento de emails
-├── 📄 danfe_generator.py  # Gerador de DANFE
-├── 📄 requirements.txt    # Dependências Python
-└── 📄 README.md          # Documentação
-```
-
-## 🔧 Configuração de Produção
-
-### Deploy no Replit
-
-1. Importe o projeto no Replit
-2. Configure as variáveis de ambiente no painel Secrets
-3. Execute o comando de inicialização:
-
-```bash
+# O sistema iniciará automaticamente com:
 gunicorn --bind 0.0.0.0:5000 --reuse-port --reload main:app
 ```
 
-### Deploy no Heroku
+### Dependências
+- Python 3.11
+- Flask + Flask-CORS
+- Selenium WebDriver
+- Chrome/Chromium browser
+- Bootstrap 5 (CDN)
+- Font Awesome 6 (CDN)
 
-```bash
-# Login no Heroku
-heroku login
+## Uso da Interface Web
 
-# Criar aplicação
-heroku create cross-xml-downloader
+1. **Acesse a aplicação** no navegador
+2. **Cole as chaves** de notas fiscais (uma por linha) no campo de texto
+3. **Clique em "Iniciar Downloads"** para começar o processamento
+4. **Acompanhe o progresso** na tela de monitoramento
+5. **Baixe os arquivos** individualmente quando concluído
 
-# Configurar banco PostgreSQL
-heroku addons:create heroku-postgresql:hobby-dev
-
-# Deploy
-git push heroku main
+### Formato das Chaves
+As chaves devem ter exatamente 44 dígitos numéricos:
+```
+35250162954987000130550020001854371034511150
 ```
 
-## 📡 API REST
+## Uso da API REST
 
-### Autenticação
-
-```bash
-# Gerar credenciais API
-curl -X POST https://crossxml.com.br/api/generate-credentials \
-  -H "Authorization: Bearer YOUR_SESSION_TOKEN"
+### URL Base
+```
+https://sua-aplicacao.replit.app/api/v1
 ```
 
-### Endpoints principais
+### Endpoints Principais
 
+#### Verificar Status da API
 ```bash
-# Criar job de download
-curl -X POST https://crossxml.com.br/api/v1/jobs \
+GET /api/v1/health
+```
+
+#### Criar Job de Download
+```bash
+POST /api/v1/jobs
+Content-Type: application/json
+
+{
+    "invoice_keys": [
+        "35250162954987000130550020001854371034511150",
+        "35250162954987000130550020001854371034511151"
+    ]
+}
+```
+
+#### Monitorar Progresso
+```bash
+GET /api/v1/jobs/{job_id}
+```
+
+#### Listar Arquivos Baixados
+```bash
+GET /api/v1/jobs/{job_id}/files
+```
+
+#### Baixar Arquivo XML
+```bash
+GET /api/v1/jobs/{job_id}/files/{filename}
+```
+
+### Exemplo com cURL
+```bash
+# Criar job
+curl -X POST https://sua-app.replit.app/api/v1/jobs \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -d '{
-    "invoice_keys": ["42250485179240000239550020004175341622314954"],
-    "callback_url": "https://webhook.example.com"
-  }'
+  -d '{"invoice_keys": ["35250162954987000130550020001854371034511150"]}'
 
-# Verificar status do job
-curl https://crossxml.com.br/api/v1/jobs/{job_id} \
-  -H "X-API-Key: YOUR_API_KEY"
+# Verificar status (substitua JOB_ID)
+curl https://sua-app.replit.app/api/v1/jobs/JOB_ID
 
-# Download do arquivo
-curl https://crossxml.com.br/api/v1/jobs/{job_id}/files/{filename} \
-  -H "X-API-Key: YOUR_API_KEY" \
-  -o arquivo.xml
+# Baixar arquivo (substitua JOB_ID e FILENAME)
+curl -O https://sua-app.replit.app/api/v1/jobs/JOB_ID/files/FILENAME.xml
 ```
 
-## 🏗️ Arquitetura do Sistema
+## Cliente Python
 
-### Fluxo de Download de XML
+Use o cliente Python incluído para integração fácil:
 
-1. **Entrada do usuário** - Chaves de 44 dígitos via interface web ou API
-2. **Validação** - Verificação do formato e créditos disponíveis
-3. **Automação** - Selenium navega automaticamente no sistema fiscal
-4. **Processamento** - XML extraído e salvo no banco de dados
-5. **Entrega** - Arquivo disponibilizado para download
+```python
+from api_client_example import XMLDownloaderAPIClient
 
-### Sistema de Créditos
+# Inicializar cliente
+client = XMLDownloaderAPIClient("https://sua-app.replit.app")
 
-- **Trial**: 7 dias gratuitos para novos usuários
-- **Pacotes**: 100, 500, 1000, 2000 créditos
-- **Cobrança**: Por uso, débito automático via Stripe
-- **Relatórios**: Histórico completo de uso
+# Baixar XMLs automaticamente
+invoice_keys = ["35250162954987000130550020001854371034511150"]
+files = client.download_invoices(invoice_keys, "./downloads")
+
+print(f"Baixados {len(files)} arquivos XML")
+```
+
+## Estrutura do Projeto
+
+```
+├── app.py                 # Aplicação Flask principal com API
+├── automation.py          # Sistema de automação com Selenium
+├── main.py               # Ponto de entrada da aplicação
+├── templates/            # Templates HTML Jinja2
+│   ├── index.html        # Página inicial com formulário
+│   └── download.html     # Página de progresso
+├── static/               # Arquivos estáticos
+│   ├── css/custom.css    # Estilos personalizados
+│   └── js/main.js        # JavaScript para validação
+├── downloads/            # Diretório para arquivos baixados
+├── api_client_example.py # Cliente Python de exemplo
+└── API_DOCUMENTATION.md  # Documentação completa da API
+```
+
+## Tecnologias Utilizadas
+
+### Backend
+- **Flask**: Framework web Python
+- **Selenium**: Automação de navegador
+- **Chrome WebDriver**: Controle do navegador
+- **Threading**: Processamento em background
+- **UUID**: Geração de IDs únicos para jobs
+
+### Frontend
+- **Bootstrap 5**: Framework CSS responsivo
+- **Font Awesome**: Biblioteca de ícones
+- **JavaScript Vanilla**: Interatividade e validação
+- **AJAX**: Atualizações em tempo real
+
+### Automação
+- **Selenium WebDriver**: Controle programático do navegador
+- **Chrome Headless**: Navegador sem interface gráfica
+- **Strategy Pattern**: Múltiplas estratégias de extração XML
+- **Retry Logic**: Tentativas automáticas em caso de falha
+
+## Configuração para Produção
+
+### Variáveis de Ambiente
+- `SESSION_SECRET`: Chave secreta para sessões Flask
+- `DATABASE_URL`: URL do banco PostgreSQL (configurado mas não usado)
+
+### Otimizações
+- **Gunicorn**: Servidor WSGI para produção
+- **Worker processes**: Múltiplos workers para concorrência
+- **Connection pooling**: Pool de conexões do banco
+- **Headless Chrome**: Performance otimizada
+
+## Monitoramento e Logs
+
+O sistema inclui logging detalhado para monitoramento:
+
+```python
+# Níveis de log configurados
+DEBUG: Detalhes de automação Selenium
+INFO:  Progresso de jobs e operações principais
+ERROR: Falhas e exceções
+```
+
+### Métricas Disponíveis
+- Número total de jobs processados
+- Taxa de sucesso/falha por job
+- Tempo médio de processamento
+- Tamanho dos arquivos baixados
+- Erros por tipo
+
+## Limitações e Considerações
+
+### Rate Limiting
+- Recomendado: máximo 100 chaves por job
+- Intervalo entre requests: mínimo 1 segundo
+- Jobs simultâneos: máximo 10 por IP
+
+### Tratamento de Erros
+- **Chaves inválidas**: Validação de formato
+- **Conexão**: Retry automático em falhas temporárias
+- **Timeout**: Timeout configurável para operações
+- **Recursos**: Cleanup automático de WebDriver
 
 ### Segurança
+- **Input validation**: Validação rigorosa de entrada
+- **CORS**: Configurado para APIs cross-origin
+- **Session management**: Sessões seguras Flask
+- **Error handling**: Não exposição de informações sensíveis
 
-- **Autenticação**: Google OAuth + sessões Flask
-- **Rate Limiting**: Proteção contra abuso
-- **Logs**: Monitoramento completo de atividades
-- **HTTPS**: Criptografia end-to-end
+## Desenvolvimento
 
-## 🤝 Contribuindo
+### Executar Localmente
+```bash
+# Instalar dependências
+pip install -r requirements.txt
 
-1. Fork o projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
+# Executar aplicação
+python main.py
+```
 
-## 📝 Licença
+### Testes
+```bash
+# Testar conexão
+python -c "from automation import InvoiceDownloader; d = InvoiceDownloader(); print(d.test_connection())"
 
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
+# Testar API
+curl http://localhost:5000/api/v1/health
+```
 
-## 🆘 Suporte
+## Changelog
 
-- **Website**: [crossxml.com.br](https://crossxml.com.br)
-- **Email**: suporte@crossxml.com.br
-- **Documentação**: [docs.crossxml.com.br](https://docs.crossxml.com.br)
+- **2025-06-19**: Sistema completo implementado
+- **2025-06-19**: API REST adicionada
+- **2025-06-19**: Cliente Python criado
+- **2025-06-19**: Documentação completa
+- **2025-06-19**: Pronto para produção
 
-## 📈 Status do Projeto
+## Suporte
 
-- ✅ Download automatizado de XMLs
-- ✅ Geração de DANFE
-- ✅ Sistema de créditos
-- ✅ API REST completa
-- ✅ Etiquetas de transporte
-- ✅ Importação via email
-- ✅ Google OAuth
-- ✅ Integração Stripe
-- 🔄 Dashboard analytics
-- 🔄 App mobile
+Para dúvidas ou problemas:
+1. Consulte a documentação da API em `API_DOCUMENTATION.md`
+2. Verifique os logs na interface web
+3. Use o endpoint `/api/v1/test` para diagnóstico
+4. Examine o código de exemplo em `api_client_example.py`
 
----
+## Licença
 
-**CROSS XML Downloader PRO** - Acesse qualquer XML usando a chave da nota fiscal
+Sistema desenvolvido para automação de downloads de XMLs de notas fiscais.
+Uso responsável conforme os termos de serviço do site.
