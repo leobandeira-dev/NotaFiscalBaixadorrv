@@ -3444,6 +3444,16 @@ def generate_label_route(xml_id):
             xml_record.label_generated = True
             db.session.commit()
         
+        # ATUALIZAR BANCO DE DADOS COMPARTILHADO LabelGeneration - CRÍTICO PARA SINCRONIZAÇÃO
+        label_generation = LabelGeneration.get_or_create(current_user.id, xml_id)
+        label_generation.mark_generated(
+            label_file_path=f"generated/{filename}",
+            volumes_count=volumes_qty,
+            layout=layout_style
+        )
+        
+        db.session.commit()
+        
         # Retornar arquivo para impressão no navegador
         response = make_response(label_buffer.getvalue())
         response.headers['Content-Type'] = 'application/pdf'
