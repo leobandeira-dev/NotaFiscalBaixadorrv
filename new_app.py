@@ -19,6 +19,9 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import generate_password_hash, check_password_hash
 from itsdangerous import URLSafeTimedSerializer
 from authlib.integrations.flask_client import OAuth
+
+# Import Google OAuth blueprint
+from google_auth import google_auth
 from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, init_default_data
 from package_models import (
     StripeProduct, PackageFeature, UserSubscription, FeatureUsage,
@@ -301,6 +304,9 @@ google = oauth.register(
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Register Google OAuth blueprint
+app.register_blueprint(google_auth, url_prefix='/auth')
 
 # Setup security headers
 setup_security_headers(app)

@@ -21,8 +21,17 @@ class User(UserMixin, db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
+    password_hash = db.Column(db.String(256), nullable=True)  # Nullable for OAuth users
     name = db.Column(db.String(100), nullable=False)
+    
+    # OAuth fields
+    provider = db.Column(db.String(50), nullable=True)  # 'local', 'google', etc.
+    profile_picture = db.Column(db.String(500), nullable=True)  # URL from OAuth provider
+    
+    # Trial system
+    trial_start_date = db.Column(db.DateTime, nullable=True)
+    trial_end_date = db.Column(db.DateTime, nullable=True)
+    is_trial_active = db.Column(db.Boolean, default=True)
     
     # Dados de cobrança
     current_balance = db.Column(db.Float, default=0.0)  # Saldo atual em R$
