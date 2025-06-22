@@ -3370,30 +3370,51 @@ def generate_label_route(xml_id):
                 'description': f'Volume {i} de {volumes_qty}'
             })
         
-        # Gerar etiquetas usando o mesmo sistema do módulo
+        # Gerar etiquetas usando os métodos corretos do ResponsiveTransportLabelGenerator
         generator = ResponsiveTransportLabelGenerator(
+            company_name=company_config['name'],
+            company_subtitle=company_config['subtitle'],
             paper_width_mm=paper_config['width_mm'],
             paper_height_mm=paper_config['height_mm'],
             layout_style=layout_style
         )
         
+        # Obter conteúdo XML do registro
+        xml_content = xml_record.xml_content
+        if not xml_content:
+            raise Exception("Conteúdo XML não encontrado no registro")
+        
         if volumes_qty > 1:
-            # Múltiplas etiquetas - usar sistema de batch
+            # Múltiplas etiquetas usando generate_transport_label_with_volume_info
             labels = []
             for i, volume_config in enumerate(volumes_config):
-                label_data = generator.generate_from_xml_record(
-                    xml_record=xml_record,
-                    company_config=company_config,
-                    volume_number=volume_config['number'],
-                    total_volumes=volumes_qty,
-                    volume_weight=volume_config['weight_kg']
-                )
-                if label_data and label_data.get('buffer'):
+                volume_number = volume_config['number']
+                pedido_number = f"{xml_record.numero_nf or xml_record.id}-{volume_number}"
+                volume_info = f"{volume_number}/{volumes_qty}"
+                
+                try:
+                    pdf_buffer = generator.generate_transport_label_with_volume_info(
+                        xml_content=xml_content,
+                        pedido_number=pedido_number,
+                        area_code=company_config['area_code'],
+                        company_logo_path=company_config['logo_path'],
+                        volume_info=volume_info,
+                        current_volume=volume_number,
+                        total_volumes=volumes_qty
+                    )
+                    
                     labels.append({
-                        'pdf_buffer': label_data['buffer'],
-                        'filename': f'etiqueta_vol_{volume_config["number"]}.pdf',
-                        'volume': volume_config['number']
+                        'pdf_buffer': pdf_buffer,
+                        'filename': f'etiqueta_vol_{volume_number}.pdf',
+                        'volume': volume_number
                     })
+                    
+                except Exception as e:
+                    logger.error(f"Erro ao gerar etiqueta volume {volume_number}: {e}")
+                    continue
+            
+            if not labels:
+                raise Exception(f"Nenhuma etiqueta válida gerada para {volumes_qty} volumes")
             
             # Mesclar em PDF único
             from responsive_label_generator import merge_labels_into_single_pdf
@@ -3401,19 +3422,19 @@ def generate_label_route(xml_id):
             filename = f"etiquetas_nf_{xml_record.numero_nf or xml_record.id}_{volumes_qty}volumes.pdf"
             
         else:
-            # Etiqueta única
-            label_data = generator.generate_from_xml_record(
-                xml_record=xml_record,
-                company_config=company_config,
-                volume_number=1,
-                total_volumes=1,
-                volume_weight=peso_total
+            # Etiqueta única usando generate_transport_label
+            pedido_number = f"{xml_record.numero_nf or xml_record.id}-1"
+            
+            label_buffer = generator.generate_transport_label(
+                xml_content=xml_content,
+                pedido_number=pedido_number,
+                area_code=company_config['area_code'],
+                company_logo_path=company_config['logo_path']
             )
             
-            if not label_data or not label_data.get('buffer'):
+            if not label_buffer:
                 raise Exception("Falha na geração da etiqueta")
             
-            label_buffer = label_data['buffer']
             filename = f"etiqueta_nf_{xml_record.numero_nf or xml_record.id}.pdf"
         
         # Registrar uso do módulo de etiquetas (sem cobrança adicional - incluído na assinatura)
