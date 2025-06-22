@@ -169,6 +169,20 @@
             border-color: #7c0db8;
             box-shadow: 0 0 0 0.2rem rgba(138, 5, 190, 0.25);
         }
+        
+        .btn-success-custom {
+            background: linear-gradient(135deg, #10b981, #059669);
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-success-custom:hover {
+            background: linear-gradient(135deg, #059669, #047857);
+            transform: translateY(-1px);
+            color: white;
+        }
         }
 </style>
 {% endblock %}
@@ -406,11 +420,12 @@
                                     
                                     <div class="col-md-4 text-end">
                                         <div class="d-flex flex-column gap-2">
+                                            {% set label_generated = xml.label_generation_status and xml.label_generation_status.is_generated %}
                                             <button onclick="generateLabelWithConfig({{ xml.id }})" 
-                                                    class="btn btn-warning-custom btn-custom"
-                                                    title="Gerar etiqueta com configurações do painel lateral">
-                                                <i class="fas fa-print"></i> 
-                                                {{ 'Imprimir Etiqueta' if xml.label_generated else 'Gerar Etiqueta' }}
+                                                    class="btn {% if label_generated %}btn-success-custom{% else %}btn-warning-custom{% endif %} btn-custom"
+                                                    title="{% if label_generated %}Imprimir etiqueta já gerada{% else %}Gerar etiqueta com configurações do painel lateral{% endif %}">
+                                                <i class="fas fa-{% if label_generated %}print{% else %}tags{% endif %}"></i> 
+                                                {{ 'Imprimir Etiqueta' if label_generated else 'Gerar Etiqueta' }}
                                             </button>
                                             
                                             <a href="{{ url_for('label_generator', xml_id=xml.id) }}" 
@@ -690,6 +705,16 @@
             document.body.appendChild(form);
             form.submit();
             document.body.removeChild(form);  // Limpar formulário após submissão
+            
+            // Aguardar um momento e atualizar o status do botão
+            setTimeout(() => {
+                const button = document.querySelector(`button[onclick="generateLabelWithConfig(${xmlId})"]`);
+                if (button) {
+                    button.className = 'btn btn-success-custom btn-custom';
+                    button.innerHTML = '<i class="fas fa-print"></i> Imprimir Etiqueta';
+                    button.title = 'Imprimir etiqueta já gerada';
+                }
+            }, 3000);
         }
 </script>
 
