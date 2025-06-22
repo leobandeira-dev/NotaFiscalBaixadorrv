@@ -102,7 +102,7 @@ class DownloadService:
                 xml_file.data_emissao = xml_data.get('data_emissao')
                 xml_file.valor_total = xml_data.get('valor_total', 0.0)
                 xml_file.peso_bruto = xml_data.get('peso_bruto', 0.0)
-                xml_file.quantidade_volumes = xml_data.get('volumes', 0)
+                xml_file.quantidade_volumes = xml_data.get('quantidade_volumes', 0)
                 xml_file.cnpj_emitente = (xml_data.get('cnpj_emitente', 'N/A') or 'N/A')[:14]
                 xml_file.nome_emitente = (xml_data.get('nome_emitente', 'N/A') or 'N/A')[:255]
                 xml_file.remetente_razao = (xml_data.get('remetente_razao', xml_data.get('nome_emitente', '')) or '')[:255]

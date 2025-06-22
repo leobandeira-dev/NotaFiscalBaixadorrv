@@ -136,10 +136,10 @@ class EmailXMLProcessor:
                 
                 # Contar volumes
                 volumes = transp.findall('nfe:vol', namespaces)
-                xml_data['volumes'] = len(volumes) if volumes else 0
+                xml_data['quantidade_volumes'] = len(volumes) if volumes else 0
             else:
                 xml_data['peso_bruto'] = 0.0
-                xml_data['volumes'] = 0
+                xml_data['quantidade_volumes'] = 0
             
             return xml_data
             
@@ -288,7 +288,7 @@ class EmailXMLProcessor:
                     xml_file.data_emissao = xml_data.get('data_emissao')
                     xml_file.valor_total = xml_data.get('valor_total', 0.0)
                     xml_file.peso_bruto = xml_data.get('peso_bruto', 0.0)
-                    xml_file.quantidade_volumes = xml_data.get('volumes', 0)
+                    xml_file.quantidade_volumes = xml_data.get('quantidade_volumes', 0)
                     xml_file.cnpj_emitente = xml_data.get('cnpj_emitente', 'N/A')
                     xml_file.nome_emitente = xml_data.get('nome_emitente', 'N/A')
                     xml_file.destinatario_cnpj_cpf = xml_data.get('destinatario_cnpj_cpf', 'N/A')
