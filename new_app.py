@@ -29,7 +29,6 @@ from access_control import (
     require_feature, require_xml_credits, require_labels_subscription,
     require_admin, get_user_package_status, inject_package_status
 )
-from thread_job_processor import init_thread_processor, get_thread_processor
 from asaas_integration import AsaasAPI, create_minimum_charge, process_webhook_payment
 from stripe_integration import StripePaymentManager, CreditManager, PricingManager, process_stripe_webhook
 from stripe_pricing_system import XMLPricingTiers, get_user_xml_credits, consume_xml_credit, get_pricing_recommendations, create_xml_credit_subscription
@@ -252,10 +251,6 @@ app.config['SERVER_NAME'] = None  # Allow any domain
 app.config['PREFERRED_URL_SCHEME'] = 'https'
 
 # Add middleware to handle custom domain
-def get_base_url():
-    """Get the correct base URL for the application"""
-    return 'https://crossxml.com.br'
-
 @app.before_request
 def handle_custom_domain():
     """Handle requests from custom domain"""
@@ -276,13 +271,13 @@ app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'noreply@crossxml.com.br')
+app.config['MAIL_USERNAME'] = os.environ.get('MAIL_USERNAME', 'noreply@xmldownloader.com')
 app.config['MAIL_PASSWORD'] = os.environ.get('MAIL_PASSWORD', '')
-app.config['MAIL_DEFAULT_SENDER'] = 'CROSS XML <noreply@crossxml.com.br>'
+app.config['MAIL_DEFAULT_SENDER'] = 'XMLDownloader <noreply@xmldownloader.com>'
 
 # OAuth configuration
-app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_OAUTH_CLIENT_ID', '')
-app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
+app.config['GOOGLE_CLIENT_ID'] = os.environ.get('GOOGLE_CLIENT_ID', '')
+app.config['GOOGLE_CLIENT_SECRET'] = os.environ.get('GOOGLE_CLIENT_SECRET', '')
 
 # Initialize database
 db.init_app(app)
@@ -290,16 +285,15 @@ db.init_app(app)
 # Initialize Flask-Mail
 mail = Mail(app)
 
-# Initialize OAuth with improved configuration
+# Initialize OAuth
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
     client_id=app.config['GOOGLE_CLIENT_ID'],
     client_secret=app.config['GOOGLE_CLIENT_SECRET'],
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    server_metadata_url='https://accounts.google.com/.well-known/openid_configuration',
     client_kwargs={
-        'scope': 'openid email profile',
-        'prompt': 'select_account'
+        'scope': 'openid email profile'
     }
 )
 
@@ -312,9 +306,6 @@ login_manager.login_view = 'login'
 setup_security_headers(app)
 login_manager.login_message = 'Faça login para acessar esta página.'
 login_manager.login_message_category = 'info'
-
-# Initialize robust thread processor
-thread_processor = init_thread_processor(app)
 
 # Initialize password reset serializer
 serializer = URLSafeTimedSerializer(app.secret_key)
@@ -368,178 +359,63 @@ class DownloadJob:
         }
 
 def process_download_job(job_id, user_id):
-    """Process download job in background with database persistence"""
-    print(f"[THREAD ENTRY] Function process_download_job called with job_id={job_id}, user_id={user_id}")
-    logger.info(f"[THREAD ENTRY] Function process_download_job called with job_id={job_id}, user_id={user_id}")
-    
+    """Process download job in background"""
     try:
-        print(f"[THREAD DEBUG] Entering app context for job {job_id}")
-        with app.app_context():
-            print(f"[THREAD DEBUG] Inside app context for job {job_id}")
-            # Domain debugging logs
-            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Starting download job processing")
-            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - User ID: {user_id}")
-            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Working directory: {os.getcwd()}")
-            logger.info(f"🔍 [Job {job_id}] DOMAIN DEBUG - Environment variables:")
-            logger.info(f"    - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
-            logger.info(f"    - REPLIT_DEV_DOMAIN: {os.environ.get('REPLIT_DEV_DOMAIN', 'Not set')}")
-            logger.info(f"    - REPL_ID: {os.environ.get('REPL_ID', 'Not set')}")
-            
-            from automation_fixed import InvoiceDownloader
-            from models import DownloadJob as DBDownloadJob
-            import json
-            
-            # Get job from database with retry mechanism
-            import time
-            db_job = None
-            for attempt in range(5):  # Try 5 times with increasing delays
-                db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
-                if db_job:
-                    logger.info(f"[DB DEBUG] Job {job_id} found in database on attempt {attempt + 1}")
-                    break
+        from automation_fixed import InvoiceDownloader
+        
+        with jobs_lock:
+            job = download_jobs.get(job_id)
+        
+        if not job:
+            logger.error(f"Job {job_id} not found for processing")
+            return
+        
+        job.status = "running"
+        downloader = InvoiceDownloader()
+        
+        for i, invoice_key in enumerate(job.invoice_keys):
+            try:
+                logger.info(f"[Job {job_id}] Processing key {i+1}/{job.total_keys}: {invoice_key}")
+                
+                result = downloader.download_invoice_xml(
+                    invoice_key=invoice_key,
+                    job_id=job_id,
+                    download_type=job.download_type,
+                    user_id=user_id
+                )
+                
+                job.processed += 1
+                
+                if result.get('success') == True:
+                    job.successful += 1
+                    if result.get('file_path'):
+                        job.downloaded_files.append(result['file_path'])
+                        job.files.append(os.path.basename(result['file_path']))
                 else:
-                    logger.warning(f"[DB DEBUG] Job {job_id} not found on attempt {attempt + 1}, retrying...")
-                    time.sleep(0.5 * (attempt + 1))  # Progressive delay: 0.5s, 1s, 1.5s, 2s, 2.5s
-            
-            if not db_job:
-                logger.error(f"Job {job_id} not found in database after 5 attempts")
-                return
-            
-            # Get job from memory or recreate from database
-            with jobs_lock:
-                job = download_jobs.get(job_id)
-            
-            if not job:
-                # Recreate memory job from database
-                class MemoryJob:
-                    def __init__(self, db_job):
-                        self.job_id = db_job.job_id
-                        self.invoice_keys = json.loads(db_job.invoice_keys or '[]')
-                        self.user_id = db_job.user_id
-                        self.total_keys = db_job.total_keys
-                        self.processed = db_job.processed
-                        self.successful = db_job.successful
-                        self.failed = db_job.failed
-                        self.status = db_job.status
-                        self.download_type = db_job.download_type or 'xml'
-                        self.files = []
-                        self.downloaded_files = json.loads(db_job.downloaded_files or '[]')
-                        self.errors = json.loads(db_job.errors or '[]')
-                        self.start_time = db_job.created_at
-                        self.end_time = db_job.completed_at
-                        
-                    @property
-                    def progress_percentage(self):
-                        return round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
-                
-                job = MemoryJob(db_job)
-                
-                with jobs_lock:
-                    download_jobs[job_id] = job
-            
-            # Update status in both memory and database
-            job.status = "running"
-            db_job.status = "running"
-            db_job.started_at = datetime.utcnow()
-            db.session.commit()
-            
-            downloader = InvoiceDownloader()
-            
-            for i, invoice_key in enumerate(job.invoice_keys):
-                try:
-                    logger.info(f"[Job {job_id}] Processing key {i+1}/{job.total_keys}: {invoice_key}")
-                    
-                    result = downloader.download_invoice_xml(
-                        invoice_key=invoice_key,
-                        job_id=job_id,
-                        download_type=job.download_type,
-                        user_id=user_id
-                    )
-                    
-                    # Update both memory and database
-                    job.processed += 1
-                    db_job.processed += 1
-                    
-                    # CRITICAL FIX: Check both success formats
-                    is_success = (result.get('success') == True or 
-                                 result.get('status') == 'success' or
-                                 result.get('success') is True)
-                    
-                    logger.info(f"[Job {job_id}] Result for {invoice_key}: {result}")
-                    logger.info(f"[Job {job_id}] Success check: {is_success}")
-                    
-                    if is_success:
-                        job.successful += 1
-                        db_job.successful += 1
-                        
-                        file_path = result.get('file_path') or result.get('filename')
-                        if file_path:
-                            job.downloaded_files.append(file_path)
-                            job.files.append(os.path.basename(file_path))
-                            db_job.add_downloaded_file(file_path)
-                            logger.info(f"[Job {job_id}] SUCCESS: {invoice_key} -> {file_path}")
-                    else:
-                        job.failed += 1
-                        db_job.failed += 1
-                        
-                        error_msg = result.get('error', result.get('message', f'Download failed: {result}'))
-                        job.errors.append({
-                            'invoice_key': invoice_key,
-                            'error': error_msg
-                        })
-                        db_job.add_error(invoice_key, error_msg)
-                        logger.warning(f"[Job {job_id}] FAILED: {invoice_key} -> {error_msg}")
-                    
-                    # Save progress to database every download
-                    db.session.commit()
-                        
-                except Exception as e:
-                    logger.error(f"[Job {job_id}] Error processing {invoice_key}: {str(e)}")
-                    
-                    # Update both memory and database
                     job.failed += 1
-                    job.processed += 1
-                    db_job.failed += 1
-                    db_job.processed += 1
-                    
-                    error_msg = str(e)
                     job.errors.append({
                         'invoice_key': invoice_key,
-                        'error': error_msg
+                        'error': result.get('error', result.get('message', 'Unknown error'))
                     })
-                    db_job.add_error(invoice_key, error_msg)
                     
-                    # Save error to database
-                    db.session.commit()
-            
-            # Mark job as completed in both memory and database
-            final_status = "completed" if job.successful > 0 else "failed"
-            job.status = final_status
-            job.end_time = datetime.utcnow()
-            
-            db_job.status = final_status
-            db_job.completed_at = datetime.utcnow()
-            db.session.commit()
-            
-            downloader.cleanup()
-            logger.info(f"[Job {job_id}] Completed: {job.successful} successful, {job.failed} failed")
-            
+            except Exception as e:
+                logger.error(f"[Job {job_id}] Error processing {invoice_key}: {str(e)}")
+                job.failed += 1
+                job.processed += 1
+                job.errors.append({
+                    'invoice_key': invoice_key,
+                    'error': str(e)
+                })
+        
+        # Mark job as completed
+        job.status = "completed" if job.successful > 0 else "failed"
+        job.end_time = datetime.now()
+        
+        downloader.cleanup()
+        logger.info(f"[Job {job_id}] Completed: {job.successful} successful, {job.failed} failed")
+        
     except Exception as e:
         logger.error(f"[Job {job_id}] Critical error: {str(e)}")
-        
-        # Update database status on critical error
-        try:
-            with app.app_context():
-                from models import DownloadJob as DBDownloadJob
-                db_job = DBDownloadJob.query.filter_by(job_id=job_id).first()
-                if db_job:
-                    db_job.status = "failed"
-                    db_job.completed_at = datetime.utcnow()
-                    db.session.commit()
-        except:
-            pass
-        
-        # Update memory job if exists
         if job_id in download_jobs:
             download_jobs[job_id].status = "failed"
 
@@ -685,13 +561,12 @@ def forgot_password():
             # Send email (simplified - in production, use proper email template)
             try:
                 msg = Message(
-                    'Redefinição de Senha - CROSS XML',
-                    sender='CROSS XML <noreply@crossxml.com.br>',
+                    'Redefinição de Senha - XMLDownloader',
                     recipients=[email],
                     body=f'''
 Olá {user.name},
 
-Você solicitou a redefinição de sua senha no CROSS XML Downloader PRO. Clique no link abaixo para definir uma nova senha:
+Você solicitou a redefinição de sua senha. Clique no link abaixo para definir uma nova senha:
 
 {reset_url}
 
@@ -699,9 +574,8 @@ Este link expira em 1 hora.
 
 Se você não solicitou esta redefinição, ignore este email.
 
---
-Equipe CROSS XML
-crossxml.com.br
+Atenciosamente,
+Equipe XMLDownloader
 '''
                 )
                 mail.send(msg)
@@ -747,219 +621,42 @@ def reset_password(token):
     
     return render_template('reset_password.html', token=token)
 
-@app.route('/domain-debug')
-def domain_debug():
-    """Debug route to analyze domain differences"""
-    import os
-    current_host = request.host
-    
-    # Check environment variables
-    replit_deployment = os.environ.get('REPLIT_DEPLOYMENT', 'Not set')
-    replit_dev_domain = os.environ.get('REPLIT_DEV_DOMAIN', 'Not set')
-    replit_domains = os.environ.get('REPLIT_DOMAINS', 'Not set')
-    
-    # Check if custom domain
-    is_custom_domain = 'crossxml.com.br' in current_host
-    is_replit_domain = 'replit.dev' in current_host
-    
-    # Check automation environment detection
-    from automation_fixed import InvoiceDownloader
-    downloader = InvoiceDownloader()
-    
-    return f"""
-    <h2>Domain Debug Information</h2>
-    <p><strong>Current Host:</strong> {current_host}</p>
-    <p><strong>Is Custom Domain:</strong> {is_custom_domain}</p>
-    <p><strong>Is Replit Domain:</strong> {is_replit_domain}</p>
-    
-    <h3>Environment Variables:</h3>
-    <p><strong>REPLIT_DEPLOYMENT:</strong> {replit_deployment}</p>
-    <p><strong>REPLIT_DEV_DOMAIN:</strong> {replit_dev_domain}</p>
-    <p><strong>REPLIT_DOMAINS:</strong> {replit_domains}</p>
-    
-    <h3>Request Headers:</h3>
-    <ul>
-    {''.join([f'<li><strong>{k}:</strong> {v}</li>' for k, v in request.headers.items()])}
-    </ul>
-    
-    <h3>Automation Environment Detection:</h3>
-    <p>Check the logs for automation environment settings when accessing from different domains.</p>
-    """
-
-@app.route('/oauth-debug')
-def oauth_debug():
-    """Debug route to show exact OAuth URLs"""
-    current_host = request.host
-    
-    if 'crossxml.com.br' in current_host:
-        redirect_uri = "https://crossxml.com.br/auth/google/callback"
-    else:
-        redirect_uri = "https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback"
-    
-    return f"""
-    <h2>OAuth Debug Information</h2>
-    <p><strong>Current Host:</strong> {current_host}</p>
-    <p><strong>Redirect URI being used:</strong> {redirect_uri}</p>
-    <p><strong>Add this EXACT URL to Google Cloud Console:</strong></p>
-    <code style="background: #f0f0f0; padding: 10px; display: block;">{redirect_uri}</code>
-    
-    <h3>Both URLs to add to Google Console:</h3>
-    <code style="background: #f0f0f0; padding: 5px; display: block;">https://crossxml.com.br/auth/google/callback</code>
-    <code style="background: #f0f0f0; padding: 5px; display: block;">https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback</code>
-    """
-
 @app.route('/auth/google')
 def google_login():
-    """Google OAuth login with proper user agent handling"""
-    # Configure session for maximum persistence
-    session.permanent = True
-    app.permanent_session_lifetime = timedelta(hours=2)
-    
-    # Use specific authorized redirect URIs for OAuth
-    if 'crossxml.com.br' in request.host:
-        redirect_uri = "https://crossxml.com.br/auth/google/callback"
-    else:
-        redirect_uri = "https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback"
-    
-    app.logger.info(f"OAuth redirect URI: {redirect_uri}")
-    
-    # Store redirect URI in session for callback validation
-    session['oauth_redirect_uri'] = redirect_uri
-    session.modified = True
-    
-    # Create proper OAuth URL manually to avoid user agent issues
-    client_id = os.environ.get('GOOGLE_OAUTH_CLIENT_ID')
-    
-    oauth_params = {
-        'client_id': client_id,
-        'redirect_uri': redirect_uri,
-        'scope': 'openid profile email',
-        'response_type': 'code',
-        'access_type': 'offline',
-        'prompt': 'select_account'
-    }
-    
-    from urllib.parse import urlencode
-    oauth_url = 'https://accounts.google.com/o/oauth2/v2/auth?' + urlencode(oauth_params)
-    
-    return redirect(oauth_url)
+    """Google OAuth login"""
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
 
 @app.route('/auth/google/callback')
 def google_callback():
     """Google OAuth callback"""
     try:
-        # Force Authlib to skip CSRF state validation
-        # Store original request args
-        original_args = dict(request.args)
+        token = google.authorize_access_token()
+        user_info = token.get('userinfo')
         
-        # Temporarily clear state from request to bypass validation
-        from werkzeug.datastructures import ImmutableMultiDict
-        
-        # Get token with error handling for state mismatch
-        try:
-            token = google.authorize_access_token()
-        except Exception as e:
-            if "mismatching_state" in str(e) or "CSRF Warning" in str(e):
-                app.logger.warning(f"CSRF state mismatch detected, bypassing validation: {e}")
-                
-                # Manually create token request without state validation
-                
-                # Clear state from session to avoid conflicts
-                session.pop('_google_authlib_state_', None)
-                
-                # Create a manual token request bypassing state validation
-                import requests
-                
-                # Get authorization code from request
-                code = request.args.get('code')
-                if not code:
-                    flash('Código de autorização não encontrado.', 'error')
-                    return redirect(url_for('login'))
-                
-                # Manual token exchange with custom domain
-                token_url = 'https://oauth2.googleapis.com/token'
-                
-                # Use same specific redirect URI as initial request
-                if 'crossxml.com.br' in request.host:
-                    redirect_uri = "https://crossxml.com.br/auth/google/callback"
-                else:
-                    redirect_uri = "https://9a7d14e3-7ec8-40b5-8b00-8733fff0b3f4-00-10dm2qhcjzz2k.spock.replit.dev/auth/google/callback"
-                
-                app.logger.info(f"Using matching redirect URI: {redirect_uri}")
-                
-                token_data = {
-                    'client_id': os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
-                    'client_secret': os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET'),
-                    'code': code,
-                    'grant_type': 'authorization_code',
-                    'redirect_uri': redirect_uri
-                }
-                
-                token_response = requests.post(token_url, data=token_data)
-                if token_response.status_code == 200:
-                    token = token_response.json()
-                else:
-                    app.logger.error(f"Token exchange failed: {token_response.text}")
-                    flash('Erro na troca de tokens. Tente novamente.', 'error')
-                    return redirect(url_for('login'))
-            else:
-                raise e
-        
-        # Parse the ID token to get user info
-        user_info = None
-        if 'id_token' in token:
-            try:
-                import jwt
-                user_info = jwt.decode(token['id_token'], options={"verify_signature": False})
-            except Exception as e:
-                app.logger.error(f"Erro ao decodificar ID token: {e}")
-        
-        # Fallback: get user info from userinfo endpoint
-        if not user_info or not user_info.get('email'):
-            try:
-                resp = google.get('userinfo', token=token)
-                user_info = resp.json() if resp else {}
-            except Exception as e:
-                app.logger.error(f"Erro ao obter userinfo: {e}")
-                user_info = {}
-        
-        if user_info and user_info.get('email'):
+        if user_info:
             email = user_info.get('email')
-            name = user_info.get('name') or user_info.get('given_name', email.split('@')[0])
+            name = user_info.get('name', email.split('@')[0])
             
             # Check if user exists
             user = User.query.filter_by(email=email).first()
             
             if not user:
-                # Create new user with trial period
-                user = User(
-                    username=name, 
-                    email=email,
-                    password_hash=generate_password_hash(secrets.token_urlsafe(32)),
-                    is_active=True,
-                    trial_end_date=datetime.utcnow() + timedelta(days=7)
-                )
+                # Create new user
+                user = User(name=name, email=email)
+                # Set a random password for OAuth users
+                user.set_password(secrets.token_urlsafe(32))
                 db.session.add(user)
                 db.session.commit()
-                
-                # Log activity
-                log_user_activity(user.id, 'account_created', 'Conta criada via Google OAuth')
-                flash('Conta criada com sucesso via Google! Trial de 7 dias ativado.', 'success')
-            else:
-                flash('Login realizado com sucesso via Google!', 'success')
+                flash('Conta criada com sucesso via Google!', 'success')
             
-            # Log user in
             login_user(user)
-            
-            # Log activity
-            log_user_activity(user.id, 'login', 'Login realizado via Google OAuth')
-            
             return redirect(url_for('dashboard'))
         else:
-            flash('Erro ao obter informações do Google. Tente novamente.', 'error')
+            flash('Erro ao obter informações do Google.', 'error')
             
     except Exception as e:
-        app.logger.error(f"Erro no login Google: {e}")
+        logger.error(f"Erro no login Google: {e}")
         flash('Erro no login com Google. Tente novamente.', 'error')
     
     return redirect(url_for('login'))
@@ -1036,12 +733,6 @@ def dashboard():
                          user_stats=user_stats,
                          trial_status=trial_status)
 
-@app.route('/download')
-@login_required
-def download():
-    """Download page - redirects to xml-download for compatibility"""
-    return redirect(url_for('xml_download'))
-
 @app.route('/xml-download')
 @login_required
 def xml_download():
@@ -1089,51 +780,9 @@ def submit_keys():
             flash(f'Créditos XML insuficientes. Você possui {available_credits} créditos, mas precisa de {len(valid_keys)} para processar estas chaves.', 'warning')
             return redirect(url_for('comprar_creditos_xml'))
         
-        # Create download job in database
+        # Create download job
         job_id = str(uuid.uuid4())
-        
-        # Create persistent job record
-        import json
-        from models import DownloadJob as DBDownloadJob
-        
-        db_job = DBDownloadJob(
-            job_id=job_id,
-            user_id=current_user.id,
-            total_keys=len(valid_keys),
-            download_type='xml',
-            invoice_keys=json.dumps(valid_keys),
-            status='starting'
-        )
-        
-        db.session.add(db_job)
-        db.session.commit()
-        
-        # Verify job was created successfully
-        logger.info(f"[DB DEBUG] Job {job_id} created in database for user {current_user.id}")
-        
-        # Create in-memory job for compatibility with existing process_download_job
-        class MemoryJob:
-            def __init__(self, db_job, keys):
-                self.job_id = db_job.job_id
-                self.invoice_keys = keys
-                self.user_id = db_job.user_id
-                self.total_keys = db_job.total_keys
-                self.processed = db_job.processed
-                self.successful = db_job.successful
-                self.failed = db_job.failed
-                self.status = db_job.status
-                self.download_type = 'xml'
-                self.files = []
-                self.downloaded_files = []
-                self.errors = []
-                self.start_time = db_job.created_at
-                self.end_time = db_job.completed_at
-                
-            @property
-            def progress_percentage(self):
-                return round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
-        
-        job = MemoryJob(db_job, valid_keys)
+        job = DownloadJob(job_id, valid_keys, current_user.id)
         
         with jobs_lock:
             download_jobs[job_id] = job
@@ -1155,90 +804,10 @@ def submit_keys():
             db.session.add(usage)
             db.session.commit()
         
-        # Log domain information for debugging
-        app.logger.info(f"[DOMAIN DEBUG] Processing download from host: {request.host}")
-        app.logger.info(f"[DOMAIN DEBUG] Job ID: {job_id}, User ID: {current_user.id}, Keys: {len(valid_keys)}")
-        app.logger.info(f"[DOMAIN DEBUG] Environment vars - REPLIT_DEPLOYMENT: {os.environ.get('REPLIT_DEPLOYMENT', 'Not set')}")
-        
-        # FORCE IMMEDIATE EXECUTION - Process directly in request context
-        logger.info(f"[FORCE EXECUTION] Starting FORCED processing for job {job_id}")
-        app.logger.info(f"[FORCE EXECUTION] Job {job_id} starting immediate execution")
-        print(f"[FORCE EXECUTION DEBUG] Processing job {job_id} with {len(valid_keys)} keys")
-        
-        from datetime import datetime
-        import json
-        import time
-        
-        try:
-            logger.info(f"[FORCE EXECUTION] Step 1: Updating job status to running")
-            
-            # Force immediate status update
-            db_job.status = 'running'
-            db_job.started_at = datetime.utcnow()
-            db_job.processed = 0
-            db_job.successful = 0 
-            db_job.failed = 0
-            db.session.commit()
-            
-            logger.info(f"[FORCE EXECUTION] Step 2: Job status updated, starting key processing")
-            
-            # Process keys with detailed logging
-            for i, key in enumerate(valid_keys):
-                logger.info(f"[FORCE EXECUTION] Processing key {i+1}/{len(valid_keys)}: {key}")
-                print(f"[FORCE EXECUTION DEBUG] Processing key {i+1}: {key}")
-                
-                # Simulate processing with immediate success
-                time.sleep(0.5)  # Brief pause to simulate work
-                
-                # Update counters
-                db_job.processed = i + 1
-                db_job.successful = i + 1
-                
-                # Create downloaded file entry
-                files_data = json.loads(db_job.downloaded_files or '[]')
-                files_data.append({
-                    'filename': f'{key}.xml',
-                    'size': 4750,
-                    'key': key,
-                    'downloaded_at': datetime.utcnow().isoformat()
-                })
-                db_job.downloaded_files = json.dumps(files_data)
-                
-                # Force commit after each key
-                db.session.commit()
-                
-                logger.info(f"[FORCE EXECUTION] Key {key} processed and committed to database")
-                print(f"[FORCE EXECUTION DEBUG] Key {i+1} completed, progress: {db_job.processed}/{len(valid_keys)}")
-            
-            # Mark as completed
-            logger.info(f"[FORCE EXECUTION] Step 3: Marking job as completed")
-            db_job.status = 'completed'
-            db_job.completed_at = datetime.utcnow()
-            db.session.commit()
-            
-            logger.info(f"[FORCE EXECUTION] SUCCESS: Job {job_id} completed with {db_job.successful} successful downloads")
-            print(f"[FORCE EXECUTION DEBUG] Job {job_id} COMPLETED successfully")
-            
-        except Exception as e:
-            logger.error(f"[FORCE EXECUTION] ERROR in job {job_id}: {e}")
-            print(f"[FORCE EXECUTION DEBUG] ERROR: {e}")
-            
-            try:
-                db_job.status = 'failed'
-                db_job.completed_at = datetime.utcnow()
-                
-                errors_data = json.loads(db_job.errors or '[]')
-                errors_data.append({
-                    'error': f'Processing error: {str(e)}',
-                    'timestamp': datetime.utcnow().isoformat()
-                })
-                db_job.errors = json.dumps(errors_data)
-                db.session.commit()
-                
-                logger.error(f"[FORCE EXECUTION] Job {job_id} marked as failed")
-            except Exception as commit_error:
-                logger.error(f"[FORCE EXECUTION] Failed to update job status: {commit_error}")
-                print(f"[FORCE EXECUTION DEBUG] Failed to update status: {commit_error}")
+        # Start download process in background
+        thread = Thread(target=process_download_job, args=(job_id, current_user.id))
+        thread.daemon = True
+        thread.start()
         
         flash(f'Processo de download iniciado para {len(valid_keys)} chave(s).', 'success')
         return redirect(url_for('download_status', job_id=job_id))
@@ -1252,45 +821,8 @@ def submit_keys():
 @login_required
 def download_status(job_id):
     """Display download progress and options"""
-    # First try to get from memory
     with jobs_lock:
         job = download_jobs.get(job_id)
-    
-    # If not in memory, try to get from database
-    if not job:
-        from models import DownloadJob as DBDownloadJob
-        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=current_user.id).first()
-        
-        if db_job:
-            # Recreate memory job from database
-            import json
-            
-            class MemoryJob:
-                def __init__(self, db_job):
-                    self.job_id = db_job.job_id
-                    self.invoice_keys = json.loads(db_job.invoice_keys or '[]')
-                    self.user_id = db_job.user_id
-                    self.total_keys = db_job.total_keys
-                    self.processed = db_job.processed
-                    self.successful = db_job.successful
-                    self.failed = db_job.failed
-                    self.status = db_job.status
-                    self.download_type = db_job.download_type or 'xml'
-                    self.files = json.loads(db_job.downloaded_files or '[]')
-                    self.downloaded_files = json.loads(db_job.downloaded_files or '[]')
-                    self.errors = json.loads(db_job.errors or '[]')
-                    self.start_time = db_job.created_at
-                    self.end_time = db_job.completed_at
-                    
-                @property
-                def progress_percentage(self):
-                    return round((self.processed / self.total_keys) * 100, 2) if self.total_keys > 0 else 0
-            
-            job = MemoryJob(db_job)
-            
-            # Add back to memory for future access
-            with jobs_lock:
-                download_jobs[job_id] = job
     
     if not job or job.user_id != current_user.id:
         flash('Job de download não encontrado.', 'error')
@@ -2289,122 +1821,14 @@ def process_danfe_generation(job_id):
 @app.route('/job_status/<job_id>')
 @login_required
 def job_status(job_id):
-    """Get job status with database synchronization"""
-    try:
-        from models import DownloadJob as DBDownloadJob
-        import json
+    """Get job status"""
+    with jobs_lock:
+        job = download_jobs.get(job_id)
         
-        # Get job directly from database
-        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=current_user.id).first()
-        
-        if not db_job:
+        if not job or job.user_id != current_user.id:
             return jsonify({'error': 'Job not found'}), 404
         
-        # Parse database fields safely
-        try:
-            db_files = json.loads(db_job.downloaded_files or '[]')
-        except:
-            db_files = []
-            
-        try:
-            db_errors = json.loads(db_job.errors or '[]')
-        except:
-            db_errors = []
-        
-        # Calculate progress
-        progress_percentage = round((db_job.processed / db_job.total_keys) * 100, 2) if db_job.total_keys > 0 else 0
-        
-        # Build response
-        response_data = {
-            'job_id': db_job.job_id,
-            'total_keys': db_job.total_keys or 0,
-            'processed': db_job.processed or 0,
-            'successful': db_job.successful or 0,
-            'failed': db_job.failed or 0,
-            'status': db_job.status or 'unknown',
-            'downloaded_files': [f.get('filename', '') if isinstance(f, dict) else str(f) for f in db_files],
-            'files': [f.get('filename', '') if isinstance(f, dict) else str(f) for f in db_files],
-            'errors': db_errors,
-            'start_time': db_job.created_at.isoformat() if db_job.created_at else None,
-            'end_time': db_job.completed_at.isoformat() if db_job.completed_at else None,
-            'progress_percentage': progress_percentage
-        }
-        
-        return jsonify(response_data)
-        
-    except Exception as e:
-        logger.error(f"Error getting job status for {job_id}: {e}")
-        return jsonify({'error': f'Database error: {str(e)}'}), 500
-
-def get_job_status_data(job_id, user_id):
-    """Get job status data directly from database - SIMPLIFIED APPROACH"""
-    try:
-        from models import DownloadJob as DBDownloadJob
-        import json
-        
-        # Get job directly from database - no memory complications
-        db_job = DBDownloadJob.query.filter_by(job_id=job_id, user_id=user_id).first()
-        
-        if not db_job:
-            logger.warning(f"[DB DIRECT] Job {job_id} not found for user {user_id}")
-            return jsonify({'error': 'Job not found'}), 404
-        
-        logger.info(f"[DB DIRECT] Job {job_id}: {db_job.processed}/{db_job.total_keys} processed, {db_job.successful} successful, status: {db_job.status}")
-        
-        # Parse database fields safely
-        try:
-            db_files = json.loads(db_job.downloaded_files or '[]')
-        except:
-            db_files = []
-            
-        try:
-            db_errors = json.loads(db_job.errors or '[]')
-        except:
-            db_errors = []
-        
-        # Calculate progress
-        progress_percentage = round((db_job.processed / db_job.total_keys) * 100, 2) if db_job.total_keys > 0 else 0
-        
-        # Build response with safe field access
-        response_data = {
-            'job_id': db_job.job_id,
-            'total_keys': db_job.total_keys or 0,
-            'processed': db_job.processed or 0,
-            'successful': db_job.successful or 0,
-            'failed': db_job.failed or 0,
-            'status': db_job.status or 'unknown',
-            'downloaded_files': [f.get('filename', '') if isinstance(f, dict) else str(f) for f in db_files],
-            'files': [f.get('filename', '') if isinstance(f, dict) else str(f) for f in db_files],
-            'errors': db_errors,
-            'start_time': db_job.created_at.isoformat() if db_job.created_at else None,
-            'end_time': db_job.completed_at.isoformat() if db_job.completed_at else None,
-            'progress_percentage': progress_percentage
-        }
-        
-        logger.info(f"[DB DIRECT] Returning clean response: {response_data['processed']}/{response_data['total_keys']} ({response_data['progress_percentage']}%)")
-        return jsonify(response_data)
-        
-    except Exception as e:
-        logger.error(f"[DB DIRECT] Error getting job status for {job_id}: {e}")
-        return jsonify({'error': f'Database error: {str(e)}'}), 500
-
-@app.route('/api/job_status/<job_id>')
-def api_job_status(job_id):
-    """Public API endpoint for job status - no authentication required for AJAX calls"""
-    # For API calls, we need to identify the user somehow
-    # Check if there's a session with user_id
-    if 'user_id' in session:
-        user_id = session['user_id']
-        return get_job_status_data(job_id, user_id)
-    
-    # If no session, try to find job in any user (less secure but works for immediate testing)
-    from models import DownloadJob as DBDownloadJob
-    db_job = DBDownloadJob.query.filter_by(job_id=job_id).first()
-    
-    if db_job:
-        return get_job_status_data(job_id, db_job.user_id)
-    
-    return jsonify({'error': 'Job not found'}), 404
+        return jsonify(job.to_dict())
 
 # Configurar timezone de São Paulo
 SP_TZ = pytz.timezone('America/Sao_Paulo')
@@ -5794,64 +5218,7 @@ try:
 except ImportError:
     logger.warning("Simple admin not available")
 
-# Health check endpoint for deployment monitoring
-@app.route('/health')
-def health_check():
-    """Health check endpoint for deployment monitoring"""
-    import time
-    return jsonify({
-        'status': 'healthy',
-        'service': 'CROSS XML Downloader',
-        'timestamp': datetime.now().isoformat(),
-        'version': '2.1-deploy-fix',
-        'domain': request.host,
-        'cache_buster': int(time.time())
-    }), 200, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
 
-# Readiness check for Replit deployments
-@app.route('/ready')
-def readiness_check():
-    """Readiness check endpoint"""
-    try:
-        # Test database connection
-        from sqlalchemy import text
-        db.session.execute(text('SELECT 1'))
-        return jsonify({
-            'status': 'ready',
-            'database': 'connected',
-            'timestamp': datetime.now().isoformat(),
-            'domain': request.host,
-            'version': '2.1-deploy-fix'
-        }), 200, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
-    except Exception as e:
-        return jsonify({
-            'status': 'not_ready',
-            'database': 'disconnected',
-            'error': str(e),
-            'timestamp': datetime.now().isoformat(),
-            'domain': request.host
-        }), 503, {'Cache-Control': 'no-cache, no-store, must-revalidate'}
-
-# Temporary endpoint to force cache refresh on custom domain
-@app.route('/deployment-status')
-def deployment_status():
-    """Temporary endpoint to verify deployment status across domains"""
-    import time
-    return jsonify({
-        'deployment': 'active',
-        'health_endpoint': '/health',
-        'ready_endpoint': '/ready',
-        'custom_domain_compatible': True,
-        'timestamp': datetime.now().isoformat(),
-        'domain': request.host,
-        'version': '2.1-deploy-fix',
-        'cache_buster': int(time.time()),
-        'message': 'This endpoint confirms the latest version is deployed'
-    }), 200, {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
-    }
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

@@ -12,7 +12,6 @@ from typing import Dict, Any
 import re
 from optimization_deploy import DeployOptimizer
 from performance_solution import PerformanceSolution, EnhancedDeployOptimizer, DeployPerformanceMonitor
-from ultra_speed_optimizer import UltraSpeedOptimizer, UltraSpeedMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +21,25 @@ class InvoiceDownloader:
         self.setup_driver()
     
     def setup_driver(self):
-        """Setup Chrome WebDriver with ULTRA performance for deploy"""
+        """Setup Chrome WebDriver with enhanced environment-optimized options"""
         try:
-            # Use new ultra-performance system
-            from ultra_performance_deploy import UltraPerformanceDeploy, ChromeDriverManager
+            # Apply comprehensive performance fixes for deploy environment
+            performance_result = PerformanceSolution.apply_deploy_performance_fixes()
+            logger.info(f"Performance optimizations applied: {performance_result['environment']}")
             
-            # Apply ultra performance optimizations
-            performance_result = UltraPerformanceDeploy.apply_ultra_performance()
-            logger.info(f"🚀 ULTRA PERFORMANCE applied: {performance_result}")
+            # Setup downloads directory
+            downloads_dir = os.path.abspath('downloads')
+            os.makedirs(downloads_dir, exist_ok=True)
+            logger.info(f"Setting download directory to: {downloads_dir}")
             
-            # Use optimized driver creation
-            self.driver = ChromeDriverManager.get_optimized_driver()
-            logger.info("✅ ULTRA-optimized Chrome driver created successfully")
-            return
+            # Get enhanced Chrome options with deploy-specific optimizations
+            chrome_options = EnhancedDeployOptimizer.get_enhanced_chrome_options()
+            
+            # Additional specific optimizations
+            chrome_options.add_argument('--disable-web-security')
+            chrome_options.add_argument('--allow-running-insecure-content')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36')
             
             # Download preferences
             prefs = {
@@ -74,68 +79,57 @@ class InvoiceDownloader:
             logger.error(f"Failed to setup Chrome WebDriver: {str(e)}")
             raise
     
-    @UltraSpeedMonitor.measure_ultra_speed
+    @DeployPerformanceMonitor.measure_operation("xml_download")
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None) -> Dict[str, Any]:
-        """Download XML for a specific invoice key with ULTRA-SPEED optimizations"""
+        """Download XML for a specific invoice key with enhanced environment-optimized timeouts"""
         try:
-            # Apply production-specific fixes
-            from production_fix import ProductionFix
+            # Get enhanced optimized timeouts for current environment
+            timeouts = EnhancedDeployOptimizer.get_enhanced_timeouts()
             
-            # Detect production environment with comprehensive checks
-            is_production = ProductionFix.is_production_environment()
-            ProductionFix.apply_production_fixes()
-            
-            # Use ultra-performance timeouts for maximum speed
-            from ultra_performance_deploy import UltraPerformanceDeploy
-            timeouts = UltraPerformanceDeploy.get_ultra_timeouts()
-            logger.info(f"⚡ [Job {job_id}] Ultra timeouts: {timeouts}")
-            
-            logger.info(f"🚀 [Job {job_id}] ULTRA-SPEED XML download starting: {invoice_key}")
+            logger.info(f"[Job {job_id}] Starting XML download for invoice key: {invoice_key}")
             
             # Navigate to the website
             url = "https://meudanfe.com.br/"
             logger.info(f"[Job {job_id}] Navigating to invoice system...")
             self.driver.get(url)
             
-            # ULTRA-SPEED waits with minimal timeouts
-            logger.info(f"⚡ [Job {job_id}] Domain-aware input search...")
+            # Environment-optimized waits
+            logger.info(f"[Job {job_id}] Looking for input field...")
             input_element = WebDriverWait(self.driver, timeouts['element_wait']).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[placeholder="Digite a CHAVE DE ACESSO"]'))
             )
-            logger.info(f"⚡ [Job {job_id}] Page ready - URL: {self.driver.current_url}")
+            logger.info(f"[Job {job_id}] Page loaded - URL: {self.driver.current_url}")
             
-            logger.info(f"⚡ [Job {job_id}] Domain-aware key entry...")
+            logger.info(f"[Job {job_id}] Entering invoice key...")
             input_element.clear()
             input_element.send_keys(invoice_key)
             
-            # Domain-aware submit button with extended timeout for custom domain
-            logger.info(f"⚡ [Job {job_id}] Domain-aware submit search...")
+            # Environment-optimized submit button wait
+            logger.info(f"[Job {job_id}] Looking for submit button...")
             try:
                 submit_button = WebDriverWait(self.driver, timeouts['element_wait']).until(
                     EC.element_to_be_clickable((By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]"))
                 )
-            except Exception as e:
-                logger.error(f"[Job {job_id}] Submit button not found with timeout {timeouts['element_wait']}s: {e}")
-                raise Exception(f"Submit button not found (timeout: {timeouts['element_wait']}s)")
+            except:
+                raise Exception("Submit button not found")
             
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast submit click...")
+            logger.info(f"[Job {job_id}] Clicking submit button...")
             submit_button.click()
             
-            # ULTRA-SPEED results wait (reduced from default)
-            logger.info(f"⚡ [Job {job_id}] Ultra-fast response wait...")
-            time.sleep(0.3)  # Drastically reduced from previous timeouts
+            # Environment-optimized results wait
+            logger.info(f"[Job {job_id}] Waiting for response page...")
+            time.sleep(timeouts['download_wait'])
             
-            logger.info(f"⚡ [Job {job_id}] Submit complete - URL: {self.driver.current_url}")
+            logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
             
-            # ULTRA-SPEED XML button detection
-            logger.info(f"⚡ [Job {job_id}] Domain-aware XML button search (timeout: {timeouts['xml_button']}s)...")
+            # Find XML download button with environment-optimized timeout
+            logger.info(f"[Job {job_id}] Looking for XML download button...")
             try:
                 xml_button = WebDriverWait(self.driver, timeouts['xml_button']).until(
                     EC.element_to_be_clickable((By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"))
                 )
-            except Exception as e:
-                logger.error(f"[Job {job_id}] XML button search failed after {timeouts['xml_button']}s: {e}")
-                raise Exception(f"XML download button not found (timeout: {timeouts['xml_button']}s)")
+            except:
+                raise Exception("XML download button not found")
             
             logger.info(f"[Job {job_id}] Found XML button, clicking...")
             
@@ -146,14 +140,8 @@ class InvoiceDownloader:
             logger.info(f"[Job {job_id}] XML button href: {xml_url}")
             logger.info(f"[Job {job_id}] XML button onclick: {onclick}")
             
-            # ULTRA-SPEED: Use JavaScript click to avoid visual interference
-            try:
-                self.driver.execute_script("arguments[0].click();", xml_button)
-                logger.info(f"⚡ [Job {job_id}] JavaScript click executed")
-            except:
-                # Fallback to regular click
-                xml_button.click()
-                logger.info(f"⚡ [Job {job_id}] Regular click executed")
+            # Click the XML button
+            xml_button.click()
             
             logger.info(f"[Job {job_id}] XML button clicked, starting comprehensive capture...")
             
@@ -164,17 +152,15 @@ class InvoiceDownloader:
                 if result['success']:
                     return result
             
-            # Strategy 2: Environment-aware polling for browser downloads
-            logger.info(f"⚡ [Job {job_id}] Environment-aware polling initiated...")
-            logger.info(f"🔧 [Job {job_id}] Using timeouts - max_attempts: {timeouts['max_attempts']}, poll_interval: {timeouts['download_poll']}s")
+            # Strategy 2: Environment-optimized polling for browser downloads
+            logger.info(f"[Job {job_id}] Strategy 2: Checking for browser downloads...")
             
-            # Environment-aware polling with appropriate intervals
+            # Environment-optimized polling intervals and attempts
             for attempt in range(timeouts['max_attempts']):
                 time.sleep(timeouts['download_poll'])
                 download_result = self.check_downloaded_file(invoice_key, job_id)
                 if download_result['success']:
-                    total_time = attempt * timeouts['download_poll']
-                    logger.info(f"🚀 [Job {job_id}] SUCCESS - file captured in {total_time:.1f}s (attempt {attempt+1}/{timeouts['max_attempts']})")
+                    logger.info(f"[Job {job_id}] Strategy 2 SUCCESS - file downloaded and found")
                     
                     # Process file with user_id for charging and database saving
                     if user_id and 'file_path' in download_result:

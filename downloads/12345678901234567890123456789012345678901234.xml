@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc xmlns="http://www.portalfiscal.inf.br/nfe">
+    <NFe>
+        <infNFe>
+            <ide>
+                <nNF>123456</nNF>
+                <serie>1</serie>
+                <dhEmi>2025-06-19T10:30:00</dhEmi>
+            </ide>
+            <emit>
+                <CNPJ>12345678000123</CNPJ>
+                <xNome>Empresa Teste</xNome>
+            </emit>
+            <total>
+                <ICMSTot>
+                    <vNF>150.00</vNF>
+                </ICMSTot>
+            </total>
+        </infNFe>
+    </NFe>
+</nfeProc>

@@ -160,19 +160,9 @@
         const jobId = '{{ job.job_id }}';
         
         function updateJobStatus() {
-            console.log(`[STATUS DEBUG] Fetching status for job: ${jobId}`);
-            fetch(`/job_status/${jobId}`, {
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            })
-                .then(response => {
-                    console.log(`[STATUS DEBUG] Response status: ${response.status}`);
-                    return response.json();
-                })
+            fetch(`/api/job_status/${jobId}`)
+                .then(response => response.json())
                 .then(data => {
-                    console.log(`[STATUS DEBUG] Job data:`, data);
                     if (data.error) {
                         console.error('Error fetching job status:', data.error);
                         return;
@@ -202,16 +192,12 @@
                     const statusAlert = document.getElementById('statusAlert');
                     const statusMessage = document.getElementById('statusMessage');
                     
-                    console.log(`[STATUS DEBUG] Current status: ${data.status}, Progress: ${data.processed}/${data.total_keys}`);
-                    
                     switch(data.status) {
                         case 'starting':
-                            console.log('[STATUS DEBUG] Status: STARTING');
                             statusMessage.textContent = 'Inicializando sistema de automação...';
                             statusAlert.className = 'alert alert-info';
                             break;
                         case 'running':
-                            console.log('[STATUS DEBUG] Status: RUNNING');
                             const percentage = data.progress_percentage.toFixed(1);
                             const currentXML = data.processed + 1; // Próximo XML sendo processado
                             statusMessage.innerHTML = `
@@ -236,22 +222,18 @@
                             progressBar.style.background = 'linear-gradient(45deg, #0d6efd, #6610f2)';
                             break;
                         case 'completed':
-                            console.log('[STATUS DEBUG] Status: COMPLETED - Updating interface');
                             statusMessage.textContent = 'Processo concluído com sucesso!';
                             statusAlert.className = 'alert alert-success';
                             progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
                             progressBar.classList.add('bg-success');
                             
                             // Show download section
-                            console.log('[STATUS DEBUG] Showing download section');
                             document.getElementById('downloadSection').classList.remove('d-none');
                             
                             // Populate individual files list
-                            console.log('[STATUS DEBUG] Populating files list:', data.downloaded_files);
                             populateFilesList(data.downloaded_files);
                             
                             // Stop polling
-                            console.log('[STATUS DEBUG] Stopping polling interval');
                             clearInterval(pollInterval);
                             break;
                         case 'failed':
@@ -286,17 +268,7 @@
                 })
                 .catch(error => {
                     console.error('Error updating job status:', error);
-                    console.log('[STATUS DEBUG] Fetch error, will retry in 2 seconds');
                 });
-        }
-        
-        // Force immediate status check on page load
-        function forceStatusUpdate() {
-            console.log('[STATUS DEBUG] Forcing immediate status update');
-            updateJobStatus();
-            // If job might be completed already, check multiple times
-            setTimeout(updateJobStatus, 1000);
-            setTimeout(updateJobStatus, 3000);
         }
         
         let startTime = null;
@@ -395,8 +367,8 @@
         // Poll for status updates every 2 seconds
         const pollInterval = setInterval(updateJobStatus, 2000);
         
-        // Force immediate and repeated status updates on page load
-        forceStatusUpdate();
+        // Initial status update
+        updateJobStatus();
     </script>
 </body>
 </html>

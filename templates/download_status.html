@@ -529,29 +529,15 @@
         {% endif %}
         
         function refreshStatus() {
-            fetch(`/api/job_status/{{ job.job_id }}`)
+            fetch(`/job_status/{{ job.job_id }}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log('🔄 Status Update:', data);
                     updateProgress(data);
                     if (data.status !== 'running') {
                         location.reload();
                     }
                 })
-                .catch(error => {
-                    console.error('Error fetching status:', error);
-                    // Fallback: try the authenticated route
-                    fetch(`/job_status/{{ job.job_id }}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            console.log('🔄 Fallback Status Update:', data);
-                            updateProgress(data);
-                            if (data.status !== 'running') {
-                                location.reload();
-                            }
-                        })
-                        .catch(fallbackError => console.error('Fallback error:', fallbackError));
-                });
+                .catch(error => console.error('Error:', error));
         }
         
         function generateDanfe(filename) {
