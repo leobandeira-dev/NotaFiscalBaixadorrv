@@ -5372,9 +5372,13 @@ def google_callback():
         login_user(user)
         log_user_activity(user.id, 'login', f'Login via Google OAuth ({request.host})')
         
+        # Log de segurança para auditoria de login bem-sucedido
+        logger.info(f"OAUTH_LOGIN_SUCCESS: Usuário {user.id} autenticado via Google OAuth, IP: {request.remote_addr}")
+        
         return redirect(url_for("dashboard"))
         
     except Exception as e:
+        logger.error(f"OAUTH_ERROR: Erro durante autenticação Google - {str(e)}, IP: {request.remote_addr}")
         flash(f"Erro durante autenticação com Google: {str(e)}", "error")
         return redirect(url_for("login"))
 
