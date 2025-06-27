@@ -1,5 +1,5 @@
 """
-Serviço de download com cobrança automática
+Serviço de download com cobrança automática - ULTRA OTIMIZADO
 Sistema completo para download de XMLs com cobrança e histórico
 """
 import logging
@@ -9,6 +9,7 @@ from typing import Dict, Any, Optional
 
 from models import db, User, XMLFile, UsageRecord, ServiceModule
 from stripe_integration import CreditManager, PricingManager
+from ultra_fast_downloader import UltraFastDownloader
 
 logger = logging.getLogger(__name__)
 

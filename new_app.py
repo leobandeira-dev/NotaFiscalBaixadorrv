@@ -375,9 +375,10 @@ class DownloadJob:
         }
 
 def process_download_job(job_id, user_id):
-    """Process download job in background"""
+    """Process download job in background - ULTRA OTIMIZADO"""
     try:
-        from automation_fixed import InvoiceDownloader
+        # Usar sistema ultra-otimizado para velocidade máxima
+        from speed_optimized_automation import process_xml_downloads_speed_optimized
         
         with jobs_lock:
             job = download_jobs.get(job_id)
@@ -387,53 +388,44 @@ def process_download_job(job_id, user_id):
             return
         
         job.status = "running"
-        downloader = InvoiceDownloader()
+        logger.info(f"[Job {job_id}] Iniciando processamento ULTRA-OTIMIZADO de {job.total_keys} XMLs")
         
-        for i, invoice_key in enumerate(job.invoice_keys):
-            try:
-                logger.info(f"[Job {job_id}] Processing key {i+1}/{job.total_keys}: {invoice_key}")
-                
-                result = downloader.download_invoice_xml(
-                    invoice_key=invoice_key,
-                    job_id=job_id,
-                    download_type=job.download_type,
-                    user_id=user_id
-                )
-                
-                job.processed += 1
-                
-                if result.get('success') == True:
-                    job.successful += 1
-                    if result.get('file_path'):
-                        job.downloaded_files.append(result['file_path'])
-                        job.files.append(os.path.basename(result['file_path']))
-                else:
-                    job.failed += 1
-                    job.errors.append({
-                        'invoice_key': invoice_key,
-                        'error': result.get('error', result.get('message', 'Unknown error'))
-                    })
-                    
-            except Exception as e:
-                logger.error(f"[Job {job_id}] Error processing {invoice_key}: {str(e)}")
-                job.failed += 1
-                job.processed += 1
-                job.errors.append({
-                    'invoice_key': invoice_key,
-                    'error': str(e)
-                })
+        # Usar downloader ultra-rápido
+        result = process_xml_downloads_speed_optimized(job_id, job.invoice_keys, user_id)
         
-        # Mark job as completed
-        job.status = "completed" if job.successful > 0 else "failed"
+        # Atualizar job com resultados
+        if result['success']:
+            job.successful = result['successful_count']
+            job.failed = result['total_count'] - result['successful_count']
+            job.processed = result['total_count']
+            
+            # Processar arquivos baixados
+            for file_info in result.get('files', []):
+                job.files.append(file_info['filename'])
+                # Construir caminho do arquivo
+                file_path = os.path.join('downloads', job_id, file_info['filename'])
+                job.downloaded_files.append(file_path)
+            
+            # Processar erros
+            job.errors = result.get('errors', [])
+            
+            job.status = "completed" if job.successful > 0 else "failed"
+            logger.info(f"[Job {job_id}] ULTRA-RÁPIDO concluído: {job.successful}/{job.total_keys} sucessos em {result['total_time']:.2f}s")
+        else:
+            job.status = "failed"
+            job.failed = job.total_keys
+            job.processed = job.total_keys
+            job.errors = [{'error': result.get('error', 'Erro desconhecido')}]
+            logger.error(f"[Job {job_id}] Falha no processamento ultra-rápido: {result.get('error')}")
+        
         job.end_time = datetime.now()
         
-        downloader.cleanup()
-        logger.info(f"[Job {job_id}] Completed: {job.successful} successful, {job.failed} failed")
-        
     except Exception as e:
-        logger.error(f"[Job {job_id}] Critical error: {str(e)}")
-        if job_id in download_jobs:
-            download_jobs[job_id].status = "failed"
+        logger.error(f"[Job {job_id}] Critical error in ULTRA-FAST processing: {str(e)}")
+        with jobs_lock:
+            if job_id in download_jobs:
+                download_jobs[job_id].status = "failed"
+                download_jobs[job_id].errors = [{'error': str(e)}]
 
 # Initialize Flask app with proper configuration
 app = Flask(__name__)
