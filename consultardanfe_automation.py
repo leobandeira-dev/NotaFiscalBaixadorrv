@@ -190,13 +190,36 @@ class ConsultarDanfeAutomation:
             if not submit_button:
                 return {'success': False, 'error': 'Botão de busca não encontrado'}
             
+            # Verificar se há CAPTCHA antes de submeter
+            captcha_detected = self.detect_captcha()
+            if captcha_detected:
+                logger.info(f"[{job_id}] CAPTCHA detectado, tentando resolver...")
+                captcha_resolved = self.handle_simple_captcha()
+                if not captcha_resolved:
+                    return {'success': False, 'error': 'CAPTCHA não pôde ser resolvido automaticamente'}
+            
             # Clicar no botão de buscar
             logger.info(f"[{job_id}] Clicando no botão de busca...")
             submit_button.click()
             
-            # Aguardar resultado
+            # Aguardar resultado e verificar se apareceu CAPTCHA após submissão
             logger.info(f"[{job_id}] Aguardando resultado...")
-            time.sleep(5)
+            time.sleep(3)
+            
+            # Verificar novamente se apareceu CAPTCHA após submissão
+            if self.detect_captcha():
+                logger.info(f"[{job_id}] CAPTCHA apareceu após submissão, resolvendo...")
+                if self.handle_simple_captcha():
+                    # Resubmeter formulário
+                    logger.info(f"[{job_id}] Resubmetendo formulário após resolver CAPTCHA...")
+                    time.sleep(2)
+                    if submit_button.is_enabled():
+                        submit_button.click()
+                    time.sleep(3)
+                else:
+                    return {'success': False, 'error': 'CAPTCHA pós-submissão não resolvido'}
+            
+            time.sleep(2)  # Aguardar processamento adicional
             
             # Procurar modal de sucesso e botão de download XML
             logger.info(f"[{job_id}] Procurando opções de download...")
@@ -369,6 +392,273 @@ class ConsultarDanfeAutomation:
         except Exception as e:
             logger.error(f"[{job_id}] Erro ao verificar arquivo: {e}")
             return {'success': False, 'error': f'Erro ao verificar download: {str(e)}'}
+    
+    def detect_captcha(self) -> bool:
+        """
+        Detectar presença de CAPTCHA na página
+        
+        Returns:
+            bool: True se CAPTCHA detectado
+        """
+        try:
+            if not self.driver:
+                return False
+            
+            # Procurar especificamente pelo modal de CAPTCHA do consultardanfe.com
+            captcha_indicators = [
+                # Modal/overlay específico do site
+                "//div[contains(text(), 'Para visualizar o DANFE')]",
+                "//div[contains(text(), 'confirme que você não é um robô')]",
+                
+                # reCAPTCHA v2 checkbox
+                "iframe[src*='recaptcha']",
+                "div.g-recaptcha",
+                "#g-recaptcha",
+                ".g-recaptcha",
+                "div[data-sitekey]",
+                
+                # Checkbox "Não sou um robô"
+                "//span[contains(text(), 'Não sou um robô')]",
+                "//label[contains(text(), 'Não sou um robô')]",
+                "input[aria-label*='robô']",
+                
+                # Container do reCAPTCHA
+                ".recaptcha-checkbox-border",
+                ".recaptcha-checkbox",
+                
+                # Overlay/modal genérico
+                "div[style*='z-index'][style*='position']"
+            ]
+            
+            for indicator in captcha_indicators:
+                try:
+                    if indicator.startswith("//"):
+                        # XPath
+                        elements = self.driver.find_elements(By.XPATH, indicator)
+                    else:
+                        # CSS Selector
+                        elements = self.driver.find_elements(By.CSS_SELECTOR, indicator)
+                    
+                    if elements:
+                        for element in elements:
+                            if element.is_displayed():
+                                logger.info(f"CAPTCHA detectado: {indicator}")
+                                return True
+                                
+                except Exception as e:
+                    logger.debug(f"Erro ao verificar indicador CAPTCHA {indicator}: {e}")
+            
+            # Verificar se há overlay modal visível (indicativo de CAPTCHA)
+            try:
+                page_source = self.driver.page_source.lower()
+                captcha_keywords = [
+                    'para visualizar o danfe',
+                    'confirme que você não é um robô',
+                    'não sou um robô',
+                    'recaptcha',
+                    'g-recaptcha'
+                ]
+                
+                for keyword in captcha_keywords:
+                    if keyword in page_source:
+                        logger.info(f"CAPTCHA detectado por palavra-chave: {keyword}")
+                        return True
+                        
+            except Exception as e:
+                logger.debug(f"Erro ao verificar código da página: {e}")
+            
+            return False
+            
+        except Exception as e:
+            logger.error(f"Erro na detecção de CAPTCHA: {e}")
+            return False
+    
+    def handle_simple_captcha(self) -> bool:
+        """
+        Tentar resolver CAPTCHA simples
+        
+        Returns:
+            bool: True se resolvido com sucesso
+        """
+        try:
+            if not self.driver:
+                return False
+            
+            logger.info("Tentando resolver CAPTCHA...")
+            
+            # Estratégia 1: Procurar e clicar no checkbox "Não sou um robô"
+            logger.info("Procurando checkbox reCAPTCHA...")
+            
+            # Aguardar um pouco para o iframe carregar
+            time.sleep(2)
+            
+            # Tentar encontrar o iframe do reCAPTCHA
+            try:
+                recaptcha_iframe = None
+                iframes = self.driver.find_elements(By.TAG_NAME, "iframe")
+                
+                for iframe in iframes:
+                    src = iframe.get_attribute('src') or ''
+                    if 'recaptcha' in src.lower():
+                        recaptcha_iframe = iframe
+                        logger.info("iframe reCAPTCHA encontrado")
+                        break
+                
+                if recaptcha_iframe:
+                    # Trocar para o iframe do reCAPTCHA
+                    self.driver.switch_to.frame(recaptcha_iframe)
+                    
+                    # Procurar o checkbox dentro do iframe
+                    checkbox_selectors = [
+                        "div.recaptcha-checkbox-border",
+                        "span.recaptcha-checkbox",
+                        "div[role='checkbox']",
+                        ".recaptcha-checkbox-checkmark"
+                    ]
+                    
+                    for selector in checkbox_selectors:
+                        try:
+                            elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                            for element in elements:
+                                if element.is_displayed():
+                                    logger.info(f"Clicando no checkbox reCAPTCHA: {selector}")
+                                    element.click()
+                                    time.sleep(3)
+                                    
+                                    # Voltar ao frame principal
+                                    self.driver.switch_to.default_content()
+                                    
+                                    # Verificar se foi resolvido
+                                    time.sleep(2)
+                                    if not self.detect_captcha():
+                                        logger.info("CAPTCHA resolvido com sucesso!")
+                                        return True
+                                    
+                                    # Se ainda há CAPTCHA, pode ser challenge adicional
+                                    logger.info("CAPTCHA ainda presente, pode ser challenge adicional")
+                                    break
+                        except Exception as e:
+                            logger.debug(f"Erro com seletor {selector}: {e}")
+                    
+                    # Garantir que voltamos ao frame principal
+                    self.driver.switch_to.default_content()
+                    
+            except Exception as e:
+                logger.debug(f"Erro ao processar iframe reCAPTCHA: {e}")
+                # Garantir que voltamos ao frame principal
+                try:
+                    self.driver.switch_to.default_content()
+                except:
+                    pass
+            
+            # Estratégia 2: Procurar checkbox fora de iframe
+            logger.info("Procurando checkbox fora de iframe...")
+            checkbox_selectors = [
+                "input[type='checkbox']",
+                "div[role='checkbox']",
+                "span.recaptcha-checkbox",
+                ".recaptcha-checkbox-border"
+            ]
+            
+            for selector in checkbox_selectors:
+                try:
+                    elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    for element in elements:
+                        if element.is_displayed() and element.is_enabled():
+                            # Verificar contexto
+                            try:
+                                parent_text = element.find_element(By.XPATH, "../..").text.lower()
+                                if any(term in parent_text for term in ['robô', 'robot', 'captcha', 'recaptcha']):
+                                    logger.info(f"Clicando no checkbox: {selector}")
+                                    element.click()
+                                    time.sleep(3)
+                                    
+                                    if not self.detect_captcha():
+                                        logger.info("CAPTCHA resolvido!")
+                                        return True
+                            except:
+                                pass
+                                    
+                except Exception as e:
+                    logger.debug(f"Erro com seletor de checkbox {selector}: {e}")
+            
+            # Estratégia 3: Aguardar resolução automática
+            logger.info("Aguardando resolução automática...")
+            for i in range(5):
+                time.sleep(1)
+                if not self.detect_captcha():
+                    logger.info("CAPTCHA resolvido automaticamente!")
+                    return True
+            
+            # Estratégia 4: Tentar fechar modal/overlay
+            logger.info("Tentando fechar modal de CAPTCHA...")
+            try:
+                # Procurar botões de fechar ou tecla ESC
+                close_selectors = [
+                    "button[aria-label*='close']",
+                    ".modal-close",
+                    ".close",
+                    "button.close"
+                ]
+                
+                for selector in close_selectors:
+                    elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                    for element in elements:
+                        if element.is_displayed():
+                            element.click()
+                            time.sleep(2)
+                            
+                            if not self.detect_captcha():
+                                logger.info("CAPTCHA removido fechando modal!")
+                                return True
+                
+                # Tentar tecla ESC
+                from selenium.webdriver.common.keys import Keys
+                body = self.driver.find_element(By.TAG_NAME, "body")
+                body.send_keys(Keys.ESCAPE)
+                time.sleep(2)
+                
+                if not self.detect_captcha():
+                    logger.info("CAPTCHA removido com ESC!")
+                    return True
+                    
+            except Exception as e:
+                logger.debug(f"Erro ao tentar fechar modal: {e}")
+            
+            logger.warning("Não foi possível resolver CAPTCHA automaticamente")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Erro ao tentar resolver CAPTCHA: {e}")
+            return False
+    
+    def wait_for_captcha_resolution(self, timeout: int = 30) -> bool:
+        """
+        Aguardar resolução manual do CAPTCHA
+        
+        Args:
+            timeout: Tempo limite em segundos
+            
+        Returns:
+            bool: True se CAPTCHA foi resolvido
+        """
+        try:
+            logger.info(f"Aguardando resolução do CAPTCHA (timeout: {timeout}s)...")
+            
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                if not self.detect_captcha():
+                    logger.info("CAPTCHA resolvido!")
+                    return True
+                
+                time.sleep(1)
+            
+            logger.warning("Timeout aguardando resolução do CAPTCHA")
+            return False
+            
+        except Exception as e:
+            logger.error(f"Erro aguardando resolução do CAPTCHA: {e}")
+            return False
     
     def cleanup(self):
         """Limpar recursos"""
