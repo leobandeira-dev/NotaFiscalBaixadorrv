@@ -124,12 +124,74 @@ class InvoiceDownloader:
             
             # Find XML download button with environment-optimized timeout
             logger.info(f"[Job {job_id}] Looking for XML download button...")
-            try:
-                xml_button = WebDriverWait(self.driver, timeouts['xml_button']).until(
-                    EC.element_to_be_clickable((By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"))
-                )
-            except:
-                raise Exception("XML download button not found")
+            
+            # DEBUG: Log current page content to understand what's available
+            logger.info(f"[Job {job_id}] Current page title: {self.driver.title}")
+            logger.info(f"[Job {job_id}] Current page URL: {self.driver.current_url}")
+            
+            # Check for common error indicators first
+            page_text = self.driver.page_source.lower()
+            if "erro" in page_text or "error" in page_text or "inválid" in page_text:
+                logger.warning(f"[Job {job_id}] ERROR DETECTED on page!")
+                
+                # Look for specific error messages
+                if "chave inválida" in page_text or "invalida" in page_text:
+                    logger.error(f"[Job {job_id}] Invalid invoice key error detected")
+                    raise Exception(f"Chave de nota fiscal inválida: {invoice_key}")
+                
+                if "não encontrada" in page_text or "not found" in page_text:
+                    logger.error(f"[Job {job_id}] Invoice not found error detected") 
+                    raise Exception(f"Nota fiscal não encontrada: {invoice_key}")
+                
+                # Log more context about the error
+                logger.info(f"[Job {job_id}] Error page content: {self.driver.page_source[:2000]}")
+                raise Exception("Erro na página após submissão do formulário")
+            
+            # Try multiple button selectors
+            button_selectors = [
+                "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]",
+                "//a[contains(@href, '.xml')]",
+                "//button[contains(text(), 'XML')]",
+                "//a[contains(text(), 'XML')]",
+                "//*[contains(text(), 'Download')]",
+                "//a[contains(@class, 'download')]"
+            ]
+            
+            xml_button = None
+            for i, selector in enumerate(button_selectors):
+                try:
+                    logger.info(f"[Job {job_id}] Trying selector {i+1}: {selector[:50]}...")
+                    xml_button = WebDriverWait(self.driver, 2).until(
+                        EC.element_to_be_clickable((By.XPATH, selector))
+                    )
+                    logger.info(f"[Job {job_id}] SUCCESS with selector {i+1}: Found button!")
+                    break
+                except:
+                    logger.info(f"[Job {job_id}] Selector {i+1} failed - trying next...")
+                    continue
+            
+            if not xml_button:
+                # DEBUG: Log all links and buttons found on page
+                try:
+                    all_links = self.driver.find_elements(By.TAG_NAME, "a")
+                    all_buttons = self.driver.find_elements(By.TAG_NAME, "button")
+                    
+                    logger.info(f"[Job {job_id}] Found {len(all_links)} links and {len(all_buttons)} buttons on page")
+                    
+                    for i, link in enumerate(all_links[:10]):  # Log first 10 links
+                        text = link.text.strip()
+                        href = link.get_attribute('href')
+                        logger.info(f"[Job {job_id}] Link {i+1}: '{text}' -> '{href}'")
+                    
+                    for i, button in enumerate(all_buttons[:5]):  # Log first 5 buttons  
+                        text = button.text.strip()
+                        onclick = button.get_attribute('onclick')
+                        logger.info(f"[Job {job_id}] Button {i+1}: '{text}' onclick='{onclick}'")
+                        
+                except Exception as debug_error:
+                    logger.error(f"[Job {job_id}] Debug logging failed: {debug_error}")
+                
+                raise Exception("XML download button not found after trying all selectors")
             
             logger.info(f"[Job {job_id}] Found XML button, clicking...")
             
