@@ -104,6 +104,9 @@ class InvoiceDownloader:
             input_element.clear()
             input_element.send_keys(invoice_key)
             
+            # Wait for any JavaScript to process the input
+            time.sleep(1.0)
+            
             # Environment-optimized submit button wait
             logger.info(f"[Job {job_id}] Looking for submit button...")
             try:
@@ -113,12 +116,58 @@ class InvoiceDownloader:
             except:
                 raise Exception("Submit button not found")
             
-            logger.info(f"[Job {job_id}] Clicking submit button...")
-            submit_button.click()
+            # Check for popup overlay warning and dismiss it
+            try:
+                popup_overlay = self.driver.find_element(By.XPATH, "//img[@alt='Permitir pop-ups']")
+                if popup_overlay.is_displayed():
+                    logger.info(f"[Job {job_id}] Popup warning detected, dismissing...")
+                    # Hide the popup overlay using JavaScript
+                    self.driver.execute_script("arguments[0].style.display = 'none';", popup_overlay)
+                    time.sleep(0.5)
+            except:
+                logger.info(f"[Job {job_id}] No popup overlay found, proceeding...")
             
-            # Environment-optimized results wait
+            logger.info(f"[Job {job_id}] Clicking submit button...")
+            
+            # Try JavaScript click if regular click fails due to overlays
+            try:
+                submit_button.click()
+            except Exception as click_error:
+                logger.warning(f"[Job {job_id}] Regular click failed: {str(click_error)[:100]}")
+                logger.info(f"[Job {job_id}] Trying JavaScript click...")
+                self.driver.execute_script("arguments[0].click();", submit_button)
+            
+            # Environment-optimized results wait with URL change detection
             logger.info(f"[Job {job_id}] Waiting for response page...")
+            
+            # Wait for page to start loading results
             time.sleep(timeouts['download_wait'])
+            
+            # Check if page has changed or if we need more time for JS
+            start_url = self.driver.current_url
+            initial_wait = 0
+            max_wait = 8  # Maximum wait for page change
+            
+            while initial_wait < max_wait:
+                current_url = self.driver.current_url
+                logger.info(f"[Job {job_id}] Waiting for page change... URL: {current_url}")
+                
+                # Check if page changed or contains results
+                if current_url != start_url or "resultado" in current_url.lower():
+                    logger.info(f"[Job {job_id}] Page changed to: {current_url}")
+                    break
+                    
+                # Check if page content indicates processing
+                page_content = self.driver.page_source.lower()
+                if "carregando" in page_content or "processando" in page_content or "loading" in page_content:
+                    logger.info(f"[Job {job_id}] Page is loading, waiting more...")
+                    time.sleep(1)
+                    initial_wait += 1
+                    continue
+                    
+                # If no change, wait a bit more
+                time.sleep(1)
+                initial_wait += 1
             
             logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
             
