@@ -25,6 +25,7 @@
                         <h4 class="card-title mb-0">
                             <i class="fas fa-tasks me-2"></i>
                             Status do Job: <span id="jobId">{{ job.job_id[:8] }}</span>
+                            <span id="statusBadge" class="badge bg-info ms-2">BAIXANDO</span>
                         </h4>
                     </div>
                     <div class="card-body">
@@ -192,14 +193,23 @@
                     const statusAlert = document.getElementById('statusAlert');
                     const statusMessage = document.getElementById('statusMessage');
                     
+                    // Update status badge
+                    const statusBadge = document.getElementById('statusBadge');
+                    
                     switch(data.status) {
                         case 'starting':
                             statusMessage.textContent = 'Inicializando sistema de automação...';
                             statusAlert.className = 'alert alert-info';
+                            statusBadge.textContent = 'INICIANDO';
+                            statusBadge.className = 'badge bg-info ms-2';
                             break;
                         case 'running':
                             const percentage = data.progress_percentage.toFixed(1);
                             const currentXML = data.processed + 1; // Próximo XML sendo processado
+                            
+                            // Update status badge to BAIXANDO
+                            statusBadge.textContent = 'BAIXANDO';
+                            statusBadge.className = 'badge bg-success ms-2';
                             
                             // Detectar se está usando fallback baseado no tempo e tentativas
                             const isUsingFallback = data.attempt_count && data.attempt_count > 1;
