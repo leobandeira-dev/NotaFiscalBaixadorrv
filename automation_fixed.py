@@ -699,6 +699,14 @@ class InvoiceDownloader:
     def try_fallback_download(self, invoice_key: str, job_id: str, user_id: int = None) -> dict:
         """Tentar download usando sistema de fallback"""
         try:
+            # Marcar o job como usando fallback
+            from new_app import download_jobs, jobs_lock
+            with jobs_lock:
+                job = download_jobs.get(job_id)
+                if job:
+                    job.using_fallback = True
+                    job.fallback_attempts += 1
+            
             # Limpar driver atual primeiro
             self.cleanup()
             
