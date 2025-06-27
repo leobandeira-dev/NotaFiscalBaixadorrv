@@ -14,7 +14,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, WebDriverException
-from xml_processor import parse_xml_content
+from xml_processor import extract_xml_data
 from simple_credit_system import consume_xml_credit_fixed
 from models import XMLFile
 from app import db
@@ -150,7 +150,8 @@ class FallbackDownloader:
                 try:
                     if ":contains(" in selector:
                         # Usar XPath para texto
-                        xpath = f"//button[contains(text(), '{selector.split(':contains(')[1].split(')')[0].strip(\"'\")}')] | //input[@value='{selector.split(':contains(')[1].split(')')[0].strip(\"'\")}']"
+                        text_content = selector.split(':contains(')[1].split(')')[0].strip("'")
+                        xpath = f"//button[contains(text(), '{text_content}')] | //input[@value='{text_content}']"
                         submit_button = self.driver.find_element(By.XPATH, xpath)
                     else:
                         submit_button = self.driver.find_element(By.CSS_SELECTOR, selector)
@@ -322,7 +323,7 @@ class FallbackDownloader:
             
             with app.app_context():
                 # Processar XML para extrair dados
-                xml_data = parse_xml_content(xml_content)
+                xml_data = parse_xml_data(xml_content)
                 
                 # Verificar se XML já existe
                 existing_xml = XMLFile.query.filter_by(
