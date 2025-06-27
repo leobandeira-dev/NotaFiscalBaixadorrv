@@ -1,7 +1,7 @@
 """
-Sistema de Automação Integrado com Consultardanfe.com
-Sistema principal: consultardanfe.com
-Sistema fallback: meudanfe.com.br (via automation_fixed.py)
+Sistema de Automação Integrado com Múltiplos Sites
+Sistema principal: meudanfe.com.br (via automation_fixed.py)
+Sistema fallback: consultardanfe.com (via consultardanfe_automation.py)
 """
 import os
 import time
@@ -24,31 +24,20 @@ class InvoiceDownloader:
         try:
             logger.info(f"[Job {job_id}] Iniciando download para chave: {invoice_key}")
             
-            # SISTEMA PRINCIPAL: consultardanfe.com
-            logger.info(f"[Job {job_id}] Sistema Principal: consultardanfe.com")
-            
-            from consultardanfe_automation import ConsultarDanfeAutomation
-            
             try:
-                primary_downloader = ConsultarDanfeAutomation()
-                result = primary_downloader.download_xml(invoice_key, job_id, user_id)
+                from automation_fixed import InvoiceDownloader as MeuDanfeDownloader
+                primary_downloader = MeuDanfeDownloader()
+                
+                result = primary_downloader.download_invoice_xml(
+                    invoice_key=invoice_key,
+                    job_id=job_id,
+                    download_type=download_type,
+                    user_id=user_id
+                )
                 
                 if result.get('success'):
-                    # Processar sucesso através do sistema de billing
-                    if user_id:
-                        processed = self._process_successful_download(
-                            user_id=user_id,
-                            invoice_key=invoice_key,
-                            file_path=result.get('file_path'),
-                            job_id=job_id
-                        )
-                        
-                        if processed:
-                            logger.info(f"[Job {job_id}] ✅ SUCESSO - Sistema Principal - Tempo: {time.time() - start_time:.2f}s")
-                            return result
-                    else:
-                        logger.info(f"[Job {job_id}] ✅ SUCESSO - Sistema Principal - Tempo: {time.time() - start_time:.2f}s")
-                        return result
+                    logger.info(f"[Job {job_id}] ✅ SUCESSO - Sistema Principal - Tempo: {time.time() - start_time:.2f}s")
+                    return result
                 else:
                     logger.warning(f"[Job {job_id}] Sistema principal falhou: {result.get('error', 'Erro desconhecido')}")
                     
@@ -62,23 +51,31 @@ class InvoiceDownloader:
                     except:
                         pass
             
-            # SISTEMA FALLBACK: meudanfe.com.br
-            logger.info(f"[Job {job_id}] Sistema Backup: meudanfe.com.br")
+            # SISTEMA FALLBACK: consultardanfe.com
+            logger.info(f"[Job {job_id}] Sistema Backup: consultardanfe.com")
             
             try:
-                from automation_fixed import InvoiceDownloader as FallbackDownloader
-                fallback_downloader = FallbackDownloader()
+                from consultardanfe_automation import ConsultarDanfeAutomation
+                fallback_downloader = ConsultarDanfeAutomation()
                 
-                result = fallback_downloader.download_invoice_xml(
-                    invoice_key=invoice_key,
-                    job_id=job_id,
-                    download_type=download_type,
-                    user_id=user_id
-                )
+                result = fallback_downloader.download_xml(invoice_key, job_id, user_id)
                 
                 if result.get('success'):
-                    logger.info(f"[Job {job_id}] ✅ SUCESSO - Sistema Backup - Tempo: {time.time() - start_time:.2f}s")
-                    return result
+                    # Processar sucesso através do sistema de billing
+                    if user_id:
+                        processed = self._process_successful_download(
+                            user_id=user_id,
+                            invoice_key=invoice_key,
+                            file_path=result.get('file_path'),
+                            job_id=job_id
+                        )
+                        
+                        if processed:
+                            logger.info(f"[Job {job_id}] ✅ SUCESSO - Sistema Backup - Tempo: {time.time() - start_time:.2f}s")
+                            return result
+                    else:
+                        logger.info(f"[Job {job_id}] ✅ SUCESSO - Sistema Backup - Tempo: {time.time() - start_time:.2f}s")
+                        return result
                 else:
                     logger.error(f"[Job {job_id}] Sistema backup também falhou: {result.get('error', 'Erro desconhecido')}")
                     
