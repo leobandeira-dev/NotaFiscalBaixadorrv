@@ -212,7 +212,8 @@ class InvoiceDownloader:
                 
                 # Log more context about the error
                 logger.info(f"[Job {job_id}] Error page content: {self.driver.page_source[:2000]}")
-                raise Exception("Erro na página após submissão do formulário")
+                logger.warning(f"[Job {job_id}] Primary site failed, attempting fallback...")
+                return self.try_fallback_download(invoice_key, job_id, user_id)
             
             # Try multiple button selectors
             button_selectors = [
@@ -695,6 +696,38 @@ class InvoiceDownloader:
                 'message': f'Falha na conexão: {str(e)}'
             }
     
+    def try_fallback_download(self, invoice_key: str, job_id: str, user_id: int = None) -> dict:
+        """Tentar download usando sistema de fallback"""
+        try:
+            # Limpar driver atual primeiro
+            self.cleanup()
+            
+            # Importar e usar sistema de fallback
+            from fallback_automation import FallbackDownloader
+            
+            logger.info(f"[Job {job_id}] Iniciando sistema de fallback...")
+            fallback = FallbackDownloader()
+            
+            result = fallback.download_xml_fallback(invoice_key, job_id, user_id)
+            
+            if result['success']:
+                logger.info(f"[Job {job_id}] Fallback successful!")
+                # Marcar resultado como sendo do fallback
+                result['source'] = 'fallback'
+                result['fallback_used'] = True
+            else:
+                logger.error(f"[Job {job_id}] Fallback also failed: {result.get('error', 'Unknown error')}")
+            
+            return result
+            
+        except Exception as e:
+            logger.error(f"[Job {job_id}] Error in fallback system: {e}")
+            return {
+                'success': False, 
+                'error': f'Tanto site principal quanto fallback falharam: {str(e)}',
+                'fallback_attempted': True
+            }
+
     def cleanup(self):
         """Clean up resources"""
         if self.driver:
