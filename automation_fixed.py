@@ -156,6 +156,10 @@ class InvoiceDownloader:
             initial_wait = 0
             max_wait = 5  # Maximum wait for page change
             
+            # Enhanced service availability check
+            service_unavailable_count = 0
+            max_unavailable_checks = 20
+            
             while initial_wait < max_wait:
                 current_url = self.driver.current_url
                 logger.info(f"[Job {job_id}] Waiting for page change... URL: {current_url}")
@@ -167,6 +171,25 @@ class InvoiceDownloader:
                     
                 # Check if page content indicates processing or errors
                 page_content = self.driver.page_source.lower()
+                
+                # Check for persistent "Buscando..." state - indicates service unavailability
+                if "buscando" in page_content:
+                    service_unavailable_count += 1
+                    logger.info(f"[Job {job_id}] System showing 'Buscando...' - check {service_unavailable_count}/{max_unavailable_checks}")
+                    
+                    if service_unavailable_count >= max_unavailable_checks:
+                        logger.error(f"[Job {job_id}] Service appears unavailable - persistent 'Buscando...' state")
+                        return {
+                            'success': False,
+                            'error': 'Importação da nota fiscal via chave de acesso indisponível no momento. Caso precise emitir etiqueta, faça o upload manual do xml',
+                            'service_unavailable': True,
+                            'file_path': None
+                        }
+                    
+                    time.sleep(1.5)  # Wait longer when service is searching
+                    initial_wait += 1.5
+                    continue
+                
                 if "carregando" in page_content or "processando" in page_content or "loading" in page_content:
                     logger.info(f"[Job {job_id}] Page is loading, waiting more...")
                     time.sleep(1)
