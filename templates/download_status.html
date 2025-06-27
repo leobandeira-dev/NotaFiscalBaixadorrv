@@ -384,9 +384,17 @@
                                 Progresso do Download
                             </h4>
                             <span id="status-badge" class="status-badge status-{{ job.status.lower() }}">
-                                {{ job.status|title }}
-                                {% if job.status == 'running' %}
+                                {% if job.status == 'starting' %}
+                                    INICIANDO
+                                {% elif job.status == 'running' %}
+                                    BAIXANDO
                                     <span class="loading-animation"></span>
+                                {% elif job.status == 'completed' %}
+                                    CONCLUÍDO
+                                {% elif job.status == 'failed' %}
+                                    FALHOU
+                                {% else %}
+                                    {{ job.status|title }}
                                 {% endif %}
                             </span>
                         </div>
@@ -673,7 +681,27 @@
             // Update status badge
             if (statusBadge) {
                 statusBadge.className = `status-badge status-${data.status.toLowerCase()}`;
-                statusBadge.innerHTML = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+                
+                // Traduzir status para português
+                let statusText = '';
+                switch(data.status) {
+                    case 'starting':
+                        statusText = 'INICIANDO';
+                        break;
+                    case 'running':
+                        statusText = 'BAIXANDO';
+                        break;
+                    case 'completed':
+                        statusText = 'CONCLUÍDO';
+                        break;
+                    case 'failed':
+                        statusText = 'FALHOU';
+                        break;
+                    default:
+                        statusText = data.status.charAt(0).toUpperCase() + data.status.slice(1);
+                }
+                
+                statusBadge.innerHTML = statusText;
                 if (data.status === 'running') {
                     statusBadge.innerHTML += '<span class="loading-animation"></span>';
                 }
