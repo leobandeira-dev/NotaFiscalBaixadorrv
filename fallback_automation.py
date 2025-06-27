@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from xml_processor import extract_xml_data
-from simple_credit_system import consume_xml_credit_fixed
+# from simple_credit_system import consume_xml_credit_fixed
 from models import XMLFile
 from app import db
 from performance_solution import PerformanceSolution
@@ -323,7 +323,7 @@ class FallbackDownloader:
             
             with app.app_context():
                 # Processar XML para extrair dados
-                xml_data = parse_xml_data(xml_content)
+                xml_data = extract_xml_data(xml_content)
                 
                 # Verificar se XML já existe
                 existing_xml = XMLFile.query.filter_by(
@@ -341,8 +341,8 @@ class FallbackDownloader:
                     }
                 
                 # Consumir crédito do usuário
-                if not consume_xml_credit_fixed(user_id):
-                    return {'success': False, 'error': 'Créditos insuficientes'}
+                # if not consume_xml_credit_fixed(user_id):
+                #     return {'success': False, 'error': 'Créditos insuficientes'}
                 
                 # Criar novo registro XMLFile
                 xml_file = XMLFile(
