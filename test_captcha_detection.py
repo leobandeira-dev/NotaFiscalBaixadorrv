@@ -79,9 +79,9 @@ def test_captcha_detection():
         for selector in button_selectors:
             try:
                 if selector.startswith("//"):
-                    elements = downloader.driver.find_elements(downloader.By.XPATH, selector)
+                    elements = downloader.driver.find_elements(By.XPATH, selector)
                 else:
-                    elements = downloader.driver.find_elements(downloader.By.CSS_SELECTOR, selector)
+                    elements = downloader.driver.find_elements(By.CSS_SELECTOR, selector)
                 
                 for element in elements:
                     if element.is_displayed() and element.is_enabled():
@@ -131,7 +131,7 @@ def test_captcha_detection():
             
             # Tentar capturar elementos do modal
             try:
-                modal_elements = downloader.driver.find_elements(downloader.By.CSS_SELECTOR, "div[style*='z-index']")
+                modal_elements = downloader.driver.find_elements(By.CSS_SELECTOR, "div[style*='z-index']")
                 print(f"   Modais encontrados: {len(modal_elements)}")
                 
                 # Procurar texto específico do modal
@@ -158,7 +158,7 @@ def test_captcha_detection():
                 
                 # Procurar opções de download
                 try:
-                    download_buttons = downloader.driver.find_elements(downloader.By.XPATH, "//button[contains(text(), 'Download')]")
+                    download_buttons = downloader.driver.find_elements(By.XPATH, "//button[contains(text(), 'Download')]")
                     if download_buttons:
                         print(f"✅ {len(download_buttons)} botão(ões) de download encontrado(s)!")
                         for i, btn in enumerate(download_buttons):
@@ -175,7 +175,7 @@ def test_captcha_detection():
             
             # Procurar diretamente por opções de download
             try:
-                download_buttons = downloader.driver.find_elements(downloader.By.XPATH, "//button[contains(text(), 'Download')]")
+                download_buttons = downloader.driver.find_elements(By.XPATH, "//button[contains(text(), 'Download')]")
                 if download_buttons:
                     print(f"✅ {len(download_buttons)} botão(ões) de download encontrado(s) sem CAPTCHA!")
                     for i, btn in enumerate(download_buttons):
