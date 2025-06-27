@@ -178,9 +178,19 @@ class FallbackDownloader:
             logger.info(f"[Fallback {job_id}] Clicking search button...")
             submit_button.click()
             
-            # Aguardar resultado aparecer
+            # Aguardar e verificar se apareceu CAPTCHA
             logger.info(f"[Fallback {job_id}] Waiting for results...")
             time.sleep(3)
+            
+            # Detectar e contornar CAPTCHA se presente
+            captcha_handled = self.detect_and_handle_captcha(job_id)
+            if captcha_handled:
+                logger.info(f"[Fallback {job_id}] CAPTCHA detectado e contornado")
+                # Reenviar formulário após contornar CAPTCHA
+                return self.retry_form_submission(invoice_key, job_id, user_id)
+            elif captcha_handled is None:  # CAPTCHA detectado mas não contornado
+                logger.warning(f"[Fallback {job_id}] CAPTCHA não pôde ser contornado - tentando site alternativo")
+                return self.try_alternative_fallback(invoice_key, job_id, user_id)
             
             # Procurar botão de download XML
             logger.info(f"[Fallback {job_id}] Looking for XML download button...")
@@ -385,6 +395,145 @@ class FallbackDownloader:
         finally:
             self.cleanup()
     
+    def detect_and_handle_captcha(self, job_id):
+        """Detectar e contornar CAPTCHA se presente"""
+        try:
+            # Detectar elementos comuns de CAPTCHA
+            captcha_indicators = [
+                "//iframe[contains(@src, 'recaptcha')]",
+                "//div[contains(@class, 'recaptcha')]", 
+                "//*[contains(text(), 'motocicleta')]",
+                "//*[contains(text(), 'motorcycle')]",
+                "//*[contains(text(), 'Selecione')]",
+                "//*[contains(text(), 'Select')]",
+                "//div[contains(@class, 'captcha')]",
+                "//img[contains(@alt, 'captcha')]"
+            ]
+            
+            captcha_found = False
+            for indicator in captcha_indicators:
+                try:
+                    element = self.driver.find_element(By.XPATH, indicator)
+                    if element.is_displayed():
+                        captcha_found = True
+                        logger.warning(f"[Fallback {job_id}] CAPTCHA detectado: {indicator}")
+                        break
+                except:
+                    continue
+            
+            if not captcha_found:
+                return False
+                
+            # Tentar estratégias de contorno do CAPTCHA
+            logger.info(f"[Fallback {job_id}] Tentando contornar CAPTCHA...")
+            
+            # Estratégia 1: Aguardar e tentar novamente
+            time.sleep(2)
+            
+            # Estratégia 2: Simular comportamento humano com movimentos de mouse
+            try:
+                from selenium.webdriver.common.action_chains import ActionChains
+                actions = ActionChains(self.driver)
+                # Mover mouse para simular comportamento humano
+                actions.move_by_offset(100, 100).perform()
+                time.sleep(1)
+                actions.move_by_offset(-50, -50).perform()
+                time.sleep(1)
+            except:
+                pass
+            
+            # Estratégia 3: Recarregar a página e tentar novamente
+            logger.info(f"[Fallback {job_id}] Recarregando página para contornar CAPTCHA...")
+            self.driver.refresh()
+            time.sleep(3)
+            
+            # Verificar se CAPTCHA ainda está presente
+            captcha_still_present = False
+            for indicator in captcha_indicators:
+                try:
+                    element = self.driver.find_element(By.XPATH, indicator)
+                    if element.is_displayed():
+                        captcha_still_present = True
+                        break
+                except:
+                    continue
+            
+            if not captcha_still_present:
+                logger.info(f"[Fallback {job_id}] CAPTCHA contornado com sucesso!")
+                return True
+            else:
+                logger.warning(f"[Fallback {job_id}] CAPTCHA ainda presente após tentativas")
+                return None  # Indica que CAPTCHA foi detectado mas não contornado
+                
+        except Exception as e:
+            logger.error(f"[Fallback {job_id}] Erro ao tentar contornar CAPTCHA: {e}")
+            return False
+
+    def retry_form_submission(self, invoice_key: str, job_id: str, user_id: int = None) -> dict:
+        """Reenviar formulário após contornar CAPTCHA"""
+        try:
+            logger.info(f"[Fallback {job_id}] Reenviando formulário após contornar CAPTCHA...")
+            
+            # Navegar para a página inicial novamente
+            self.driver.get("https://consultadanfe.com.br/")
+            time.sleep(2)
+            
+            # Preencher campo de chave novamente
+            input_field = self.driver.find_element(By.CSS_SELECTOR, "input[type='text'], input[name*='chave'], input[id*='chave']")
+            input_field.clear()
+            input_field.send_keys(invoice_key)
+            
+            # Clicar no botão de buscar
+            submit_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit'], input[type='submit']")
+            submit_button.click()
+            
+            time.sleep(3)
+            
+            # Proceder com download normal
+            return self.extract_xml_from_page(job_id, invoice_key, user_id)
+            
+        except Exception as e:
+            logger.error(f"[Fallback {job_id}] Erro ao reenviar formulário: {e}")
+            return {'success': False, 'error': f'Erro ao reenviar formulário: {str(e)}'}
+
+    def try_alternative_fallback(self, invoice_key: str, job_id: str, user_id: int = None) -> dict:
+        """Tentar site alternativo quando CAPTCHA não pode ser contornado"""
+        try:
+            logger.info(f"[Fallback {job_id}] Tentando site alternativo...")
+            
+            # Lista de sites alternativos (apenas para demonstração - em produção, usar sites reais)
+            alternative_sites = [
+                "https://nfe.fazenda.gov.br/portal/consultaCompleta.aspx",
+                # Adicionar outros sites alternativos aqui conforme necessário
+            ]
+            
+            for site in alternative_sites:
+                try:
+                    logger.info(f"[Fallback {job_id}] Tentando site: {site}")
+                    self.driver.get(site)
+                    time.sleep(3)
+                    
+                    # Verificar se site está acessível
+                    if "nfe.fazenda.gov.br" in self.driver.current_url:
+                        # Site oficial da SEFAZ - retornar erro informativo
+                        return {
+                            'success': False, 
+                            'error': 'Site de fallback bloqueado por CAPTCHA. Tente novamente em alguns minutos.'
+                        }
+                    
+                except Exception as e:
+                    logger.warning(f"[Fallback {job_id}] Site alternativo falhou: {e}")
+                    continue
+            
+            return {
+                'success': False, 
+                'error': 'Todos os sites de fallback indisponíveis. Sistema principal será usado automaticamente.'
+            }
+            
+        except Exception as e:
+            logger.error(f"[Fallback {job_id}] Erro ao tentar sites alternativos: {e}")
+            return {'success': False, 'error': f'Erro em sites alternativos: {str(e)}'}
+
     def cleanup(self):
         """Limpar recursos"""
         if self.driver:
