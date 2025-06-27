@@ -218,7 +218,7 @@ class SpeedOptimizedDownloader:
                 xml_file.peso_bruto = xml_data.get('peso_bruto')
                 xml_file.quantidade_volumes = xml_data.get('quantidade_volumes', 1)
                 xml_file.nome_emitente = xml_data.get('nome_emitente')
-                xml_file.nome_destinatario = xml_data.get('nome_destinatario')
+                xml_file.destinatario_razao = xml_data.get('nome_destinatario')
                 
                 db.session.add(xml_file)
                 db.session.commit()
