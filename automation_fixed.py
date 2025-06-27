@@ -6,6 +6,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from typing import Dict, Any
@@ -129,13 +130,20 @@ class InvoiceDownloader:
             
             logger.info(f"[Job {job_id}] Clicking submit button...")
             
-            # Try JavaScript click if regular click fails due to overlays
+            # Try multiple submission methods
             try:
                 submit_button.click()
+                logger.info(f"[Job {job_id}] Regular click successful")
             except Exception as click_error:
                 logger.warning(f"[Job {job_id}] Regular click failed: {str(click_error)[:100]}")
                 logger.info(f"[Job {job_id}] Trying JavaScript click...")
-                self.driver.execute_script("arguments[0].click();", submit_button)
+                try:
+                    self.driver.execute_script("arguments[0].click();", submit_button)
+                    logger.info(f"[Job {job_id}] JavaScript click successful")
+                except Exception as js_error:
+                    logger.warning(f"[Job {job_id}] JavaScript click failed: {str(js_error)[:100]}")
+                    logger.info(f"[Job {job_id}] Trying Enter key on input...")
+                    input_element.send_keys(Keys.ENTER)
             
             # Environment-optimized results wait with URL change detection
             logger.info(f"[Job {job_id}] Waiting for response page...")
@@ -146,7 +154,7 @@ class InvoiceDownloader:
             # Check if page has changed or if we need more time for JS
             start_url = self.driver.current_url
             initial_wait = 0
-            max_wait = 8  # Maximum wait for page change
+            max_wait = 5  # Maximum wait for page change
             
             while initial_wait < max_wait:
                 current_url = self.driver.current_url
@@ -157,13 +165,23 @@ class InvoiceDownloader:
                     logger.info(f"[Job {job_id}] Page changed to: {current_url}")
                     break
                     
-                # Check if page content indicates processing
+                # Check if page content indicates processing or errors
                 page_content = self.driver.page_source.lower()
                 if "carregando" in page_content or "processando" in page_content or "loading" in page_content:
                     logger.info(f"[Job {job_id}] Page is loading, waiting more...")
                     time.sleep(1)
                     initial_wait += 1
                     continue
+                    
+                # Check for form validation errors
+                if "erro" in page_content or "inválida" in page_content or "incorreta" in page_content:
+                    logger.warning(f"[Job {job_id}] Form validation error detected")
+                    break
+                    
+                # Check if we got results but they're not visible
+                if "xml" in page_content or "baixar" in page_content or "download" in page_content:
+                    logger.info(f"[Job {job_id}] Results content detected!")
+                    break
                     
                 # If no change, wait a bit more
                 time.sleep(1)
