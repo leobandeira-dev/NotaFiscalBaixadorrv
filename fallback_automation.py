@@ -39,8 +39,15 @@ class FallbackDownloader:
             self.performance.apply_deploy_performance_fixes()
             
             # Configurações específicas para fallback
-            options.add_argument("--window-size=800,600")
+            options.add_argument("--headless=new")
+            options.add_argument("--no-sandbox")
+            options.add_argument("--disable-dev-shm-usage")
+            options.add_argument("--disable-gpu")
+            options.add_argument("--window-size=400,300")
             options.add_argument("--disable-blink-features=AutomationControlled")
+            options.add_argument("--disable-extensions")
+            options.add_argument("--disable-default-apps")
+            options.add_argument("--single-process")
             options.add_experimental_option("excludeSwitches", ["enable-automation"])
             options.add_experimental_option('useAutomationExtension', False)
             
@@ -69,9 +76,13 @@ class FallbackDownloader:
                     chromedriver_path = path
                     break
             
+            # Selenium 4 não usa mais executable_path
+            from selenium.webdriver.chrome.service import Service
+            
             if chromedriver_path:
                 logger.info(f"Using chromedriver at: {chromedriver_path}")
-                self.driver = webdriver.Chrome(executable_path=chromedriver_path, options=options)
+                service = Service(executable_path=chromedriver_path)
+                self.driver = webdriver.Chrome(service=service, options=options)
             else:
                 logger.info("Using system chromedriver")
                 self.driver = webdriver.Chrome(options=options)
