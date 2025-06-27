@@ -118,23 +118,40 @@ class FallbackDownloader:
             # Procurar campo de entrada da chave
             logger.info(f"[Fallback {job_id}] Looking for invoice key input field...")
             
-            # Diferentes seletores possíveis para o input
-            input_selectors = [
-                "input[placeholder*='chave']",
-                "input[type='text']",
-                "input.form-control",
-                "#chave",
-                "[name='chave']"
-            ]
+            # Aguardar carregamento completo da página
+            time.sleep(3)
             
+            # Tentar o seletor específico identificado no teste primeiro
             input_element = None
-            for selector in input_selectors:
-                try:
-                    input_element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
-                    logger.info(f"[Fallback {job_id}] Found input field with selector: {selector}")
-                    break
-                except TimeoutException:
-                    continue
+            try:
+                input_element = wait.until(EC.element_to_be_clickable((By.ID, "chave")))
+                logger.info(f"[Fallback {job_id}] Found input field with ID 'chave'")
+            except TimeoutException:
+                logger.warning(f"[Fallback {job_id}] Input field 'chave' not found via ID, trying other selectors...")
+                
+                # Diferentes seletores possíveis para o input
+                input_selectors = [
+                    "input[name='chave']",
+                    "input[placeholder*='CHAVE ACESSO']",
+                    "input[placeholder*='chave']",
+                    "input[type='text']",
+                    "input.form-control",
+                    "[name='chave']"
+                ]
+                
+                for selector in input_selectors:
+                    try:
+                        elements = self.driver.find_elements(By.CSS_SELECTOR, selector)
+                        for element in elements:
+                            if element.is_displayed() and element.is_enabled():
+                                input_element = element
+                                logger.info(f"[Fallback {job_id}] Found input field with selector: {selector}")
+                                break
+                        if input_element:
+                            break
+                    except Exception as e:
+                        logger.debug(f"[Fallback {job_id}] Selector {selector} failed: {e}")
+                        continue
             
             if not input_element:
                 return {'success': False, 'error': 'Input field not found on fallback site'}
@@ -148,10 +165,11 @@ class FallbackDownloader:
             logger.info(f"[Fallback {job_id}] Looking for search button...")
             
             button_selectors = [
+                "button:contains('Buscar DANFE / XML')",
                 "button:contains('Buscar')",
-                "button:contains('BUSCAR')",
-                "input[type='submit']",
+                "button:contains('BUSCAR')", 
                 "button[type='submit']",
+                "input[type='submit']",
                 ".btn-primary",
                 ".btn"
             ]
