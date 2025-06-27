@@ -384,7 +384,7 @@ class DownloadJob:
 def process_download_job(job_id, user_id):
     """Process download job in background"""
     try:
-        from automation_consultardanfe import InvoiceDownloader
+        from simple_meudanfe_system import SimpleMeuDanfeDownloader as InvoiceDownloader
         
         with jobs_lock:
             job = download_jobs.get(job_id)
