@@ -720,7 +720,7 @@ class InvoiceDownloader:
             }
     
     def try_fallback_download(self, invoice_key: str, job_id: str, user_id: int = None) -> dict:
-        """Tentar download usando sistema de fallback"""
+        """Tentar download usando consultardanfe.com como fallback"""
         try:
             # Marcar o job como usando fallback
             from new_app import download_jobs, jobs_lock
@@ -733,21 +733,21 @@ class InvoiceDownloader:
             # Limpar driver atual primeiro
             self.cleanup()
             
-            # Importar e usar sistema de fallback
-            from fallback_automation import FallbackDownloader
+            # Importar e usar sistema de fallback atualizado
+            from consultardanfe_updated import ConsultarDanfeFallback
             
-            logger.info(f"[Job {job_id}] Iniciando sistema de fallback...")
-            fallback = FallbackDownloader()
+            logger.info(f"[Job {job_id}] Iniciando sistema de fallback consultardanfe.com...")
+            fallback = ConsultarDanfeFallback()
             
-            result = fallback.download_xml_fallback(invoice_key, job_id, user_id)
+            result = fallback.download_invoice_xml(invoice_key, job_id, user_id)
             
             if result['success']:
-                logger.info(f"[Job {job_id}] Fallback successful!")
+                logger.info(f"[Job {job_id}] Fallback consultardanfe.com successful!")
                 # Marcar resultado como sendo do fallback
-                result['source'] = 'fallback'
+                result['source'] = 'consultardanfe_fallback'
                 result['fallback_used'] = True
             else:
-                logger.error(f"[Job {job_id}] Fallback also failed: {result.get('error', 'Unknown error')}")
+                logger.error(f"[Job {job_id}] Fallback consultardanfe.com also failed: {result.get('error', 'Unknown error')}")
             
             return result
             
