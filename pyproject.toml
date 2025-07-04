@@ -33,5 +33,4 @@ dependencies = [
     "pypdf2>=3.0.1",
     "cryptography>=45.0.4",
     "psutil>=7.0.0",
-    "beautifulsoup4>=4.13.4",
 ]

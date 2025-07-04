@@ -11,7 +11,6 @@ import pytz
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
 from threading import Thread, Lock
-import threading
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, send_from_directory, send_file, make_response
 from io import BytesIO
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
@@ -352,9 +351,6 @@ class DownloadJob:
         self.end_time = None
         self.callback_url = None
         self.download_type = 'xml'
-        self.attempt_count = 0  # Track retry attempts
-        self.using_fallback = False  # Track if currently using fallback
-        self.fallback_attempts = 0  # Track fallback attempts
     
     @property
     def progress_percentage(self):
@@ -375,16 +371,13 @@ class DownloadJob:
             'downloaded_files': self.downloaded_files,
             'errors': self.errors,
             'start_time': self.start_time.isoformat() if self.start_time else None,
-            'end_time': self.end_time.isoformat() if self.end_time else None,
-            'attempt_count': self.attempt_count,
-            'using_fallback': self.using_fallback,
-            'fallback_attempts': self.fallback_attempts
+            'end_time': self.end_time.isoformat() if self.end_time else None
         }
 
 def process_download_job(job_id, user_id):
     """Process download job in background"""
     try:
-        from simple_meudanfe_system import SimpleMeuDanfeDownloader as InvoiceDownloader
+        from automation_fixed import InvoiceDownloader
         
         with jobs_lock:
             job = download_jobs.get(job_id)
@@ -1828,37 +1821,6 @@ def job_status(job_id):
             return jsonify({'error': 'Job not found'}), 404
         
         return jsonify(job.to_dict())
-
-@app.route('/api/retry_job/<job_id>', methods=['POST'])
-@login_required
-def retry_job(job_id):
-    """Retry a failed job"""
-    with jobs_lock:
-        job = download_jobs.get(job_id)
-        
-        if not job or job.user_id != current_user.id:
-            return jsonify({'error': 'Job not found'}), 404
-        
-        if job.status == 'running':
-            return jsonify({'error': 'Job is already running'}), 400
-        
-        # Reset job state for retry
-        job.processed = 0
-        job.successful = 0
-        job.failed = 0
-        job.status = "starting"
-        job.downloaded_files = []
-        job.errors = []
-        job.end_time = None
-        job.attempt_count += 1
-        job.using_fallback = False
-        
-        # Start background processing
-        thread = threading.Thread(target=process_download_job, args=(job_id, current_user.id))
-        thread.daemon = True
-        thread.start()
-        
-        return jsonify({'success': True, 'message': 'Job restarted successfully'})
 
 # Configurar timezone de São Paulo
 SP_TZ = pytz.timezone('America/Sao_Paulo')

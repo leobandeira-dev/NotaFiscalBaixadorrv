@@ -25,7 +25,6 @@
                         <h4 class="card-title mb-0">
                             <i class="fas fa-tasks me-2"></i>
                             Status do Job: <span id="jobId">{{ job.job_id[:8] }}</span>
-                            <span id="statusBadge" class="badge bg-info ms-2">BAIXANDO</span>
                         </h4>
                     </div>
                     <div class="card-body">
@@ -193,59 +192,34 @@
                     const statusAlert = document.getElementById('statusAlert');
                     const statusMessage = document.getElementById('statusMessage');
                     
-                    // Update status badge
-                    const statusBadge = document.getElementById('statusBadge');
-                    
                     switch(data.status) {
                         case 'starting':
                             statusMessage.textContent = 'Inicializando sistema de automação...';
                             statusAlert.className = 'alert alert-info';
-                            statusBadge.textContent = 'INICIANDO';
-                            statusBadge.className = 'badge bg-info ms-2';
                             break;
                         case 'running':
                             const percentage = data.progress_percentage.toFixed(1);
                             const currentXML = data.processed + 1; // Próximo XML sendo processado
-                            
-                            // Update status badge to BAIXANDO
-                            statusBadge.textContent = 'BAIXANDO';
-                            statusBadge.className = 'badge bg-success ms-2';
-                            
-                            // Detectar se está usando fallback baseado no tempo e tentativas
-                            const isUsingFallback = data.attempt_count && data.attempt_count > 1;
-                            const fallbackIndicator = isUsingFallback ? 
-                                '<span class="badge bg-warning text-dark ms-2"><i class="fas fa-shield-alt me-1"></i>Sistema Backup</span>' : 
-                                '<span class="badge bg-primary ms-2"><i class="fas fa-rocket me-1"></i>Sistema Principal</span>';
-                            
                             statusMessage.innerHTML = `
                                 <div class="d-flex align-items-center">
                                     <div class="spinner-border spinner-border-sm text-primary me-3" role="status">
                                         <span class="visually-hidden">Baixando...</span>
                                     </div>
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex align-items-center mb-1">
-                                            <strong class="text-primary">Baixando XML ${currentXML} de ${data.total_keys}</strong>
-                                            ${fallbackIndicator}
-                                        </div>
-                                        <div class="progress mb-2" style="height: 4px;">
-                                            <div class="progress-bar bg-primary" style="width: ${percentage}%"></div>
-                                        </div>
+                                    <div>
+                                        <strong class="text-primary">Baixando XML ${currentXML} de ${data.total_keys}</strong>
+                                        <br>
                                         <small class="text-muted">
-                                            <i class="fas fa-server me-1"></i>
-                                            ${isUsingFallback ? 'Utilizando sistema backup para máxima confiabilidade' : 'Sistema otimizado para ambiente deploy'}
-                                            <span class="ms-3">
+                                            <i class="fas fa-server me-1"></i>Sistema otimizado para ambiente deploy
+                                            <span class="ms-2">
                                                 <i class="fas fa-check-circle me-1 text-success"></i>${data.successful} concluídos
                                             </span>
-                                            ${data.failed > 0 ? `<span class="ms-2"><i class="fas fa-exclamation-triangle me-1 text-warning"></i>${data.failed} tentativas</span>` : ''}
                                         </small>
                                     </div>
                                 </div>
                             `;
-                            statusAlert.className = isUsingFallback ? 'alert alert-warning border-warning' : 'alert alert-primary border-primary';
+                            statusAlert.className = 'alert alert-primary border-primary';
                             progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
-                            progressBar.style.background = isUsingFallback ? 
-                                'linear-gradient(45deg, #ffc107, #fd7e14)' : 
-                                'linear-gradient(45deg, #0d6efd, #6610f2)';
+                            progressBar.style.background = 'linear-gradient(45deg, #0d6efd, #6610f2)';
                             break;
                         case 'completed':
                             statusMessage.textContent = 'Processo concluído com sucesso!';
@@ -263,38 +237,8 @@
                             clearInterval(pollInterval);
                             break;
                         case 'failed':
-                            const hasAttempts = data.processed > 0 || data.failed > 0;
-                            const fallbackAttempted = data.attempt_count && data.attempt_count > 1;
-                            
-                            statusMessage.innerHTML = `
-                                <div class="d-flex align-items-center">
-                                    <div class="text-danger me-3">
-                                        <i class="fas fa-exclamation-circle fa-2x"></i>
-                                    </div>
-                                    <div class="flex-grow-1">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <strong class="text-danger">Download não concluído</strong>
-                                            ${fallbackAttempted ? '<span class="badge bg-warning text-dark ms-2"><i class="fas fa-shield-alt me-1"></i>Backup Tentado</span>' : ''}
-                                        </div>
-                                        <small class="text-muted">
-                                            ${fallbackAttempted ? 
-                                                '<i class="fas fa-info-circle me-1"></i>Sistema principal e backup foram testados. Verifique os detalhes abaixo.' :
-                                                '<i class="fas fa-info-circle me-1"></i>Tentativa com sistema principal. Sistema backup será ativado automaticamente.'
-                                            }
-                                            <br>
-                                            <div class="mt-2">
-                                                <button class="btn btn-warning btn-sm" onclick="retryDownload()">
-                                                    <i class="fas fa-redo me-1"></i>Tentar Novamente
-                                                </button>
-                                                <button class="btn btn-outline-secondary btn-sm ms-2" onclick="window.location.href='/'">
-                                                    <i class="fas fa-home me-1"></i>Nova Tentativa
-                                                </button>
-                                            </div>
-                                        </small>
-                                    </div>
-                                </div>
-                            `;
-                            statusAlert.className = 'alert alert-danger border-danger';
+                            statusMessage.textContent = 'Processo falhou. Verifique os erros abaixo.';
+                            statusAlert.className = 'alert alert-danger';
                             progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
                             progressBar.classList.add('bg-danger');
                             
@@ -329,26 +273,6 @@
         
         let startTime = null;
         let lastUpdateTime = null;
-        
-        function retryDownload() {
-            // Retry the current job
-            const confirmRetry = confirm('Deseja tentar novamente o download? Isso irá reiniciar o processo.');
-            if (confirmRetry) {
-                fetch(`/api/retry_job/${jobId}`, { method: 'POST' })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            location.reload(); // Recarregar página para mostrar novo progresso
-                        } else {
-                            alert('Erro ao tentar novamente: ' + (data.error || 'Erro desconhecido'));
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Erro ao tentar novamente:', error);
-                        alert('Erro de conexão. Tente recarregar a página.');
-                    });
-            }
-        }
         
         function updateEstimatedTime(data) {
             const estimatedTimeElement = document.getElementById('estimatedTime');

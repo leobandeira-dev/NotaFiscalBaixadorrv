@@ -124,14 +124,14 @@ class EnhancedDeployOptimizer:
             chrome_options.add_argument('--disable-gpu')
             chrome_options.add_argument('--disable-software-rasterizer')
             
-            # Janela pequena mas funcional para deploy (JS necessita espaço mínimo)
-            chrome_options.add_argument('--window-size=800,600')
+            # Janela ultra-pequena para deploy
+            chrome_options.add_argument('--window-size=400,300')
             chrome_options.add_argument('--window-position=0,0')
             
-            # Otimizações de memória específicas para deploy (SEM SINGLE-PROCESS)
+            # Otimizações de memória específicas para deploy
             chrome_options.add_argument('--memory-pressure-off')
             chrome_options.add_argument('--max_old_space_size=512')
-            # REMOVIDO: --single-process (interfere com JavaScript)
+            chrome_options.add_argument('--single-process')
             chrome_options.add_argument('--no-zygote')
             chrome_options.add_argument('--disable-background-timer-throttling')
             chrome_options.add_argument('--disable-backgrounding-occluded-windows')

@@ -384,17 +384,9 @@
                                 Progresso do Download
                             </h4>
                             <span id="status-badge" class="status-badge status-{{ job.status.lower() }}">
-                                {% if job.status == 'starting' %}
-                                    INICIANDO
-                                {% elif job.status == 'running' %}
-                                    BAIXANDO
+                                {{ job.status|title }}
+                                {% if job.status == 'running' %}
                                     <span class="loading-animation"></span>
-                                {% elif job.status == 'completed' %}
-                                    CONCLUÍDO
-                                {% elif job.status == 'failed' %}
-                                    FALHOU
-                                {% else %}
-                                    {{ job.status|title }}
                                 {% endif %}
                             </span>
                         </div>
@@ -533,46 +525,14 @@
                         </div>
                         {% endif %}
                         {% elif job.status == 'failed' %}
-                        {% if job.errors and job.errors[0].get('error') and 'indisponível no momento' in job.errors[0].get('error', '') %}
-                        <div class="alert alert-warning border-warning mb-4">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            <strong>Serviço Temporariamente Indisponível</strong><br>
-                            {{ job.errors[0].get('error', '') }}
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
-                                <a href="{{ url_for('upload_xml') }}" class="btn btn-success w-100">
-                                    <i class="fas fa-upload me-2"></i>
-                                    Upload Manual do XML
-                                </a>
-                            </div>
-                            <div class="col-6">
-                                <a href="{{ url_for('xml_download') }}" class="btn btn-outline-primary w-100">
-                                    <i class="fas fa-retry me-2"></i>
-                                    Tentar Novamente
-                                </a>
-                            </div>
-                        </div>
-                        {% else %}
                         <p class="text-danger mb-4">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             Ocorreram erros no download
                         </p>
-                        {% if job.errors %}
-                        <div class="alert alert-danger mb-3">
-                            {% for error in job.errors %}
-                            <div class="mb-2">
-                                <strong>Chave:</strong> {{ error.invoice_key }}<br>
-                                <strong>Erro:</strong> {{ error.error }}
-                            </div>
-                            {% endfor %}
-                        </div>
-                        {% endif %}
                         <a href="{{ url_for('xml_download') }}" class="btn btn-primary">
                             <i class="fas fa-retry me-2"></i>
                             Tentar Novamente
                         </a>
-                        {% endif %}
                         {% endif %}
                         
                         <div class="mt-4 pt-4" style="border-top: 1px solid #e5e7eb;">
@@ -713,27 +673,7 @@
             // Update status badge
             if (statusBadge) {
                 statusBadge.className = `status-badge status-${data.status.toLowerCase()}`;
-                
-                // Traduzir status para português
-                let statusText = '';
-                switch(data.status) {
-                    case 'starting':
-                        statusText = 'INICIANDO';
-                        break;
-                    case 'running':
-                        statusText = 'BAIXANDO';
-                        break;
-                    case 'completed':
-                        statusText = 'CONCLUÍDO';
-                        break;
-                    case 'failed':
-                        statusText = 'FALHOU';
-                        break;
-                    default:
-                        statusText = data.status.charAt(0).toUpperCase() + data.status.slice(1);
-                }
-                
-                statusBadge.innerHTML = statusText;
+                statusBadge.innerHTML = data.status.charAt(0).toUpperCase() + data.status.slice(1);
                 if (data.status === 'running') {
                     statusBadge.innerHTML += '<span class="loading-animation"></span>';
                 }
