@@ -111,14 +111,14 @@ class InvoiceDownloader:
             except:
                 logger.info(f"[Job {job_id}] Page load timeout, proceeding anyway")
             
-            # Try different strategies to find and interact with input field
+            # Try different strategies to find and interact with input field - Updated from website mapping
             selectors = [
-                (By.ID, 'searchTxt'),  # Primary input field from the new layout
-                (By.CSS_SELECTOR, 'input[name="searchTxt"]'),
-                (By.CSS_SELECTOR, 'input[placeholder*="Chave"]'),
-                (By.CSS_SELECTOR, 'input[type="text"]'),
-                (By.CSS_SELECTOR, 'input[placeholder*="chave"]'),
-                (By.XPATH, "//input[@type='text']")
+                (By.ID, 'searchTxt'),  # Confirmed working selector from website mapping
+                (By.NAME, 'searchTxt'),  # Backup name selector
+                (By.CSS_SELECTOR, 'input[id="searchTxt"]'),  # CSS ID selector
+                (By.XPATH, "//input[@id='searchTxt']"),  # XPath ID selector
+                (By.CSS_SELECTOR, 'input[placeholder*="Chave"]'),  # Placeholder fallback
+                (By.CSS_SELECTOR, 'input[type="text"]')  # Type fallback
             ]
             
             for i, selector in enumerate(selectors):
