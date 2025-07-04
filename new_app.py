@@ -345,9 +345,11 @@ class DownloadJob:
         self.failed = 0
         self.status = "starting"  # starting, running, completed, failed
         self.downloaded_files = []
-        self.files = []  # Add files attribute for compatibility
+        self.files = {}  # Dictionary to store filename -> file_path mapping
         self.errors = []
         self.start_time = datetime.now()
+        self.created_at = datetime.now()
+        self.completed_at = None
         self.end_time = None
         self.callback_url = None
         self.download_type = 'xml'
@@ -406,7 +408,8 @@ def process_download_job(job_id, user_id):
                     job.successful += 1
                     if result.get('file_path'):
                         job.downloaded_files.append(result['file_path'])
-                        job.files.append(os.path.basename(result['file_path']))
+                        filename = os.path.basename(result['file_path'])
+                        job.files[filename] = result['file_path']
                 else:
                     job.failed += 1
                     job.errors.append({
@@ -5497,6 +5500,212 @@ def google_logout():
     logout_user()
     flash("Logout realizado com sucesso.", "success")
     return redirect(url_for("index"))
+
+# ====================================
+# API REST ENDPOINTS
+# ====================================
+
+@app.route('/api/v1/health', methods=['GET'])
+def api_health():
+    """Health check endpoint"""
+    return jsonify({
+        'status': 'healthy',
+        'version': '2.0',
+        'title': 'CROSS XML Downloader API',
+        'timestamp': datetime.now().isoformat()
+    })
+
+@app.route('/api/v1/jobs', methods=['POST'])
+def api_create_job():
+    """Create a new download job via API"""
+    try:
+        data = request.get_json()
+        if not data or 'invoice_keys' not in data:
+            return jsonify({'error': 'invoice_keys required'}), 400
+        
+        invoice_keys = data['invoice_keys']
+        if not isinstance(invoice_keys, list) or not invoice_keys:
+            return jsonify({'error': 'invoice_keys must be a non-empty list'}), 400
+        
+        # Validate invoice keys format (44 digits)
+        for key in invoice_keys:
+            if not isinstance(key, str) or not key.isdigit() or len(key) != 44:
+                return jsonify({'error': f'Invalid invoice key format: {key}'}), 400
+        
+        # Create job
+        job_id = str(uuid.uuid4())
+        user_id = getattr(current_user, 'id', 1) if current_user.is_authenticated else 1  # Default admin
+        job = DownloadJob(job_id, invoice_keys, user_id)
+        
+        with jobs_lock:
+            download_jobs[job_id] = job
+        
+        # Start processing in background
+        thread = Thread(target=process_download_job, args=(job_id, user_id))
+        thread.daemon = True
+        thread.start()
+        
+        return jsonify({
+            'job_id': job_id,
+            'status': 'created',
+            'total_keys': len(invoice_keys),
+            'created_at': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"API create job error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/v1/jobs/<job_id>', methods=['GET'])
+def api_get_job_status(job_id):
+    """Get job status and progress"""
+    try:
+        with jobs_lock:
+            job = download_jobs.get(job_id)
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        return jsonify({
+            'job_id': job_id,
+            'status': job.status,
+            'progress': {
+                'total_keys': job.total_keys,
+                'processed': job.processed,
+                'successful': job.successful,
+                'failed': job.failed,
+                'percentage': (job.processed / job.total_keys * 100) if job.total_keys > 0 else 0
+            },
+            'files': list(job.files.keys()),
+            'errors': job.errors,
+            'created_at': job.created_at.isoformat(),
+            'completed_at': job.completed_at.isoformat() if job.completed_at else None
+        })
+        
+    except Exception as e:
+        logger.error(f"API get job status error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/v1/jobs', methods=['GET'])
+def api_list_jobs():
+    """List all jobs with filtering"""
+    try:
+        status_filter = request.args.get('status')
+        limit = int(request.args.get('limit', 50))
+        offset = int(request.args.get('offset', 0))
+        
+        with jobs_lock:
+            jobs_list = list(download_jobs.values())
+        
+        # Filter by status if provided
+        if status_filter:
+            jobs_list = [job for job in jobs_list if job.status == status_filter]
+        
+        # Sort by creation time (newest first)
+        jobs_list.sort(key=lambda x: x.created_at, reverse=True)
+        
+        # Apply pagination
+        total = len(jobs_list)
+        jobs_list = jobs_list[offset:offset + limit]
+        
+        # Format response
+        jobs_data = []
+        for job in jobs_list:
+            jobs_data.append({
+                'job_id': job.job_id,
+                'status': job.status,
+                'total_keys': job.total_keys,
+                'processed': job.processed,
+                'successful': job.successful,
+                'failed': job.failed,
+                'created_at': job.created_at.isoformat(),
+                'completed_at': job.completed_at.isoformat() if job.completed_at else None
+            })
+        
+        return jsonify({
+            'jobs': jobs_data,
+            'total': total,
+            'limit': limit,
+            'offset': offset
+        })
+        
+    except Exception as e:
+        logger.error(f"API list jobs error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/v1/jobs/<job_id>/files/<filename>', methods=['GET'])
+def api_download_file(job_id, filename):
+    """Download a specific XML file from a completed job"""
+    try:
+        with jobs_lock:
+            job = download_jobs.get(job_id)
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        if filename not in job.files:
+            return jsonify({'error': 'File not found'}), 404
+        
+        file_path = job.files[filename]
+        if not os.path.exists(file_path):
+            return jsonify({'error': 'File no longer exists'}), 404
+        
+        return send_file(file_path, as_attachment=True, download_name=filename)
+        
+    except Exception as e:
+        logger.error(f"API download file error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/v1/jobs/<job_id>/files', methods=['GET'])
+def api_list_job_files(job_id):
+    """List all files for a specific job"""
+    try:
+        with jobs_lock:
+            job = download_jobs.get(job_id)
+        
+        if not job:
+            return jsonify({'error': 'Job not found'}), 404
+        
+        files_data = []
+        for filename, file_path in job.files.items():
+            file_size = os.path.getsize(file_path) if os.path.exists(file_path) else 0
+            files_data.append({
+                'filename': filename,
+                'size': file_size,
+                'download_url': f'/api/v1/jobs/{job_id}/files/{filename}'
+            })
+        
+        return jsonify({
+            'job_id': job_id,
+            'files': files_data
+        })
+        
+    except Exception as e:
+        logger.error(f"API list job files error: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/api/v1/test-connection', methods=['GET'])
+def api_test_connection():
+    """Test connection to invoice system"""
+    try:
+        from automation_speed_optimized import SpeedOptimizedInvoiceDownloader
+        downloader = SpeedOptimizedInvoiceDownloader()
+        result = downloader.test_connection()
+        downloader.cleanup()
+        
+        return jsonify({
+            'status': 'success' if result.get('success') else 'error',
+            'message': result.get('message', 'Connection test completed'),
+            'timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        logger.error(f"API test connection error: {e}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Connection test failed: {str(e)}',
+            'timestamp': datetime.now().isoformat()
+        }), 500
 
 
 if __name__ == "__main__":
