@@ -1,4 +1,4 @@
-# CROSS XML Downloader API v2.0
+# CROSS XML Downloader API v1.0
 
 ## Visão Geral
 
@@ -6,7 +6,7 @@ A API REST do CROSS XML permite integração automatizada para download em lote 
 
 **Base URL:** `https://sua-aplicacao.replit.app/api/v1`
 
-**Versão:** 2.0 (Julho 2025)
+**Versão:** 1.0 (Julho 2025)
 
 **Performance:** Download otimizado em ~7.4 segundos por chave
 

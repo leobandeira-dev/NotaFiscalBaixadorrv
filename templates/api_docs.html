@@ -336,7 +336,7 @@ Content-Type: application/json</code></pre>
                             <div class="endpoint-section mb-4">
                                 <div class="d-flex align-items-center mb-2">
                                     <span class="badge badge-primary mr-2">GET</span>
-                                    <code class="h5">/api/v2/jobs/{job_id}</code>
+                                    <code class="h5">/api/v1/jobs/{job_id}</code>
                                 </div>
                                 <p>Consulta o status de um job de download.</p>
                                 
@@ -353,7 +353,7 @@ Content-Type: application/json</code></pre>
       "invoice_key": "35250513516247000107550010000113401146202508",
       "status": "success",
       "filename": "35250513516247000107550010000113401146202508.xml",
-      "download_url": "/api/v2/download/file/abc123.xml"
+      "download_url": "/api/v1/jobs/abc123/files/abc123.xml"
     }
   ]
 }</code></pre>
@@ -363,7 +363,7 @@ Content-Type: application/json</code></pre>
                             <div class="endpoint-section mb-4">
                                 <div class="d-flex align-items-center mb-2">
                                     <span class="badge badge-info mr-2">GET</span>
-                                    <code class="h5">/api/v2/account</code>
+                                    <code class="h5">/api/v1/account</code>
                                 </div>
                                 <p>Consulta informações da conta e saldo de créditos.</p>
                                 
@@ -391,7 +391,7 @@ Content-Type: application/json</code></pre>
                             <pre><code class="language-python">import requests
 import time
 
-API_BASE = "{{ request.url_root }}api/v2"
+API_BASE = "{{ request.url_root }}api/v1"
 API_KEY = "sua_api_key_aqui"
 
 headers = {
@@ -435,7 +435,7 @@ else:
 
                             <!-- JavaScript Example -->
                             <h5 class="mt-4"><i class="fab fa-js-square text-warning"></i> JavaScript</h5>
-                            <pre><code class="language-javascript">const API_BASE = "{{ request.url_root }}api/v2";
+                            <pre><code class="language-javascript">const API_BASE = "{{ request.url_root }}api/v1";
 const API_KEY = "sua_api_key_aqui";
 
 const headers = {
