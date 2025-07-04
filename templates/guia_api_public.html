@@ -4,105 +4,231 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guia de Conexão API - CROSS XML</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: #333;
+        :root {
+            --primary-purple: #8A05BE;
+            --primary-purple-dark: #6B0F9A;
+            --primary-purple-light: #A855F7;
+            --gray-50: #FAFAFA;
+            --gray-100: #F5F5F5;
+            --gray-900: #1A1A1A;
         }
         
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .btn-primary {
+            background: var(--primary-purple);
+            border: none;
+            padding: 12px 32px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-purple-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(138, 5, 190, 0.3);
+        }
+        
+        .btn-outline-primary {
+            border: 2px solid var(--primary-purple);
+            color: var(--primary-purple);
+            padding: 10px 30px;
+            font-weight: 600;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary-purple);
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        /* Header */
         .navbar {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.95) !important;
             backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
             padding: 1rem 0;
         }
         
         .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-            color: #8A05BE !important;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-purple) !important;
         }
         
         .nav-link {
-            color: #333 !important;
             font-weight: 500;
-            margin: 0 0.5rem;
+            color: #333 !important;
+            margin: 0 15px;
             transition: color 0.3s ease;
         }
         
         .nav-link:hover {
-            color: #8A05BE !important;
+            color: var(--primary-purple) !important;
         }
         
-        .hero-section {
-            background: linear-gradient(135deg, rgba(138, 5, 190, 0.1), rgba(102, 126, 234, 0.1));
-            padding: 4rem 0;
+        /* Hero Section */
+        .hero {
+            background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
+            padding: 120px 0 80px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(138, 5, 190, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border-radius: 0 0 0 100px;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+        
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 1.5rem;
+            color: var(--gray-900);
+        }
+        
+        .hero .highlight {
+            background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .hero p {
+            font-size: 1.4rem;
+            color: #666;
+            margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+        
+        /* Sections */
+        .section {
+            padding: 80px 0;
+        }
+        
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
             text-align: center;
+            margin-bottom: 1rem;
+            color: var(--gray-900);
+        }
+        
+        .section-subtitle {
+            font-size: 1.2rem;
+            color: #666;
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        
+        /* Solution Cards */
+        .solution-card {
+            background: white;
+            border-radius: 16px;
+            padding: 2.5rem;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            height: 100%;
+            border: 2px solid transparent;
+            margin-bottom: 2rem;
+        }
+        
+        .solution-card:hover {
+            transform: translateY(-8px);
+            border-color: var(--primary-purple);
+            box-shadow: 0 20px 60px rgba(138, 5, 190, 0.15);
+        }
+        
+        .solution-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
             color: white;
         }
         
-        .hero-section h1 {
-            font-size: 3rem;
+        .icon-download { background: linear-gradient(135deg, var(--primary-purple), var(--primary-purple-light)); }
+        .icon-pdf { background: linear-gradient(135deg, #10b981, #059669); }
+        .icon-api { background: linear-gradient(135deg, #f59e0b, #d97706); }
+        
+        .solution-card h3 {
+            font-size: 1.5rem;
             font-weight: 700;
             margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            color: var(--gray-900);
         }
         
-        .hero-section p {
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
+        .solution-card p {
+            color: #666;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
         }
         
-        .content-section {
-            background: white;
-            margin: -2rem 0 0 0;
-            border-radius: 20px 20px 0 0;
-            padding: 3rem 0;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+        .feature-list {
+            list-style: none;
+            text-align: left;
         }
         
-        .api-card {
-            background: white;
-            border-radius: 12px;
-            padding: 2rem;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid #e5e7eb;
-            margin-bottom: 2rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        .feature-list li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
         }
         
-        .api-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        .feature-list li i {
+            color: #10b981;
+            margin-right: 0.75rem;
         }
         
-        .card-header {
-            background: linear-gradient(135deg, #f8f9ff, #f0f4ff);
-            border: none;
-            border-radius: 12px 12px 0 0;
-            padding: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .card-header h5 {
-            color: #111827;
-            font-weight: 600;
-            margin: 0;
-        }
-        
+        /* Code blocks */
         .code-block {
             position: relative;
             background: #f8f9fa;
             border: 1px solid #e9ecef;
-            border-radius: 8px;
-            margin: 1rem 0;
+            border-radius: 12px;
+            margin: 1.5rem 0;
             overflow-x: auto;
         }
         
@@ -111,16 +237,17 @@
             padding: 1.5rem;
             background: transparent;
             border: none;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             line-height: 1.6;
             color: #333;
+            font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
         }
         
         .copy-btn {
             position: absolute;
-            top: 0.75rem;
-            right: 0.75rem;
-            background: #8A05BE;
+            top: 1rem;
+            right: 1rem;
+            background: var(--primary-purple);
             color: white;
             border: none;
             border-radius: 6px;
@@ -136,10 +263,16 @@
             opacity: 1;
         }
         
+        /* Tabs */
+        .nav-tabs {
+            border-bottom: none;
+            margin-bottom: 2rem;
+        }
+        
         .nav-tabs .nav-link {
             border: none;
             background: #f8f9fa;
-            color: #6b7280;
+            color: #666;
             margin-right: 0.5rem;
             border-radius: 8px 8px 0 0;
             padding: 0.75rem 1.5rem;
@@ -149,18 +282,21 @@
         
         .nav-tabs .nav-link.active {
             background: white;
-            color: #8A05BE;
-            border-bottom: 3px solid #8A05BE;
+            color: var(--primary-purple);
+            border-bottom: 3px solid var(--primary-purple);
             box-shadow: 0 2px 8px rgba(138, 5, 190, 0.1);
         }
         
+        /* Tables */
         .table {
             margin: 0;
+            border-radius: 12px;
+            overflow: hidden;
         }
         
         .table th {
             background: #f9fafb;
-            color: #111827;
+            color: var(--gray-900);
             font-weight: 600;
             border: none;
             padding: 1rem;
@@ -172,6 +308,7 @@
             vertical-align: middle;
         }
         
+        /* Badges */
         .badge {
             font-size: 0.75rem;
             padding: 0.5rem 0.75rem;
@@ -179,60 +316,70 @@
             font-weight: 500;
         }
         
-        .btn-cta {
-            background: linear-gradient(135deg, #8A05BE, #667eea);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 1rem 2rem;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(138, 5, 190, 0.3);
-        }
+        .badge-get { background: #dcfce7; color: #166534; }
+        .badge-post { background: #dbeafe; color: #1e40af; }
         
-        .btn-cta:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(138, 5, 190, 0.4);
-            color: white;
-        }
-        
-        .icon-wrapper {
-            width: 48px;
-            height: 48px;
-            background: rgba(138, 5, 190, 0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 1rem;
-        }
-        
-        .performance-card {
-            background: linear-gradient(135deg, #f0fff4, #dcfce7);
-            border: 1px solid #bbf7d0;
-        }
-        
-        .pricing-card {
-            background: linear-gradient(135deg, #fffbeb, #fef3c7);
-            border: 1px solid #fde68a;
-        }
-        
+        /* Alert boxes */
         .alert-info {
             background: linear-gradient(135deg, #f0f4ff, #e6f3ff);
             border: 1px solid #c7d2fe;
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1.5rem 0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
         }
         
-        .footer-cta {
-            background: linear-gradient(135deg, #f8f9ff, #f0f4ff);
-            border-radius: 12px;
-            padding: 3rem 2rem;
+        /* Final CTA */
+        .cta-section {
+            background: linear-gradient(135deg, var(--gray-50), white);
+            padding: 80px 0;
+        }
+        
+        .cta-card {
+            background: white;
+            border-radius: 20px;
+            padding: 4rem 2rem;
             text-align: center;
-            margin: 3rem 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .cta-card:hover {
+            border-color: var(--primary-purple);
+            transform: translateY(-4px);
+        }
+        
+        .performance-stats {
+            background: linear-gradient(135deg, #f0fff4, #dcfce7);
+            border: 1px solid #bbf7d0;
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        
+        .pricing-stats {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border: 1px solid #fde68a;
+            border-radius: 16px;
+            padding: 2rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            
+            .hero p {
+                font-size: 1.1rem;
+            }
+            
+            .section-title {
+                font-size: 2rem;
+            }
+            
+            .navbar-brand {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
@@ -267,62 +414,151 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero-section">
+    <section class="hero">
         <div class="container">
-            <h1><i class="fas fa-code me-3"></i>API REST v1.0</h1>
-            <p>Integre seu sistema com a API do CROSS XML para downloads automatizados de XMLs</p>
-        </div>
-    </section>
-
-    <!-- Content Section -->
-    <section class="content-section">
-        <div class="container">
-            <!-- API Overview -->
-            <div class="api-card">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="icon-wrapper">
-                        <i class="fas fa-rocket" style="color: #8A05BE; font-size: 1.2rem;"></i>
-                    </div>
-                    <div>
-                        <h4 class="mb-1" style="color: #111827; font-weight: 600;">API REST Completa</h4>
-                        <p class="text-muted mb-0">Acesso programático a todas as funcionalidades da plataforma</p>
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <div class="hero-content">
+                        <h1>
+                            <span class="highlight">API REST v1.0</span><br>
+                            para CROSS XML
+                        </h1>
+                        <p>Integre seu sistema com nossa API para downloads automatizados de XMLs de notas fiscais</p>
+                        <div class="d-flex gap-3 align-items-center">
+                            <a href="/login" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Acessar Plataforma
+                            </a>
+                            <a href="/registro" class="btn btn-outline-primary">
+                                Criar Conta
+                            </a>
+                        </div>
                     </div>
                 </div>
-                
-                <div class="alert-info">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-info-circle me-2" style="color: #3b82f6;"></i>
-                        <div>
-                            <strong>Dupla Funcionalidade:</strong> A API retorna tanto dados estruturados JSON (19 campos extraídos) quanto arquivos XML originais (~4KB cada)
+                <div class="col-lg-6">
+                    <div class="hero-visual">
+                        <div class="dashboard-mockup">
+                            <div class="dashboard-content">
+                                <div class="stat-card">
+                                    <div class="stat-value">6-8s</div>
+                                    <div class="stat-label">Tempo médio por download</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">19</div>
+                                    <div class="stat-label">Campos extraídos por XML</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">99.8%</div>
+                                    <div class="stat-label">Taxa de sucesso</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- API Overview Section -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">API REST Completa</h2>
+            <p class="section-subtitle">Acesso programático a todas as funcionalidades da plataforma CROSS XML</p>
+            
+            <div class="alert-info">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-info-circle me-2" style="color: #3b82f6;"></i>
+                    <div>
+                        <strong>Dupla Funcionalidade:</strong> A API retorna tanto dados estruturados JSON (19 campos extraídos) quanto arquivos XML originais (~4KB cada)
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Cards -->
+            <div class="row">
+                <div class="col-lg-4">
+                    <div class="solution-card">
+                        <div class="solution-icon icon-api">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h3>Performance</h3>
+                        <p>Processamento ultra-rápido com otimizações avançadas</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check-circle"></i>6-8 segundos por download XML</li>
+                            <li><i class="fas fa-check-circle"></i>99.8% taxa de sucesso</li>
+                            <li><i class="fas fa-check-circle"></i>19 campos extraídos automaticamente</li>
+                            <li><i class="fas fa-check-circle"></i>Processamento simultâneo de até 50 XMLs</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="solution-card">
+                        <div class="solution-icon icon-download">
+                            <i class="fas fa-tag"></i>
+                        </div>
+                        <h3>Estrutura de Preços</h3>
+                        <p>Preços competitivos com escalabilidade baseada em volume</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check-circle"></i>R$ 0,06-0,10 por XML (baseado no volume)</li>
+                            <li><i class="fas fa-check-circle"></i>DANFE sempre gratuito</li>
+                            <li><i class="fas fa-check-circle"></i>Etiquetas R$ 49,90/mês</li>
+                            <li><i class="fas fa-check-circle"></i>7 dias grátis para novos usuários</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="solution-card">
+                        <div class="solution-icon icon-pdf">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <h3>Integração Simples</h3>
+                        <p>API REST com documentação completa e exemplos práticos</p>
+                        <ul class="feature-list">
+                            <li><i class="fas fa-check-circle"></i>Endpoints RESTful padronizados</li>
+                            <li><i class="fas fa-check-circle"></i>Autenticação via API Key + Secret</li>
+                            <li><i class="fas fa-check-circle"></i>Exemplos em Python, JavaScript e cURL</li>
+                            <li><i class="fas fa-check-circle"></i>Suporte técnico especializado</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API Documentation Section -->
+    <section class="section" style="background: var(--gray-50);">
+        <div class="container">
+            <h2 class="section-title">Documentação da API</h2>
+            <p class="section-subtitle">Guia completo para integração com exemplos práticos</p>
 
             <!-- Credentials Section -->
-            <div class="api-card">
-                <div class="card-header">
-                    <h5><i class="fas fa-key me-2" style="color: #8A05BE;"></i>1. Configuração de Credenciais</h5>
+            <div class="solution-card">
+                <div class="solution-icon icon-download">
+                    <i class="fas fa-key"></i>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted mb-3">Para usar a API, você precisa de credenciais de acesso:</p>
-                    <div class="d-flex align-items-center p-3 mb-3" style="background: #f9fafb; border-radius: 8px; border-left: 4px solid #8A05BE;">
-                        <i class="fas fa-arrow-right me-2" style="color: #8A05BE;"></i>
+                <h3>1. Configuração de Credenciais</h3>
+                <p>Para usar a API, você precisa de credenciais de acesso</p>
+                <div class="alert-info">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-arrow-right me-2" style="color: var(--primary-purple);"></i>
                         <span><strong>Faça login na plataforma</strong> para gerar suas credenciais da API</span>
                     </div>
-                    
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <h6 style="color: #111827; font-weight: 600;">Base URL</h6>
-                            <div class="code-block">
-                                <code>https://crossxml.com.br/api/v1</code>
-                            </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6 style="color: var(--gray-900); font-weight: 600;">Base URL</h6>
+                        <div class="code-block">
+                            <pre>https://crossxml.com.br/api/v1</pre>
+                            <button class="copy-btn" onclick="copyToClipboard('https://crossxml.com.br/api/v1')">Copiar</button>
                         </div>
-                        <div class="col-md-6">
-                            <h6 style="color: #111827; font-weight: 600;">Autenticação</h6>
-                            <div class="code-block">
-                                <code>X-API-Key: api_xxxxxxxx<br>X-API-Secret: secret_xxxxxxxx</code>
-                            </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 style="color: var(--gray-900); font-weight: 600;">Autenticação</h6>
+                        <div class="code-block">
+                            <pre>X-API-Key: api_xxxxxxxx
+X-API-Secret: secret_xxxxxxxx</pre>
+                            <button class="copy-btn" onclick="copyToClipboard('X-API-Key: api_xxxxxxxx\\nX-API-Secret: secret_xxxxxxxx')">Copiar</button>
                         </div>
                     </div>
                 </div>
@@ -694,17 +930,41 @@ exemploDownload();</code></pre>
                 </div>
             </div>
 
-            <!-- Call to Action -->
-            <div class="footer-cta">
-                <h4 style="color: #111827; font-weight: 600; margin-bottom: 1rem;">Pronto para começar?</h4>
-                <p class="text-muted mb-4">Crie sua conta e gere suas credenciais da API</p>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-card">
+                <div class="solution-icon icon-download mx-auto mb-4">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <h2 class="section-title">Pronto para começar?</h2>
+                <p class="section-subtitle">Crie sua conta e gere suas credenciais da API em segundos</p>
+                
+                <div class="row justify-content-center mb-4">
+                    <div class="col-md-6">
+                        <div class="performance-stats text-center">
+                            <h5 style="color: var(--gray-900); font-weight: 600;">Performance Garantida</h5>
+                            <p class="mb-0">6-8 segundos por XML • 99.8% taxa de sucesso</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="pricing-stats text-center">
+                            <h5 style="color: var(--gray-900); font-weight: 600;">7 Dias Grátis</h5>
+                            <p class="mb-0">Teste completo sem compromisso</p>
+                        </div>
+                    </div>
+                </div>
+                
                 <div class="d-flex gap-3 justify-content-center flex-wrap">
-                    <a href="/login" class="btn-cta">
+                    <a href="/login" class="btn btn-primary">
                         <i class="fas fa-sign-in-alt me-2"></i>
-                        Fazer Login
+                        Acessar Plataforma
                     </a>
-                    <a href="/registro" class="btn btn-outline-secondary" style="border-radius: 8px; padding: 1rem 2rem; font-weight: 500; text-decoration: none;">
-                        Criar Conta
+                    <a href="/registro" class="btn btn-outline-primary">
+                        Criar Conta Grátis
                     </a>
                 </div>
             </div>
@@ -713,6 +973,18 @@ exemploDownload();</code></pre>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Visual feedback
+                event.target.textContent = 'Copiado!';
+                setTimeout(() => {
+                    event.target.textContent = 'Copiar';
+                }, 2000);
+            }).catch(err => {
+                console.error('Erro ao copiar: ', err);
+            });
+        }
+        
         function copyCode(button) {
             const codeBlock = button.nextElementSibling;
             const text = codeBlock.textContent;
