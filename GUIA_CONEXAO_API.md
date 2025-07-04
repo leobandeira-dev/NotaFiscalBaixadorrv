@@ -8,7 +8,7 @@
 
 ## 🔑 Passo 1: Gerar Credenciais da API
 
-1. Acesse seu painel: `https://sua-aplicacao.replit.app/api-docs`
+1. Acesse seu painel: `https://crossxml.com.br/api-docs`
 2. Na seção **"Gerenciamento de Credenciais"**, clique em **"Gerar Credenciais"**
 3. Copie e guarde com segurança:
    - **API Key**: `api_xxxxxxxxxxxxxxxx`
@@ -19,7 +19,7 @@
 ## 🌐 Passo 2: URL Base da API
 
 ```
-URL Base: https://sua-aplicacao.replit.app/api/v1
+URL Base: https://crossxml.com.br/api/v1
 ```
 
 **Substitua `sua-aplicacao.replit.app` pela URL real do seu sistema**
@@ -35,7 +35,7 @@ import json
 # Suas credenciais
 API_KEY = "api_xxxxxxxxxxxxxxxx"
 API_SECRET = "secret_xxxxxxxxxxxxxxxx"
-BASE_URL = "https://sua-aplicacao.replit.app/api/v1"
+BASE_URL = "https://crossxml.com.br/api/v1"
 
 # Teste de conectividade
 response = requests.get(f"{BASE_URL}/health")
@@ -47,7 +47,7 @@ print("Status da API:", response.json())
 ```javascript
 const API_KEY = "api_xxxxxxxxxxxxxxxx";
 const API_SECRET = "secret_xxxxxxxxxxxxxxxx";
-const BASE_URL = "https://sua-aplicacao.replit.app/api/v1";
+const BASE_URL = "https://crossxml.com.br/api/v1";
 
 // Teste de conectividade
 fetch(`${BASE_URL}/health`)
@@ -58,7 +58,7 @@ fetch(`${BASE_URL}/health`)
 ### cURL (Terminal)
 
 ```bash
-curl -X GET "https://sua-aplicacao.replit.app/api/v1/health"
+curl -X GET "https://crossxml.com.br/api/v1/health"
 ```
 
 ## 📤 Passo 4: Primeiro Download de XML
@@ -111,7 +111,7 @@ class CrossXMLAPI:
 api = CrossXMLAPI(
     api_key="api_xxxxxxxxxxxxxxxx",
     api_secret="secret_xxxxxxxxxxxxxxxx", 
-    base_url="https://sua-aplicacao.replit.app/api/v1"
+    base_url="https://crossxml.com.br/api/v1"
 )
 
 # 1. Criar job com chaves XML
@@ -182,7 +182,7 @@ class CrossXMLAPI {
 const api = new CrossXMLAPI(
     "api_xxxxxxxxxxxxxxxx",
     "secret_xxxxxxxxxxxxxxxx",
-    "https://sua-aplicacao.replit.app/api/v1"
+    "https://crossxml.com.br/api/v1"
 );
 
 async function exemploDownload() {
