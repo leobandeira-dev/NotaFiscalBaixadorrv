@@ -217,18 +217,18 @@ class InvoiceDownloader:
                     from selenium.webdriver.common.action_chains import ActionChains
                     ActionChains(self.driver).move_to_element(submit_button).click().perform()
             
-            # Wait for loading to complete in new layout
-            logger.info(f"[Job {job_id}] Waiting for results to load in new layout...")
-            time.sleep(timeouts['download_wait'])
-            
-            # Wait for loading spinner to disappear if present
+            # Wait for the options div to become visible (new site behavior)
+            logger.info(f"[Job {job_id}] Waiting for options div to appear...")
             try:
-                WebDriverWait(self.driver, 5).until_not(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "[class*='loading'], [class*='spinner'], .loading"))
+                options_div = WebDriverWait(self.driver, timeouts['download_poll']).until(
+                    EC.visibility_of_element_located((By.ID, "optionsDiv"))
                 )
-                logger.info(f"[Job {job_id}] Loading completed")
-            except:
-                logger.info(f"[Job {job_id}] No loading spinner detected, proceeding")
+                logger.info(f"[Job {job_id}] Options div is now visible")
+            except Exception as e:
+                logger.warning(f"[Job {job_id}] Options div not found: {e}")
+                # Fallback - wait a bit and proceed
+                time.sleep(timeouts['download_wait'])
+                logger.info(f"[Job {job_id}] Proceeding with fallback wait")
             
             logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
             
@@ -256,6 +256,8 @@ class InvoiceDownloader:
             
             xml_button = None
             selectors = [
+                (By.ID, "downloadXmlBtn"),  # New primary selector - red "Baixar XML" button
+                (By.XPATH, "//a[@id='downloadXmlBtn']"),
                 (By.XPATH, "//button[contains(text(), 'Baixar XML')]"),
                 (By.XPATH, "//*[contains(text(), 'Baixar XML')]"),
                 (By.XPATH, "//a[contains(text(), 'Baixar XML')]"),
