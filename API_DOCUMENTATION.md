@@ -4,6 +4,15 @@
 
 A API REST do CROSS XML permite integração automatizada para download em lote de arquivos XML de notas fiscais brasileiras. A API oferece endpoints para criar jobs de download, monitorar progresso, baixar arquivos XML e acessar dados estruturados extraídos automaticamente.
 
+## **Dupla Funcionalidade: JSON + XML**
+
+A API retorna **ambos os formatos** para cada chave processada:
+
+1. **Dados JSON Estruturados**: 19 campos extraídos automaticamente (número NF, valor, peso, emitente, destinatário, etc.) para integração rápida em sistemas
+2. **Arquivos XML Originais**: Documentos fiscais completos (~4KB cada) para compliance, auditoria e geração de DANFE
+
+Esta dupla funcionalidade permite usar dados estruturados para lógica de negócio e manter XMLs originais para requisitos fiscais/legais.
+
 **Base URL:** `https://sua-aplicacao.replit.app/api/v1`
 
 **Versão:** 1.0 (Julho 2025)
