@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Conexão API - CROSS XML</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 0;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: #8A05BE !important;
+        }
+        
+        .nav-link {
+            color: #333 !important;
+            font-weight: 500;
+            margin: 0 0.5rem;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: #8A05BE !important;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, rgba(138, 5, 190, 0.1), rgba(102, 126, 234, 0.1));
+            padding: 4rem 0;
+            text-align: center;
+            color: white;
+        }
+        
+        .hero-section h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .hero-section p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+        
+        .content-section {
+            background: white;
+            margin: -2rem 0 0 0;
+            border-radius: 20px 20px 0 0;
+            padding: 3rem 0;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .api-card {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .api-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        }
+        
+        .card-header {
+            background: linear-gradient(135deg, #f8f9ff, #f0f4ff);
+            border: none;
+            border-radius: 12px 12px 0 0;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .card-header h5 {
+            color: #111827;
+            font-weight: 600;
+            margin: 0;
+        }
+        
+        .code-block {
+            position: relative;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        
+        .code-block pre {
+            margin: 0;
+            padding: 1.5rem;
+            background: transparent;
+            border: none;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: #8A05BE;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            font-weight: 500;
+        }
+        
+        .copy-btn:hover {
+            opacity: 1;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            background: #f8f9fa;
+            color: #6b7280;
+            margin-right: 0.5rem;
+            border-radius: 8px 8px 0 0;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link.active {
+            background: white;
+            color: #8A05BE;
+            border-bottom: 3px solid #8A05BE;
+            box-shadow: 0 2px 8px rgba(138, 5, 190, 0.1);
+        }
+        
+        .table {
+            margin: 0;
+        }
+        
+        .table th {
+            background: #f9fafb;
+            color: #111827;
+            font-weight: 600;
+            border: none;
+            padding: 1rem;
+        }
+        
+        .table td {
+            padding: 1rem;
+            border-top: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+        
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        
+        .btn-cta {
+            background: linear-gradient(135deg, #8A05BE, #667eea);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(138, 5, 190, 0.3);
+        }
+        
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(138, 5, 190, 0.4);
+            color: white;
+        }
+        
+        .icon-wrapper {
+            width: 48px;
+            height: 48px;
+            background: rgba(138, 5, 190, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+        }
+        
+        .performance-card {
+            background: linear-gradient(135deg, #f0fff4, #dcfce7);
+            border: 1px solid #bbf7d0;
+        }
+        
+        .pricing-card {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border: 1px solid #fde68a;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #f0f4ff, #e6f3ff);
+            border: 1px solid #c7d2fe;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+        
+        .footer-cta {
+            background: linear-gradient(135deg, #f8f9ff, #f0f4ff);
+            border-radius: 12px;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin: 3rem 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-cube me-2"></i>
+                CROSS XML
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/#precos">Preços</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/guia-api">API</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <h1><i class="fas fa-code me-3"></i>API REST v1.0</h1>
+            <p>Integre seu sistema com a API do CROSS XML para downloads automatizados de XMLs</p>
+        </div>
+    </section>
+
+    <!-- Content Section -->
+    <section class="content-section">
+        <div class="container">
+            <!-- API Overview -->
+            <div class="api-card">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="icon-wrapper">
+                        <i class="fas fa-rocket" style="color: #8A05BE; font-size: 1.2rem;"></i>
+                    </div>
+                    <div>
+                        <h4 class="mb-1" style="color: #111827; font-weight: 600;">API REST Completa</h4>
+                        <p class="text-muted mb-0">Acesso programático a todas as funcionalidades da plataforma</p>
+                    </div>
+                </div>
+                
+                <div class="alert-info">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-info-circle me-2" style="color: #3b82f6;"></i>
+                        <div>
+                            <strong>Dupla Funcionalidade:</strong> A API retorna tanto dados estruturados JSON (19 campos extraídos) quanto arquivos XML originais (~4KB cada)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Credentials Section -->
+            <div class="api-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-key me-2" style="color: #8A05BE;"></i>1. Configuração de Credenciais</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">Para usar a API, você precisa de credenciais de acesso:</p>
+                    <div class="d-flex align-items-center p-3 mb-3" style="background: #f9fafb; border-radius: 8px; border-left: 4px solid #8A05BE;">
+                        <i class="fas fa-arrow-right me-2" style="color: #8A05BE;"></i>
+                        <span><strong>Faça login na plataforma</strong> para gerar suas credenciais da API</span>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h6 style="color: #111827; font-weight: 600;">Base URL</h6>
+                            <div class="code-block">
+                                <code>https://crossxml.com.br/api/v1</code>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 style="color: #111827; font-weight: 600;">Autenticação</h6>
+                            <div class="code-block">
+                                <code>X-API-Key: api_xxxxxxxx<br>X-API-Secret: secret_xxxxxxxx</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Start Section -->
+            <div class="api-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-play me-2" style="color: #8A05BE;"></i>2. Início Rápido</h5>
+                </div>
+                <div class="card-body">
+                    <div class="nav nav-tabs mb-3" role="tablist">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#python-tab">
+                            <i class="fab fa-python me-1"></i> Python
+                        </button>
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#javascript-tab">
+                            <i class="fab fa-js me-1"></i> JavaScript
+                        </button>
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#curl-tab">
+                            <i class="fas fa-terminal me-1"></i> cURL
+                        </button>
+                    </div>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="python-tab">
+                            <h6 style="color: #111827; font-weight: 600;">Teste de Conectividade</h6>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                                <pre><code>import requests
+
+# Configure sua URL base
+BASE_URL = "https://crossxml.com.br/api/v1"
+
+# Teste de conectividade
+response = requests.get(f"{BASE_URL}/health")
+print("Status da API:", response.json())</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="javascript-tab">
+                            <h6 style="color: #111827; font-weight: 600;">Teste de Conectividade</h6>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                                <pre><code>const BASE_URL = "https://crossxml.com.br/api/v1";
+
+// Teste de conectividade
+fetch(`${BASE_URL}/health`)
+  .then(response => response.json())
+  .then(data => console.log("Status da API:", data));</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="curl-tab">
+                            <h6 style="color: #111827; font-weight: 600;">Teste de Conectividade</h6>
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                                <pre><code>curl -X GET "https://crossxml.com.br/api/v1/health"</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Endpoints Reference -->
+            <div class="api-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list me-2" style="color: #8A05BE;"></i>3. Referência de Endpoints</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-borderless">
+                            <thead>
+                                <tr>
+                                    <th>Método</th>
+                                    <th>Endpoint</th>
+                                    <th>Descrição</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge" style="background: #dcfce7; color: #166534;">GET</span></td>
+                                    <td><code>/health</code></td>
+                                    <td>Verificar status da API</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge" style="background: #dbeafe; color: #1e40af;">POST</span></td>
+                                    <td><code>/jobs</code></td>
+                                    <td>Criar novo job de download</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge" style="background: #dcfce7; color: #166534;">GET</span></td>
+                                    <td><code>/jobs/{job_id}</code></td>
+                                    <td>Verificar status do job</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge" style="background: #dcfce7; color: #166534;">GET</span></td>
+                                    <td><code>/jobs/{job_id}/files</code></td>
+                                    <td>Listar arquivos do job</td>
+                                </tr>
+                                <tr>
+                                    <td><span class="badge" style="background: #dcfce7; color: #166534;">GET</span></td>
+                                    <td><code>/jobs/{job_id}/files/{filename}</code></td>
+                                    <td>Baixar arquivo XML específico</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Example Implementation -->
+            <div class="api-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-code me-2" style="color: #8A05BE;"></i>4. Exemplo Completo</h5>
+                </div>
+                <div class="card-body">
+                    <div class="nav nav-tabs mb-3" role="tablist">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#python-complete">
+                            <i class="fab fa-python me-1"></i> Python Completo
+                        </button>
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#javascript-complete">
+                            <i class="fab fa-js me-1"></i> JavaScript Completo
+                        </button>
+                    </div>
+
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="python-complete">
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                                <pre><code>import requests
+import time
+
+class CrossXMLAPI:
+    def __init__(self, api_key, api_secret, base_url="https://crossxml.com.br/api/v1"):
+        self.base_url = base_url
+        self.headers = {
+            'Content-Type': 'application/json',
+            'X-API-Key': api_key,
+            'X-API-Secret': api_secret
+        }
+    
+    def create_job(self, invoice_keys):
+        """Criar novo job de download"""
+        response = requests.post(f"{self.base_url}/jobs", 
+                               json={"invoice_keys": invoice_keys}, 
+                               headers=self.headers)
+        return response.json()
+    
+    def get_job_status(self, job_id):
+        """Obter status do job"""
+        response = requests.get(f"{self.base_url}/jobs/{job_id}", 
+                              headers=self.headers)
+        return response.json()
+    
+    def download_xml(self, job_id, filename, save_path="."):
+        """Baixar arquivo XML específico"""
+        response = requests.get(f"{self.base_url}/jobs/{job_id}/files/{filename}", 
+                              headers=self.headers)
+        
+        file_path = f"{save_path}/{filename}"
+        with open(file_path, 'wb') as f:
+            f.write(response.content)
+        return file_path
+
+# Exemplo de uso
+api = CrossXMLAPI(
+    api_key="api_xxxxxxxxxxxxxxxx",
+    api_secret="secret_xxxxxxxxxxxxxxxx"
+)
+
+# 1. Criar job
+job = api.create_job(["35250513516247000107550010000113401146202508"])
+print(f"Job criado: {job['job_id']}")
+
+# 2. Aguardar conclusão
+while True:
+    status = api.get_job_status(job['job_id'])
+    print(f"Status: {status['status']} - {status['progress']['percentage']}%")
+    
+    if status['status'] in ['completed', 'failed']:
+        break
+    
+    time.sleep(2)
+
+# 3. Baixar arquivos
+if status['status'] == 'completed':
+    for file_info in status['files']:
+        file_path = api.download_xml(job['job_id'], file_info['filename'])
+        print(f"XML baixado: {file_path}")
+</code></pre>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="javascript-complete">
+                            <div class="code-block">
+                                <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                                <pre><code>class CrossXMLAPI {
+    constructor(apiKey, apiSecret, baseUrl = "https://crossxml.com.br/api/v1") {
+        this.baseUrl = baseUrl;
+        this.headers = {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey,
+            'X-API-Secret': apiSecret
+        };
+    }
+
+    async criarJob(chavesXml) {
+        const response = await fetch(`${this.baseUrl}/jobs`, {
+            method: 'POST',
+            headers: this.headers,
+            body: JSON.stringify({ invoice_keys: chavesXml })
+        });
+        return await response.json();
+    }
+
+    async statusJob(jobId) {
+        const response = await fetch(`${this.baseUrl}/jobs/${jobId}`, {
+            headers: this.headers
+        });
+        return await response.json();
+    }
+
+    async baixarXml(jobId, nomeArquivo) {
+        const response = await fetch(`${this.baseUrl}/jobs/${jobId}/files/${nomeArquivo}`, {
+            headers: this.headers
+        });
+        return await response.blob();
+    }
+}
+
+// Exemplo de uso
+const api = new CrossXMLAPI(
+    "api_xxxxxxxxxxxxxxxx",
+    "secret_xxxxxxxxxxxxxxxx"
+);
+
+async function exemploDownload() {
+    // 1. Criar job
+    const job = await api.criarJob(["35250513516247000107550010000113401146202508"]);
+    console.log("Job criado:", job.job_id);
+
+    // 2. Aguardar conclusão
+    let status;
+    do {
+        status = await api.statusJob(job.job_id);
+        console.log(`Status: ${status.status} - ${status.progress.percentage}%`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    } while (status.status === "running");
+
+    // 3. Baixar arquivos
+    if (status.status === "completed") {
+        for (const arquivo of status.files) {
+            const blob = await api.baixarXml(job.job_id, arquivo.filename);
+            console.log(`XML baixado: ${arquivo.filename}`);
+        }
+    }
+}
+
+exemploDownload();</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Structure -->
+            <div class="api-card">
+                <div class="card-header">
+                    <h5><i class="fas fa-database me-2" style="color: #8A05BE;"></i>5. Estrutura de Resposta</h5>
+                </div>
+                <div class="card-body">
+                    <h6 style="color: #111827; font-weight: 600;">Resposta do Status do Job</h6>
+                    <div class="code-block">
+                        <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                        <pre><code>{
+    "job_id": "123e4567-e89b-12d3-a456-426614174000",
+    "status": "completed",
+    "progress": {
+        "total_keys": 1,
+        "processed": 1,
+        "successful": 1,
+        "failed": 0,
+        "percentage": 100.0
+    },
+    "files": [
+        {
+            "filename": "35250513516247000107550010000113401146202508.xml",
+            "size": 4165,
+            "download_url": "/api/v1/jobs/123.../files/352505..."
+        }
+    ],
+    "extracted_data": [
+        {
+            "chave_nf": "35250513516247000107550010000113401146202508",
+            "numero_nf": "11340",
+            "serie_nf": "1",
+            "data_emissao": "2025-06-19",
+            "valor_total": 1850.00,
+            "peso_bruto": 25.5,
+            "quantidade_volumes": 3,
+            "nome_emitente": "REAL SINALIZACAO LTDA",
+            "emitente_cidade": "JOINVILLE",
+            "emitente_uf": "SC",
+            "destinatario_nome": "CORSUL COMERCIO",
+            "destinatario_cidade": "SAO LUIS",
+            "destinatario_uf": "MA"
+        }
+    ]
+}</code></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Performance & Pricing -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="api-card performance-card">
+                        <div class="d-flex align-items-center mb-3">
+                            <div style="width: 48px; height: 48px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                <i class="fas fa-tachometer-alt" style="color: #22c55e; font-size: 1.2rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1" style="color: #111827; font-weight: 600;">Performance</h5>
+                                <p class="text-muted mb-0">Downloads otimizados</p>
+                            </div>
+                        </div>
+                        <ul class="list-unstyled mb-0">
+                            <li class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle me-2" style="color: #22c55e;"></i>
+                                <span>Tempo médio: 6-8 segundos por XML</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-2">
+                                <i class="fas fa-check-circle me-2" style="color: #22c55e;"></i>
+                                <span>Processamento em lote suportado</span>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <i class="fas fa-check-circle me-2" style="color: #22c55e;"></i>
+                                <span>Monitoramento em tempo real</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="api-card pricing-card">
+                        <div class="d-flex align-items-center mb-3">
+                            <div style="width: 48px; height: 48px; background: rgba(251, 191, 36, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                <i class="fas fa-coins" style="color: #fbbf24; font-size: 1.2rem;"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-1" style="color: #111827; font-weight: 600;">Preços</h5>
+                                <p class="text-muted mb-0">Cobrança por uso</p>
+                            </div>
+                        </div>
+                        <ul class="list-unstyled mb-0">
+                            <li class="d-flex align-items-center mb-2">
+                                <i class="fas fa-tag me-2" style="color: #fbbf24;"></i>
+                                <span>R$ 0,06 - 0,10 por XML</span>
+                            </li>
+                            <li class="d-flex align-items-center mb-2">
+                                <i class="fas fa-tag me-2" style="color: #fbbf24;"></i>
+                                <span>Desconto por volume</span>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <i class="fas fa-tag me-2" style="color: #fbbf24;"></i>
+                                <span>7 dias grátis para novos usuários</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action -->
+            <div class="footer-cta">
+                <h4 style="color: #111827; font-weight: 600; margin-bottom: 1rem;">Pronto para começar?</h4>
+                <p class="text-muted mb-4">Crie sua conta e gere suas credenciais da API</p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="/login" class="btn-cta">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Fazer Login
+                    </a>
+                    <a href="/registro" class="btn btn-outline-secondary" style="border-radius: 8px; padding: 1rem 2rem; font-weight: 500; text-decoration: none;">
+                        Criar Conta
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyCode(button) {
+            const codeBlock = button.nextElementSibling;
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                button.textContent = 'Copiado!';
+                setTimeout(() => {
+                    button.textContent = 'Copiar';
+                }, 2000);
+            });
+        }
+
+        // Bootstrap tab functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active from all tabs and panes
+                    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+                    document.querySelectorAll('.tab-pane').forEach(pane => {
+                        pane.classList.remove('show', 'active');
+                    });
+                    
+                    // Add active to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show target pane
+                    const target = document.querySelector(this.getAttribute('data-bs-target'));
+                    if (target) {
+                        target.classList.add('show', 'active');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

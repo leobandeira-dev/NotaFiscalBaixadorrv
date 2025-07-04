@@ -558,7 +558,7 @@ def login():
 @app.route('/guia-api')
 def guia_api():
     """Guia público de conexão da API"""
-    return render_template('guia_api.html')
+    return render_template('guia_api_public.html')
 
 @app.route('/logout')
 @login_required
