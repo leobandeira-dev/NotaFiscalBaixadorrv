@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Conexão API - CROSS XML Downloader PRO</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .content-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            margin: 2rem 0;
+            overflow: hidden;
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, #8A05BE 0%, #667eea 100%);
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+        }
+        
+        .step-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 2rem;
+        }
+        
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .step-number {
+            background: linear-gradient(135deg, #8A05BE, #667eea);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-right: 1rem;
+        }
+        
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            position: relative;
+            overflow-x: auto;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #8A05BE;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .copy-btn:hover {
+            background: #6d0499;
+        }
+        
+        .endpoint-table {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .endpoint-table th {
+            background: linear-gradient(135deg, #8A05BE, #667eea);
+            color: white;
+            border: none;
+            padding: 1rem;
+        }
+        
+        .endpoint-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .method-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        
+        .method-get { background: #d4edda; color: #155724; }
+        .method-post { background: #d1ecf1; color: #0c5460; }
+        
+        .warning-box {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .success-box {
+            background: linear-gradient(135deg, #d4edda, #a8e6a3);
+            border: 1px solid #a8e6a3;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .nav-link {
+            color: #8A05BE !important;
+            font-weight: 500;
+        }
+        
+        .nav-link:hover {
+            color: #6d0499 !important;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #8A05BE, #667eea);
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #6d0499, #5a6fd8);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-download text-primary me-2"></i>
+                CROSS XML
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Início</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/precos">Preços</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/guia-api">API</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container" style="margin-top: 100px;">
+        <div class="content-container">
+            <!-- Hero Section -->
+            <div class="hero-section">
+                <div class="container">
+                    <h1 class="display-4 fw-bold mb-3">
+                        <i class="fas fa-code me-3"></i>
+                        Guia de Conexão API
+                    </h1>
+                    <p class="lead">Integre seu sistema com a API REST do CROSS XML para downloads automatizados</p>
+                    <div class="row justify-content-center mt-4">
+                        <div class="col-md-3 text-center">
+                            <h3 class="h5 mb-1">Versão</h3>
+                            <span class="badge bg-light text-dark fs-6">v1.0</span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h3 class="h5 mb-1">Performance</h3>
+                            <span class="badge bg-light text-dark fs-6">~7s por XML</span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h3 class="h5 mb-1">Rate Limit</h3>
+                            <span class="badge bg-light text-dark fs-6">100/min</span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <h3 class="h5 mb-1">Formato</h3>
+                            <span class="badge bg-light text-dark fs-6">JSON + XML</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="container py-5">
+                <!-- Prerequisites -->
+                <div class="step-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="step-number">1</div>
+                            <h3 class="mb-0">Pré-requisitos</h3>
+                        </div>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Conta ativa no CROSS XML</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Créditos disponíveis (R$ 0,06-0,10 por XML)</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success me-2"></i> Credenciais da API geradas</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Generate Credentials -->
+                <div class="step-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="step-number">2</div>
+                            <h3 class="mb-0">Gerar Credenciais da API</h3>
+                        </div>
+                        <p>Acesse seu painel administrativo para gerar suas credenciais de acesso:</p>
+                        <ol>
+                            <li>Faça login em sua conta</li>
+                            <li>Vá para a seção <strong>"API & Integração"</strong></li>
+                            <li>Clique em <strong>"Gerar Credenciais"</strong></li>
+                            <li>Copie e guarde com segurança sua API Key e Secret</li>
+                        </ol>
+                        
+                        <div class="warning-box">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Importante:</strong> Mantenha suas credenciais seguras - elas dão acesso total à sua conta!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Connection Test -->
+                <div class="step-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="step-number">3</div>
+                            <h3 class="mb-0">Teste de Conectividade</h3>
+                        </div>
+                        
+                        <h5>Python</h5>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                            <pre><code>import requests
+
+# Configure sua URL base
+BASE_URL = "https://sua-aplicacao.replit.app/api/v1"
+
+# Teste de conectividade
+response = requests.get(f"{BASE_URL}/health")
+print("Status da API:", response.json())</code></pre>
+                        </div>
+
+                        <h5>JavaScript/Node.js</h5>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                            <pre><code>const BASE_URL = "https://sua-aplicacao.replit.app/api/v1";
+
+// Teste de conectividade
+fetch(`${BASE_URL}/health`)
+  .then(response => response.json())
+  .then(data => console.log("Status da API:", data));</code></pre>
+                        </div>
+
+                        <h5>cURL</h5>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                            <pre><code>curl -X GET "https://sua-aplicacao.replit.app/api/v1/health"</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- First Download -->
+                <div class="step-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="step-number">4</div>
+                            <h3 class="mb-0">Primeiro Download de XML</h3>
+                        </div>
+                        
+                        <h5>Python - Exemplo Completo</h5>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                            <pre><code>import requests
+import json
+import time
+
+class CrossXMLAPI:
+    def __init__(self, api_key, api_secret, base_url):
+        self.api_key = api_key
+        self.api_secret = api_secret
+        self.base_url = base_url
+        self.headers = {
+            'Content-Type': 'application/json',
+            'X-API-Key': api_key,
+            'X-API-Secret': api_secret
+        }
+    
+    def criar_job(self, chaves_xml):
+        """Cria um job de download para as chaves fornecidas"""
+        url = f"{self.base_url}/jobs"
+        data = {"invoice_keys": chaves_xml}
+        
+        response = requests.post(url, json=data, headers=self.headers)
+        return response.json()
+    
+    def status_job(self, job_id):
+        """Verifica o status de um job"""
+        url = f"{self.base_url}/jobs/{job_id}"
+        response = requests.get(url, headers=self.headers)
+        return response.json()
+    
+    def baixar_xml(self, job_id, nome_arquivo, pasta_destino="./"):
+        """Baixa um arquivo XML específico"""
+        url = f"{self.base_url}/jobs/{job_id}/files/{nome_arquivo}"
+        response = requests.get(url, headers=self.headers)
+        
+        if response.status_code == 200:
+            caminho = f"{pasta_destino}{nome_arquivo}"
+            with open(caminho, 'wb') as f:
+                f.write(response.content)
+            return caminho
+        return None
+
+# Exemplo de uso
+api = CrossXMLAPI(
+    api_key="sua_api_key_aqui",
+    api_secret="sua_api_secret_aqui", 
+    base_url="https://sua-aplicacao.replit.app/api/v1"
+)
+
+# 1. Criar job com chaves XML
+chaves = ["35250513516247000107550010000113401146202508"]
+job = api.criar_job(chaves)
+job_id = job["job_id"]
+print(f"Job criado: {job_id}")
+
+# 2. Aguardar conclusão
+while True:
+    status = api.status_job(job_id)
+    print(f"Status: {status['status']} - Progresso: {status['progress']['percentage']}%")
+    
+    if status["status"] == "completed":
+        break
+    elif status["status"] == "failed":
+        print("Job falhou:", status.get("errors"))
+        break
+    
+    time.sleep(2)
+
+# 3. Baixar arquivos
+for arquivo in status["files"]:
+    caminho = api.baixar_xml(job_id, arquivo["filename"])
+    print(f"XML baixado: {caminho}")</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API Endpoints -->
+                <div class="step-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="step-number">5</div>
+                            <h3 class="mb-0">Endpoints Principais</h3>
+                        </div>
+                        
+                        <div class="table-responsive endpoint-table">
+                            <table class="table table-striped mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Método</th>
+                                        <th>Endpoint</th>
+                                        <th>Descrição</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span class="method-badge method-get">GET</span></td>
+                                        <td><code>/health</code></td>
+                                        <td>Status da API</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="method-badge method-post">POST</span></td>
+                                        <td><code>/jobs</code></td>
+                                        <td>Criar job de download</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="method-badge method-get">GET</span></td>
+                                        <td><code>/jobs/{job_id}</code></td>
+                                        <td>Status do job</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="method-badge method-get">GET</span></td>
+                                        <td><code>/jobs</code></td>
+                                        <td>Listar todos os jobs</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="method-badge method-get">GET</span></td>
+                                        <td><code>/jobs/{job_id}/files</code></td>
+                                        <td>Listar arquivos do job</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="method-badge method-get">GET</span></td>
+                                        <td><code>/jobs/{job_id}/files/{filename}</code></td>
+                                        <td>Baixar arquivo XML</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Response Structure -->
+                <div class="step-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="step-number">6</div>
+                            <h3 class="mb-0">Estrutura de Resposta</h3>
+                        </div>
+                        
+                        <h5>Dupla Funcionalidade: JSON + XML</h5>
+                        <p>A API retorna <strong>ambos os formatos</strong> para cada chave processada:</p>
+                        <ul>
+                            <li><strong>Dados JSON Estruturados:</strong> 19 campos extraídos automaticamente</li>
+                            <li><strong>Arquivos XML Originais:</strong> Documentos fiscais completos (~4KB cada)</li>
+                        </ul>
+
+                        <h5>Exemplo de Resposta Job Status</h5>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                            <pre><code>{
+    "job_id": "123e4567-e89b-12d3-a456-426614174000",
+    "status": "completed",
+    "progress": {
+        "total_keys": 1,
+        "processed": 1,
+        "successful": 1,
+        "failed": 0,
+        "percentage": 100.0
+    },
+    "files": [
+        {
+            "filename": "35250513516247000107550010000113401146202508.xml",
+            "size": 4165,
+            "download_url": "/api/v1/jobs/123.../files/352505..."
+        }
+    ],
+    "extracted_data": [
+        {
+            "chave_nf": "35250513516247000107550010000113401146202508",
+            "numero_nf": "11340",
+            "serie_nf": "1",
+            "data_emissao": "2025-06-19",
+            "valor_total": 1850.00,
+            "peso_bruto": 25.5,
+            "quantidade_volumes": 3,
+            "nome_emitente": "REAL SINALIZACAO LTDA",
+            "emitente_cidade": "JOINVILLE",
+            "emitente_uf": "SC",
+            "destinatario_nome": "CORSUL COMERCIO",
+            "destinatario_cidade": "SAO LUIS",
+            "destinatario_uf": "MA"
+        }
+    ]
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Costs and Limits -->
+                <div class="step-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="step-number">7</div>
+                            <h3 class="mb-0">Custos e Limites</h3>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Custos por Operação</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-dollar-sign text-success me-2"></i> Download XML: R$ 0,06 - 0,10 por chave</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i> Consulta Status: Gratuito</li>
+                                    <li><i class="fas fa-check-circle text-success me-2"></i> Download Arquivo: Gratuito</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Limites e Rate Limiting</h5>
+                                <ul class="list-unstyled">
+                                    <li><i class="fas fa-tachometer-alt text-info me-2"></i> Rate Limit: 100 req/min</li>
+                                    <li><i class="fas fa-clock text-info me-2"></i> Timeout: 60s por chave</li>
+                                    <li><i class="fas fa-layer-group text-info me-2"></i> Jobs Simultâneos: Máximo 5</li>
+                                    <li><i class="fas fa-list text-info me-2"></i> Máximo: 1000 chaves por job</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Handling -->
+                <div class="step-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="step-number">8</div>
+                            <h3 class="mb-0">Tratamento de Erros</h3>
+                        </div>
+                        
+                        <h5>Códigos de Status HTTP</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li><span class="badge bg-success me-2">200</span> Sucesso</li>
+                                    <li><span class="badge bg-warning me-2">400</span> Erro na requisição</li>
+                                    <li><span class="badge bg-danger me-2">401</span> Não autorizado</li>
+                                    <li><span class="badge bg-danger me-2">403</span> Sem créditos</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li><span class="badge bg-secondary me-2">404</span> Não encontrado</li>
+                                    <li><span class="badge bg-warning me-2">429</span> Rate limit excedido</li>
+                                    <li><span class="badge bg-danger me-2">500</span> Erro interno</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h5>Exemplo de Resposta de Erro</h5>
+                        <div class="code-block">
+                            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+                            <pre><code>{
+    "error": "insufficient_credits",
+    "message": "Créditos insuficientes para processar 5 chaves. Saldo atual: 2",
+    "details": {
+        "required_credits": 5,
+        "current_balance": 2,
+        "cost_per_key": 0.10
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Integration Tips -->
+                <div class="step-card card">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="step-number">9</div>
+                            <h3 class="mb-0">Dicas de Integração</h3>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="fas fa-database text-primary me-2"></i> <strong>Cache de Dados:</strong> Armazene dados extraídos para evitar reprocessamento</li>
+                                    <li class="mb-2"><i class="fas fa-redo text-primary me-2"></i> <strong>Retry Logic:</strong> Implemente tentativas automáticas para falhas temporárias</li>
+                                    <li class="mb-2"><i class="fas fa-clock text-primary me-2"></i> <strong>Polling Inteligente:</strong> Use intervalos progressivos para verificar status</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="fas fa-layer-group text-primary me-2"></i> <strong>Batch Processing:</strong> Processe chaves em lotes para melhor performance</li>
+                                    <li class="mb-2"><i class="fas fa-exclamation-triangle text-primary me-2"></i> <strong>Error Handling:</strong> Trate todos os códigos de erro adequadamente</li>
+                                    <li class="mb-2"><i class="fas fa-shield-alt text-primary me-2"></i> <strong>Segurança:</strong> Mantenha credenciais em variáveis de ambiente</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Message -->
+                <div class="success-box text-center">
+                    <i class="fas fa-check-circle fs-1 text-success mb-3"></i>
+                    <h4>API Funcionando Perfeitamente!</h4>
+                    <p class="mb-0">Downloads otimizados em ~7-8 segundos por chave com performance excepcional.</p>
+                </div>
+
+                <!-- CTA -->
+                <div class="text-center mt-4">
+                    <a href="/login" class="btn btn-primary btn-lg me-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Acessar Painel
+                    </a>
+                    <a href="/precos" class="btn btn-outline-primary btn-lg">
+                        <i class="fas fa-tags me-2"></i>
+                        Ver Preços
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-4">
+        <div class="container">
+            <p class="text-white-50 mb-0">© 2025 CROSS XML Downloader PRO. API v1.0 - Performance otimizada.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyCode(button) {
+            const codeBlock = button.nextElementSibling.querySelector('code');
+            const text = codeBlock.textContent;
+            
+            navigator.clipboard.writeText(text).then(function() {
+                button.textContent = 'Copiado!';
+                button.style.background = '#28a745';
+                
+                setTimeout(function() {
+                    button.textContent = 'Copiar';
+                    button.style.background = '#8A05BE';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
