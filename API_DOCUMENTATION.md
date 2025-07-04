@@ -1,14 +1,40 @@
-# XML Downloader API
+# CROSS XML Downloader API v2.0
 
 ## Visão Geral
 
-A API REST do XML Downloader permite integração automatizada para download em lote de arquivos XML de notas fiscais. A API oferece endpoints para criar jobs de download, monitorar progresso e baixar arquivos XML individualmente.
+A API REST do CROSS XML permite integração automatizada para download em lote de arquivos XML de notas fiscais brasileiras. A API oferece endpoints para criar jobs de download, monitorar progresso, baixar arquivos XML e acessar dados estruturados extraídos automaticamente.
 
 **Base URL:** `https://sua-aplicacao.replit.app/api/v1`
 
+**Versão:** 2.0 (Julho 2025)
+
+**Performance:** Download otimizado em ~7.4 segundos por chave
+
+## Dados Extraídos Automaticamente
+
+Para cada chave de 44 dígitos processada, a API extrai e estrutura **19 campos de dados**:
+
+### Dados Básicos da NFe
+- Chave da nota (44 dígitos)
+- Número e série da nota
+- Data de emissão
+- Valor total (R$)
+
+### Dados do Emitente/Remetente
+- CNPJ, razão social
+- Cidade, UF, endereço, CEP
+
+### Dados do Destinatário
+- CNPJ/CPF, razão social
+- Cidade, UF, endereço, CEP
+
+### Dados de Transporte
+- Peso bruto (kg)
+- Quantidade de volumes
+
 ## Autenticação
 
-Atualmente a API não requer autenticação. Para uso em produção, recomenda-se implementar autenticação por API key.
+A API suporta autenticação via API Key para usuários registrados. Acesse `/api-docs` na interface web para gerar suas credenciais.
 
 ## Endpoints
 
@@ -22,9 +48,9 @@ Verifica se a API está funcionando.
 ```json
 {
     "status": "healthy",
-    "version": "1.0",
-    "service": "XML Downloader API",
-    "timestamp": "2025-06-19T04:00:00.000000"
+    "version": "2.0",
+    "title": "CROSS XML Downloader API",
+    "timestamp": "2025-07-04T21:35:00.000000"
 }
 ```
 
@@ -158,18 +184,55 @@ Baixa um arquivo XML específico de um job.
 
 Testa a conectividade do sistema de automação.
 
-**Endpoint:** `POST /api/v1/test`
+**Endpoint:** `GET /api/v1/test-connection`
 
 **Resposta:**
 ```json
 {
     "status": "success",
     "message": "Connection test completed",
-    "details": {
-        "success": true,
-        "response_time": "2.5s"
-    },
-    "timestamp": "2025-06-19T04:00:00.000000"
+    "timestamp": "2025-07-04T21:38:00.000000"
+}
+```
+
+## Exemplo Completo de Dados Retornados
+
+Quando você processa uma chave como `42250485179240000239550020004175361171503396`, recebe:
+
+### 1. Arquivo XML Original (4.165 bytes)
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<nfeProc versao="4.00" xmlns="http://www.portalfiscal.inf.br/nfe">
+  <NFe>
+    <infNFe Id="NFe42250485179240000239550020004175361171503396">
+      <!-- Dados completos da NFe -->
+    </infNFe>
+  </NFe>
+</nfeProc>
+```
+
+### 2. Dados Estruturados Extraídos
+```json
+{
+  "invoice_key": "42250485179240000239550020004175361171503396",
+  "numero_nf": "417536",
+  "serie_nf": "2", 
+  "data_emissao": "2025-04-17",
+  "valor_total": 9150.00,
+  "cnpj_emitente": "85179240000239",
+  "nome_emitente": "CORSUL COMERCIO E REPRESENTACOES DO SUL LTDA",
+  "remetente_cidade": "JOINVILLE",
+  "remetente_uf": "SC",
+  "remetente_endereco": "RUA GUARUJA, 434, ITAUM",
+  "remetente_cep": "89210300",
+  "destinatario_cnpj_cpf": "00655209000193",
+  "destinatario_razao": "CONSORCIO DE ALUMINIO DO MARANHAO",
+  "destinatario_cidade": "SAO LUIS",
+  "destinatario_uf": "MA",
+  "destinatario_endereco": "RODOVIA BR 135, SN, DISTRITO INDUSTRIAL",
+  "destinatario_cep": "65095050",
+  "peso_bruto": 16.2,
+  "quantidade_volumes": 2
 }
 ```
 
@@ -199,25 +262,43 @@ Os jobs podem ter os seguintes status:
 - **`FILE_NOT_FOUND`**: Arquivo não encontrado
 - **`INTERNAL_ERROR`**: Erro interno do servidor
 
+## Estrutura de Preços via API
+
+### Créditos XML
+- **Starter**: 100 créditos por R$ 10,00 (R$ 0,10/XML)
+- **Professional**: 500 créditos por R$ 40,00 (R$ 0,08/XML)
+- **Enterprise**: 1.000 créditos por R$ 70,00 (R$ 0,07/XML)
+- **Corporate**: 2.000 créditos por R$ 120,00 (R$ 0,06/XML)
+
+### Recursos Inclusos
+- **DANFE**: Sempre gratuito
+- **Dados Estruturados**: Inclusos em cada processamento
+- **API Unlimited**: Sem limite de requisições
+
 ## Exemplos de Uso
 
-### Python
+### Python com Dados Estruturados
 
 ```python
 import requests
 import time
 
+# Configuração
+BASE_URL = 'https://sua-app.replit.app/api/v1'
+INVOICE_KEYS = ['42250485179240000239550020004175361171503396']
+
 # Criar job
-response = requests.post('https://sua-app.replit.app/api/v1/jobs', json={
-    'invoice_keys': ['35250162954987000130550020001854371034511150']
+response = requests.post(f'{BASE_URL}/jobs', json={
+    'invoice_keys': INVOICE_KEYS
 })
 
 job_data = response.json()
 job_id = job_data['job_id']
+print(f"Job criado: {job_id}")
 
-# Monitorar progresso
+# Monitorar progresso (otimizado em ~7.4s)
 while True:
-    status_response = requests.get(f'https://sua-app.replit.app/api/v1/jobs/{job_id}')
+    status_response = requests.get(f'{BASE_URL}/jobs/{job_id}')
     status = status_response.json()
     
     print(f"Status: {status['status']}, Progresso: {status['progress']['percentage']}%")
@@ -225,11 +306,20 @@ while True:
     if status['status'] in ['completed', 'failed']:
         break
     
-    time.sleep(5)
+    time.sleep(2)  # Verificação a cada 2 segundos
 
-# Baixar arquivos
+# Processar resultados
 if status['status'] == 'completed':
-    files_response = requests.get(f'https://sua-app.replit.app/api/v1/jobs/{job_id}/files')
+    # 1. Dados estruturados no status do job
+    xml_data = status.get('xml_data', {})
+    print(f"NF: {xml_data.get('numero_nf')}")
+    print(f"Emitente: {xml_data.get('nome_emitente')}")
+    print(f"Valor: R$ {xml_data.get('valor_total')}")
+    print(f"Peso: {xml_data.get('peso_bruto')} kg")
+    print(f"Volumes: {xml_data.get('quantidade_volumes')}")
+    
+    # 2. Baixar arquivo XML original
+    files_response = requests.get(f'{BASE_URL}/jobs/{job_id}/files')
     files = files_response.json()['files']
     
     for file_info in files:
@@ -238,7 +328,7 @@ if status['status'] == 'completed':
         with open(file_info['filename'], 'wb') as f:
             f.write(file_response.content)
         
-        print(f"Arquivo baixado: {file_info['filename']}")
+        print(f"XML baixado: {file_info['filename']} ({file_info['size']} bytes)")
 ```
 
 ### cURL
