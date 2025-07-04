@@ -430,7 +430,7 @@
                                 <i class="fas fa-file-archive me-2"></i>
                                 Arquivos Baixados ({{ job.files|length }})
                             </h6>
-                            {% for file in job.files[:5] %}
+                            {% for file in job.files.keys() %}
                             <div class="file-item">
                                 <span class="file-name">{{ file }}</span>
                                 <div class="file-actions">
