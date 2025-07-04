@@ -515,7 +515,7 @@
                         <p>API REST com documentação completa e exemplos práticos</p>
                         <ul class="feature-list">
                             <li><i class="fas fa-check-circle"></i>Endpoints RESTful padronizados</li>
-                            <li><i class="fas fa-check-circle"></i>Autenticação via API Key + Secret</li>
+                            <li><i class="fas fa-check-circle"></i>Autenticação simples via API Key única</li>
                             <li><i class="fas fa-check-circle"></i>Exemplos em Python, JavaScript e cURL</li>
                             <li><i class="fas fa-check-circle"></i>Suporte técnico especializado</li>
                         </ul>
@@ -556,9 +556,8 @@
                     <div class="col-md-6">
                         <h6 style="color: var(--gray-900); font-weight: 600;">Autenticação</h6>
                         <div class="code-block">
-                            <pre>X-API-Key: api_xxxxxxxx
-X-API-Secret: secret_xxxxxxxx</pre>
-                            <button class="copy-btn" onclick="copyToClipboard('X-API-Key: api_xxxxxxxx\\nX-API-Secret: secret_xxxxxxxx')">Copiar</button>
+                            <pre>X-API-Key: api_xxxxxxxx</pre>
+                            <button class="copy-btn" onclick="copyToClipboard('X-API-Key: api_xxxxxxxx')">Copiar</button>
                         </div>
                     </div>
                 </div>
@@ -692,12 +691,11 @@ fetch(`${BASE_URL}/health`)
 import time
 
 class CrossXMLAPI:
-    def __init__(self, api_key, api_secret, base_url="https://crossxml.com.br/api/v1"):
+    def __init__(self, api_key, base_url="https://crossxml.com.br/api/v1"):
         self.base_url = base_url
         self.headers = {
             'Content-Type': 'application/json',
-            'X-API-Key': api_key,
-            'X-API-Secret': api_secret
+            'X-API-Key': api_key
         }
     
     def create_job(self, invoice_keys):
@@ -725,8 +723,7 @@ class CrossXMLAPI:
 
 # Exemplo de uso
 api = CrossXMLAPI(
-    api_key="api_xxxxxxxxxxxxxxxx",
-    api_secret="secret_xxxxxxxxxxxxxxxx"
+    api_key="api_xxxxxxxxxxxxxxxx"
 )
 
 # 1. Criar job
@@ -756,12 +753,11 @@ if status['status'] == 'completed':
                             <div class="code-block">
                                 <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
                                 <pre><code>class CrossXMLAPI {
-    constructor(apiKey, apiSecret, baseUrl = "https://crossxml.com.br/api/v1") {
+    constructor(apiKey, baseUrl = "https://crossxml.com.br/api/v1") {
         this.baseUrl = baseUrl;
         this.headers = {
             'Content-Type': 'application/json',
-            'X-API-Key': apiKey,
-            'X-API-Secret': apiSecret
+            'X-API-Key': apiKey
         };
     }
 
@@ -791,8 +787,7 @@ if status['status'] == 'completed':
 
 // Exemplo de uso
 const api = new CrossXMLAPI(
-    "api_xxxxxxxxxxxxxxxx",
-    "secret_xxxxxxxxxxxxxxxx"
+    "api_xxxxxxxxxxxxxxxx"
 );
 
 async function exemploDownload() {
