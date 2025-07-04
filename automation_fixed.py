@@ -112,11 +112,11 @@ class InvoiceDownloader:
             
             # Try different strategies to find and interact with input field
             selectors = [
-                (By.CSS_SELECTOR, 'input[type="text"]'),
+                (By.ID, 'searchTxt'),  # Primary input field from the new layout
+                (By.CSS_SELECTOR, 'input[name="searchTxt"]'),
                 (By.CSS_SELECTOR, 'input[placeholder*="Chave"]'),
+                (By.CSS_SELECTOR, 'input[type="text"]'),
                 (By.CSS_SELECTOR, 'input[placeholder*="chave"]'),
-                (By.NAME, 'chave'),
-                (By.ID, 'chave'),
                 (By.XPATH, "//input[@type='text']")
             ]
             
@@ -174,22 +174,27 @@ class InvoiceDownloader:
                 except Exception as js_error:
                     raise Exception(f"Failed to enter invoice key: {e}, JavaScript fallback also failed: {js_error}")
             
-            # Environment-optimized submit button wait for new green BUSCAR button
+            # Environment-optimized submit button wait for new green BUSCAR button (it's an <a> tag now)
             logger.info(f"[Job {job_id}] Looking for new green BUSCAR button...")
             submit_button = None
-            for selector in [
+            for i, selector in enumerate([
+                (By.ID, 'searchBtn'),  # Primary search button - it's a link now
+                (By.XPATH, "//a[contains(text(), 'BUSCAR')]"),
+                (By.XPATH, "//a[@id='searchBtn']"),
+                (By.CSS_SELECTOR, "a[id='searchBtn']"),
+                (By.XPATH, "//*[contains(text(), 'BUSCAR')]"),
                 (By.XPATH, "//button[contains(text(), 'BUSCAR')]"),
-                (By.XPATH, "//*[contains(text(), 'BUSCAR') and (@type='button' or @type='submit')]"),
-                (By.CSS_SELECTOR, "button[class*='btn']"),
-                (By.CSS_SELECTOR, "input[type='submit']"),
-                (By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]")
-            ]:
+                (By.CSS_SELECTOR, "a[href='#']")
+            ], 1):
                 try:
+                    logger.info(f"[Job {job_id}] Trying submit selector {i}: {selector}")
                     submit_button = WebDriverWait(self.driver, timeouts['element_wait']).until(
                         EC.element_to_be_clickable(selector)
                     )
+                    logger.info(f"[Job {job_id}] Found submit button with selector {i}")
                     break
-                except:
+                except Exception as e:
+                    logger.info(f"[Job {job_id}] Submit selector {i} failed: {str(e)[:100]}")
                     continue
             
             if not submit_button:
