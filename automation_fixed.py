@@ -217,23 +217,109 @@ class InvoiceDownloader:
                     from selenium.webdriver.common.action_chains import ActionChains
                     ActionChains(self.driver).move_to_element(submit_button).click().perform()
             
-            # Wait for the options div to become visible (new site behavior)
-            logger.info(f"[Job {job_id}] Waiting for options div to appear...")
+            # Wait for the results to appear with multiple strategies
+            logger.info(f"[Job {job_id}] Waiting for search results...")
+            
+            # Strategy 1: Wait for options div to become visible
+            options_div_found = False
             try:
-                options_div = WebDriverWait(self.driver, timeouts['download_poll']).until(
+                logger.info(f"[Job {job_id}] Trying to find options div...")
+                options_div = WebDriverWait(self.driver, 8).until(
                     EC.visibility_of_element_located((By.ID, "optionsDiv"))
                 )
                 logger.info(f"[Job {job_id}] Options div is now visible")
+                options_div_found = True
             except Exception as e:
-                logger.warning(f"[Job {job_id}] Options div not found: {e}")
-                # Fallback - wait a bit and proceed
+                logger.info(f"[Job {job_id}] Options div not visible yet: {str(e)[:100]}")
+            
+            # Strategy 2: Wait for any XML-related content to appear
+            if not options_div_found:
+                logger.info(f"[Job {job_id}] Checking for XML content in page...")
+                max_attempts = 10
+                for attempt in range(max_attempts):
+                    try:
+                        page_content = self.driver.page_source.lower()
+                        if 'baixar xml' in page_content or 'downloadxmlbtn' in page_content:
+                            logger.info(f"[Job {job_id}] XML content detected in page after {attempt + 1} attempts")
+                            options_div_found = True
+                            break
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.warning(f"[Job {job_id}] Error checking page content: {e}")
+                        break
+            
+            # Strategy 3: Wait for URL change or specific elements
+            if not options_div_found:
+                logger.info(f"[Job {job_id}] Waiting for page changes...")
                 time.sleep(timeouts['download_wait'])
-                logger.info(f"[Job {job_id}] Proceeding with fallback wait")
+                try:
+                    # Check if page has changed
+                    current_url = self.driver.current_url
+                    page_title = self.driver.title
+                    logger.info(f"[Job {job_id}] Current state - URL: {current_url}, Title: {page_title}")
+                except Exception as e:
+                    logger.warning(f"[Job {job_id}] Could not check page state: {e}")
+            
+            # Strategy 4: Force show options div and populate with invoice key
+            if not options_div_found:
+                logger.info(f"[Job {job_id}] Forcing options div to appear...")
+                try:
+                    # Force the options div to be visible and populate the disabled input
+                    self.driver.execute_script("""
+                        var optionsDiv = document.getElementById('optionsDiv');
+                        var chaveDsd = document.getElementById('chaveDsd');
+                        if (optionsDiv) {
+                            optionsDiv.style.display = 'block';
+                            console.log('Options div forced to visible');
+                        }
+                        if (chaveDsd) {
+                            chaveDsd.value = arguments[0];
+                            console.log('Chave populated in disabled field');
+                        }
+                    """, invoice_key)
+                    
+                    time.sleep(2)
+                    
+                    # Verify if options div is now visible
+                    options_div = self.driver.find_element(By.ID, "optionsDiv")
+                    if options_div.is_displayed():
+                        logger.info(f"[Job {job_id}] Options div successfully forced to visible")
+                        options_div_found = True
+                    else:
+                        logger.info(f"[Job {job_id}] Options div still not visible after forcing")
+                        
+                except Exception as e:
+                    logger.info(f"[Job {job_id}] Error forcing options div: {e}")
             
             logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
+            logger.info(f"[Job {job_id}] Options div found: {options_div_found}")
             
-            # Additional wait to ensure results are fully loaded
-            time.sleep(2)
+            # If options div still not found, try one more forced approach
+            if not options_div_found:
+                logger.info(f"[Job {job_id}] Final attempt: forcing XML button visibility...")
+                try:
+                    # Force all relevant elements to be visible
+                    self.driver.execute_script("""
+                        // Force options div visible
+                        var optionsDiv = document.getElementById('optionsDiv');
+                        if (optionsDiv) {
+                            optionsDiv.style.display = 'block';
+                            optionsDiv.style.visibility = 'visible';
+                        }
+                        
+                        // Force download button visible
+                        var xmlBtn = document.getElementById('downloadXmlBtn');
+                        if (xmlBtn) {
+                            xmlBtn.style.display = 'block';
+                            xmlBtn.style.visibility = 'visible';
+                        }
+                        
+                        return 'Elements forced visible';
+                    """)
+                    time.sleep(1)
+                    logger.info(f"[Job {job_id}] Elements forced to visible via JavaScript")
+                except Exception as e:
+                    logger.info(f"[Job {job_id}] Final force attempt failed: {e}")
             
             # Find XML download button in new layout (red "Baixar XML" button)
             logger.info(f"[Job {job_id}] Looking for XML download button in new layout...")
@@ -281,6 +367,193 @@ class InvoiceDownloader:
                     continue
             
             if not xml_button:
+                # Final attempt: Use browser search function to locate button text
+                logger.info(f"[Job {job_id}] Final attempt: Using browser search to locate 'Baixar XML' button...")
+                try:
+                    # First, use Ctrl+F to open browser search
+                    from selenium.webdriver.common.keys import Keys
+                    from selenium.webdriver.common.action_chains import ActionChains
+                    
+                    # Open browser search with Ctrl+F
+                    actions = ActionChains(self.driver)
+                    actions.key_down(Keys.CONTROL).send_keys('f').key_up(Keys.CONTROL).perform()
+                    time.sleep(1)
+                    
+                    # Type "Baixar XML" in search box
+                    actions.send_keys('Baixar XML').perform()
+                    time.sleep(1)
+                    
+                    # Press Enter to navigate to found text
+                    actions.send_keys(Keys.ENTER).perform()
+                    time.sleep(1)
+                    
+                    # Close search with Escape
+                    actions.send_keys(Keys.ESCAPE).perform()
+                    time.sleep(1)
+                    
+                    logger.info(f"[Job {job_id}] Browser search completed")
+                    
+                    # Now try JavaScript approach to find and click the highlighted element
+                    result = self.driver.execute_script("""
+                        // Force options div visible first
+                        var optionsDiv = document.getElementById('optionsDiv');
+                        if (optionsDiv) {
+                            optionsDiv.style.display = 'block';
+                            optionsDiv.style.visibility = 'visible';
+                        }
+                        
+                        // Try to find exact "Baixar XML" text in all elements
+                        var walker = document.createTreeWalker(
+                            document.body,
+                            NodeFilter.SHOW_TEXT,
+                            null,
+                            false
+                        );
+                        
+                        var textNode;
+                        while (textNode = walker.nextNode()) {
+                            if (textNode.textContent.trim() === 'Baixar XML') {
+                                var element = textNode.parentNode;
+                                // Go up the DOM tree to find clickable element
+                                while (element && element !== document.body) {
+                                    if (element.tagName === 'BUTTON' || element.tagName === 'A' || 
+                                        element.onclick || element.getAttribute('onclick') ||
+                                        element.style.cursor === 'pointer') {
+                                        element.click();
+                                        return 'XML button clicked via text walker';
+                                    }
+                                    element = element.parentNode;
+                                }
+                            }
+                        }
+                        
+                        // Alternative: Look for any clickable element containing "Baixar XML"
+                        var clickableElements = document.querySelectorAll('button, a, div[onclick], span[onclick], *[style*="cursor:pointer"], *[style*="cursor: pointer"]');
+                        for (var i = 0; i < clickableElements.length; i++) {
+                            var elem = clickableElements[i];
+                            var text = elem.textContent || elem.innerText || '';
+                            if (text.trim() === 'Baixar XML') {
+                                elem.click();
+                                return 'XML button clicked via clickable search';
+                            }
+                        }
+                        
+                        // Last resort: try to trigger any element with "xml" in its attributes
+                        var allElements = document.getElementsByTagName('*');
+                        for (var j = 0; j < allElements.length; j++) {
+                            var el = allElements[j];
+                            var attrs = el.attributes;
+                            for (var k = 0; k < attrs.length; k++) {
+                                if (attrs[k].value && attrs[k].value.toLowerCase().includes('xml')) {
+                                    var elText = el.textContent || el.innerText || '';
+                                    if (elText.toLowerCase().includes('baixar')) {
+                                        el.click();
+                                        return 'XML button clicked via attribute search';
+                                    }
+                                }
+                            }
+                        }
+                        
+                        return 'No XML button found after search';
+                    """)
+                    
+                    if 'clicked' in result.lower():
+                        logger.info(f"[Job {job_id}] JavaScript click executed: {result}")
+                        
+                        # Wait for download or redirect
+                        time.sleep(3)
+                        
+                        # Enhanced post-click verification
+                        try:
+                            current_url = self.driver.current_url
+                            logger.info(f"[Job {job_id}] URL after JS click: {current_url}")
+                            
+                            # Wait longer for potential redirect or content load
+                            time.sleep(5)
+                            
+                            # Check multiple indicators of success
+                            success_indicators = []
+                            
+                            # 1. Check if URL changed (might indicate download)
+                            new_url = self.driver.current_url
+                            if new_url != current_url:
+                                success_indicators.append(f"URL changed to {new_url}")
+                            
+                            # 2. Check page source for XML content
+                            try:
+                                page_source = self.driver.page_source
+                                
+                                # Look for XML download dialog or content
+                                if any(indicator in page_source.lower() for indicator in ['download', 'salvando', 'xml baixado', 'arquivo']):
+                                    success_indicators.append("Download dialog detected")
+                                
+                                # Try to extract XML from current page
+                                xml_content = self.extract_xml_from_page(page_source)
+                                if xml_content and len(xml_content) > 100:  # Ensure meaningful XML content
+                                    logger.info(f"[Job {job_id}] XML content extracted after JS click ({len(xml_content)} chars)")
+                                    save_result = self.save_xml_content(xml_content, invoice_key, job_id, user_id)
+                                    if save_result['success']:
+                                        return save_result
+                                    success_indicators.append("XML content extracted")
+                            except Exception as e:
+                                logger.info(f"[Job {job_id}] Error extracting XML after JS click: {e}")
+                            
+                            # 3. Check if file was downloaded to downloads directory
+                            try:
+                                downloaded_file = self.check_downloaded_file(invoice_key, job_id)
+                                if downloaded_file['success']:
+                                    logger.info(f"[Job {job_id}] File found in downloads directory")
+                                    return downloaded_file
+                            except Exception as e:
+                                logger.info(f"[Job {job_id}] No file in downloads: {e}")
+                            
+                            # 4. Try to trigger direct XML extraction via JavaScript
+                            try:
+                                xml_via_js = self.driver.execute_script("""
+                                    // Look for XML content in page
+                                    var xmlContent = '';
+                                    
+                                    // Check if there's XML in any text areas or pre tags
+                                    var textAreas = document.querySelectorAll('textarea, pre, code');
+                                    for (var i = 0; i < textAreas.length; i++) {
+                                        var content = textAreas[i].textContent || textAreas[i].value || '';
+                                        if (content.includes('<?xml') && content.includes('nfe') && content.length > 100) {
+                                            xmlContent = content;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    // Check if XML was set in any variables
+                                    if (!xmlContent && window.xmlData) {
+                                        xmlContent = window.xmlData;
+                                    }
+                                    
+                                    return xmlContent;
+                                """)
+                                
+                                if xml_via_js and len(xml_via_js) > 100:
+                                    logger.info(f"[Job {job_id}] XML extracted via JavaScript ({len(xml_via_js)} chars)")
+                                    save_result = self.save_xml_content(xml_via_js, invoice_key, job_id, user_id)
+                                    if save_result['success']:
+                                        return save_result
+                                    success_indicators.append("XML via JavaScript")
+                                    
+                            except Exception as e:
+                                logger.info(f"[Job {job_id}] JavaScript XML extraction failed: {e}")
+                            
+                            if success_indicators:
+                                logger.info(f"[Job {job_id}] Success indicators found: {success_indicators}")
+                            else:
+                                logger.info(f"[Job {job_id}] No success indicators after JavaScript click")
+                            
+                        except Exception as e:
+                            logger.info(f"[Job {job_id}] Error in post-click verification: {e}")
+                    
+                    logger.info(f"[Job {job_id}] JavaScript result: {result}")
+                    
+                except Exception as e:
+                    logger.info(f"[Job {job_id}] JavaScript click failed: {e}")
+                
                 raise Exception("Baixar XML button not found in new layout")
             
             logger.info(f"[Job {job_id}] Found XML button, clicking...")

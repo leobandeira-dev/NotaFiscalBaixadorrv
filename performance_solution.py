@@ -124,24 +124,23 @@ class EnhancedDeployOptimizer:
             chrome_options.add_argument('--disable-gpu')
             chrome_options.add_argument('--disable-software-rasterizer')
             
-            # Janela ultra-pequena para deploy
-            chrome_options.add_argument('--window-size=400,300')
+            # Janela estável para deploy
+            chrome_options.add_argument('--window-size=1024,768')
             chrome_options.add_argument('--window-position=0,0')
             
-            # Otimizações de memória específicas para deploy
+            # Otimizações de memória estáveis para deploy
             chrome_options.add_argument('--memory-pressure-off')
-            chrome_options.add_argument('--max_old_space_size=512')
-            chrome_options.add_argument('--single-process')
-            chrome_options.add_argument('--no-zygote')
+            chrome_options.add_argument('--max_old_space_size=1024')
+            # Removidos --single-process e --no-zygote que causam instabilidade
             chrome_options.add_argument('--disable-background-timer-throttling')
             chrome_options.add_argument('--disable-backgrounding-occluded-windows')
             chrome_options.add_argument('--disable-renderer-backgrounding')
             
-            # Desabilitar recursos desnecessários em deploy
+            # Desabilitar recursos desnecessários em deploy (mas manter JavaScript)
             chrome_options.add_argument('--disable-extensions')
             chrome_options.add_argument('--disable-plugins')
             chrome_options.add_argument('--disable-images')
-            chrome_options.add_argument('--disable-javascript-harmony-shipping')
+            # JavaScript habilitado para meudanfe.com.br funcionar
             chrome_options.add_argument('--disable-background-networking')
             chrome_options.add_argument('--disable-background-mode')
             chrome_options.add_argument('--disable-client-side-phishing-detection')
