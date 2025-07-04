@@ -62,6 +62,13 @@ class DownloadJob:
         self.created_at = datetime.now().isoformat()
         self.completed_at = None
         self.download_type = 'xml'
+    
+    @property
+    def progress_percentage(self):
+        """Calculate progress percentage"""
+        if self.total_keys == 0:
+            return 0
+        return (self.processed / self.total_keys) * 100
         
     def to_dict(self):
         return {
