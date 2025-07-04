@@ -188,7 +188,7 @@
                         <div class="tab-pane fade show active" id="overview" role="tabpanel">
                             <h4 class="text-primary mb-3">
                                 <i class="fas fa-rocket"></i>
-                                CROSS XML Downloader PRO API v2.0
+                                CROSS XML Downloader PRO API v1.0 (Speed Optimized)
                             </h4>
                             
                             <p class="lead mb-4">
@@ -202,7 +202,8 @@
                                         <li><i class="fas fa-check text-success"></i> Download automático de XMLs via chaves de 44 dígitos</li>
                                         <li><i class="fas fa-check text-success"></i> Processamento assíncrono com acompanhamento em tempo real</li>
                                         <li><i class="fas fa-check text-success"></i> Sistema de cobrança por uso integrado (1 crédito = 1 XML)</li>
-                                        <li><i class="fas fa-check text-success"></i> Extração automática de dados completos do XML</li>
+                                        <li><i class="fas fa-check text-success"></i> <strong>Extração automática de 19 campos estruturados</strong></li>
+                                        <li><i class="fas fa-check text-success"></i> Performance otimizada: ~7.4 segundos por XML</li>
                                         <li><i class="fas fa-check text-success"></i> Rate limiting e controle de qualidade</li>
                                         <li><i class="fas fa-check text-success"></i> Suporte para processamento em lote</li>
                                     </ul>
@@ -210,13 +211,46 @@
                                 <div class="col-md-6">
                                     <h5><i class="fas fa-info-circle text-info"></i> Informações Técnicas</h5>
                                     <ul class="list-unstyled">
-                                        <li><strong>Base URL:</strong> <code>{{ request.url_root }}api/v2</code></li>
+                                        <li><strong>Base URL:</strong> <code>{{ request.url_root }}api/v1</code></li>
                                         <li><strong>Formato:</strong> JSON</li>
                                         <li><strong>Rate Limit:</strong> 100 requisições/minuto</li>
                                         <li><strong>Timeout:</strong> 60 segundos</li>
                                         <li><strong>Encoding:</strong> UTF-8</li>
                                         <li><strong>HTTPS:</strong> Obrigatório</li>
                                     </ul>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-success mt-4">
+                                <h5><i class="fas fa-database text-success"></i> Dados Estruturados Extraídos Automaticamente</h5>
+                                <p>Cada XML processado retorna 19 campos estruturados prontos para uso:</p>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>NFe Básica:</strong>
+                                        <ul>
+                                            <li>Chave da nota fiscal (44 dígitos)</li>
+                                            <li>Número da NF e série</li>
+                                            <li>Data de emissão</li>
+                                            <li>Valor total (R$)</li>
+                                        </ul>
+                                        <strong>Transporte:</strong>
+                                        <ul>
+                                            <li>Peso bruto (kg)</li>
+                                            <li>Quantidade de volumes</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Emitente/Remetente:</strong>
+                                        <ul>
+                                            <li>CNPJ e razão social</li>
+                                            <li>Cidade, UF, endereço, CEP</li>
+                                        </ul>
+                                        <strong>Destinatário:</strong>
+                                        <ul>
+                                            <li>CNPJ/CPF e razão social</li>
+                                            <li>Cidade, UF, endereço, CEP</li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -277,9 +311,9 @@ Content-Type: application/json</code></pre>
                             <div class="endpoint-section mb-4">
                                 <div class="d-flex align-items-center mb-2">
                                     <span class="badge badge-success mr-2">POST</span>
-                                    <code class="h5">/api/v2/download</code>
+                                    <code class="h5">/api/v1/jobs</code>
                                 </div>
-                                <p>Inicia o download de XMLs a partir de chaves fiscais.</p>
+                                <p>Cria job para download otimizado de XMLs (~7.4s por chave) com extração de 19 campos estruturados.</p>
                                 
                                 <h6>Parâmetros:</h6>
                                 <pre><code class="language-json">{
@@ -291,13 +325,10 @@ Content-Type: application/json</code></pre>
 
                                 <h6>Resposta de Sucesso:</h6>
                                 <pre><code class="language-json">{
-  "success": true,
-  "job_id": "job_abc123",
-  "message": "Download iniciado com sucesso",
-  "invoice_keys": ["35250513516247000107550010000113401146202508"],
-  "estimated_time": "30-60 segundos",
-  "cost_per_xml": 1.0,
-  "total_cost": 1.0
+  "job_id": "9fec83c7-11f1-486b-851b-89bd46340324",
+  "status": "created",
+  "total_keys": 2,
+  "created_at": "2025-07-04T21:44:40.041406"
 }</code></pre>
                             </div>
 
