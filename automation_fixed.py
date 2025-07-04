@@ -88,48 +88,179 @@ class InvoiceDownloader:
             
             logger.info(f"[Job {job_id}] Starting XML download for invoice key: {invoice_key}")
             
-            # Navigate to the website
+            # Navigate to the website with new layout
             url = "https://meudanfe.com.br/"
-            logger.info(f"[Job {job_id}] Navigating to invoice system...")
+            logger.info(f"[Job {job_id}] Navigating to updated invoice system...")
             self.driver.get(url)
             
-            # Environment-optimized waits
-            logger.info(f"[Job {job_id}] Looking for input field...")
-            input_element = WebDriverWait(self.driver, timeouts['element_wait']).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, 'input[placeholder="Digite a CHAVE DE ACESSO"]'))
-            )
+            # Wait for page to fully load in new layout
+            logger.info(f"[Job {job_id}] Waiting for page to fully load...")
+            time.sleep(3)
+            
+            # Environment-optimized waits for new layout
+            logger.info(f"[Job {job_id}] Looking for input field in new layout...")
+            input_element = None
+            
+            # Try to wait for page to be interactive
+            try:
+                WebDriverWait(self.driver, 10).until(
+                    lambda driver: driver.execute_script("return document.readyState") == "complete"
+                )
+                logger.info(f"[Job {job_id}] Page fully loaded")
+            except:
+                logger.info(f"[Job {job_id}] Page load timeout, proceeding anyway")
+            
+            # Try different strategies to find and interact with input field
+            selectors = [
+                (By.CSS_SELECTOR, 'input[type="text"]'),
+                (By.CSS_SELECTOR, 'input[placeholder*="Chave"]'),
+                (By.CSS_SELECTOR, 'input[placeholder*="chave"]'),
+                (By.NAME, 'chave'),
+                (By.ID, 'chave'),
+                (By.XPATH, "//input[@type='text']")
+            ]
+            
+            for i, selector in enumerate(selectors):
+                try:
+                    logger.info(f"[Job {job_id}] Trying input selector {i+1}: {selector}")
+                    
+                    # First find the element
+                    element = WebDriverWait(self.driver, 5).until(
+                        EC.presence_of_element_located(selector)
+                    )
+                    
+                    # Then wait for it to be clickable
+                    input_element = WebDriverWait(self.driver, 5).until(
+                        EC.element_to_be_clickable(selector)
+                    )
+                    
+                    logger.info(f"[Job {job_id}] Found interactive input field with selector {i+1}")
+                    break
+                except Exception as e:
+                    logger.info(f"[Job {job_id}] Input selector {i+1} failed: {str(e)[:100]}")
+                    continue
+            
+            if not input_element:
+                raise Exception("Input field not found or not interactive in new layout")
+            
             logger.info(f"[Job {job_id}] Page loaded - URL: {self.driver.current_url}")
             
-            logger.info(f"[Job {job_id}] Entering invoice key...")
-            input_element.clear()
-            input_element.send_keys(invoice_key)
-            
-            # Environment-optimized submit button wait
-            logger.info(f"[Job {job_id}] Looking for submit button...")
+            # Try multiple strategies to enter the invoice key
+            logger.info(f"[Job {job_id}] Entering invoice key in new layout...")
             try:
-                submit_button = WebDriverWait(self.driver, timeouts['element_wait']).until(
-                    EC.element_to_be_clickable((By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]"))
-                )
-            except:
-                raise Exception("Submit button not found")
+                # Clear any existing content
+                input_element.clear()
+                time.sleep(0.5)
+                
+                # Enter the invoice key
+                input_element.send_keys(invoice_key)
+                time.sleep(1)
+                
+                # Verify the content was entered
+                value = input_element.get_attribute('value')
+                if value != invoice_key:
+                    logger.warning(f"[Job {job_id}] Input value doesn't match: got '{value}', expected '{invoice_key}'")
+                    # Try again with JavaScript
+                    self.driver.execute_script(f"arguments[0].value = '{invoice_key}';", input_element)
+                    
+                logger.info(f"[Job {job_id}] Invoice key entered successfully")
+                
+            except Exception as e:
+                logger.error(f"[Job {job_id}] Error entering invoice key: {e}")
+                # Fallback: try with JavaScript
+                try:
+                    self.driver.execute_script(f"arguments[0].value = '{invoice_key}';", input_element)
+                    logger.info(f"[Job {job_id}] Invoice key entered via JavaScript")
+                except Exception as js_error:
+                    raise Exception(f"Failed to enter invoice key: {e}, JavaScript fallback also failed: {js_error}")
+            
+            # Environment-optimized submit button wait for new green BUSCAR button
+            logger.info(f"[Job {job_id}] Looking for new green BUSCAR button...")
+            submit_button = None
+            for selector in [
+                (By.XPATH, "//button[contains(text(), 'BUSCAR')]"),
+                (By.XPATH, "//*[contains(text(), 'BUSCAR') and (@type='button' or @type='submit')]"),
+                (By.CSS_SELECTOR, "button[class*='btn']"),
+                (By.CSS_SELECTOR, "input[type='submit']"),
+                (By.XPATH, "//button[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'buscar')]")
+            ]:
+                try:
+                    submit_button = WebDriverWait(self.driver, timeouts['element_wait']).until(
+                        EC.element_to_be_clickable(selector)
+                    )
+                    break
+                except:
+                    continue
+            
+            if not submit_button:
+                raise Exception("BUSCAR button not found in new layout")
             
             logger.info(f"[Job {job_id}] Clicking submit button...")
             submit_button.click()
             
-            # Environment-optimized results wait
-            logger.info(f"[Job {job_id}] Waiting for response page...")
+            # Wait for loading to complete in new layout
+            logger.info(f"[Job {job_id}] Waiting for results to load in new layout...")
             time.sleep(timeouts['download_wait'])
+            
+            # Wait for loading spinner to disappear if present
+            try:
+                WebDriverWait(self.driver, 5).until_not(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "[class*='loading'], [class*='spinner'], .loading"))
+                )
+                logger.info(f"[Job {job_id}] Loading completed")
+            except:
+                logger.info(f"[Job {job_id}] No loading spinner detected, proceeding")
             
             logger.info(f"[Job {job_id}] After submit - URL: {self.driver.current_url}")
             
-            # Find XML download button with environment-optimized timeout
-            logger.info(f"[Job {job_id}] Looking for XML download button...")
+            # Additional wait to ensure results are fully loaded
+            time.sleep(2)
+            
+            # Find XML download button in new layout (red "Baixar XML" button)
+            logger.info(f"[Job {job_id}] Looking for XML download button in new layout...")
+            
+            # Debug: Print page content to understand new structure
             try:
-                xml_button = WebDriverWait(self.driver, timeouts['xml_button']).until(
-                    EC.element_to_be_clickable((By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"))
-                )
-            except:
-                raise Exception("XML download button not found")
+                page_content = self.driver.page_source
+                if "Baixar XML" in page_content:
+                    logger.info(f"[Job {job_id}] 'Baixar XML' text found on page")
+                else:
+                    logger.info(f"[Job {job_id}] 'Baixar XML' text NOT found on page")
+                    
+                # Check for any XML-related buttons
+                if "xml" in page_content.lower():
+                    logger.info(f"[Job {job_id}] 'xml' text found on page")
+                else:
+                    logger.info(f"[Job {job_id}] 'xml' text NOT found on page")
+            except Exception as e:
+                logger.warning(f"[Job {job_id}] Could not debug page content: {e}")
+            
+            xml_button = None
+            selectors = [
+                (By.XPATH, "//button[contains(text(), 'Baixar XML')]"),
+                (By.XPATH, "//*[contains(text(), 'Baixar XML')]"),
+                (By.XPATH, "//a[contains(text(), 'Baixar XML')]"),
+                (By.XPATH, "//button[contains(text(), 'XML')]"),
+                (By.XPATH, "//*[contains(text(), 'XML')]"),
+                (By.XPATH, "//*[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'xml') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'baixar')]"),
+                (By.CSS_SELECTOR, "button[onclick*='xml'], a[href*='xml']"),
+                (By.CSS_SELECTOR, "button[class*='btn'], a[class*='btn']")
+            ]
+            
+            for i, selector in enumerate(selectors):
+                try:
+                    logger.info(f"[Job {job_id}] Trying selector {i+1}: {selector}")
+                    xml_button = WebDriverWait(self.driver, 3).until(
+                        EC.element_to_be_clickable(selector)
+                    )
+                    logger.info(f"[Job {job_id}] Found XML button with selector {i+1}")
+                    break
+                except Exception as e:
+                    logger.info(f"[Job {job_id}] Selector {i+1} failed: {str(e)[:100]}")
+                    continue
+            
+            if not xml_button:
+                raise Exception("Baixar XML button not found in new layout")
             
             logger.info(f"[Job {job_id}] Found XML button, clicking...")
             
