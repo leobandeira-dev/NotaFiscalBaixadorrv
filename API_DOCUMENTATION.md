@@ -57,7 +57,7 @@ Verifica se a API está funcionando.
 ```json
 {
     "status": "healthy",
-    "version": "2.0",
+    "version": "1.0",
     "title": "CROSS XML Downloader API",
     "timestamp": "2025-07-04T21:35:00.000000"
 }
@@ -117,10 +117,10 @@ Consulta o status e progresso de um job específico.
         "failed": 0,
         "percentage": 100.0
     },
-    "files": [
-        "35250162954987000130550020001854371034511150.xml",
-        "35250162954987000130550020001854371034511151.xml"
-    ],
+    "files": {
+        "35250162954987000130550020001854371034511150.xml": "/api/v1/jobs/cc9fc653/files/35250162954987000130550020001854371034511150.xml",
+        "35250162954987000130550020001854371034511151.xml": "/api/v1/jobs/cc9fc653/files/35250162954987000130550020001854371034511151.xml"
+    },
     "errors": [],
     "created_at": "2025-06-19T04:00:00.000000",
     "completed_at": "2025-06-19T04:05:00.000000"

@@ -5510,7 +5510,7 @@ def api_health():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
-        'version': '2.0',
+        'version': '1.0',
         'title': 'CROSS XML Downloader API',
         'timestamp': datetime.now().isoformat()
     })
