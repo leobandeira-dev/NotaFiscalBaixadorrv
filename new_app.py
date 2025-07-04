@@ -2215,8 +2215,7 @@ def generate_api_credentials():
         flash('Credenciais API geradas com sucesso!', 'success')
         return jsonify({
             'success': True,
-            'api_key': credentials['api_key'],
-            'api_secret': credentials['api_secret']
+            'api_key': credentials['api_key']
         })
     except Exception as e:
         logger.error(f"Erro ao gerar credenciais API: {e}")

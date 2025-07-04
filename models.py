@@ -47,9 +47,8 @@ class User(UserMixin, db.Model):
     labels_stripe_subscription_id = db.Column(db.String(100), nullable=True)
     labels_trial_expires_at = db.Column(db.DateTime, default=lambda: datetime.utcnow() + timedelta(days=7))
     
-    # Chaves API
+    # Chave API (simplificada)
     api_key = db.Column(db.String(64), unique=True)
-    api_secret = db.Column(db.String(64), unique=True)
     
     # Credenciais para importação via email
     import_email = db.Column(db.String(120), nullable=True)
@@ -105,8 +104,7 @@ class User(UserMixin, db.Model):
         super(User, self).__init__(**kwargs)
         if not self.api_key:
             self.api_key = self.generate_api_key()
-        if not self.api_secret:
-            self.api_secret = self.generate_api_secret()
+
     
     def set_password(self, password):
         """Define a senha do usuário"""
@@ -120,14 +118,10 @@ class User(UserMixin, db.Model):
         """Gera uma nova chave API"""
         return f"ak_{secrets.token_urlsafe(32)}"
     
-    def generate_api_secret(self):
-        """Gera um novo secret API"""
-        return f"sk_{secrets.token_urlsafe(32)}"
-    
     def regenerate_api_credentials(self):
         """Regenera as credenciais API"""
         self.api_key = self.generate_api_key()
-        self.api_secret = self.generate_api_secret()
+
         db.session.commit()
     
     def set_email_credentials(self, email, password, server, port=993, ssl=True):
@@ -246,24 +240,21 @@ class User(UserMixin, db.Model):
         db.session.commit()
     
     def generate_api_credentials(self):
-        """Gera novas credenciais API para o usuário"""
-        self.api_key = secrets.token_urlsafe(32)
-        self.api_secret = secrets.token_urlsafe(32)
+        """Gera nova chave API para o usuário"""
+        self.api_key = f"ak_{secrets.token_urlsafe(32)}"
         db.session.commit()
         return {
-            'api_key': self.api_key,
-            'api_secret': self.api_secret
+            'api_key': self.api_key
         }
     
     def revoke_api_credentials(self):
-        """Revoga as credenciais API do usuário"""
+        """Revoga a chave API do usuário"""
         self.api_key = None
-        self.api_secret = None
         db.session.commit()
     
     def has_api_credentials(self):
-        """Verifica se o usuário tem credenciais API ativas"""
-        return bool(self.api_key and self.api_secret)
+        """Verifica se o usuário tem chave API ativa"""
+        return bool(self.api_key)
     
     def to_dict(self):
         """Converte o usuário para dicionário"""

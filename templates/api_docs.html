@@ -135,26 +135,7 @@
                         <small class="form-text text-muted">Use no header: <code>X-API-Key</code></small>
                     </div>
 
-                    <!-- API Secret -->
-                    <div class="form-group mb-4">
-                        <label for="api-secret" class="font-weight-bold">
-                            <i class="fas fa-shield-alt text-warning"></i>
-                            API Secret:
-                        </label>
-                        <div class="input-group">
-                            <input type="password" class="form-control" id="api-secret" value="{{ api_secret }}" readonly>
-                            <div class="input-group-append">
-                                <button class="btn btn-outline-secondary" type="button" onclick="toggleSecret()">
-                                    <i class="fas fa-eye" id="toggle-icon"></i>
-                                </button>
-                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('api-secret')">
-                                    <i class="fas fa-copy"></i>
-                                    Copiar
-                                </button>
-                            </div>
-                        </div>
-                        <small class="form-text text-muted">Use no header: <code>X-API-Secret</code></small>
-                    </div>
+
 
                     <!-- Actions -->
                     <div class="row">
@@ -187,7 +168,7 @@
                             Gerar Credenciais API
                         </button>
                         <p class="text-muted mt-3">
-                            Após gerar, você receberá uma API Key e um API Secret para autenticação.
+                            Após gerar, você receberá uma API Key para autenticação simplificada.
                         </p>
                     </div>
                     {% endif %}
@@ -244,18 +225,7 @@ function copyToClipboard(inputId) {
     }, 2000);
 }
 
-function toggleSecret() {
-    const input = document.getElementById('api-secret');
-    const icon = document.getElementById('toggle-icon');
-    
-    if (input.type === 'password') {
-        input.type = 'text';
-        icon.className = 'fas fa-eye-slash';
-    } else {
-        input.type = 'password';
-        icon.className = 'fas fa-eye';
-    }
-}
+
 
 function generateCredentials() {
     fetch('/api/generate-credentials', {
