@@ -34,14 +34,14 @@ class SpeedOptimizedInvoiceDownloader(InvoiceDownloader):
             logger.info(f"[Job {job_id}] Navigating to invoice system...")
             self.driver.get("https://meudanfe.com.br/")
             
-            # Step 2: Quick page load check
-            WebDriverWait(self.driver, 5).until(
+            # Step 2: Ultra-fast page load check (reduced timeout)
+            WebDriverWait(self.driver, 3).until(
                 lambda driver: driver.execute_script("return document.readyState") == "complete"
             )
             
-            # Step 3: Find and fill input field (minimal wait)
+            # Step 3: Find and fill input field (ultra-fast)
             logger.info(f"[Job {job_id}] Looking for input field...")
-            input_field = WebDriverWait(self.driver, 3).until(
+            input_field = WebDriverWait(self.driver, 2).until(
                 EC.presence_of_element_located((By.ID, "searchTxt"))
             )
             
@@ -49,15 +49,15 @@ class SpeedOptimizedInvoiceDownloader(InvoiceDownloader):
             input_field.send_keys(invoice_key)
             logger.info(f"[Job {job_id}] Invoice key entered")
             
-            # Step 4: Find and click search button (minimal wait)
-            search_button = WebDriverWait(self.driver, 3).until(
+            # Step 4: Find and click search button (ultra-fast)
+            search_button = WebDriverWait(self.driver, 2).until(
                 EC.element_to_be_clickable((By.ID, "searchBtn"))
             )
             search_button.click()
             logger.info(f"[Job {job_id}] Search button clicked")
             
-            # Step 5: Wait for results (optimized)
-            time.sleep(2)  # Reduced wait
+            # Step 5: Minimal wait for results
+            time.sleep(1)  # Ultra reduced wait
             
             # Step 6: IMMEDIATE TEXT SEARCH STRATEGY (skip conventional selectors)
             logger.info(f"[Job {job_id}] SPEED MODE: Using immediate text search for 'Baixar XML'")
@@ -126,8 +126,8 @@ class SpeedOptimizedInvoiceDownloader(InvoiceDownloader):
             if 'clicked' in result.lower():
                 logger.info(f"[Job {job_id}] SPEED SUCCESS: {result}")
                 
-                # Step 8: Quick file verification (optimized)
-                time.sleep(1)  # Minimal wait for download
+                # Step 8: Ultra-fast file verification
+                time.sleep(0.5)  # Ultra minimal wait for download
                 
                 # Check for downloaded file
                 downloaded_file = self.check_downloaded_file(invoice_key, job_id)
