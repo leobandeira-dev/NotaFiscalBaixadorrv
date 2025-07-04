@@ -19,12 +19,10 @@ Sistema completo para download automático em lote de arquivos XML de notas fisc
 - **Download programático** de arquivos
 - **Suporte a CORS** para aplicações web
 
-### Automação Ultra-Otimizada
-- **Speed-Optimized Engine** com processamento 87% mais rápido (7,4s vs 57s por XML)
+### Automação
 - **Selenium WebDriver** para automação completa do navegador
-- **Chrome headless** ultra-otimizado para ambiente de produção
-- **Text Search Strategy** com busca direta por texto via TreeWalker JavaScript
-- **Detecção inteligente** de elementos da página com fallback automático
+- **Chrome headless** otimizado para performance
+- **Detecção inteligente** de elementos da página
 - **Extração robusta** de conteúdo XML
 - **Tratamento de erros** abrangente
 
@@ -63,7 +61,7 @@ As chaves devem ter exatamente 44 dígitos numéricos:
 
 ### URL Base
 ```
-https://crossxml.com.br/api/v1
+https://sua-aplicacao.replit.app/api/v1
 ```
 
 ### Endpoints Principais
@@ -104,15 +102,15 @@ GET /api/v1/jobs/{job_id}/files/{filename}
 ### Exemplo com cURL
 ```bash
 # Criar job
-curl -X POST https://crossxml.com.br/api/v1/jobs \
+curl -X POST https://sua-app.replit.app/api/v1/jobs \
   -H "Content-Type: application/json" \
-  -d '{"invoice_keys": ["35250513516247000107550010000113401146202508"]}'
+  -d '{"invoice_keys": ["35250162954987000130550020001854371034511150"]}'
 
 # Verificar status (substitua JOB_ID)
-curl https://crossxml.com.br/api/v1/jobs/JOB_ID
+curl https://sua-app.replit.app/api/v1/jobs/JOB_ID
 
 # Baixar arquivo (substitua JOB_ID e FILENAME)
-curl -O https://crossxml.com.br/api/v1/jobs/JOB_ID/files/FILENAME.xml
+curl -O https://sua-app.replit.app/api/v1/jobs/JOB_ID/files/FILENAME.xml
 ```
 
 ## Cliente Python
@@ -123,10 +121,10 @@ Use o cliente Python incluído para integração fácil:
 from api_client_example import XMLDownloaderAPIClient
 
 # Inicializar cliente
-client = XMLDownloaderAPIClient("https://crossxml.com.br")
+client = XMLDownloaderAPIClient("https://sua-app.replit.app")
 
 # Baixar XMLs automaticamente
-invoice_keys = ["35250513516247000107550010000113401146202508"]
+invoice_keys = ["35250162954987000130550020001854371034511150"]
 files = client.download_invoices(invoice_keys, "./downloads")
 
 print(f"Baixados {len(files)} arquivos XML")
