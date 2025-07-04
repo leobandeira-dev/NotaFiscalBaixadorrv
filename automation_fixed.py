@@ -12,6 +12,7 @@ from typing import Dict, Any
 import re
 from optimization_deploy import DeployOptimizer
 from performance_solution import PerformanceSolution, EnhancedDeployOptimizer, DeployPerformanceMonitor
+from automation_connection_fix import ChromeConnectionFix
 
 logger = logging.getLogger(__name__)
 
@@ -201,7 +202,20 @@ class InvoiceDownloader:
                 raise Exception("BUSCAR button not found in new layout")
             
             logger.info(f"[Job {job_id}] Clicking submit button...")
-            submit_button.click()
+            # Try multiple click strategies to prevent disconnection
+            try:
+                # First try regular click
+                submit_button.click()
+            except Exception as click_error:
+                logger.info(f"[Job {job_id}] Regular click failed, trying JavaScript: {click_error}")
+                try:
+                    # Fallback to JavaScript click if regular click fails
+                    self.driver.execute_script("arguments[0].click();", submit_button)
+                except Exception as js_error:
+                    logger.info(f"[Job {job_id}] JavaScript click failed, trying action chains: {js_error}")
+                    # Final fallback with action chains
+                    from selenium.webdriver.common.action_chains import ActionChains
+                    ActionChains(self.driver).move_to_element(submit_button).click().perform()
             
             # Wait for loading to complete in new layout
             logger.info(f"[Job {job_id}] Waiting for results to load in new layout...")
@@ -377,10 +391,18 @@ class InvoiceDownloader:
             }
             
         except Exception as e:
-            logger.error(f"[Job {job_id}] Error downloading XML: {str(e)}")
+            error_msg = str(e)
+            logger.error(f"[Job {job_id}] Error downloading XML: {error_msg}")
+            
+            # Check if it's a Chrome connection issue
+            if ChromeConnectionFix.is_connection_error(error_msg):
+                logger.info(f"[Job {job_id}] Chrome connection issue detected")
+                return ChromeConnectionFix.create_error_response(job_id, invoice_key, error_msg)
+            
             return {
                 'success': False,
-                'error': f'Erro no download: {str(e)}'
+                'error': f'Erro no download: {error_msg}',
+                'error_category': ChromeConnectionFix.get_error_category(error_msg)
             }
     
     def download_file_direct(self, url: str, invoice_key: str, job_id: str) -> Dict[str, Any]:
