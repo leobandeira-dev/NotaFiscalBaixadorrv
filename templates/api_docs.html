@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}API & Integração - CROSS XML Downloader PRO{% endblock %}
+{% block title %}Credenciais API - CROSS XML Downloader PRO{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,10 +10,16 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 mb-0 text-gray-800">
-                        <i class="fas fa-code text-primary"></i>
-                        API & Integração
+                        <i class="fas fa-key text-primary"></i>
+                        Credenciais API
                     </h1>
-                    <p class="text-muted mb-0">Documentação completa da API REST para integração com sistemas externos</p>
+                    <p class="text-muted mb-0">Gerencie suas credenciais para integração via API REST</p>
+                </div>
+                <div>
+                    <a href="/guia-api" class="btn btn-outline-primary" target="_blank">
+                        <i class="fas fa-book"></i>
+                        Ver Documentação Completa
+                    </a>
                 </div>
             </div>
 
@@ -45,14 +51,14 @@
                             <div class="row no-gutters align-items-center">
                                 <div class="col mr-2">
                                     <div class="text-xs font-weight-bold text-{% if has_api_credentials %}success{% else %}warning{% endif %} text-uppercase mb-1">
-                                        Credenciais API
+                                        Status API
                                     </div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        {% if has_api_credentials %}Ativas{% else %}Não configuradas{% endif %}
+                                        {% if has_api_credentials %}Ativa{% else %}Inativa{% endif %}
                                     </div>
                                 </div>
                                 <div class="col-auto">
-                                    <i class="fas fa-key fa-2x text-gray-300"></i>
+                                    <i class="fas fa-wifi fa-2x text-gray-300"></i>
                                 </div>
                             </div>
                         </div>
@@ -65,7 +71,7 @@
                             <div class="row no-gutters align-items-center">
                                 <div class="col mr-2">
                                     <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                                        Versão da API
+                                        Versão
                                     </div>
                                     <div class="h5 mb-0 font-weight-bold text-gray-800">v1.0</div>
                                 </div>
@@ -100,38 +106,72 @@
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-key"></i>
-                        Gerenciamento de Credenciais API
+                        <i class="fas fa-user-secret"></i>
+                        Suas Credenciais de Autenticação
                     </h6>
                 </div>
                 <div class="card-body">
                     {% if has_api_credentials %}
                     <div class="alert alert-success" role="alert">
                         <i class="fas fa-check-circle"></i>
-                        <strong>Credenciais ativas!</strong> Sua API Key está configurada e pronta para uso.
+                        <strong>Credenciais ativas!</strong> Suas chaves estão configuradas e prontas para uso.
                     </div>
                     
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="form-group">
-                                <label for="api-key" class="font-weight-bold">API Key:</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="api-key" value="{{ api_key }}" readonly>
-                                    <div class="input-group-append">
-                                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('api-key')">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                    <!-- API Key -->
+                    <div class="form-group mb-4">
+                        <label for="api-key" class="font-weight-bold">
+                            <i class="fas fa-fingerprint text-primary"></i>
+                            API Key:
+                        </label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="api-key" value="{{ api_key }}" readonly>
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('api-key')">
+                                    <i class="fas fa-copy"></i>
+                                    Copiar
+                                </button>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="font-weight-bold">Ações:</label><br>
-                            <button class="btn btn-warning btn-sm" onclick="regenerateCredentials()">
-                                <i class="fas fa-sync-alt"></i> Regenerar
+                        <small class="form-text text-muted">Use no header: <code>X-API-Key</code></small>
+                    </div>
+
+                    <!-- API Secret -->
+                    <div class="form-group mb-4">
+                        <label for="api-secret" class="font-weight-bold">
+                            <i class="fas fa-shield-alt text-warning"></i>
+                            API Secret:
+                        </label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="api-secret" value="{{ api_secret }}" readonly>
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" onclick="toggleSecret()">
+                                    <i class="fas fa-eye" id="toggle-icon"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('api-secret')">
+                                    <i class="fas fa-copy"></i>
+                                    Copiar
+                                </button>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">Use no header: <code>X-API-Secret</code></small>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Importante:</strong> Mantenha suas credenciais seguras. Elas identificam você no sistema.
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <button class="btn btn-warning" onclick="regenerateCredentials()">
+                                <i class="fas fa-sync-alt"></i>
+                                Regenerar Credenciais
                             </button>
-                            <button class="btn btn-danger btn-sm ml-2" onclick="revokeCredentials()">
-                                <i class="fas fa-trash"></i> Revogar
+                            <button class="btn btn-danger ml-2" onclick="revokeCredentials()">
+                                <i class="fas fa-trash"></i>
+                                Revogar Acesso
                             </button>
                         </div>
                     </div>
@@ -146,521 +186,104 @@
                             <i class="fas fa-key"></i>
                             Gerar Credenciais API
                         </button>
+                        <p class="text-muted mt-3">
+                            Após gerar, você receberá uma API Key e um API Secret para autenticação.
+                        </p>
                     </div>
                     {% endif %}
                 </div>
             </div>
 
-            <!-- API Documentation Tabs -->
+            <!-- Quick Example -->
+            {% if has_api_credentials %}
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
-                    <ul class="nav nav-tabs card-header-tabs" id="apiTabs" role="tablist">
-                        <li class="nav-item">
-                            <a class="nav-link active" id="overview-tab" data-toggle="tab" href="#overview" role="tab">
-                                <i class="fas fa-info-circle"></i> Visão Geral
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="auth-tab" data-toggle="tab" href="#authentication" role="tab">
-                                <i class="fas fa-shield-alt"></i> Autenticação
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="endpoints-tab" data-toggle="tab" href="#endpoints" role="tab">
-                                <i class="fas fa-link"></i> Endpoints
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="examples-tab" data-toggle="tab" href="#examples" role="tab">
-                                <i class="fas fa-code"></i> Exemplos
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" id="pricing-tab" data-toggle="tab" href="#pricing" role="tab">
-                                <i class="fas fa-dollar-sign"></i> Preços
-                            </a>
-                        </li>
-                    </ul>
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-code"></i>
+                        Exemplo de Uso das Credenciais
+                    </h6>
                 </div>
                 <div class="card-body">
-                    <div class="tab-content" id="apiTabContent">
-                        <!-- Overview Tab -->
-                        <div class="tab-pane fade show active" id="overview" role="tabpanel">
-                            <h4 class="text-primary mb-3">
-                                <i class="fas fa-rocket"></i>
-                                CROSS XML Downloader PRO API v1.0 (Speed Optimized)
-                            </h4>
-                            
-                            <p class="lead mb-4">
-                                API REST completa para automação de download de XMLs fiscais brasileiros com sistema de créditos integrado.
-                            </p>
-
-                            <!-- Destaque: Dupla Funcionalidade -->
-                            <div class="alert alert-info border-left-info" role="alert">
-                                <div class="row align-items-center">
-                                    <div class="col-lg-8">
-                                        <h5 class="alert-heading mb-2">
-                                            <i class="fas fa-exchange-alt"></i>
-                                            <strong>Dupla Funcionalidade: JSON + XML</strong>
-                                        </h5>
-                                        <p class="mb-0">
-                                            A API retorna <strong>ambos os formatos</strong> para cada chave processada:
-                                        </p>
-                                        <ul class="mb-0 mt-2">
-                                            <li><strong>Dados JSON:</strong> 19 campos extraídos (número NF, valor, peso, emitente, destinatário, etc.)</li>
-                                            <li><strong>Arquivos XML:</strong> Documentos fiscais originais completos (~4KB cada)</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-lg-4 text-center">
-                                        <i class="fas fa-file-code fa-3x text-info mb-2"></i>
-                                        <br>
-                                        <small class="text-muted">Dados estruturados + Arquivos originais</small>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <h5><i class="fas fa-star text-warning"></i> Recursos Principais</h5>
-                                    <ul class="list-unstyled">
-                                        <li><i class="fas fa-check text-success"></i> Download automático de XMLs via chaves de 44 dígitos</li>
-                                        <li><i class="fas fa-check text-success"></i> Processamento assíncrono com acompanhamento em tempo real</li>
-                                        <li><i class="fas fa-check text-success"></i> Sistema de cobrança por uso integrado (1 crédito = 1 XML)</li>
-                                        <li><i class="fas fa-check text-success"></i> <strong>Extração automática de 19 campos estruturados</strong></li>
-                                        <li><i class="fas fa-check text-success"></i> Performance otimizada: ~7.4 segundos por XML</li>
-                                        <li><i class="fas fa-check text-success"></i> Rate limiting e controle de qualidade</li>
-                                        <li><i class="fas fa-check text-success"></i> Suporte para processamento em lote</li>
-                                    </ul>
-                                </div>
-                                <div class="col-md-6">
-                                    <h5><i class="fas fa-info-circle text-info"></i> Informações Técnicas</h5>
-                                    <ul class="list-unstyled">
-                                        <li><strong>Base URL:</strong> <code>{{ request.url_root }}api/v1</code></li>
-                                        <li><strong>Formato:</strong> JSON</li>
-                                        <li><strong>Rate Limit:</strong> 100 requisições/minuto</li>
-                                        <li><strong>Timeout:</strong> 60 segundos</li>
-                                        <li><strong>Encoding:</strong> UTF-8</li>
-                                        <li><strong>HTTPS:</strong> Obrigatório</li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <div class="alert alert-success mt-4">
-                                <h5><i class="fas fa-database text-success"></i> Dados Estruturados Extraídos Automaticamente</h5>
-                                <p>Cada XML processado retorna 19 campos estruturados prontos para uso:</p>
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <strong>NFe Básica:</strong>
-                                        <ul>
-                                            <li>Chave da nota fiscal (44 dígitos)</li>
-                                            <li>Número da NF e série</li>
-                                            <li>Data de emissão</li>
-                                            <li>Valor total (R$)</li>
-                                        </ul>
-                                        <strong>Transporte:</strong>
-                                        <ul>
-                                            <li>Peso bruto (kg)</li>
-                                            <li>Quantidade de volumes</li>
-                                        </ul>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <strong>Emitente/Remetente:</strong>
-                                        <ul>
-                                            <li>CNPJ e razão social</li>
-                                            <li>Cidade, UF, endereço, CEP</li>
-                                        </ul>
-                                        <strong>Destinatário:</strong>
-                                        <ul>
-                                            <li>CNPJ/CPF e razão social</li>
-                                            <li>Cidade, UF, endereço, CEP</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Authentication Tab -->
-                        <div class="tab-pane fade" id="authentication" role="tabpanel">
-                            <h4 class="text-primary mb-3">
-                                <i class="fas fa-shield-alt"></i>
-                                Autenticação
-                            </h4>
-                            
-                            <p>Todas as requisições da API requerem autenticação via headers HTTP usando sua API Key.</p>
-
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle"></i>
-                                <strong>Importante:</strong> Mantenha sua API Key segura e não a compartilhe. Ela deve ser enviada no header <code>X-API-Key</code> de todas as requisições.
-                            </div>
-
-                            <h5>Exemplo de Header:</h5>
-                            <pre><code class="language-http">X-API-Key: sua_api_key_aqui
+                    <h6>Cabeçalhos necessários para autenticação:</h6>
+                    <pre class="bg-light p-3 rounded"><code>X-API-Key: {{ api_key }}
+X-API-Secret: {{ api_secret }}
 Content-Type: application/json</code></pre>
-
-                            <h5 class="mt-4">Códigos de Erro de Autenticação:</h5>
-                            <div class="table-responsive">
-                                <table class="table table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Código</th>
-                                            <th>Descrição</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td><span class="badge badge-danger">401</span></td>
-                                            <td>API Key não fornecida ou inválida</td>
-                                        </tr>
-                                        <tr>
-                                            <td><span class="badge badge-warning">403</span></td>
-                                            <td>Acesso negado ou credenciais revogadas</td>
-                                        </tr>
-                                        <tr>
-                                            <td><span class="badge badge-warning">429</span></td>
-                                            <td>Rate limit excedido</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- Endpoints Tab -->
-                        <div class="tab-pane fade" id="endpoints" role="tabpanel">
-                            <h4 class="text-primary mb-3">
-                                <i class="fas fa-link"></i>
-                                Endpoints Disponíveis
-                            </h4>
-
-                            <!-- Download XML Endpoint -->
-                            <div class="endpoint-section mb-4">
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="badge badge-success mr-2">POST</span>
-                                    <code class="h5">/api/v1/jobs</code>
-                                </div>
-                                <p>Cria job para download otimizado de XMLs (~7.4s por chave) com extração de 19 campos estruturados.</p>
-                                
-                                <h6>Parâmetros:</h6>
-                                <pre><code class="language-json">{
-  "invoice_keys": [
-    "35250513516247000107550010000113401146202508",
-    "42250485179240000239550020004175361171503396"
-  ]
-}</code></pre>
-
-                                <h6>Resposta de Sucesso:</h6>
-                                <pre><code class="language-json">{
-  "job_id": "9fec83c7-11f1-486b-851b-89bd46340324",
-  "status": "created",
-  "total_keys": 2,
-  "created_at": "2025-07-04T21:44:40.041406"
-}</code></pre>
-                            </div>
-
-                            <!-- Job Status Endpoint -->
-                            <div class="endpoint-section mb-4">
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="badge badge-primary mr-2">GET</span>
-                                    <code class="h5">/api/v1/jobs/{job_id}</code>
-                                </div>
-                                <p>Consulta o status de um job de download.</p>
-                                
-                                <h6>Resposta:</h6>
-                                <pre><code class="language-json">{
-  "job_id": "9fec83c7-11f1-486b-851b-89bd46340324",
-  "status": "completed",
-  "progress": {
-    "total_keys": 1,
-    "processed": 1,
-    "successful": 1,
-    "failed": 0,
-    "percentage": 100.0
-  },
-  "files": {
-    "35250513516247000107550010000113401146202508.xml": "/api/v1/jobs/9fec83c7/files/35250513516247000107550010000113401146202508.xml"
-  },
-  "errors": [],
-  "created_at": "2025-07-04T21:44:40.041406",
-  "completed_at": "2025-07-04T21:44:48.234567"
-}</code></pre>
-                            </div>
-
-                            <!-- Account Status Endpoint -->
-                            <div class="endpoint-section mb-4">
-                                <div class="d-flex align-items-center mb-2">
-                                    <span class="badge badge-info mr-2">GET</span>
-                                    <code class="h5">/api/v1/account</code>
-                                </div>
-                                <p>Consulta informações da conta e saldo de créditos.</p>
-                                
-                                <h6>Resposta:</h6>
-                                <pre><code class="language-json">{
-  "user_id": 123,
-  "email": "usuario@exemplo.com",
-  "xml_credits": 150,
-  "trial_active": false,
-  "labels_access": true,
-  "account_status": "active"
-}</code></pre>
-                            </div>
-                        </div>
-
-                        <!-- Examples Tab -->
-                        <div class="tab-pane fade" id="examples" role="tabpanel">
-                            <h4 class="text-primary mb-3">
-                                <i class="fas fa-code"></i>
-                                Exemplos de Código
-                            </h4>
-
-                            <!-- Python Example -->
-                            <h5><i class="fab fa-python text-warning"></i> Python</h5>
-                            <pre><code class="language-python">import requests
-import time
-
-API_BASE = "{{ request.url_root }}api/v1"
-API_KEY = "sua_api_key_aqui"
-
-headers = {
-    "X-API-Key": API_KEY,
-    "Content-Type": "application/json"
-}
-
-# Iniciar download
-payload = {
-    "invoice_keys": ["35250513516247000107550010000113401146202508"]
-}
-
-response = requests.post(f"{API_BASE}/jobs", json=payload, headers=headers)
-result = response.json()
-
-job_id = result["job_id"]
-print(f"Download iniciado! Job ID: {job_id}")
-
-# Aguardar conclusão
-while True:
-    status_response = requests.get(f"{API_BASE}/jobs/{job_id}", headers=headers)
-    status = status_response.json()
-    
-    print(f"Status: {status['status']} - Progresso: {status.get('progress', {}).get('percentage', 0)}%")
-    
-    if status["status"] == "completed":
-        print("Download concluído!")
-        # Listar arquivos disponíveis
-        files_response = requests.get(f"{API_BASE}/jobs/{job_id}/files", headers=headers)
-        files_data = files_response.json()
-        for file_info in files_data["files"]:
-            print(f"Arquivo: {file_info['filename']}")
-        break
-    elif status["status"] == "failed":
-        print("Download falhou!")
-        break
-        
-    time.sleep(5)
-</code></pre>
-
-                            <!-- JavaScript Example -->
-                            <h5 class="mt-4"><i class="fab fa-js-square text-warning"></i> JavaScript</h5>
-                            <pre><code class="language-javascript">const API_BASE = "{{ request.url_root }}api/v1";
-const API_KEY = "sua_api_key_aqui";
-
-const headers = {
-    "X-API-Key": API_KEY,
-    "Content-Type": "application/json"
-};
-
-async function downloadXML(invoiceKeys) {
-    try {
-        // Iniciar download
-        const response = await fetch(`${API_BASE}/jobs`, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify({
-                invoice_keys: invoiceKeys
-            })
-        });
-        
-        const result = await response.json();
-        
-        console.log(`Download iniciado! Job ID: ${result.job_id}`);
-        
-        // Monitorar progresso
-        const jobId = result.job_id;
-        return await monitorJob(jobId);
-    } catch (error) {
-        console.error('Erro no download:', error);
-    }
-}
-
-async function monitorJob(jobId) {
-    while (true) {
-        const response = await fetch(`${API_BASE}/jobs/${jobId}`, {
-            headers: headers
-        });
-        
-        const status = await response.json();
-        const progress = status.progress?.percentage || 0;
-        console.log(`Status: ${status.status} - Progresso: ${progress}%`);
-        
-        if (status.status === "completed") {
-            console.log("Download concluído!");
-            // Listar arquivos disponíveis
-            const filesResponse = await fetch(`${API_BASE}/jobs/${jobId}/files`, {
-                headers: headers
-            });
-            const filesData = await filesResponse.json();
-            return filesData.files;
-        } else if (status.status === "failed") {
-            throw new Error("Download falhou!");
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 5000));
-    }
-}
-
-// Uso
-downloadXML(["35250513516247000107550010000113401146202508"]);</code></pre>
-                        </div>
-
-                        <!-- Pricing Tab -->
-                        <div class="tab-pane fade" id="pricing" role="tabpanel">
-                            <h4 class="text-primary mb-3">
-                                <i class="fas fa-dollar-sign"></i>
-                                Estrutura de Preços
-                            </h4>
-
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle"></i>
-                                <strong>Sistema de Créditos:</strong> Cada XML baixado consome 1 crédito. Os créditos são debitados automaticamente de sua conta.
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="card">
-                                        <div class="card-header bg-primary text-white">
-                                            <h5 class="mb-0">
-                                                <i class="fas fa-download"></i>
-                                                Download de XMLs
-                                            </h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="text-center mb-3">
-                                                <span class="h2 text-primary">1 Crédito</span>
-                                                <div class="text-muted">por XML baixado</div>
-                                            </div>
-                                            <ul class="list-unstyled">
-                                                <li><i class="fas fa-check text-success"></i> Download via API</li>
-                                                <li><i class="fas fa-check text-success"></i> Extração de dados</li>
-                                                <li><i class="fas fa-check text-success"></i> Armazenamento seguro</li>
-                                                <li><i class="fas fa-check text-success"></i> Suporte técnico</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-md-6">
-                                    <div class="card">
-                                        <div class="card-header bg-success text-white">
-                                            <h5 class="mb-0">
-                                                <i class="fas fa-gift"></i>
-                                                Recursos Gratuitos
-                                            </h5>
-                                        </div>
-                                        <div class="card-body">
-                                            <div class="text-center mb-3">
-                                                <span class="h2 text-success">GRÁTIS</span>
-                                                <div class="text-muted">sempre incluído</div>
-                                            </div>
-                                            <ul class="list-unstyled">
-                                                <li><i class="fas fa-check text-success"></i> Geração de DANFE</li>
-                                                <li><i class="fas fa-check text-success"></i> Consulta de status</li>
-                                                <li><i class="fas fa-check text-success"></i> Histórico de downloads</li>
-                                                <li><i class="fas fa-check text-success"></i> Rate limiting generoso</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <h5>Pacotes de Créditos Disponíveis:</h5>
-                                <div class="table-responsive">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Pacote</th>
-                                                <th>Créditos</th>
-                                                <th>Valor</th>
-                                                <th>Custo por XML</th>
-                                                <th>Economia</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td><span class="badge badge-secondary">Starter</span></td>
-                                                <td>200 créditos</td>
-                                                <td>R$ 19,90</td>
-                                                <td>R$ 0,10</td>
-                                                <td>-</td>
-                                            </tr>
-                                            <tr>
-                                                <td><span class="badge badge-primary">Professional</span></td>
-                                                <td>650 créditos</td>
-                                                <td>R$ 49,90</td>
-                                                <td>R$ 0,08</td>
-                                                <td>20%</td>
-                                            </tr>
-                                            <tr class="table-success">
-                                                <td><span class="badge badge-success">Enterprise</span></td>
-                                                <td>1.500 créditos</td>
-                                                <td>R$ 99,90</td>
-                                                <td>R$ 0,07</td>
-                                                <td>30%</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
+                    
+                    <div class="mt-3">
+                        <a href="/guia-api" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-external-link-alt"></i>
+                            Ver Documentação Completa com Exemplos
+                        </a>
                     </div>
                 </div>
             </div>
+            {% endif %}
+
         </div>
     </div>
 </div>
 
-<!-- JavaScript -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
-
 <script>
-function copyToClipboard(elementId) {
-    const element = document.getElementById(elementId);
-    element.select();
-    element.setSelectionRange(0, 99999);
+function copyToClipboard(inputId) {
+    const input = document.getElementById(inputId);
+    input.select();
+    input.setSelectionRange(0, 99999);
     document.execCommand('copy');
     
-    // Show feedback
-    const button = element.nextElementSibling.querySelector('button');
-    const originalHTML = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-check"></i>';
+    // Visual feedback
+    const button = input.nextElementSibling.querySelector('button');
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i> Copiado!';
     button.classList.add('btn-success');
     button.classList.remove('btn-outline-secondary');
     
     setTimeout(() => {
-        button.innerHTML = originalHTML;
+        button.innerHTML = originalText;
         button.classList.remove('btn-success');
         button.classList.add('btn-outline-secondary');
     }, 2000);
 }
 
+function toggleSecret() {
+    const input = document.getElementById('api-secret');
+    const icon = document.getElementById('toggle-icon');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+    } else {
+        input.type = 'password';
+        icon.className = 'fas fa-eye';
+    }
+}
+
 function generateCredentials() {
-    if (confirm('Deseja gerar novas credenciais API? Esta ação criará uma nova API Key.')) {
-        fetch('/generate-api-credentials', {
+    fetch('/api/generate-credentials', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erro ao gerar credenciais: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Erro ao gerar credenciais');
+    });
+}
+
+function regenerateCredentials() {
+    if (confirm('Tem certeza que deseja regenerar suas credenciais? As antigas ficarão inválidas.')) {
+        fetch('/api/regenerate-credentials', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
             }
         })
         .then(response => response.json())
@@ -668,29 +291,22 @@ function generateCredentials() {
             if (data.success) {
                 location.reload();
             } else {
-                alert('Erro ao gerar credenciais: ' + data.error);
+                alert('Erro ao regenerar credenciais: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Erro interno do servidor');
+            alert('Erro ao regenerar credenciais');
         });
-    }
-}
-
-function regenerateCredentials() {
-    if (confirm('Deseja regenerar suas credenciais API? Suas credenciais atuais serão invalidadas.')) {
-        generateCredentials();
     }
 }
 
 function revokeCredentials() {
-    if (confirm('Deseja revogar suas credenciais API? Você precisará gerar novas credenciais para usar a API.')) {
-        fetch('/revoke-api-credentials', {
+    if (confirm('Tem certeza que deseja revogar suas credenciais? Você perderá acesso à API.')) {
+        fetch('/api/revoke-credentials', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
             }
         })
         .then(response => response.json())
@@ -698,14 +314,15 @@ function revokeCredentials() {
             if (data.success) {
                 location.reload();
             } else {
-                alert('Erro ao revogar credenciais: ' + data.error);
+                alert('Erro ao revogar credenciais: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Erro interno do servidor');
+            alert('Erro ao revogar credenciais');
         });
     }
 }
 </script>
+
 {% endblock %}
