@@ -63,7 +63,7 @@ As chaves devem ter exatamente 44 dígitos numéricos:
 
 ### URL Base
 ```
-https://sua-aplicacao.replit.app/api/v1
+https://crossxml.com.br/api/v1
 ```
 
 ### Endpoints Principais
@@ -104,15 +104,15 @@ GET /api/v1/jobs/{job_id}/files/{filename}
 ### Exemplo com cURL
 ```bash
 # Criar job
-curl -X POST https://sua-app.replit.app/api/v1/jobs \
+curl -X POST https://crossxml.com.br/api/v1/jobs \
   -H "Content-Type: application/json" \
-  -d '{"invoice_keys": ["35250162954987000130550020001854371034511150"]}'
+  -d '{"invoice_keys": ["35250513516247000107550010000113401146202508"]}'
 
 # Verificar status (substitua JOB_ID)
-curl https://sua-app.replit.app/api/v1/jobs/JOB_ID
+curl https://crossxml.com.br/api/v1/jobs/JOB_ID
 
 # Baixar arquivo (substitua JOB_ID e FILENAME)
-curl -O https://sua-app.replit.app/api/v1/jobs/JOB_ID/files/FILENAME.xml
+curl -O https://crossxml.com.br/api/v1/jobs/JOB_ID/files/FILENAME.xml
 ```
 
 ## Cliente Python
@@ -123,10 +123,10 @@ Use o cliente Python incluído para integração fácil:
 from api_client_example import XMLDownloaderAPIClient
 
 # Inicializar cliente
-client = XMLDownloaderAPIClient("https://sua-app.replit.app")
+client = XMLDownloaderAPIClient("https://crossxml.com.br")
 
 # Baixar XMLs automaticamente
-invoice_keys = ["35250162954987000130550020001854371034511150"]
+invoice_keys = ["35250513516247000107550010000113401146202508"]
 files = client.download_invoices(invoice_keys, "./downloads")
 
 print(f"Baixados {len(files)} arquivos XML")

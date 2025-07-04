@@ -12,12 +12,12 @@ from typing import List, Dict, Optional
 class XMLDownloaderAPIClient:
     """Cliente para a API do XML Downloader"""
     
-    def __init__(self, base_url: str = "http://localhost:5000"):
+    def __init__(self, base_url: str = "https://crossxml.com.br"):
         """
         Inicializa o cliente da API
         
         Args:
-            base_url: URL base da API (ex: https://sua-app.replit.app)
+            base_url: URL base da API (ex: https://crossxml.com.br)
         """
         self.base_url = base_url.rstrip('/')
         self.api_url = f"{self.base_url}/api/v1"

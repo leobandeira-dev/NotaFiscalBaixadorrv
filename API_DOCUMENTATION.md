@@ -323,8 +323,8 @@ import requests
 import time
 
 # Criar job
-response = requests.post('https://sua-app.replit.app/api/v1/jobs', json={
-    'invoice_keys': ['35250162954987000130550020001854371034511150']
+response = requests.post('https://crossxml.com.br/api/v1/jobs', json={
+    'invoice_keys': ['35250513516247000107550010000113401146202508']
 })
 
 job_data = response.json()
@@ -332,7 +332,7 @@ job_id = job_data['job_id']
 
 # Monitorar progresso
 while True:
-    status_response = requests.get(f'https://sua-app.replit.app/api/v1/jobs/{job_id}')
+    status_response = requests.get(f'https://crossxml.com.br/api/v1/jobs/{job_id}')
     status = status_response.json()
     
     print(f"Status: {status['status']}, Progresso: {status['progress']['percentage']}%")
@@ -344,11 +344,11 @@ while True:
 
 # Baixar arquivos
 if status['status'] == 'completed':
-    files_response = requests.get(f'https://sua-app.replit.app/api/v1/jobs/{job_id}/files')
+    files_response = requests.get(f'https://crossxml.com.br/api/v1/jobs/{job_id}/files')
     files = files_response.json()['files']
     
     for file_info in files:
-        file_response = requests.get(f"https://sua-app.replit.app{file_info['download_url']}")
+        file_response = requests.get(f"https://crossxml.com.br{file_info['download_url']}")
         
         with open(file_info['filename'], 'wb') as f:
             f.write(file_response.content)
@@ -360,20 +360,20 @@ if status['status'] == 'completed':
 
 ```bash
 # Criar job
-curl -X POST https://sua-app.replit.app/api/v1/jobs \
+curl -X POST https://crossxml.com.br/api/v1/jobs \
   -H "Content-Type: application/json" \
   -d '{
-    "invoice_keys": ["35250162954987000130550020001854371034511150"]
+    "invoice_keys": ["35250513516247000107550010000113401146202508"]
   }'
 
 # Verificar status
-curl https://sua-app.replit.app/api/v1/jobs/JOB_ID
+curl https://crossxml.com.br/api/v1/jobs/JOB_ID
 
 # Listar arquivos
-curl https://sua-app.replit.app/api/v1/jobs/JOB_ID/files
+curl https://crossxml.com.br/api/v1/jobs/JOB_ID/files
 
 # Baixar arquivo
-curl -O https://sua-app.replit.app/api/v1/jobs/JOB_ID/files/FILENAME.xml
+curl -O https://crossxml.com.br/api/v1/jobs/JOB_ID/files/FILENAME.xml
 ```
 
 ### JavaScript/Node.js
@@ -382,7 +382,7 @@ curl -O https://sua-app.replit.app/api/v1/jobs/JOB_ID/files/FILENAME.xml
 const axios = require('axios');
 
 async function downloadInvoices(invoiceKeys) {
-    const baseUrl = 'https://sua-app.replit.app/api/v1';
+    const baseUrl = 'https://crossxml.com.br/api/v1';
     
     // Criar job
     const jobResponse = await axios.post(`${baseUrl}/jobs`, {
