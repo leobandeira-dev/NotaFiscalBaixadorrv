@@ -374,22 +374,22 @@ class InvoiceDownloader:
                     from selenium.webdriver.common.keys import Keys
                     from selenium.webdriver.common.action_chains import ActionChains
                     
-                    # Open browser search with Ctrl+F
+                    # Optimized browser search - reduced waits
                     actions = ActionChains(self.driver)
                     actions.key_down(Keys.CONTROL).send_keys('f').key_up(Keys.CONTROL).perform()
-                    time.sleep(1)
+                    time.sleep(0.3)  # Reduced from 1s
                     
                     # Type "Baixar XML" in search box
                     actions.send_keys('Baixar XML').perform()
-                    time.sleep(1)
+                    time.sleep(0.3)  # Reduced from 1s
                     
                     # Press Enter to navigate to found text
                     actions.send_keys(Keys.ENTER).perform()
-                    time.sleep(1)
+                    time.sleep(0.3)  # Reduced from 1s
                     
                     # Close search with Escape
                     actions.send_keys(Keys.ESCAPE).perform()
-                    time.sleep(1)
+                    time.sleep(0.2)  # Reduced from 1s
                     
                     logger.info(f"[Job {job_id}] Browser search completed")
                     
@@ -460,16 +460,16 @@ class InvoiceDownloader:
                     if 'clicked' in result.lower():
                         logger.info(f"[Job {job_id}] JavaScript click executed: {result}")
                         
-                        # Wait for download or redirect
-                        time.sleep(3)
+                        # Optimized wait for download or redirect
+                        time.sleep(1)  # Reduced from 3s
                         
                         # Enhanced post-click verification
                         try:
                             current_url = self.driver.current_url
                             logger.info(f"[Job {job_id}] URL after JS click: {current_url}")
                             
-                            # Wait longer for potential redirect or content load
-                            time.sleep(5)
+                            # Reduced wait for content load
+                            time.sleep(2)  # Reduced from 5s
                             
                             # Check multiple indicators of success
                             success_indicators = []

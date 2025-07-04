@@ -377,7 +377,7 @@ class DownloadJob:
 def process_download_job(job_id, user_id):
     """Process download job in background"""
     try:
-        from automation_fixed import InvoiceDownloader
+        from automation_speed_optimized import SpeedOptimizedInvoiceDownloader
         
         with jobs_lock:
             job = download_jobs.get(job_id)
@@ -387,7 +387,7 @@ def process_download_job(job_id, user_id):
             return
         
         job.status = "running"
-        downloader = InvoiceDownloader()
+        downloader = SpeedOptimizedInvoiceDownloader()
         
         for i, invoice_key in enumerate(job.invoice_keys):
             try:
@@ -3160,9 +3160,9 @@ def pricing():
 def test_automation():
     """Testar conexão do sistema de automação"""
     try:
-        from automation_fixed import InvoiceDownloader
+        from automation_speed_optimized import SpeedOptimizedInvoiceDownloader
         
-        downloader = InvoiceDownloader()
+        downloader = SpeedOptimizedInvoiceDownloader()
         result = downloader.test_connection()
         
         if result.get('success'):
