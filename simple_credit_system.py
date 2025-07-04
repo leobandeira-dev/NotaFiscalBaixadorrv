@@ -12,13 +12,18 @@ logger = logging.getLogger(__name__)
 
 def get_user_xml_balance(user_id):
     """
-    Obter saldo atual de créditos XML do usuário (considera trial period)
+    Obter saldo atual de créditos XML do usuário (considera trial period e admin)
     """
     try:
         from models import User
         user = User.query.get(user_id)
         if not user:
             return 0
+            
+        # ADMINISTRADOR: Créditos ilimitados para admin@xmldownloader.com
+        if user.email == 'admin@xmldownloader.com':
+            logger.info(f"Usuário {user_id} é administrador - créditos ilimitados")
+            return 999999  # Saldo ilimitado para administrador
             
         # Se usuário está em trial, retorna saldo "infinito" (999999) para bypass das verificações
         is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
@@ -116,7 +121,7 @@ def add_xml_credits(user_id, credits, description="Créditos adicionados"):
 
 def consume_xml_credit(user_id, description="Download XML"):
     """
-    Consumir um crédito XML do usuário (verifica período de trial)
+    Consumir um crédito XML do usuário (verifica período de trial e admin)
     """
     try:
         from models import User
@@ -124,6 +129,25 @@ def consume_xml_credit(user_id, description="Download XML"):
         if not user:
             logger.error(f"Usuário {user_id} não encontrado")
             return False
+        
+        # ADMINISTRADOR: Créditos ilimitados para admin@xmldownloader.com
+        if user.email == 'admin@xmldownloader.com':
+            logger.info(f"Usuário {user_id} é administrador - download gratuito registrado")
+            
+            # Registrar uso do admin (sem consumir créditos)
+            admin_record = CreditBalance(
+                user_id=user_id,
+                transaction_type='admin_usage',
+                amount=0,  # Sem cobrança para admin
+                balance_after=999999,  # Saldo sempre ilimitado
+                description=f"{description} (Admin - gratuito)",
+                service_type='xml_download_admin',
+                created_at=datetime.utcnow()
+            )
+            
+            db.session.add(admin_record)
+            db.session.commit()
+            return True
         
         # Verificar se usuário está em período de teste (trial de 7 dias)
         is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
@@ -180,13 +204,18 @@ def consume_xml_credit(user_id, description="Download XML"):
 
 def can_download_xml(user_id):
     """
-    Verifica se o usuário pode fazer download de XML (trial ou créditos)
+    Verifica se o usuário pode fazer download de XML (admin, trial ou créditos)
     """
     try:
         from models import User
         user = User.query.get(user_id)
         if not user:
             return False
+        
+        # ADMINISTRADOR: Sempre pode fazer download
+        if user.email == 'admin@xmldownloader.com':
+            logger.info(f"Usuário {user_id} é administrador - pode fazer download")
+            return True
         
         # Verificar se está em período de trial
         is_trial_active = user.trial_expires_at and user.trial_expires_at > datetime.utcnow()
