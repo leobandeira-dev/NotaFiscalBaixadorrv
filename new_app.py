@@ -910,11 +910,7 @@ def create_charge():
         flash('Erro interno. Tente novamente.', 'error')
         return redirect(url_for('add_balance'))
 
-@app.route('/api_credentials')
-@login_required
-def api_credentials():
-    """API credentials page"""
-    return render_template('api_credentials.html')
+# Rota removida - agora usa /api-docs
 
 @app.route('/download-demo')
 @login_required
@@ -5822,7 +5818,7 @@ def revoke_api_key():
 @login_required
 def manage_credentials():
     """Página de gerenciamento de credenciais (redirecionamento)"""
-    return redirect(url_for('api_credentials_page'))
+    return redirect(url_for('api_docs'))
 
 @app.route('/debug-credentials')
 @login_required
