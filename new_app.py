@@ -5754,11 +5754,13 @@ def generate_api_key():
         db.session.add(activity)
         db.session.commit()
         
-        return jsonify({
+        response = jsonify({
             'success': True,
             'api_key': api_key,
             'message': 'Chave API gerada com sucesso'
         })
+        response.headers['Content-Type'] = 'application/json'
+        return response
     except Exception as e:
         logger.error(f"Erro ao gerar chave API: {e}")
         return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
@@ -5779,11 +5781,13 @@ def regenerate_api_key():
         db.session.add(activity)
         db.session.commit()
         
-        return jsonify({
+        response = jsonify({
             'success': True,
             'api_key': api_key,
             'message': 'Chave API regenerada com sucesso'
         })
+        response.headers['Content-Type'] = 'application/json'
+        return response
     except Exception as e:
         logger.error(f"Erro ao regenerar chave API: {e}")
         return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
@@ -5804,10 +5808,12 @@ def revoke_api_key():
         db.session.add(activity)
         db.session.commit()
         
-        return jsonify({
+        response = jsonify({
             'success': True,
             'message': 'Chave API revogada com sucesso'
         })
+        response.headers['Content-Type'] = 'application/json'
+        return response
     except Exception as e:
         logger.error(f"Erro ao revogar chave API: {e}")
         return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
@@ -5817,6 +5823,13 @@ def revoke_api_key():
 def manage_credentials():
     """Página de gerenciamento de credenciais (redirecionamento)"""
     return redirect(url_for('api_credentials_page'))
+
+@app.route('/debug-credentials')
+@login_required
+def debug_credentials():
+    """Página de debug para credenciais"""
+    with open('debug_credentials.html', 'r') as f:
+        return f.read()
 
 
 if __name__ == "__main__":
