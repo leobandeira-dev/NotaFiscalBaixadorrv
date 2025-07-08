@@ -818,7 +818,7 @@ class InvoiceDownloader:
                     
                     with app.app_context():
                         # Verificar se XML já existe
-                        existing = ImportedXML.query.filter_by(
+                        existing = XMLFile.query.filter_by(
                             user_id=user_id, 
                             invoice_key=invoice_key
                         ).first()
@@ -863,9 +863,10 @@ class InvoiceDownloader:
                             data_emissao = None
                             valor_total = 0.0
                         
-                        # Criar registro ImportedXML
-                        imported_xml = ImportedXML(
+                        # Criar registro XMLFile
+                        imported_xml = XMLFile(
                             user_id=user_id,
+                            filename=filename,
                             invoice_key=invoice_key,
                             xml_content=xml_content,
                             file_path=file_path,
