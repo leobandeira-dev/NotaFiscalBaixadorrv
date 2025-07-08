@@ -3314,8 +3314,8 @@ def generate_label_route(xml_id):
         xml_content = xml_record.xml_content
         invoice_key = xml_record.invoice_key
         
-        # Verificar acesso ao módulo de etiquetas
-        if not current_user.has_labels_access():
+        # Verificar acesso ao módulo de etiquetas (Admin tem acesso total)
+        if not current_user.is_admin and not current_user.has_labels_access():
             SecurityManager.log_security_event("LABELS_ACCESS_DENIED", current_user.id, f"Trial active: {current_user.is_labels_trial_active()}, Subscription active: {current_user.labels_subscription_active}")
             flash('Você precisa adquirir o módulo de etiquetas para acessar esta funcionalidade.', 'warning')
             return redirect(url_for('labels_module'))

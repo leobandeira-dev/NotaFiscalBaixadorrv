@@ -812,7 +812,7 @@ class InvoiceDownloader:
                 try:
                     # Import Flask app and use application context
                     from new_app import app, db
-                    from models import XMLFile, ImportedXML, User, UsageRecord, ServiceModule
+                    from models import XMLFile, User, UsageRecord, ServiceModule
                     from datetime import datetime
                     import xml.etree.ElementTree as ET
                     

@@ -131,7 +131,21 @@ def require_xml_credits(f):
 
 def require_labels_subscription(f):
     """Decorator específico para módulo de etiquetas"""
-    return require_feature('transport_labels')(f)
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not current_user.is_authenticated:
+            if request.is_json:
+                return jsonify({'error': 'Login necessário'}), 401
+            flash('Faça login para continuar.', 'warning')
+            return redirect(url_for('login'))
+        
+        # Admin tem acesso total ao módulo de etiquetas
+        if current_user.is_admin:
+            return f(*args, **kwargs)
+        
+        # Para usuários normais, verificar subscription
+        return require_feature('transport_labels')(f)(*args, **kwargs)
+    return decorated_function
 
 def require_admin(f):
     """Decorator para funcionalidades administrativas"""

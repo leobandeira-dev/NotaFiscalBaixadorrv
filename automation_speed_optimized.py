@@ -133,6 +133,26 @@ class SpeedOptimizedInvoiceDownloader(InvoiceDownloader):
                 downloaded_file = self.check_downloaded_file(invoice_key, job_id)
                 if downloaded_file['success']:
                     logger.info(f"[Job {job_id}] SPEED OPTIMIZATION SUCCESSFUL - File downloaded")
+                    
+                    # Process file with user_id for charging and database saving
+                    if user_id and 'file_path' in downloaded_file:
+                        try:
+                            # Read XML content from downloaded file
+                            with open(downloaded_file['file_path'], 'r', encoding='utf-8') as f:
+                                xml_content = f.read()
+                            
+                            # Use save_xml_content method with Flask context
+                            save_result = self.save_xml_content(xml_content, invoice_key, job_id, user_id, 'SISTEMA')
+                            if save_result['success']:
+                                logger.info(f"[Job {job_id}] Successfully saved XML to database for user {user_id}")
+                                # Update the result with database info
+                                downloaded_file.update(save_result)
+                            else:
+                                logger.error(f"[Job {job_id}] Failed to save XML to database for user {user_id}")
+                            
+                        except Exception as e:
+                            logger.error(f"[Job {job_id}] Error processing downloaded file for database: {e}")
+                    
                     return downloaded_file
                 
                 # Alternative: Check for XML in page source
