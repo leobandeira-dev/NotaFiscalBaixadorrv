@@ -21,7 +21,7 @@ from itsdangerous import URLSafeTimedSerializer
 # Import Google OAuth components
 import requests
 from oauthlib.oauth2 import WebApplicationClient
-from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, LabelGeneration, APICredential, init_default_data
+from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, LabelGeneration, init_default_data
 from package_models import (
     StripeProduct, PackageFeature, UserSubscription, FeatureUsage,
     init_stripe_products, get_user_active_subscriptions, 
@@ -5520,22 +5520,15 @@ def authenticate_api_request():
     if not api_key:
         return None, {'error': 'X-API-Key header required'}, 401
     
-    # Buscar credencial ativa
-    credential = APICredential.query.filter_by(
-        api_key=api_key, 
-        is_active=True
-    ).first()
+    # Buscar usuário pela chave API
+    user = User.query.filter_by(api_key=api_key).first()
     
-    if not credential:
+    if not user:
         return None, {'error': 'Invalid API key'}, 401
     
     # Verificar se o usuário está ativo
-    user = credential.user
-    if not user or not user.active:
+    if not user.active:
         return None, {'error': 'User account inactive'}, 401
-    
-    # Marcar uso da credencial
-    credential.mark_used()
     
     return user, None, None
 
@@ -5769,82 +5762,94 @@ def api_test_connection():
         }), 500
 
 # =============================================================================
-# API CREDENTIALS MANAGEMENT ROUTES
+# API CREDENTIALS MANAGEMENT ROUTES (SIMPLIFIED)
 # =============================================================================
 
-@app.route('/api/credentials', methods=['GET'])
+@app.route('/api/credentials')
 @login_required
-def api_get_credentials():
-    """Listar credenciais API do usuário"""
-    try:
-        credentials = current_user.get_active_credentials()
-        return jsonify([cred.to_dict() for cred in credentials])
-    except Exception as e:
-        logger.error(f"Erro ao listar credenciais: {e}")
-        return jsonify({'error': 'Erro interno do servidor'}), 500
+def api_credentials_page():
+    """Página de gerenciamento de credenciais API (simplificada)"""
+    return render_template('api_credentials_simple.html')
 
-@app.route('/api/credentials', methods=['POST'])
+@app.route('/api/credentials/generate', methods=['POST'])
 @login_required
-def api_create_credential():
-    """Criar nova credencial API"""
+def generate_api_key():
+    """Gera uma nova chave API para o usuário"""
     try:
-        data = request.get_json()
-        nickname = data.get('nickname', '').strip()
-        
-        if not nickname:
-            return jsonify({'error': 'Nome da credencial é obrigatório'}), 400
-        
-        if len(nickname) > 100:
-            return jsonify({'error': 'Nome da credencial muito longo (máximo 100 caracteres)'}), 400
-        
-        # Criar credencial
-        result = current_user.generate_api_credentials(nickname)
+        api_key = current_user.generate_api_key()
         
         # Log da atividade
         activity = UserActivity(
             user_id=current_user.id,
-            activity_type='credential_created',
-            description=f'Nova credencial API criada: {nickname}'
+            activity_type='api_key_generated',
+            description='Chave API gerada'
         )
         db.session.add(activity)
         db.session.commit()
         
-        return jsonify(result)
-        
+        return jsonify({
+            'success': True,
+            'api_key': api_key,
+            'message': 'Chave API gerada com sucesso'
+        })
     except Exception as e:
-        logger.error(f"Erro ao criar credencial: {e}")
-        return jsonify({'error': 'Erro interno do servidor'}), 500
+        logger.error(f"Erro ao gerar chave API: {e}")
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
 
-@app.route('/api/credentials/<int:credential_id>', methods=['DELETE'])
+@app.route('/api/credentials/regenerate', methods=['POST'])
 @login_required
-def api_revoke_credential(credential_id):
-    """Revogar credencial específica"""
+def regenerate_api_key():
+    """Regenera a chave API do usuário"""
     try:
-        success = current_user.revoke_api_credentials(credential_id)
+        api_key = current_user.regenerate_api_key()
         
-        if success:
-            # Log da atividade
-            activity = UserActivity(
-                user_id=current_user.id,
-                activity_type='credential_revoked',
-                description=f'Credencial API #{credential_id} revogada'
-            )
-            db.session.add(activity)
-            db.session.commit()
-            
-            return jsonify({'message': 'Credencial revogada com sucesso'})
-        else:
-            return jsonify({'error': 'Credencial não encontrada'}), 404
-            
+        # Log da atividade
+        activity = UserActivity(
+            user_id=current_user.id,
+            activity_type='api_key_regenerated',
+            description='Chave API regenerada'
+        )
+        db.session.add(activity)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'api_key': api_key,
+            'message': 'Chave API regenerada com sucesso'
+        })
     except Exception as e:
-        logger.error(f"Erro ao revogar credencial: {e}")
-        return jsonify({'error': 'Erro interno do servidor'}), 500
+        logger.error(f"Erro ao regenerar chave API: {e}")
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
+
+@app.route('/api/credentials/revoke', methods=['POST'])
+@login_required
+def revoke_api_key():
+    """Revoga a chave API do usuário"""
+    try:
+        current_user.revoke_api_key()
+        
+        # Log da atividade
+        activity = UserActivity(
+            user_id=current_user.id,
+            activity_type='api_key_revoked',
+            description='Chave API revogada'
+        )
+        db.session.add(activity)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Chave API revogada com sucesso'
+        })
+    except Exception as e:
+        logger.error(f"Erro ao revogar chave API: {e}")
+        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
 
 @app.route('/credenciais-api')
 @login_required
 def manage_credentials():
-    """Página de gerenciamento de credenciais"""
-    return render_template('api_credentials.html')
+    """Página de gerenciamento de credenciais (redirecionamento)"""
+    return redirect(url_for('api_credentials_page'))
 
 
 if __name__ == "__main__":

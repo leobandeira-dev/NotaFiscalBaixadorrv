@@ -103,8 +103,7 @@ class User(UserMixin, db.Model):
     def __init__(self, **kwargs):
         super(User, self).__init__(**kwargs)
         if not self.api_key:
-            self.api_key = self.generate_api_key()
-
+            self.generate_api_key()
     
     def set_password(self, password):
         """Define a senha do usuário"""
@@ -116,13 +115,24 @@ class User(UserMixin, db.Model):
     
     def generate_api_key(self):
         """Gera uma nova chave API"""
-        return f"ak_{secrets.token_urlsafe(32)}"
-    
-    def regenerate_api_credentials(self):
-        """Regenera as credenciais API"""
-        self.api_key = self.generate_api_key()
-
+        self.api_key = f"ak_{secrets.token_urlsafe(32)}"
         db.session.commit()
+        return self.api_key
+    
+    def regenerate_api_key(self):
+        """Regenera a chave API"""
+        self.api_key = f"ak_{secrets.token_urlsafe(32)}"
+        db.session.commit()
+        return self.api_key
+    
+    def revoke_api_key(self):
+        """Revoga a chave API"""
+        self.api_key = None
+        db.session.commit()
+    
+    def has_api_key(self):
+        """Verifica se o usuário tem chave API"""
+        return self.api_key is not None
     
     def set_email_credentials(self, email, password, server, port=993, ssl=True):
         """Define as credenciais para importação via email"""
@@ -239,97 +249,7 @@ class User(UserMixin, db.Model):
         self.current_balance += amount
         db.session.commit()
     
-    def generate_api_credentials(self, nickname="Padrão"):
-        """Gera nova chave API para o usuário com apelido"""
-        # Verificar se já existe uma credencial com esse apelido
-        existing = APICredential.query.filter_by(user_id=self.id, nickname=nickname).first()
-        if existing:
-            nickname = f"{nickname} ({datetime.utcnow().strftime('%d/%m %H:%M')})"
-        
-        # Criar nova credencial
-        credential = APICredential(
-            user_id=self.id,
-            api_key=APICredential.generate_api_key(),
-            nickname=nickname
-        )
-        
-        db.session.add(credential)
-        db.session.commit()
-        
-        return {
-            'api_key': credential.api_key,
-            'nickname': credential.nickname,
-            'id': credential.id
-        }
-
-    def revoke_api_credentials(self, credential_id=None):
-        """Revoga uma credencial específica ou todas"""
-        if credential_id:
-            # Revogar credencial específica
-            credential = APICredential.query.filter_by(
-                id=credential_id, 
-                user_id=self.id
-            ).first()
-            if credential:
-                credential.is_active = False
-                db.session.commit()
-                return True
-        else:
-            # Revogar todas as credenciais
-            APICredential.query.filter_by(user_id=self.id).update({'is_active': False})
-            db.session.commit()
-            return True
-        return False
-
-    def has_api_credentials(self):
-        """Verifica se o usuário tem credenciais API ativas"""
-        return APICredential.query.filter_by(
-            user_id=self.id, 
-            is_active=True
-        ).count() > 0
-    
-    def get_active_credentials(self):
-        """Retorna todas as credenciais ativas do usuário"""
-        return APICredential.query.filter_by(
-            user_id=self.id, 
-            is_active=True
-        ).order_by(APICredential.created_at.desc()).all()
-    
-    def get_primary_api_key(self):
-        """Retorna a primeira credencial ativa para compatibilidade"""
-        credential = APICredential.query.filter_by(
-            user_id=self.id, 
-            is_active=True
-        ).order_by(APICredential.created_at.asc()).first()
-        return credential.api_key if credential else None
-    
-    @property
-    def api_key(self):
-        """Propriedade para compatibilidade com código existente"""
-        return self.get_primary_api_key()
-    
-    @api_key.setter
-    def api_key(self, value):
-        """Setter para compatibilidade - atualiza a primeira credencial"""
-        if value is None:
-            # Revogar todas as credenciais
-            self.revoke_api_credentials()
-        else:
-            # Criar nova credencial ou atualizar existente
-            existing = APICredential.query.filter_by(
-                user_id=self.id, 
-                is_active=True
-            ).first()
-            if existing:
-                existing.api_key = value
-            else:
-                credential = APICredential(
-                    user_id=self.id,
-                    api_key=value,
-                    nickname="Padrão"
-                )
-                db.session.add(credential)
-            db.session.commit()
+    # API Key methods simplificados (implementados acima na linha 116-135)
     
     def to_dict(self):
         """Converte o usuário para dicionário"""
@@ -510,54 +430,7 @@ class CreditBalance(db.Model):
             'created_at': self.created_at.isoformat()
         }
 
-class APICredential(db.Model):
-    """Múltiplas credenciais API por usuário com apelidos"""
-    __tablename__ = 'api_credentials'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
-    # Credencial
-    api_key = db.Column(db.String(255), unique=True, nullable=False, index=True)
-    nickname = db.Column(db.String(100), nullable=False)  # Apelido/nome da credencial
-    
-    # Status
-    is_active = db.Column(db.Boolean, default=True, nullable=False)
-    last_used_at = db.Column(db.DateTime)
-    usage_count = db.Column(db.Integer, default=0)
-    
-    # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    expires_at = db.Column(db.DateTime)  # Opcional para expiração
-    
-    # Relacionamento
-    user = db.relationship('User', backref='api_credentials')
-    
-    def __repr__(self):
-        return f'<APICredential {self.nickname} for user {self.user_id}>'
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'nickname': self.nickname,
-            'api_key': self.api_key,
-            'is_active': self.is_active,
-            'last_used_at': self.last_used_at.isoformat() if self.last_used_at else None,
-            'usage_count': self.usage_count,
-            'created_at': self.created_at.isoformat(),
-            'expires_at': self.expires_at.isoformat() if self.expires_at else None
-        }
-    
-    @staticmethod
-    def generate_api_key():
-        """Gera uma nova chave API única"""
-        return f"ak_{secrets.token_urlsafe(32)}"
-    
-    def mark_used(self):
-        """Marca a credencial como usada"""
-        self.last_used_at = datetime.utcnow()
-        self.usage_count += 1
-        db.session.commit()
+# APICredential modelo removido - agora usamos api_key diretamente no User
 
 class LabelGeneration(db.Model):
     """Controle de geração de etiquetas"""
