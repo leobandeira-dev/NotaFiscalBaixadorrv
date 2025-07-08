@@ -924,13 +924,7 @@ def download_demo():
 
 
 
-@app.route('/regenerate_api', methods=['POST'])
-@login_required
-def regenerate_api():
-    """Regenerate API credentials"""
-    current_user.regenerate_api_credentials()
-    flash('Credenciais API regeneradas com sucesso.', 'success')
-    return redirect(url_for('api_credentials'))
+# Rota antiga removida - agora usamos /api/credentials/regenerate
 
 # Admin routes
 @app.route('/admin')
@@ -2202,37 +2196,10 @@ def api_docs():
     
     return render_template('api_docs.html', 
                          xml_balance=xml_balance,
-                         has_api_credentials=current_user.has_api_credentials(),
-                         api_key=current_user.api_key if current_user.has_api_credentials() else None)
+                         has_api_credentials=bool(current_user.api_key),
+                         api_key=current_user.api_key or "Nenhuma chave gerada")
 
-@app.route('/generate-api-credentials', methods=['POST'])
-@login_required
-@rate_limit_check(max_requests=5, window_minutes=15)
-def generate_api_credentials():
-    """Gerar novas credenciais API para o usuário"""
-    try:
-        credentials = current_user.generate_api_credentials()
-        flash('Credenciais API geradas com sucesso!', 'success')
-        return jsonify({
-            'success': True,
-            'api_key': credentials['api_key']
-        })
-    except Exception as e:
-        logger.error(f"Erro ao gerar credenciais API: {e}")
-        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
-
-@app.route('/revoke-api-credentials', methods=['POST'])
-@login_required
-@rate_limit_check(max_requests=5, window_minutes=15)
-def revoke_api_credentials():
-    """Revogar credenciais API do usuário"""
-    try:
-        current_user.revoke_api_credentials()
-        flash('Credenciais API revogadas com sucesso!', 'info')
-        return jsonify({'success': True})
-    except Exception as e:
-        logger.error(f"Erro ao revogar credenciais API: {e}")
-        return jsonify({'success': False, 'error': 'Erro interno do servidor'}), 500
+# Rotas antigas removidas - agora usamos /api/credentials
 
 @app.route('/upload-xml', methods=['GET', 'POST'])
 @login_required
