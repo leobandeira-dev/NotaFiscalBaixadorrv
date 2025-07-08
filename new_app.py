@@ -1993,22 +1993,26 @@ def labels_module():
         flash('Módulo de etiquetas não disponível.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Verificar se usuário está em período de teste
-    is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()
-    
-    # Verificar se usuário tem assinatura ativa do módulo
-    from package_models import UserSubscription, StripeProduct
-    active_subscription = UserSubscription.query.join(StripeProduct).filter(
-        UserSubscription.user_id == current_user.id,
-        StripeProduct.stripe_product_id == 'prod_SSVViDPzXYZHhO',  # Labels module product ID
-        UserSubscription.status == 'active'
-    ).first()
-    
-    # Se não tem acesso (nem trial nem assinatura), mostrar página de compra
-    if not is_trial_active and not active_subscription:
-        return render_template('labels_purchase.html', 
-                             labels_module=labels_module,
-                             user=current_user)
+    # Admin tem acesso total ao módulo de etiquetas
+    if current_user.is_admin:
+        pass  # Admin bypass - prosseguir para a funcionalidade
+    else:
+        # Verificar se usuário está em período de teste
+        is_trial_active = current_user.trial_expires_at and current_user.trial_expires_at > datetime.now()
+        
+        # Verificar se usuário tem assinatura ativa do módulo
+        from package_models import UserSubscription, StripeProduct
+        active_subscription = UserSubscription.query.join(StripeProduct).filter(
+            UserSubscription.user_id == current_user.id,
+            StripeProduct.stripe_product_id == 'prod_SSVViDPzXYZHhO',  # Labels module product ID
+            UserSubscription.status == 'active'
+        ).first()
+        
+        # Se não tem acesso (nem trial nem assinatura), mostrar página de compra
+        if not is_trial_active and not active_subscription:
+            return render_template('labels_purchase.html', 
+                                 labels_module=labels_module,
+                                 user=current_user)
     
     page = request.args.get('page', 1, type=int)
     per_page = 12
