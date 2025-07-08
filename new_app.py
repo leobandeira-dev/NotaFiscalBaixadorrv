@@ -2194,7 +2194,7 @@ def api_docs():
     from simple_credit_system import get_user_xml_balance
     xml_balance = get_user_xml_balance(current_user.id)
     
-    return render_template('api_docs.html', 
+    return render_template('api_credentials_fixed.html', 
                          xml_balance=xml_balance,
                          has_api_credentials=bool(current_user.api_key),
                          api_key=current_user.api_key or "Nenhuma chave gerada")
