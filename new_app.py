@@ -5509,6 +5509,56 @@ def google_logout():
 # API REST ENDPOINTS
 # ====================================
 
+# =============================================================================
+# API AUTHENTICATION
+# =============================================================================
+
+def authenticate_api_request():
+    """Autentica requisições API usando X-API-Key header"""
+    api_key = request.headers.get('X-API-Key')
+    
+    if not api_key:
+        return None, {'error': 'X-API-Key header required'}, 401
+    
+    # Buscar credencial ativa
+    credential = APICredential.query.filter_by(
+        api_key=api_key, 
+        is_active=True
+    ).first()
+    
+    if not credential:
+        return None, {'error': 'Invalid API key'}, 401
+    
+    # Verificar se o usuário está ativo
+    user = credential.user
+    if not user or not user.active:
+        return None, {'error': 'User account inactive'}, 401
+    
+    # Marcar uso da credencial
+    credential.mark_used()
+    
+    return user, None, None
+
+def require_api_key(f):
+    """Decorator para rotas que exigem autenticação via API key"""
+    from functools import wraps
+    
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user, error, status_code = authenticate_api_request()
+        if error:
+            return jsonify(error), status_code
+        
+        # Adicionar usuário ao contexto da request
+        request.api_user = user
+        return f(*args, **kwargs)
+    
+    return decorated_function
+
+# =============================================================================
+# API ROUTES
+# =============================================================================
+
 @app.route('/api/v1/health', methods=['GET'])
 def api_health():
     """Health check endpoint"""
@@ -5520,9 +5570,13 @@ def api_health():
     })
 
 @app.route('/api/v1/jobs', methods=['POST'])
+@require_api_key
 def api_create_job():
     """Create a new download job via API"""
     try:
+        # Get authenticated user
+        user = request.api_user
+        
         data = request.get_json()
         if not data or 'invoice_keys' not in data:
             return jsonify({'error': 'invoice_keys required'}), 400
@@ -5538,8 +5592,7 @@ def api_create_job():
         
         # Create job
         job_id = str(uuid.uuid4())
-        user_id = getattr(current_user, 'id', 1) if current_user.is_authenticated else 1  # Default admin
-        job = DownloadJob(job_id, invoice_keys, user_id)
+        job = DownloadJob(job_id, invoice_keys, user.id)
         
         with jobs_lock:
             download_jobs[job_id] = job
@@ -5561,6 +5614,7 @@ def api_create_job():
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/v1/jobs/<job_id>', methods=['GET'])
+@require_api_key
 def api_get_job_status(job_id):
     """Get job status and progress"""
     try:
@@ -5591,6 +5645,7 @@ def api_get_job_status(job_id):
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/v1/jobs', methods=['GET'])
+@require_api_key
 def api_list_jobs():
     """List all jobs with filtering"""
     try:
@@ -5638,6 +5693,7 @@ def api_list_jobs():
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/v1/jobs/<job_id>/files/<filename>', methods=['GET'])
+@require_api_key
 def api_download_file(job_id, filename):
     """Download a specific XML file from a completed job"""
     try:
@@ -5661,6 +5717,7 @@ def api_download_file(job_id, filename):
         return jsonify({'error': 'Internal server error'}), 500
 
 @app.route('/api/v1/jobs/<job_id>/files', methods=['GET'])
+@require_api_key
 def api_list_job_files(job_id):
     """List all files for a specific job"""
     try:
@@ -5710,6 +5767,84 @@ def api_test_connection():
             'message': f'Connection test failed: {str(e)}',
             'timestamp': datetime.now().isoformat()
         }), 500
+
+# =============================================================================
+# API CREDENTIALS MANAGEMENT ROUTES
+# =============================================================================
+
+@app.route('/api/credentials', methods=['GET'])
+@login_required
+def api_get_credentials():
+    """Listar credenciais API do usuário"""
+    try:
+        credentials = current_user.get_active_credentials()
+        return jsonify([cred.to_dict() for cred in credentials])
+    except Exception as e:
+        logger.error(f"Erro ao listar credenciais: {e}")
+        return jsonify({'error': 'Erro interno do servidor'}), 500
+
+@app.route('/api/credentials', methods=['POST'])
+@login_required
+def api_create_credential():
+    """Criar nova credencial API"""
+    try:
+        data = request.get_json()
+        nickname = data.get('nickname', '').strip()
+        
+        if not nickname:
+            return jsonify({'error': 'Nome da credencial é obrigatório'}), 400
+        
+        if len(nickname) > 100:
+            return jsonify({'error': 'Nome da credencial muito longo (máximo 100 caracteres)'}), 400
+        
+        # Criar credencial
+        result = current_user.generate_api_credentials(nickname)
+        
+        # Log da atividade
+        activity = UserActivity(
+            user_id=current_user.id,
+            activity_type='credential_created',
+            description=f'Nova credencial API criada: {nickname}'
+        )
+        db.session.add(activity)
+        db.session.commit()
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Erro ao criar credencial: {e}")
+        return jsonify({'error': 'Erro interno do servidor'}), 500
+
+@app.route('/api/credentials/<int:credential_id>', methods=['DELETE'])
+@login_required
+def api_revoke_credential(credential_id):
+    """Revogar credencial específica"""
+    try:
+        success = current_user.revoke_api_credentials(credential_id)
+        
+        if success:
+            # Log da atividade
+            activity = UserActivity(
+                user_id=current_user.id,
+                activity_type='credential_revoked',
+                description=f'Credencial API #{credential_id} revogada'
+            )
+            db.session.add(activity)
+            db.session.commit()
+            
+            return jsonify({'message': 'Credencial revogada com sucesso'})
+        else:
+            return jsonify({'error': 'Credencial não encontrada'}), 404
+            
+    except Exception as e:
+        logger.error(f"Erro ao revogar credencial: {e}")
+        return jsonify({'error': 'Erro interno do servidor'}), 500
+
+@app.route('/credenciais-api')
+@login_required
+def manage_credentials():
+    """Página de gerenciamento de credenciais"""
+    return render_template('api_credentials.html')
 
 
 if __name__ == "__main__":
