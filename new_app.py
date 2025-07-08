@@ -21,7 +21,7 @@ from itsdangerous import URLSafeTimedSerializer
 # Import Google OAuth components
 import requests
 from oauthlib.oauth2 import WebApplicationClient
-from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, LabelGeneration, init_default_data
+from models import db, User, ServiceModule, UsageRecord, Charge, SystemSettings, StripeTransaction, CreditBalance, XMLFile, UserActivity, LabelGeneration, APICredential, init_default_data
 from package_models import (
     StripeProduct, PackageFeature, UserSubscription, FeatureUsage,
     init_stripe_products, get_user_active_subscriptions, 
@@ -5598,7 +5598,7 @@ def api_create_job():
             download_jobs[job_id] = job
         
         # Start processing in background
-        thread = Thread(target=process_download_job, args=(job_id, user_id))
+        thread = Thread(target=process_download_job, args=(job_id, user.id))
         thread.daemon = True
         thread.start()
         
