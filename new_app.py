@@ -379,7 +379,8 @@ class DownloadJob:
 def process_download_job(job_id, user_id):
     """Process download job in background"""
     try:
-        from automation_speed_optimized import SpeedOptimizedInvoiceDownloader
+        # Use STEALTH downloader with anti-bot detection and increased timeouts
+        from automation_undetected import StealthInvoiceDownloader
         
         with jobs_lock:
             job = download_jobs.get(job_id)
@@ -389,7 +390,7 @@ def process_download_job(job_id, user_id):
             return
         
         job.status = "running"
-        downloader = SpeedOptimizedInvoiceDownloader()
+        downloader = StealthInvoiceDownloader()
         
         for i, invoice_key in enumerate(job.invoice_keys):
             try:
