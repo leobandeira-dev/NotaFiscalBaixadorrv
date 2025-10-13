@@ -58,6 +58,12 @@ class StealthInvoiceDownloader:
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--disable-blink-features=AutomationControlled')
             
+            # SSL/Certificate options - Allow insecure sites
+            chrome_options.add_argument('--ignore-certificate-errors')
+            chrome_options.add_argument('--ignore-ssl-errors')
+            chrome_options.add_argument('--allow-insecure-localhost')
+            chrome_options.add_argument('--allow-running-insecure-content')
+            
             # Anti-detection: Window size
             chrome_options.add_argument('--window-size=1920,1080')
             chrome_options.add_argument('--start-maximized')
