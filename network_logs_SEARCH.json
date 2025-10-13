@@ -1,0 +1,139 @@
+{
+  "requests": [
+    {
+      "method": "Network.requestWillBeSent",
+      "url": "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/os8at/0x4AAAAAABi39iOg0GNr5eFO/auto/fbE/new/normal/auto",
+      "timestamp": 1760387268632
+    },
+    {
+      "method": "Network.requestWillBeSent",
+      "url": "https://analytics.ahrefs.com/api/event",
+      "timestamp": 1760387268690
+    },
+    {
+      "method": "Network.requestWillBeSent",
+      "url": "https://cloudflareinsights.com/cdn-cgi/rum",
+      "timestamp": 1760387268846
+    },
+    {
+      "method": "Network.requestWillBeSent",
+      "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-PMT1R6XERE&gtm=45je5a80v9223751060za200zd9223751060&_p=1760387262615&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=949282489.1760387264&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AEEAAAQ&_s=2&tag_exp=101509157~103116026~103200004~103233427~104527907~104528500~104684208~104684211~104948813~115480710~115834636~115834638~115868792~115868794&sid=1760387263&sct=1&seg=0&dl=https%3A%2F%2Fmeudanfe.com.br%2F&dt=Meu%20Danfe%20-%20Gerar%20Danfe%2C%20Buscar%20NFe%20pela%20chave%2C%20Danfe%20PDF&en=form_start&ep.form_id=&ep.form_name=&ep.form_destination=https%3A%2F%2Fmeudanfe.com.br%2F&epn.form_length=1&ep.first_field_id=searchTxt&ep.first_field_name=searchTxt&ep.first_field_type=text&epn.first_field_position=1&_et=5021&tfd=11471",
+      "timestamp": 1760387273689
+    },
+    {
+      "method": "Network.requestWillBeSent",
+      "url": "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch5lQEloMAy1oASB2idd69IEY14u3DdRG.Uy.GOji0Hfs-1760387268-1.3.1.1-taQvBGu830t8tkWoASxWMvy8YCANNhPCEY.kTx68W5I/os8at/0x4AAAAAABi39iOg0GNr5eFO/auto/fbE/failure_retry/normal/auto",
+      "timestamp": 1760387285806
+    }
+  ],
+  "responses": [
+    {
+      "method": "Network.responseReceived",
+      "url": "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch/os8at/0x4AAAAAABi39iOg0GNr5eFO/auto/fbE/new/normal/auto",
+      "content_type": "text/html",
+      "headers": {
+        "accept-ch": "Sec-CH-UA-Bitness, Sec-CH-UA-Arch, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Platform, Sec-CH-UA, UA-Bitness, UA-Arch, UA-Full-Version, UA-Mobile, UA-Model, UA-Platform-Version, UA-Platform, UA",
+        "alt-svc": "h3=\":443\"; ma=86400",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "cf-ray": "98e1946d2d897600-SEA",
+        "content-encoding": "br",
+        "content-security-policy": "default-src 'none'; script-src 'nonce-itEBMy7H1KYdoLzy' 'unsafe-eval'; script-src-attr 'none'; worker-src blob:; style-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; frame-src 'self' blob:; child-src 'self' blob:; form-action 'none'; base-uri 'self'; sandbox allow-same-origin allow-scripts allow-popups allow-forms",
+        "content-type": "text/html; charset=UTF-8",
+        "critical-ch": "Sec-CH-UA-Bitness, Sec-CH-UA-Arch, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Platform, Sec-CH-UA, UA-Bitness, UA-Arch, UA-Full-Version, UA-Mobile, UA-Model, UA-Platform-Version, UA-Platform, UA",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "cross-origin",
+        "date": "Mon, 13 Oct 2025 20:27:48 GMT",
+        "document-policy": "js-profiling",
+        "origin-agent-cluster": "?1",
+        "permissions-policy": "accelerometer=(),autoplay=(),browsing-topics=(),camera=(),clipboard-read=(),clipboard-write=(),geolocation=(),gyroscope=(),hid=(),interest-cohort=(),magnetometer=(),microphone=(),payment=(),publickey-credentials-get=(),screen-wake-lock=(),serial=(),sync-xhr=(),usb=()",
+        "referrer-policy": "same-origin",
+        "server": "cloudflare"
+      },
+      "timestamp": 1760387268769
+    },
+    {
+      "method": "Network.responseReceived",
+      "url": "https://analytics.ahrefs.com/api/event",
+      "content_type": "application/json",
+      "headers": {
+        "access-control-allow-origin": "*",
+        "alt-svc": "h3=\":443\"; ma=86400",
+        "cf-cache-status": "DYNAMIC",
+        "cf-ray": "98e1946cb83e6e84-SEA",
+        "content-encoding": "gzip",
+        "content-type": "application/json",
+        "date": "Mon, 13 Oct 2025 20:27:48 GMT",
+        "server": "cloudflare",
+        "traceparent": "00-cea10f683d94480283c93bf3e955dfee-42ddc35e136c4e27-03",
+        "vary": "Accept-Encoding",
+        "x-request-id": "cea515b2-41c5-42aa-9fea-851fc8649a25"
+      },
+      "timestamp": 1760387268851
+    },
+    {
+      "method": "Network.responseReceived",
+      "url": "https://cloudflareinsights.com/cdn-cgi/rum",
+      "content_type": "text/plain",
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "access-control-allow-methods": "POST,OPTIONS",
+        "access-control-allow-origin": "https://meudanfe.com.br",
+        "access-control-max-age": "86400",
+        "cf-ray": "98e1946d5e6ac398-SEA",
+        "date": "Mon, 13 Oct 2025 20:27:48 GMT",
+        "server": "cloudflare",
+        "vary": "Origin",
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY"
+      },
+      "timestamp": 1760387268854
+    },
+    {
+      "method": "Network.responseReceived",
+      "url": "https://www.google-analytics.com/g/collect?v=2&tid=G-PMT1R6XERE&gtm=45je5a80v9223751060za200zd9223751060&_p=1760387262615&gcd=13l3l3l3l1l1&npa=0&dma=0&cid=949282489.1760387264&ul=en-us&sr=800x600&uaa=&uab=&uafvl=&uamb=0&uam=&uap=&uapv=&uaw=0&are=1&frm=0&pscdl=noapi&_eu=AEEAAAQ&_s=2&tag_exp=101509157~103116026~103200004~103233427~104527907~104528500~104684208~104684211~104948813~115480710~115834636~115834638~115868792~115868794&sid=1760387263&sct=1&seg=0&dl=https%3A%2F%2Fmeudanfe.com.br%2F&dt=Meu%20Danfe%20-%20Gerar%20Danfe%2C%20Buscar%20NFe%20pela%20chave%2C%20Danfe%20PDF&en=form_start&ep.form_id=&ep.form_name=&ep.form_destination=https%3A%2F%2Fmeudanfe.com.br%2F&epn.form_length=1&ep.first_field_id=searchTxt&ep.first_field_name=searchTxt&ep.first_field_type=text&epn.first_field_position=1&_et=5021&tfd=11471",
+      "content_type": "text/plain",
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "access-control-allow-origin": "https://meudanfe.com.br",
+        "cache-control": "no-cache, no-store, must-revalidate",
+        "content-length": "0",
+        "content-security-policy-report-only": "script-src 'none'; form-action 'none'; frame-src 'none'; report-uri https://csp.withgoogle.com/csp/scaffolding/ascnsrsggc:102:0",
+        "content-type": "text/plain",
+        "cross-origin-opener-policy-report-only": "same-origin; report-to=ascnsrsggc:102:0",
+        "cross-origin-resource-policy": "cross-origin",
+        "date": "Mon, 13 Oct 2025 20:27:53 GMT",
+        "expires": "Fri, 01 Jan 1990 00:00:00 GMT",
+        "pragma": "no-cache",
+        "report-to": "{\"group\":\"ascnsrsggc:102:0\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://csp.withgoogle.com/csp/report-to/scaffolding/ascnsrsggc:102:0\"}],}",
+        "server": "Golfe2"
+      },
+      "timestamp": 1760387273690
+    },
+    {
+      "method": "Network.responseReceived",
+      "url": "https://challenges.cloudflare.com/cdn-cgi/challenge-platform/h/g/turnstile/f/ov2/av0/rch5lQEloMAy1oASB2idd69IEY14u3DdRG.Uy.GOji0Hfs-1760387268-1.3.1.1-taQvBGu830t8tkWoASxWMvy8YCANNhPCEY.kTx68W5I/os8at/0x4AAAAAABi39iOg0GNr5eFO/auto/fbE/failure_retry/normal/auto",
+      "content_type": "text/html",
+      "headers": {
+        "accept-ch": "Sec-CH-UA-Bitness, Sec-CH-UA-Arch, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Platform, Sec-CH-UA, UA-Bitness, UA-Arch, UA-Full-Version, UA-Mobile, UA-Model, UA-Platform-Version, UA-Platform, UA",
+        "alt-svc": "h3=\":443\"; ma=86400",
+        "cache-control": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+        "cf-ray": "98e194d84b437600-SEA",
+        "content-encoding": "br",
+        "content-security-policy": "default-src 'none'; script-src 'nonce-TbHYVWNOuRIEt0Y4' 'unsafe-eval'; script-src-attr 'none'; worker-src blob:; style-src 'unsafe-inline'; img-src 'self'; connect-src 'self'; frame-src 'self' blob:; child-src 'self' blob:; form-action 'none'; base-uri 'self'; sandbox allow-same-origin allow-scripts allow-popups allow-forms",
+        "content-type": "text/html; charset=UTF-8",
+        "critical-ch": "Sec-CH-UA-Bitness, Sec-CH-UA-Arch, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Platform-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Platform, Sec-CH-UA, UA-Bitness, UA-Arch, UA-Full-Version, UA-Mobile, UA-Model, UA-Platform-Version, UA-Platform, UA",
+        "cross-origin-embedder-policy": "require-corp",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-resource-policy": "cross-origin",
+        "date": "Mon, 13 Oct 2025 20:28:05 GMT",
+        "document-policy": "js-profiling",
+        "origin-agent-cluster": "?1",
+        "permissions-policy": "accelerometer=(),autoplay=(),browsing-topics=(),camera=(),clipboard-read=(),clipboard-write=(),geolocation=(),gyroscope=(),hid=(),interest-cohort=(),magnetometer=(),microphone=(),payment=(),publickey-credentials-get=(),screen-wake-lock=(),serial=(),sync-xhr=(),usb=()",
+        "referrer-policy": "same-origin",
+        "server": "cloudflare"
+      },
+      "timestamp": 1760387285856
+    }
+  ]
+}

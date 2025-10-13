@@ -15,6 +15,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 import subprocess
+import json
+import requests
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -81,6 +83,9 @@ class StealthInvoiceDownloader:
             chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
             chrome_options.add_experimental_option('useAutomationExtension', False)
             
+            # Enable performance logging to capture network requests
+            chrome_options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
+            
             # Anti-detection: Add realistic preferences
             prefs = {
                 'profile.default_content_setting_values.notifications': 2,
@@ -108,6 +113,9 @@ class StealthInvoiceDownloader:
             
             # Create driver
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            
+            # Enable Network domain to capture download requests
+            self.driver.execute_cdp_cmd('Network.enable', {})
             
             # Anti-detection: Execute CDP commands to hide webdriver
             self.driver.execute_cdp_cmd('Network.setUserAgentOverride', {
@@ -161,6 +169,57 @@ class StealthInvoiceDownloader:
         except Exception as e:
             logger.error(f"Failed to initialize Chrome WebDriver: {e}")
             raise
+    
+    def _extract_download_url_from_logs(self, job_id: str, file_type: str = 'xml'):
+        """Extract download URL from Chrome performance logs"""
+        try:
+            logs = self.driver.get_log('performance')
+            
+            # Extensions to look for
+            extensions = {
+                'xml': ['.xml'],
+                'danfe': ['.pdf', 'danfe']
+            }
+            search_extensions = extensions.get(file_type, ['.xml'])
+            
+            download_urls = []
+            for log in logs:
+                try:
+                    message = json.loads(log['message'])['message']
+                    
+                    # Look for network response events
+                    if message.get('method') == 'Network.responseReceived':
+                        response = message.get('params', {}).get('response', {})
+                        url = response.get('url', '')
+                        
+                        # Check for download indicators
+                        headers = response.get('headers', {})
+                        content_disposition = headers.get('content-disposition', '').lower()
+                        content_type = response.get('mimeType', '').lower()
+                        
+                        # Check if this is a download
+                        is_download = False
+                        if 'attachment' in content_disposition:
+                            is_download = True
+                        elif any(ext in url.lower() for ext in search_extensions):
+                            is_download = True
+                        elif file_type == 'xml' and ('xml' in content_type or 'application/xml' in content_type):
+                            is_download = True
+                        elif file_type == 'danfe' and ('pdf' in content_type or 'application/pdf' in content_type):
+                            is_download = True
+                        
+                        if is_download and url and url.startswith('http'):
+                            download_urls.append(url)
+                            logger.info(f"[Job {job_id}] 🎯 Found download URL: {url[:100]}...")
+                
+                except (json.JSONDecodeError, KeyError):
+                    continue
+            
+            return download_urls
+        
+        except Exception as e:
+            logger.error(f"[Job {job_id}] Error extracting download URL: {e}")
+            return []
     
     def download_invoice_xml(self, invoice_key: str, job_id: str, download_type: str = 'xml', user_id: int = None):
         """
@@ -312,35 +371,44 @@ class StealthInvoiceDownloader:
             logger.info(f"[Job {job_id}] 🖱️ Clicking search button...")
             search_button.click()
             
-            # Wait for results with longer timeout
-            logger.info(f"[Job {job_id}] ⏳ Waiting for search results (extended timeout)...")
-            time.sleep(self._get_random_delay(5, 8))
+            # Wait for results with EXTRA long timeout for JavaScript to load
+            logger.info(f"[Job {job_id}] ⏳ Waiting for search results (EXTRA extended timeout for JS to load)...")
+            time.sleep(self._get_random_delay(10, 15))  # Even longer wait for results page to fully load
+            
+            # Wait for the download buttons to be visible in DOM
+            logger.info(f"[Job {job_id}] ⏳ Waiting for download buttons to load...")
+            time.sleep(5)
             
             # Find download button based on type
             logger.info(f"[Job {job_id}] 🔍 Looking for {download_type.upper()} download button...")
             
             if download_type == 'xml':
                 download_selectors = [
+                    (By.ID, 'downloadXmlBtn'),  # CORRECT ID from website!
+                    (By.XPATH, "//a[@id='downloadXmlBtn']"),
                     (By.XPATH, "//a[contains(text(), 'Baixar XML')]"),
-                    (By.XPATH, "//button[contains(text(), 'Baixar XML')]"),
-                    (By.ID, 'downloadXml'),
-                    (By.CSS_SELECTOR, 'a[href*="xml"]'),
+                    (By.XPATH, "//a[contains(.//span, 'Baixar XML')]"),
+                    (By.CSS_SELECTOR, "a#downloadXmlBtn"),
+                    (By.XPATH, "//*[@id='downloadXmlBtn']"),
                 ]
             else:  # danfe
                 download_selectors = [
+                    (By.ID, 'downloadDanfeBtn'),  # CORRECT ID from website!
+                    (By.XPATH, "//a[@id='downloadDanfeBtn']"),
                     (By.XPATH, "//a[contains(text(), 'Baixar DANFE')]"),
-                    (By.XPATH, "//button[contains(text(), 'Baixar DANFE')]"),
-                    (By.XPATH, "//a[contains(text(), 'DANFE')]"),
-                    (By.ID, 'downloadDanfe'),
+                    (By.XPATH, "//a[contains(.//span, 'Baixar DANFE')]"),
+                    (By.CSS_SELECTOR, "a#downloadDanfeBtn"),
+                    (By.XPATH, "//*[@id='downloadDanfeBtn']"),
                 ]
             
             download_button = None
             for i, (by_type, selector) in enumerate(download_selectors):
                 try:
+                    # First, wait for element to be PRESENT (not necessarily visible)
                     download_button = WebDriverWait(self.driver, 15).until(
-                        EC.element_to_be_clickable((by_type, selector))
+                        EC.presence_of_element_located((by_type, selector))
                     )
-                    logger.info(f"[Job {job_id}] ✅ Found {download_type.upper()} download button")
+                    logger.info(f"[Job {job_id}] ✅ Found {download_type.upper()} download button (ID: {selector if by_type == By.ID else 'other'})")
                     break
                 except:
                     continue
@@ -348,22 +416,58 @@ class StealthInvoiceDownloader:
             if not download_button:
                 raise Exception(f"{download_type.upper()} download button not found")
             
+            # Scroll to button to make it visible (CRITICAL FIX!)
+            logger.info(f"[Job {job_id}] 📜 Scrolling to {download_type.upper()} button...")
+            self.driver.execute_script("arguments[0].scrollIntoView({behavior: 'smooth', block: 'center'});", download_button)
+            time.sleep(2)  # Wait for scroll animation
+            
             # Human delay before download
             time.sleep(self._get_random_delay(1.0, 2.0))
             
-            # Click download
-            logger.info(f"[Job {job_id}] 📥 Clicking {download_type.upper()} download...")
-            download_button.click()
+            # Get list of files BEFORE clicking
+            files_before = set(os.listdir(self.download_dir))
             
-            # Wait for download
-            time.sleep(self._get_random_delay(5, 8))
+            # Click download using JavaScript (more robust than Selenium click)
+            logger.info(f"[Job {job_id}] 📥 Clicking {download_type.upper()} download with JavaScript...")
+            self.driver.execute_script("arguments[0].click();", download_button)
             
-            # Check for downloaded file
-            logger.info(f"[Job {job_id}] ✅ Download completed successfully")
+            # Wait for download to complete by checking for new files
+            logger.info(f"[Job {job_id}] ⏳ Waiting for file to download...")
+            max_wait = 30  # 30 seconds max wait
+            check_interval = 1  # Check every second
+            downloaded_file = None
+            
+            for i in range(max_wait):
+                time.sleep(check_interval)
+                files_after = set(os.listdir(self.download_dir))
+                new_files = files_after - files_before
+                
+                # Filter out partial downloads (.crdownload, .tmp)
+                completed_files = [f for f in new_files if not f.endswith(('.crdownload', '.tmp', '.part'))]
+                
+                if completed_files:
+                    downloaded_file = completed_files[0]
+                    logger.info(f"[Job {job_id}] ✅ Found downloaded file: {downloaded_file}")
+                    break
+                
+                if i > 0 and i % 5 == 0:
+                    logger.info(f"[Job {job_id}] Still waiting... ({i}s elapsed)")
+            
+            if not downloaded_file:
+                raise Exception(f"Download timeout: no new file appeared after {max_wait} seconds")
+            
+            # Determine correct file extension and rename
+            file_ext = 'pdf' if download_type == 'danfe' else 'xml'
+            old_path = os.path.join(self.download_dir, downloaded_file)
+            new_path = f"{self.download_dir}/{invoice_key}.{file_ext}"
+            
+            # Rename file to correct name
+            os.rename(old_path, new_path)
+            logger.info(f"[Job {job_id}] ✅ File renamed to: {new_path}")
             
             return {
                 'success': True,
-                'file_path': f"{self.download_dir}/{invoice_key}.{download_type}",
+                'file_path': new_path,
                 'message': f'{download_type.upper()} downloaded successfully'
             }
             
