@@ -371,13 +371,42 @@ class StealthInvoiceDownloader:
             logger.info(f"[Job {job_id}] 🖱️ Clicking search button...")
             search_button.click()
             
-            # Wait for results with EXTRA long timeout for JavaScript to load
-            logger.info(f"[Job {job_id}] ⏳ Waiting for search results (EXTRA extended timeout for JS to load)...")
-            time.sleep(self._get_random_delay(10, 15))  # Even longer wait for results page to fully load
+            # Wait for the NEW PAGE to load by detecting specific elements that only appear AFTER results load
+            logger.info(f"[Job {job_id}] ⏳ Waiting for results page to load completely...")
             
-            # Wait for the download buttons to be visible in DOM
-            logger.info(f"[Job {job_id}] ⏳ Waiting for download buttons to load...")
-            time.sleep(5)
+            # Multiple strategies to detect when results page is loaded
+            page_loaded = False
+            wait_strategies = [
+                # Strategy 1: Wait for "NOVA CONSULTA" button (appears only on results page)
+                (By.XPATH, "//button[contains(text(), 'NOVA CONSULTA')]"),
+                (By.XPATH, "//*[contains(text(), 'NOVA CONSULTA')]"),
+                # Strategy 2: Wait for invoice key display
+                (By.XPATH, f"//*[contains(text(), '{invoice_key}')]"),
+                # Strategy 3: Wait for any download button
+                (By.ID, 'downloadXmlBtn'),
+                (By.ID, 'downloadDanfeBtn'),
+            ]
+            
+            for by_type, selector in wait_strategies:
+                try:
+                    logger.info(f"[Job {job_id}] 🔍 Checking for results page element: {selector[:50]}...")
+                    WebDriverWait(self.driver, 30).until(
+                        EC.presence_of_element_located((by_type, selector))
+                    )
+                    logger.info(f"[Job {job_id}] ✅ Results page loaded! (detected via: {selector[:50]})")
+                    page_loaded = True
+                    break
+                except:
+                    continue
+            
+            if not page_loaded:
+                logger.warning(f"[Job {job_id}] ⚠️ Could not detect results page load, proceeding anyway...")
+                # Fallback to time-based wait
+                time.sleep(10)
+            
+            # Extra buffer for any animations/transitions
+            logger.info(f"[Job {job_id}] ⏳ Waiting for page animations to complete...")
+            time.sleep(3)
             
             # Find download button based on type
             logger.info(f"[Job {job_id}] 🔍 Looking for {download_type.upper()} download button...")
