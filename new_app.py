@@ -395,27 +395,83 @@ def process_download_job(job_id, user_id):
             try:
                 logger.info(f"[Job {job_id}] Processing key {i+1}/{job.total_keys}: {invoice_key}")
                 
-                result = downloader.download_invoice_xml(
-                    invoice_key=invoice_key,
-                    job_id=job_id,
-                    download_type=job.download_type,
-                    user_id=user_id
-                )
+                # Handle 'both' download type - download XML and DANFE separately
+                if job.download_type == 'both':
+                    logger.info(f"[Job {job_id}] Downloading both XML and DANFE for {invoice_key}")
+                    
+                    # Download XML first
+                    xml_result = downloader.download_invoice_xml(
+                        invoice_key=invoice_key,
+                        job_id=job_id,
+                        download_type='xml',
+                        user_id=user_id
+                    )
+                    
+                    # Download DANFE second
+                    danfe_result = downloader.download_invoice_xml(
+                        invoice_key=invoice_key,
+                        job_id=job_id,
+                        download_type='danfe',
+                        user_id=user_id
+                    )
+                    
+                    # Consider successful if at least one succeeds
+                    xml_success = xml_result.get('success', False)
+                    danfe_success = danfe_result.get('success', False)
+                    
+                    job.processed += 1
+                    
+                    if xml_success or danfe_success:
+                        job.successful += 1
+                        
+                        # Add both files if successful
+                        if xml_success and xml_result.get('file_path'):
+                            job.downloaded_files.append(xml_result['file_path'])
+                            filename = os.path.basename(xml_result['file_path'])
+                            job.files[filename] = xml_result['file_path']
+                            logger.info(f"[Job {job_id}] XML downloaded successfully: {filename}")
+                        
+                        if danfe_success and danfe_result.get('file_path'):
+                            job.downloaded_files.append(danfe_result['file_path'])
+                            filename = os.path.basename(danfe_result['file_path'])
+                            job.files[filename] = danfe_result['file_path']
+                            logger.info(f"[Job {job_id}] DANFE downloaded successfully: {filename}")
+                    else:
+                        job.failed += 1
+                        error_msg = []
+                        if not xml_success:
+                            error_msg.append(f"XML: {xml_result.get('error', 'falha')}")
+                        if not danfe_success:
+                            error_msg.append(f"DANFE: {danfe_result.get('error', 'falha')}")
+                        
+                        job.errors.append({
+                            'invoice_key': invoice_key,
+                            'error': ' | '.join(error_msg)
+                        })
                 
-                job.processed += 1
-                
-                if result.get('success') == True:
-                    job.successful += 1
-                    if result.get('file_path'):
-                        job.downloaded_files.append(result['file_path'])
-                        filename = os.path.basename(result['file_path'])
-                        job.files[filename] = result['file_path']
                 else:
-                    job.failed += 1
-                    job.errors.append({
-                        'invoice_key': invoice_key,
-                        'error': result.get('error', result.get('message', 'Unknown error'))
-                    })
+                    # Single download type (xml or danfe)
+                    result = downloader.download_invoice_xml(
+                        invoice_key=invoice_key,
+                        job_id=job_id,
+                        download_type=job.download_type,
+                        user_id=user_id
+                    )
+                    
+                    job.processed += 1
+                    
+                    if result.get('success') == True:
+                        job.successful += 1
+                        if result.get('file_path'):
+                            job.downloaded_files.append(result['file_path'])
+                            filename = os.path.basename(result['file_path'])
+                            job.files[filename] = result['file_path']
+                    else:
+                        job.failed += 1
+                        job.errors.append({
+                            'invoice_key': invoice_key,
+                            'error': result.get('error', result.get('message', 'Unknown error'))
+                        })
                     
             except Exception as e:
                 logger.error(f"[Job {job_id}] Error processing {invoice_key}: {str(e)}")
@@ -802,6 +858,97 @@ def submit_keys():
         logger.error(f"Error in submit_keys: {str(e)}")
         flash('Erro interno do servidor. Tente novamente.', 'error')
         return redirect(url_for('xml_download'))
+
+@app.route('/NotaFiscalBaixador', methods=['GET', 'POST'])
+@login_required
+def nota_fiscal_baixador():
+    """
+    Rota para baixar automaticamente XML e DANFE do site meudanfe.com.br
+    Baixa os dois arquivos (XML e DANFE) automaticamente para cada chave
+    """
+    if request.method == 'GET':
+        # Mostrar página com formulário para inserir chaves
+        from simple_credit_system import get_user_xml_balance
+        xml_balance = get_user_xml_balance(current_user.id)
+        return render_template('nota_fiscal_baixador.html', xml_balance=xml_balance)
+    
+    # POST - Processar as chaves
+    try:
+        keys_text = request.form.get('invoice_keys', '').strip()
+        
+        if not keys_text:
+            flash('Por favor, insira pelo menos uma chave de nota fiscal.', 'error')
+            return redirect(url_for('nota_fiscal_baixador'))
+        
+        # Parse invoice keys
+        invoice_keys = [key.strip() for key in keys_text.split('\n') if key.strip()]
+        
+        if not invoice_keys:
+            flash('Nenhuma chave válida encontrada.', 'error')
+            return redirect(url_for('nota_fiscal_baixador'))
+        
+        # Validate invoice keys format (44 digits)
+        valid_keys = []
+        for key in invoice_keys:
+            clean_key = ''.join(filter(str.isdigit, key))
+            if len(clean_key) == 44:
+                valid_keys.append(clean_key)
+        
+        if not valid_keys:
+            flash('Nenhuma chave válida encontrada. Chaves devem ter 44 dígitos.', 'error')
+            return redirect(url_for('nota_fiscal_baixador'))
+        
+        # Check if user has sufficient XML credits
+        from simple_credit_system import get_user_xml_balance
+        available_credits = get_user_xml_balance(current_user.id)
+        
+        if available_credits < len(valid_keys):
+            flash(f'Créditos XML insuficientes. Você possui {available_credits} créditos, mas precisa de {len(valid_keys)} para processar estas chaves.', 'warning')
+            return redirect(url_for('comprar_creditos_xml'))
+        
+        # Create download job with download_type='both' to download XML and DANFE
+        job_id = str(uuid.uuid4())
+        job = DownloadJob(job_id, valid_keys, current_user.id)
+        job.download_type = 'both'  # Download both XML and DANFE automatically
+        
+        with jobs_lock:
+            download_jobs[job_id] = job
+        
+        # Record usage
+        xml_module = ServiceModule.query.filter_by(name='xml_download').first()
+        if xml_module:
+            usage = UsageRecord(
+                user_id=current_user.id,
+                module_id=xml_module.id,
+                quantity=len(valid_keys),
+                cost=0.0,
+                description=f"Download automático de XML e DANFE via meudanfe.com.br - {len(valid_keys)} chave(s)",
+                invoice_keys=json.dumps(valid_keys),
+                job_id=job_id
+            )
+            db.session.add(usage)
+            db.session.commit()
+        
+        # Log user activity
+        log_user_activity(
+            user_id=current_user.id,
+            activity_type='xml_danfe_download',
+            description=f'Iniciou download de XML e DANFE via meudanfe.com.br para {len(valid_keys)} chave(s)',
+            details={'job_id': job_id, 'total_keys': len(valid_keys)}
+        )
+        
+        # Start download process in background
+        thread = Thread(target=process_download_job, args=(job_id, current_user.id))
+        thread.daemon = True
+        thread.start()
+        
+        flash(f'Download automático iniciado! Baixando XML e DANFE para {len(valid_keys)} chave(s).', 'success')
+        return redirect(url_for('download_status', job_id=job_id))
+        
+    except Exception as e:
+        logger.error(f"Error in nota_fiscal_baixador: {str(e)}")
+        flash('Erro interno do servidor. Tente novamente.', 'error')
+        return redirect(url_for('nota_fiscal_baixador'))
 
 @app.route('/download/<job_id>')
 @login_required

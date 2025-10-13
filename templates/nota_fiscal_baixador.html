@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baixador de XML e DANFE - CROSS XML</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-purple: #8A05BE;
+            --primary-purple-dark: #6B0F9A;
+            --primary-purple-light: #A855F7;
+            --gray-50: #FAFAFA;
+            --gray-100: #F5F5F5;
+            --gray-900: #1A1A1A;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            margin-left: 280px;
+        }
+        
+        .main-content {
+            padding: 3rem;
+        }
+        
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 40px rgba(138, 5, 190, 0.2);
+        }
+        
+        .page-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        
+        .page-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+        
+        .info-banner {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            border-left: 5px solid var(--primary-purple);
+        }
+        
+        .info-banner h4 {
+            color: var(--primary-purple);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .info-banner ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .info-banner ul li {
+            padding: 0.5rem 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-banner ul li i {
+            color: var(--success-color);
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+        }
+        
+        .form-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        }
+        
+        .form-card h3 {
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--gray-900);
+        }
+        
+        .credit-badge {
+            background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 15px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3);
+        }
+        
+        .credit-badge i {
+            font-size: 1.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.75rem;
+        }
+        
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            padding: 1rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-purple);
+            box-shadow: 0 0 0 3px rgba(138, 5, 190, 0.1);
+        }
+        
+        textarea.form-control {
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(138, 5, 190, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(138, 5, 190, 0.4);
+        }
+        
+        .btn-primary i {
+            margin-right: 0.5rem;
+        }
+        
+        .example-box {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-top: 1rem;
+            border-left: 4px solid var(--primary-purple);
+        }
+        
+        .example-box small {
+            color: #64748b;
+        }
+        
+        .example-code {
+            font-family: 'Courier New', monospace;
+            color: var(--primary-purple);
+            font-weight: 600;
+        }
+        
+        .feature-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .feature-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .feature-item i {
+            font-size: 1.5rem;
+            color: var(--primary-purple);
+        }
+        
+        .feature-item span {
+            font-weight: 500;
+            color: var(--gray-900);
+        }
+    </style>
+</head>
+<body>
+    {% include 'base.html' %}
+    
+    <div class="main-content">
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="page-title">
+                        <i class="fas fa-download"></i> Baixador de XML e DANFE
+                    </h1>
+                    <p class="page-subtitle">
+                        Download automático de XML e DANFE diretamente do site meudanfe.com.br
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Info Banner -->
+        <div class="info-banner">
+            <h4><i class="fas fa-info-circle"></i> Como Funciona</h4>
+            <ul>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Insira as chaves de acesso das notas fiscais (44 dígitos)</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>O sistema acessa automaticamente o site <strong>meudanfe.com.br</strong></span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Baixa <strong>XML e DANFE</strong> simultaneamente para cada chave</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Custos: <strong>1 crédito XML</strong> por nota fiscal baixada</span>
+                </li>
+                <li>
+                    <i class="fas fa-check-circle"></i>
+                    <span>Geração de DANFE: <strong>100% GRATUITA</strong></span>
+                </li>
+            </ul>
+            
+            <div class="feature-list">
+                <div class="feature-item">
+                    <i class="fas fa-file-code"></i>
+                    <span>XML Original</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-file-pdf"></i>
+                    <span>DANFE em PDF</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-robot"></i>
+                    <span>100% Automatizado</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-bolt"></i>
+                    <span>Download Rápido</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Form Card -->
+        <div class="form-card">
+            <h3><i class="fas fa-keyboard"></i> Inserir Chaves de Acesso</h3>
+            
+            <!-- Credit Badge -->
+            <div class="credit-badge">
+                <i class="fas fa-coins"></i>
+                <div>
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Créditos XML Disponíveis</div>
+                    <div style="font-size: 1.4rem; font-weight: 800;">{{ xml_balance }}</div>
+                </div>
+            </div>
+            
+            <form method="POST" action="{{ url_for('nota_fiscal_baixador') }}">
+                <div class="mb-4">
+                    <label for="invoice_keys" class="form-label">
+                        <i class="fas fa-key"></i> Chaves de Acesso das Notas Fiscais
+                    </label>
+                    <textarea 
+                        class="form-control" 
+                        id="invoice_keys" 
+                        name="invoice_keys" 
+                        placeholder="Cole as chaves de acesso aqui (uma por linha)&#10;&#10;Exemplo:&#10;42250485179240000239550020004175361171503396&#10;35250513516247000107550010000113401146202508&#10;..."
+                        required
+                    ></textarea>
+                    
+                    <div class="example-box">
+                        <small>
+                            <i class="fas fa-lightbulb"></i> <strong>Dica:</strong> 
+                            Cada chave deve ter exatamente <span class="example-code">44 dígitos</span>. 
+                            Você pode inserir várias chaves, uma por linha.
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="fas fa-download"></i>
+                        Baixar XML e DANFE Automaticamente
+                    </button>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt"></i> 
+                        Downloads processados com segurança via meudanfe.com.br
+                    </small>
+                </div>
+            </form>
+            
+            {% if xml_balance < 1 %}
+            <div class="alert alert-warning mt-4">
+                <i class="fas fa-exclamation-triangle"></i> 
+                <strong>Atenção:</strong> Você não possui créditos XML suficientes. 
+                <a href="{{ url_for('comprar_creditos_xml') }}" class="alert-link">Clique aqui para comprar créditos</a>.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
